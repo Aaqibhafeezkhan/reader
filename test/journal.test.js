@@ -111,3 +111,12 @@ test('Work counts its pages done, by a heading\'s box or a choice made, and stil
   assert.deepEqual(count(filled, EVENING), { done: 2, of: 12 });
   assert.deepEqual(count(filled, CLOSING), { done: 2, of: 12 });
 });
+
+test('its videos are links to them, not images that can\'t load, until they\'re on the page (#31)', () => {
+  const out = drawn(EVENING);
+  const videos = (body) => [...body.matchAll(/<a class="social social-yt" href="https:\/\/www\.youtube\.com\/watch\?v=([\w-]+)">/g)].map(([, id]) => id);
+  assert.equal(videos(out[2]).length, 7);
+  assert.equal(videos(out[2])[0], '-Fy2GxrurO4');
+  assert.equal(videos(out[9]).length, 4);
+  assert.doesNotMatch(out.join('\n'), /<img src="yt:/);
+});

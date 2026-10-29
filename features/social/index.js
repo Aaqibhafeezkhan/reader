@@ -10,11 +10,13 @@
  *   fb:jzheaux[]           facebook.com/jzheaux
  *   insta:jzheaux[]        @jzheaux
  *   yt:jzheaux[]           @jzheaux
+ *   yt:v/FcWl8WgKP8E[]     youtu.be/FcWl8WgKP8E, the video
  *
  * It shows as the site would write it, on the right above, unless the
  * brackets say otherwise: `gh:jzheaux[my GitHub]`. A Bluesky handle with a
  * dot in it is a whole one (`bluesky:jzheaux.dev[]`); a LinkedIn name with a
- * slash is another kind of page (`linkedin:company/vmware[]`).
+ * slash is another kind of page (`linkedin:company/vmware[]`), and so is a
+ * YouTube one: `yt:v/<id>` is a video, since a handle can look like an id.
  *
  * The marks are in icons/, and go into the stylesheet as masks, so each is
  * drawn in its site's color. A mark is only seen, so the link also says
@@ -77,7 +79,12 @@ const SITES = {
     site: 'YouTube',
     icon: 'youtube',
     color: 'var(--gm-brand-youtube)',
-    at: (name) => ({ href: `https://www.youtube.com/@${name}`, label: `@${name}` }),
+    at: (name) => {
+      const video = /^v\/([\w-]+)$/.exec(name);
+      if (video) return { href: `https://www.youtube.com/watch?v=${video[1]}`, label: `youtu.be/${video[1]}` };
+      if (name.includes('/')) return null;
+      return { href: `https://www.youtube.com/@${name}`, label: `@${name}` };
+    },
   },
 };
 

@@ -12,6 +12,8 @@ test('each site has its address, and its way of writing a name', () => {
   assert.deepEqual(socialLink('fb', 'jzheaux', ''), { href: 'https://www.facebook.com/jzheaux', label: 'facebook.com/jzheaux' });
   assert.deepEqual(socialLink('insta', 'jzheaux', ''), { href: 'https://www.instagram.com/jzheaux', label: '@jzheaux', site: 'Instagram' });
   assert.deepEqual(socialLink('yt', '@jzheaux', ''), { href: 'https://www.youtube.com/@jzheaux', label: '@jzheaux', site: 'YouTube' });
+  assert.deepEqual(socialLink('yt', 'v/FcWl8WgKP8E', ''), { href: 'https://www.youtube.com/watch?v=FcWl8WgKP8E', label: 'youtu.be/FcWl8WgKP8E', site: 'YouTube' });
+  assert.equal(socialLink('yt', 'jzheaux/videos', ''), null, 'a video has a path of its own');
   assert.deepEqual(socialLink('gh', 'jzheaux', ' my GitHub '), { href: 'https://github.com/jzheaux', label: 'my GitHub' });
   assert.equal(socialLink('gh', '', ''), null);
 });

@@ -9,7 +9,9 @@
  * feature can have a box done by sending it, or its list item, a
  * `preview:complete`: a plain box is ticked, a staged one filled all the way.
  * Where the page can't be worked (`Preview.workable`), as on a slide, none
- * of them takes a click or a key. Runs in the preview frame.
+ * of them takes a click or a key; when it stops being workable while it's
+ * showing, as a page past its time does, they're shut as the server would
+ * have drawn them. Runs in the preview frame.
  */
 (() => {
   const boxLine = (b, on) => {
@@ -39,6 +41,12 @@
   }, true);
   document.addEventListener('keydown', (e) => {
     if (shut(e.target) && [' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
+  });
+
+  window.addEventListener('preview:workable', () => {
+    if (Preview.workable) return;
+    for (const b of document.querySelectorAll('input.task-box, input.choice-box, button.stage-box')) if (!b.closest('.field')) Preview.shut(b, { disabled: '' });
+    for (const b of document.querySelectorAll('.task-reset, .task-log')) Preview.shut(b, { hidden: '' });
   });
 
   document.addEventListener('change', (e) => {

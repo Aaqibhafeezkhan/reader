@@ -156,3 +156,26 @@ in Work too, though not on a slide. A date that isn't one
 (the heading it's under, to the next at that level or above), plain,
 staged or a choice, as one edit you can undo. `reset:[Clear]` names it.
 It's as much for a todo list or a game as for a [recipe](recipes.md).
+
+## Closing a form
+
+Some pages are filled in for a while and are then a record: a day's checklist, a sign-up sheet, a quiz.
+`open-until:` in the front matter says until when.
+
+```markdown
+---
+title: Potluck sign-up
+open-until: 2026-11-08 18:00
+---
+```
+
+It's a day and a time, read by the clock of whoever has the page open; a day alone (`open-until: 2026-11-07`) is open to the end of that day.
+The byline says so, *Editable Until 18:00 on 8 November 2026, Two Days Away*, counting down by the minute, and a workbook says it atop each page.
+
+Once the time has passed, the page's boxes, choices, fields, dates and puzzles show what was left in them and can't be changed, and an empty field has no hint.
+The byline then says *No Longer Editable*, and when it closed on hover, or when the keyboard reaches it.
+If the time passes while the page is open, it shuts there and then: what was being typed into a field is kept.
+Playing something back (a video, a sound) still works, and Edit still edits the file: change the time to open it again.
+
+An exported page says until when it could be edited, without the count, or that it no longer can.
+Should the page's inputs still write to the file a day after it closed, the server refuses them, a day late so that a server whose clock or time zone isn't yours errs towards open.

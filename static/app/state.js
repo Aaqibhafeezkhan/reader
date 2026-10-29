@@ -37,6 +37,7 @@ export const state = {
   saved: '',            // text as last written to / read from disk
   mtime: null,          // disk mtime that `saved` corresponds to
   conflict: false,
+  worked: false,        // the unsaved edits include some the page's inputs made
   renderSeq: 0,         // drops out-of-order render responses
   openSeq: 0,           // drops superseded file opens
   saving: Promise.resolve(),

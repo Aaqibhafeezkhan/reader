@@ -11,7 +11,8 @@
  * asides feature's `~` lines are such notes. Here the tokens
  * are cut into rows (splitPairs, features/rows.js) and each row is drawn
  * beside its notes. What else goes in the masthead, under the byline, is on
- * `env.masthead` (the asides' legend).
+ * `env.masthead` (the asides' legend), and what goes at the end of the
+ * byline itself on `env.byline` (when the page closes).
  *
  * A front matter key with an alias, `reviewer #: Josh` or `topic c:
  * Coherence`, declares something for a feature, which claims the line
@@ -103,7 +104,7 @@ export function columns(md, tokens, env, { headings = true, title } = {}) {
     ? `<div class="gm-colheads"><div>${escapeHtml(speakerLabel)}</div><div class="gm-h-aside">${escapeHtml(listenerLabel)}</div></div>`
     : '';
 
-  const head = masthead(meta, docTitle, (env.masthead || []).join('\n  '));
+  const head = masthead(meta, docTitle, (env.masthead || []).join('\n  '), env.byline || []);
   return {
     title: docTitle,
     // The byline's reviewer chips, if it has any, want their look.
@@ -118,7 +119,7 @@ function reviewerChip(value) {
   return name ? `<span class="gm-who">${escapeHtml(name)}</span>` : '';
 }
 
-function masthead(meta, docTitle, more = '') {
+function masthead(meta, docTitle, more = '', said = []) {
   const bits = [];
   if (meta.author) bits.push(`<span>${escapeHtml(meta.author)}</span>`);
   if (meta.date) bits.push(`<span>${escapeHtml(meta.date)}</span>`);
@@ -135,7 +136,7 @@ function masthead(meta, docTitle, more = '') {
     .filter(([k, v]) => !UNSHOWN.has(k) && typeof v === 'string')
     .map(([k, v]) => (REVIEWER.test(k) ? reviewerChip(v) : ALIASED.test(k) ? '' : `<span>${escapeHtml(k)}: ${escapeHtml(v)}</span>`))
     .filter(Boolean);
-  bits.push(...extras);
+  bits.push(...extras, ...said);
 
   return `<header class="gm-masthead">
   <h1 class="gm-title">${escapeHtml(docTitle)}</h1>

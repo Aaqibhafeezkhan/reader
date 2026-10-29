@@ -62,7 +62,9 @@ export function titleOf(meta, file) {
  * drew of the page, by feature (`{ mermaid: { text: svg } }`), to set into
  * it where the page will have nothing to draw it (export.js). `exported` is for a page that will
  * run no script of the app's, so draws nothing that would wait on one. `deck` is for a slide
- * being presented, where the deck keeps the page's fields shut.
+ * being presented, where the deck keeps the page's fields shut. `now` is the
+ * time, in ms, that the page is drawn as of (now, if not given): a page past
+ * the time its front matter says it's open until is drawn as a record.
  */
 export function render(src, options) {
   return renderWith(md, FEATURES, src, options);
@@ -79,9 +81,9 @@ export function makeRenderer(features) {
 }
 
 /** render(), by `md`, built from `features`. */
-function renderWith(md, features, src, { file, read, line = 0, shared = {}, entries, lines = false, background, fonts, matter, drawn, exported = false, deck = false } = {}) {
+function renderWith(md, features, src, { file, read, line = 0, shared = {}, entries, lines = false, background, fonts, matter, drawn, exported = false, deck = false, now } = {}) {
   const text = src || '';
-  const env = { lineBase: line, file, read, shared, entries, lines, matter, drawn, exported, deck };
+  const env = { lineBase: line, file, read, shared, entries, lines, matter, drawn, exported, deck, now };
   const tokens = md.parse(text, env);
   const meta = env.frontMatter || {};
   // The notes in the page's margin (src/columns.js), its asides among them.

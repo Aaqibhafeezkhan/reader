@@ -4,7 +4,7 @@
  *   GET  /api/info             content root and name, and reader's version: { label, url }
  *   GET  /api/tree             listable files, newest first
  *   GET  /api/file?path=       { text, mtime }
- *   PUT  /api/file             { path, text, baseMtime, force?, explicit? }
+ *   PUT  /api/file             { path, text, baseMtime, force?, explicit?, worked? }
  *   POST /api/new              { name? }
  *   POST /api/branch           { from, to } -> a copy of a document, as another version
  *   POST /api/promote          { path, base } -> { path, moved: [{ from, to }] }
@@ -36,6 +36,14 @@
  *
  * Each page has a Content-Security-Policy (PAGE_POLICIES): no page runs an
  * inline script, so markup that slipped into a rendered note couldn't either.
+ *
+ * A save that carries what the page's own inputs wrote (`worked`: a box
+ * ticked, a field filled in) is refused, 423, once the page has been a
+ * record for a day: past the time its front matter says it's open until
+ * (features/open-until). The page shuts itself by the reader's clock; this
+ * is only a backstop, a day late, so a server whose clock or zone isn't
+ * the reader's (a container that has lost its TZ runs on UTC) errs towards
+ * open. A save of what was typed into the file is never refused.
  */
 
 import fs from 'node:fs';
@@ -44,6 +52,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createContent, DOC_EXTS, PathError } from './content.js';
 import { render } from './render.js';
+import { extract, closesAt } from './page.js';
 import { slides, pages, isDeck } from './slides.js';
 import { exportHtml } from './export.js';
 import { version } from './version.js';
@@ -89,10 +98,13 @@ const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]']);
 // What each field of a request's body must be, when it's there at all.
 const FIELDS = {
   text: 'string', path: 'string', name: 'string', from: 'string', to: 'string', base: 'string', trash: 'string',
-  baseMtime: 'number', mtime: 'number',
+  baseMtime: 'number', mtime: 'number', worked: 'boolean',
 };
 
 const badRequest = (message) => Object.assign(new Error(message), { status: 400 });
+
+// How long after a page closes its inputs' writes are still taken.
+const GRACE = 24 * 60 * 60 * 1000;
 
 function decode(part) {
   try {
@@ -186,7 +198,8 @@ function foreign(req, route) {
 // and a PDF can't reach the API anyway.
 const CONTENT_SANDBOX = { 'Content-Security-Policy': 'sandbox' };
 
-export function createServer({ root, allowHosts = [] }) {
+/** `now` is the clock a record is judged by. */
+export function createServer({ root, allowHosts = [], now = Date.now }) {
   const content = createContent(root);
   const hosts = new Set([...LOOPBACK, ...allowHosts.map((h) => h.toLowerCase())]);
 
@@ -258,6 +271,12 @@ export function createServer({ root, allowHosts = [] }) {
       return sendJson(res, slides(body.text, { file: body.path, read }));
     }
     if (route === '/api/file' && req.method === 'PUT') {
+      if (body.worked) {
+        const closes = closesAt(extract(body.text ?? '').entries);
+        if (closes != null && now() >= closes + GRACE) {
+          throw Object.assign(new Error(`${body.path} is a record: what's filled in on its page closed over a day ago`), { status: 423 });
+        }
+      }
       const result = content.write(body.path, body.text, {
         baseMtime: body.baseMtime,
         force: Boolean(body.force),

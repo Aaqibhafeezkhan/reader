@@ -1,0 +1,19 @@
+/* Until when the page can be edited, in the byline, or atop a workbook's
+   page; once it can't be, when it closed shows on hover or focus. */
+.open-until { position: relative; font-family: var(--gm-sans); }
+p.open-until { font-size: 0.82rem; color: var(--gm-ink-soft); letter-spacing: 0.02em; margin: 0 0 0.8rem; }
+.open-until-closed { font-weight: 600; cursor: help; border-radius: 2px; }
+.open-until-closed:focus-visible { outline: 2px solid var(--gm-accent); outline-offset: 2px; }
+.open-until-closed:is(:hover, :focus)::after {
+  content: attr(data-closed);
+  content: attr(data-closed) / "";
+  position: absolute; left: 0; top: calc(100% + 0.3em); z-index: 5;
+  white-space: nowrap;
+  font-weight: 400; font-size: 0.82rem; letter-spacing: 0;
+  padding: 0.2em 0.5em; border-radius: 3px;
+  color: var(--gm-paper); background: var(--gm-ink);
+}
+@media (forced-colors: active) {
+  .open-until-closed:is(:hover, :focus)::after { color: CanvasText; background: Canvas; border: 1px solid CanvasText; }
+}
+@media print { .open-until-closed::after { display: none; } }

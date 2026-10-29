@@ -17,7 +17,9 @@
  * those lines starts with, for a puzzle in a quote or a list. When the lines
  * don't all start the same way, or the puzzle is in an aside (whose lines
  * are counted apart from the file's), there are no lines to write to: the
- * puzzle can be seen but not played.
+ * puzzle can be seen but not played. Nor is it played in a record, a page
+ * past the time it was open until (features/blank.js), which is drawn the
+ * same way, and which the preview keeps from taking keys.
  *
  * A puzzle can keep its board in a file of its own, named after the kind
  * (```maze mazes/one.maze), so a big one doesn't fill the page; the fence
@@ -36,6 +38,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { escapeAttr } from '../source.js';
+import { closed } from '../blank.js';
 
 const KINDS_DIR = new URL('./kinds/', import.meta.url);
 
@@ -66,7 +69,7 @@ export function puzzles(md) {
     const n = shared.puzzles = (shared.puzzles ?? 0);
     shared.puzzles++;
     const { kind, from, to, prefix, source } = puzzle;
-    const lines = from == null ? '' : ` data-from="${from}" data-to="${to}"${prefix ? ` data-prefix="${escapeAttr(prefix)}"` : ''}`;
+    const lines = from == null || closed(env) ? '' : ` data-from="${from}" data-to="${to}"${prefix ? ` data-prefix="${escapeAttr(prefix)}"` : ''}`;
     const board = !source ? ''
       : source.error ? ` data-source-error="${escapeAttr(source.error)}"`
         : ` data-source="${escapeAttr(source.text)}"`;

@@ -16,7 +16,9 @@
  * Click a puzzle (or Tab to it) to play; while it has focus it takes the
  * keys. Esc hands them back, the puzzle keeping the focus, and Enter takes
  * them again. A screen reader hears it as an application, named by its
- * kind, and hears where each key leaves it.
+ * kind, and hears where each key leaves it. In a record, a page past the
+ * time it was open until (`Preview.closed`), a puzzle is drawn as it was
+ * left, and takes no keys or clicks, nor the keyboard.
  *
  * A move goes up as an edit to the lines inside the fence, which the server
  * names as `data-from` and `data-to` (see edits.js), each line starting with
@@ -84,6 +86,7 @@
       const prefix = host.dataset.prefix ?? '';
       const fenced = (t) => lines(t).map((l) => prefix + l);
       const send = (before, after) => {
+        if (Preview.closed) return;
         const edit = { from, to, before: fenced(before), after: fenced(after) };
         to = from + edit.after.length;
         Preview.edit([edit], { drawn: true });
@@ -99,8 +102,11 @@
         continue;
       }
       keys.set(host, `${host.dataset.kind}\n${text}`);
-      host.tabIndex = 0;
-      host.setAttribute('role', 'application');
+      // Ahead of the kind's own, which a record's puzzle doesn't hear.
+      for (const type of ['keydown', 'pointerdown', 'pointermove', 'pointerup', 'click', 'dblclick']) {
+        host.addEventListener(type, (e) => { if (Preview.closed) e.stopImmediatePropagation(); }, true);
+      }
+      playable(host);
       // After the kind's own keys: a key it took is heard.
       host.addEventListener('keydown', (e) => { if (e.defaultPrevented) tells.get(host)?.(); });
       host.addEventListener('focusout', (e) => { if (!host.contains(e.relatedTarget)) host.classList.remove('puzzle-resting'); });
@@ -110,6 +116,21 @@
   }
 
   const lines = (s) => (s === '' ? [] : s.split('\n'));
+
+  /** A puzzle drawn is one Tab reaches, to play, unless the page is a record. */
+  function playable(host) {
+    if (Preview.closed) {
+      if (host.contains(document.activeElement)) document.activeElement.blur();
+      host.removeAttribute('tabindex');
+      host.removeAttribute('role');
+    } else {
+      host.tabIndex = 0;
+      host.setAttribute('role', 'application');
+    }
+  }
+  window.addEventListener('preview:closed', () => {
+    for (const host of document.querySelectorAll('.puzzle[data-kind]')) if (keys.has(host)) playable(host);
+  });
 
   function unreadable(host, why) {
     host.classList.add('puzzle-unreadable');

@@ -8,6 +8,10 @@
  * alias for the asides feature, not a line of the byline. Only the features
  * the page is rendered with claim lines; one left out claims none, and its
  * lines are the page's (see src/columns.js for how they show).
+ *
+ * A line a feature claims may say when the page closes (its `closes`): when
+ * its inputs are done with and it becomes a record. The page is `closed`
+ * once `env.now` is past the earliest such time (features/blank.js).
  */
 
 import { frontMatter, fenced } from '../features/source.js';
@@ -29,6 +33,18 @@ export function matterEntry(line, features = FEATURES) {
     if (e) return { feature: f.name, ...e };
   }
   return null;
+}
+
+/**
+ * When the page whose front matter claimed `entries` closes, in ms, by the
+ * earliest that one of `features` says (its `closes(entry)`), or null if
+ * none says.
+ */
+export function closesAt(entries, features = FEATURES) {
+  const times = entries
+    .map((e) => features.find((f) => f.name === e.feature)?.closes?.(e))
+    .filter((t) => Number.isFinite(t));
+  return times.length ? Math.min(...times) : null;
 }
 
 /**
@@ -74,7 +90,9 @@ export function extract(src, features = FEATURES) {
  * Takes them off, as the first rule after normalizing (`page_extract`),
  * keeping the front matter on `env.frontMatter` and the entries features
  * claimed on `env.entries`. A part of a page with none of its own (a deck's
- * slide) keeps the `env.entries` it was given, its deck's. Token maps count
+ * slide) keeps the `env.entries` it was given, its deck's. When the page
+ * closes is `env.closes` (`closesAt`), and whether it's closed by `env.now`
+ * (now, if not given), `env.closed`. Token maps count
  * lines of what's left; `env.sourceLines[n]` is the line of the source that
  * line `n` of it came from. Features that read the file as written go before
  * this rule (`beforeExtract`, features/source.js). `features` are the ones
@@ -89,5 +107,7 @@ export function page(md, features = FEATURES) {
     state.env.frontMatter = meta;
     state.env.entries = entries.length ? entries : (state.env.entries ?? []);
     state.env.sourceLines = lines;
+    state.env.closes = closesAt(state.env.entries, features);
+    state.env.closed = state.env.closes != null && (state.env.now ?? Date.now()) >= state.env.closes;
   });
 }

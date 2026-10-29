@@ -4,8 +4,10 @@
  * open, to go from month to month; picking a day writes it into the file in
  * the date's place. While it's kept open the arrow keys move by a day or a
  * week, PageUp and PageDown by a month; Esc, or a click elsewhere, closes
- * it. Not on a slide, where clicks and keys are the deck's. Runs in the
- * preview frame.
+ * it. Not on a slide, where clicks and keys are the deck's, nor once the
+ * page is shut while it's showing, as a page past its time is: a calendar
+ * open then closes, and the dates are taken out of the keyboard's way.
+ * Runs in the preview frame.
  */
 (() => {
   const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -238,6 +240,13 @@
     e.preventDefault();
     e.stopImmediatePropagation();
   }, true);
+
+  window.addEventListener('preview:workable', () => {
+    if (Preview.workable) return;
+    if (cal.contains(document.activeElement)) document.activeElement.blur();
+    close();
+    for (const el of document.querySelectorAll('.date[data-line][tabindex]')) Preview.shut(el, { tabindex: null, role: null, 'aria-haspopup': null });
+  });
 
   window.addEventListener('scroll', () => { if (open) place(); }, { passive: true });
   window.addEventListener('resize', () => { if (open) place(); });

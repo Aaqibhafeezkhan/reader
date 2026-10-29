@@ -40,7 +40,23 @@
  *     or a key. Each render sets it, false on a slide, which the deck keeps
  *     shut; it may be set again while the page is showing, and what's done
  *     after goes by it. While it's false, <html> is marked `unworkable`, so
- *     what can't be worked doesn't look as if it could.
+ *     what can't be worked doesn't look as if it could. When it changes,
+ *     `preview:workable` is sent to the window: what's open to be worked
+ *     (a blank being typed in, a calendar) closes, and what the keyboard
+ *     could reach is taken out of its way, as the server would have drawn
+ *     it, by `Preview.shut`.
+ *
+ *   Preview.shut(el, attrs)
+ *     Sets `el`'s attributes to `attrs` while the page can't be worked, one
+ *     that's null taken off (`{ tabindex: null, disabled: '' }`), and puts
+ *     back what they were once it can be again. The keyboard leaves it.
+ *
+ *   Preview.closed
+ *     Whether the page is a record, past the time it was open until: set
+ *     by each render, and when that time comes while it's showing. A
+ *     record can't be worked either, and nothing in it is changed, not
+ *     even what can be on a slide (a puzzle). While it's true, <html> is
+ *     marked `closed`; when it changes, `preview:closed` is sent.
  */
 (() => {
   const hooks = [];
@@ -53,14 +69,49 @@
     for (const { edits, opts } of sending?.values() ?? []) window.parent.postMessage({ type: 'edit', edits, ...opts }, '*');
   };
   let workable = true;
+  let closed = false;
+  // What each element shut had, to put back.
+  const stowed = new Map();
+  const reopen = () => {
+    for (const [el, had] of stowed) {
+      for (const [name, value] of Object.entries(had)) {
+        if (value == null) el.removeAttribute(name);
+        else el.setAttribute(name, value);
+      }
+    }
+    stowed.clear();
+  };
   window.Preview = {
     deck: false,
     get workable() {
       return workable;
     },
     set workable(on) {
+      const was = workable;
       workable = Boolean(on);
       document.documentElement.classList.toggle('unworkable', !workable);
+      if (workable) reopen();
+      if (was !== workable) window.dispatchEvent(new Event('preview:workable'));
+    },
+    shut(el, attrs) {
+      if (el.contains(document.activeElement)) document.activeElement.blur();
+      const had = stowed.get(el) ?? {};
+      for (const [name, value] of Object.entries(attrs)) {
+        if (!(name in had)) had[name] = el.getAttribute(name);
+        if (value == null) el.removeAttribute(name);
+        else el.setAttribute(name, value);
+      }
+      stowed.set(el, had);
+    },
+    get closed() {
+      return closed;
+    },
+    set closed(on) {
+      const was = closed;
+      closed = Boolean(on);
+      document.documentElement.classList.toggle('closed', closed);
+      if (closed) this.workable = false;
+      if (was !== closed) window.dispatchEvent(new Event('preview:closed'));
     },
     edit(edits, opts = {}) {
       if (!held) {

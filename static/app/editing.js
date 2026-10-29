@@ -129,6 +129,8 @@ export function applyEdit({ edits, undo = false, drawn = false }, { fromStage = 
     if (deck.open) loadDeck().then((ok) => ok && showSlide());
     return;
   }
+  // For the server to refuse, should the page be long past its time.
+  state.worked = true;
   const lines = t.value.split('\n').length;
   const { selectionStart, selectionEnd, scrollTop } = t;
   if (undo && !state.working && !deck.open) {

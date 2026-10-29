@@ -9,8 +9,10 @@
  * reads with the one picked. A field in a sentence (`[@ what goes here:
  * answer]`) writes its answer into its place on the line, moving along the
  * others after it. Where the page can't be worked (`Preview.workable`), as
- * on a slide, no blank opens and no choice is picked. Runs in the preview
- * frame.
+ * on a slide, no blank opens and no choice is picked; and when it stops
+ * being workable while it's showing, as a page past its time does, a blank
+ * being typed in is written and closed, and the blanks and choices are
+ * taken out of the keyboard's way. Runs in the preview frame.
  */
 (() => {
   let editing = null;
@@ -149,6 +151,18 @@
     if (f && !(e.target instanceof HTMLTextAreaElement)) openField(f);
   });
 
+  // Shut while it's showing: what's been typed is kept, as clicking away
+  // keeps it, and the page is left as the server draws one that's shut.
+  window.addEventListener('preview:workable', () => {
+    if (Preview.workable) return;
+    editing?.close(true);
+    resting = null;
+    for (const slot of document.querySelectorAll('.field-value[tabindex]')) {
+      Preview.shut(slot, { tabindex: null, role: null, 'aria-label': null, 'aria-placeholder': null });
+    }
+    for (const choice of document.querySelectorAll('.field-choice > input')) Preview.shut(choice, { disabled: '' });
+  });
+
   // A field being filled in stays open through a re-render, with what's
   // been typed so far; one just written keeps the keyboard, as written
   // ones bring a render.
@@ -156,7 +170,7 @@
     keep: () => editing?.keep()
       ?? (resting && document.activeElement === resting ? { ...placeOf(resting.closest('.field')), resting: true } : undefined),
     restore: (root, filling) => {
-      if (!filling) return;
+      if (!filling || !Preview.workable) return;
       const field = fieldAt(filling.line, filling.label, filling.at);
       if (!field) return;
       if (!filling.resting) return openField(field, filling);

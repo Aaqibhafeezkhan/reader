@@ -381,6 +381,7 @@ export async function open(p) {
     state.current = { path: p, type };
     state.saved = file.text;
     state.mtime = file.mtime;
+    state.worked = false;
     el.editor.value = file.text;
     el.editor.disabled = false;
     el.editor.scrollTop = 0;

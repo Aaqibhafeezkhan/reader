@@ -15,7 +15,8 @@ becomes the masthead; without a `Title` the file name is used. `Speaker`
 and `Listener` head the two columns, the text's and the asides'. Any other
 key shows in the byline as `key: value`, but for those reader reads itself
 (`font:`, `background:` and the rest below, `type:` (see
-[Work and present](presenting.md)), and a deck's `time:`, `paging:` and
+[Work and present](presenting.md)), `open-until:` (see
+[Forms](forms.md)), and a deck's `time:`, `paging:` and
 `transition:`) and one holding keys of its own (`multibox:`).
 
 ```markdown

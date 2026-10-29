@@ -8,6 +8,8 @@
  * button beside it adds a heading for today, with the multiple picked. Another
  * feature can have a box done by sending it, or its list item, a
  * `preview:complete`: a plain box is ticked, a staged one filled all the way.
+ * A box says whether it's done (`data-done`), and when that changes on the
+ * page, sends `preview:done`, for whatever counts what's done.
  * Where the page can't be worked (`Preview.workable`), as on a slide, none
  * of them takes a click or a key; when it stops being workable while it's
  * showing, as a page past its time does, they're shut as the server would
@@ -24,12 +26,19 @@
     const lines = JSON.parse(b.dataset.lines);
     return { from: line, to: line + 1, before: [lines[Number(b.dataset.stage)]], after: [lines[to]] };
   };
+  /** Whether box `b` is done, said where anything counting it can read it. */
+  const markDone = (b, done) => {
+    if (b.dataset.done === String(done)) return;
+    b.dataset.done = String(done);
+    b.dispatchEvent(new Event('preview:done', { bubbles: true }));
+  };
   /** Until the next render, the page is what the file says. */
   const setStage = (b, to) => {
     b.dataset.stage = String(to);
     [...b.children].forEach((pip, k) => pip.classList.toggle('on', k < to));
     const n = b.children.length;
     b.setAttribute('aria-checked', to === n ? 'true' : to ? 'mixed' : 'false');
+    markDone(b, to === n);
   };
 
   // A box or a choice where the page can't be worked: a click on it, which
@@ -59,6 +68,7 @@
     const edits = group.map((b) => boxLine(b, b === box ? box.checked : false))
       .filter((x) => x.before[0] !== x.after[0]);
     for (const b of group) b.defaultChecked = b.checked;
+    if (box.type === 'checkbox') markDone(box, box.checked);
     if (edits.length) Preview.edit(edits, { undo: true });
   });
 
@@ -77,6 +87,7 @@
     } else if (plain && !plain.defaultChecked && !plain.closest('.field')) {
       Preview.edit([boxLine(plain, true)], { undo: true });
       plain.checked = plain.defaultChecked = true;
+      markDone(plain, true);
     }
   });
 
@@ -113,6 +124,7 @@
       if (within(b) && b.defaultChecked) {
         edits.push(boxLine(b, false));
         b.checked = b.defaultChecked = false;
+        if (b.type === 'checkbox') markDone(b, false);
       }
     }
     for (const b of document.querySelectorAll('.stage-box')) {

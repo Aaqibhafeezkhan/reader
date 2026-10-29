@@ -90,6 +90,9 @@ export const MARKS = {
  * The tags a feature may leave on a token's `meta` for the others to read,
  * named for what they mean rather than for the feature that set them:
  *
+ * - `done`: the token is a thing to be done, a box, and whether it is (true
+ *   or false), with the `line` it's on; a choice isn't one. What counts
+ *   what's done counts these (`progress:[]`), whichever feature drew them.
  * - `notExported`: draw nothing for the token on an exported page, because
  *   another feature already shows there what it says, and nothing on that
  *   page could change it (a step's box, whose badge says whether it's done).

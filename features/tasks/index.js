@@ -96,6 +96,8 @@ export function tasks(md) {
         first.content = first.content.slice(m[0].length);
         const input = new state.Token('task_box', 'input', 0);
         input.meta = { ...box, group: lists.at(-1), name: nameOf(inline.children) };
+        // A box is a thing to be done; a choice isn't (see source.js's tags).
+        if (!box.radio) input.meta.done = box.checked;
         inline.children.unshift(input);
       }
     }
@@ -164,7 +166,7 @@ export function tasks(md) {
     const lines = ` data-on="${escapeAttr(on)}" data-off="${escapeAttr(off)}"${name ? ` aria-label="${escapeAttr(name)}"` : ''}${checked ? ' checked' : ''}${shut(env)}`;
     return radio
       ? `<input type="radio" class="choice-box" name="choice-${group}" data-line="${line}"${lines}> `
-      : `<input type="checkbox" class="task-box" data-line="${line}"${lines}> `;
+      : `<input type="checkbox" class="task-box" data-line="${line}" data-done="${checked}"${lines}> `;
   };
 }
 
@@ -211,7 +213,7 @@ function stageBox({ line, stage, lines, stages, name, pictured }) {
   // Where it can't be filled, it only says how far it's got.
   if (pictured) return `<span class="stage-box" role="img" aria-label="${escapeAttr(label)}" title="${escapeAttr(now)}">${pips}</span>${shown} `;
   return `<button type="button" class="stage-box" role="checkbox" aria-checked="${stage === n ? 'true' : stage ? 'mixed' : 'false'}"`
-    + ` aria-label="${escapeAttr(label)}" title="${escapeAttr(`${now}${next}`)}" data-line="${line}" data-stage="${stage}"`
+    + ` aria-label="${escapeAttr(label)}" title="${escapeAttr(`${now}${next}`)}" data-line="${line}" data-stage="${stage}" data-done="${stage === n}"`
     + ` data-lines="${escapeAttr(JSON.stringify(lines))}">${pips}</button>${shown} `;
 }
 

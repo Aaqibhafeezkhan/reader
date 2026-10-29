@@ -1,0 +1,17 @@
+.progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  vertical-align: 0.05em;
+  white-space: nowrap;
+}
+.progress progress {
+  width: 8em;
+  height: 0.6em;
+  accent-color: var(--gm-accent);
+}
+.progress-count {
+  font: 600 0.85em/1 var(--gm-sans);
+  font-variant-numeric: tabular-nums;
+  color: var(--gm-ink-soft);
+}

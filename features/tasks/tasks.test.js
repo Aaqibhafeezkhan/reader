@@ -14,8 +14,8 @@ test('task items become checkboxes that know their line', () => {
 
 test('a task box knows its line checked and unchecked, as written', () => {
   const { body } = render('- [ ] trash\n- [X] dishes\n- ( ) red\n');
-  assert.match(body, /data-line="0" data-on="- \[x\] trash" data-off="- \[ \] trash" aria-label="trash">/);
-  assert.match(body, /data-line="1" data-on="- \[X\] dishes" data-off="- \[ \] dishes" aria-label="dishes" checked>/);
+  assert.match(body, /data-line="0" data-done="false" data-on="- \[x\] trash" data-off="- \[ \] trash" aria-label="trash">/);
+  assert.match(body, /data-line="1" data-done="true" data-on="- \[X\] dishes" data-off="- \[ \] dishes" aria-label="dishes" checked>/);
   assert.match(body, /data-line="2" data-on="- \(x\) red" data-off="- \( \) red" aria-label="red">/);
 });
 
@@ -60,7 +60,7 @@ test('task boxes in code, or not heading a list item, are left as typed', () => 
 
 test('a box in an aside knows its line in the file', () => {
   const { body } = render('text\n~ - [ ] in the aside\n', { line: 10 });
-  assert.match(body, /<li class="task"><input type="checkbox" class="task-box" data-line="11" data-on="~ - \[x\] in the aside" data-off="~ - \[ \] in the aside" aria-label="in the aside"> in the aside<\/li>/);
+  assert.match(body, /<li class="task"><input type="checkbox" class="task-box" data-line="11" data-done="false" data-on="~ - \[x\] in the aside" data-off="~ - \[ \] in the aside" aria-label="in the aside"> in the aside<\/li>/);
 });
 
 test('a list of radio buttons split by an aside is still one choice', () => {
@@ -72,7 +72,7 @@ test('a list of radio buttons split by an aside is still one choice', () => {
 
 test('boxes on a slide know their lines in the file', () => {
   const out = slides('# One\n\n---\n\n- [ ] here\n');
-  assert.match(out.slides[1].body, /data-line="4" data-on="- \[x\] here"/);
+  assert.match(out.slides[1].body, /data-line="4" data-done="false" data-on="- \[x\] here"/);
 });
 
 test('on a slide, every box and choice is drawn as it stands and can\'t be changed, and there\'s no reset', () => {
@@ -103,7 +103,7 @@ test('done tasks are in the done ink, at full opacity', () => {
 
 test('a checkbox at the head of a heading marks it, and knows its line', () => {
   const { body } = render('# [ ] Gratitude\n\n## [x] Ways\n');
-  assert.match(body, /<h1 class="task-heading"[^>]*><input type="checkbox" class="task-box" data-line="0" data-on="# \[x\] Gratitude" data-off="# \[ \] Gratitude" aria-label="Gratitude"> Gratitude<\/h1>/);
+  assert.match(body, /<h1 class="task-heading"[^>]*><input type="checkbox" class="task-box" data-line="0" data-done="false" data-on="# \[x\] Gratitude" data-off="# \[ \] Gratitude" aria-label="Gratitude"> Gratitude<\/h1>/);
   assert.match(body, /<h2 class="task-heading"[^>]*><input type="checkbox" class="task-box" data-line="2" [^>]* checked> Ways<\/h2>/);
 });
 
@@ -189,4 +189,11 @@ test('an exported page draws no box another feature has tagged notExported, whic
   assert.equal(exported.match(/<input/g).length, 1);
   assert.match(exported, /<input type="checkbox" class="task-box"[^>]*> still a box/);
   assert.equal(md.render('- [x] shown elsewhere\n', {}).match(/<input/g).length, 1, 'only an export leaves it out');
+});
+
+test('a box says it\'s a thing to be done, and whether it is, for whatever counts them; a choice doesn\'t', () => {
+  const md = new MarkdownIt().use(tasks.plugin);
+  const tokens = md.parse('- [x] a\n- [ ] b\n- [x][ ] c\n- (x) d\n', {});
+  const tagged = tokens.flatMap((t) => t.children ?? []).filter((t) => t.type === 'task_box').map((t) => t.meta.done);
+  assert.deepEqual(tagged, [true, false, false, undefined]);
 });

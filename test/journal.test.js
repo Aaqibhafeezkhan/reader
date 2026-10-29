@@ -42,6 +42,17 @@ test('its fields say what goes in them: a hint, faint in the blank, not part of 
   assert.doesNotMatch(all, /class="field-label">[^<]*\{/, 'no label shows its braces');
 });
 
+test('its to-dos count how many are reviewed, and each book how far it\'s read', () => {
+  const out = drawn(EVENING);
+  const bars = (body) => [...body.matchAll(/<progress value="(\d+)" max="(\d+)" aria-label="([^"]*)"><\/progress> <span class="progress-count">([^<]*)<\/span>/g)]
+    .map(([, value, max, name, count]) => [value, max, name, count]);
+  // Its own box, on the heading, says the page is done, and isn't counted.
+  assert.deepEqual(bars(out[3]), [['0', '10', 'reviewed', '0 of 10']]);
+  assert.deepEqual(bars(out[8]), [['326', '1007', 'pages', '326 of 1007'], ['22', '314', 'pages', '22 of 314'], ['241', '436', 'pages', '241 of 436']]);
+  // And as a record, the same.
+  assert.deepEqual(bars(drawn(CLOSING)[3]), [['0', '10', 'reviewed', '0 of 10']]);
+});
+
 test('the evening it\'s filled in, each page says until when, and its boxes, choices and blanks can be worked', () => {
   const out = drawn(EVENING);
   for (const body of out) {

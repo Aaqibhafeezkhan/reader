@@ -157,6 +157,43 @@ in Work too, though not on a slide. A date that isn't one
 staged or a choice, as one edit you can undo. `reset:[Clear]` names it.
 It's as much for a todo list or a game as for a [recipe](recipes.md).
 
+## Progress
+
+`progress:` draws a bar, and says how far along it is.
+Two numbers in the brackets, done and of how many, draw it as written; the words after it say what's counted.
+
+::: tabs
++++ Source
+```markdown
+progress:[326/1007] pages
+```
++++ Rendered
+progress:[326/1007] pages
+:::
+
+Empty brackets count the boxes in its section (the heading it's under, to the next at that level or above, or the slide it's on), and how many are ticked.
+A staged box counts once it's full; a choice isn't a box, and neither is the heading's own box, which says the whole section is done.
+
+::: tabs
++++ Source
+```markdown
+progress:[] packed
+
+- [x] Passport
+- [x] Charger
+- [ ] Rain jacket
+```
++++ Rendered
+progress:[] packed
+
+- [x] Passport
+- [x] Charger
+- [ ] Rain jacket
+:::
+
+The bar fills as the boxes are ticked, in Work too.
+On a slide, on an exported page, or once the page is a record (below), it shows the boxes as the file has them.
+
 ## Closing a form
 
 Some pages are filled in for a while and are then a record: a day's checklist, a sign-up sheet, a quiz.

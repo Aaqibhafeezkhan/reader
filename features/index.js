@@ -50,6 +50,7 @@ import scriptureLds from './scripture-lds/index.js';
 import search from './search/index.js';
 import rfc from './rfc/index.js';
 import count from './count/index.js';
+import progress from './progress/index.js';
 import social from './social/index.js';
 import arrows from './arrows/index.js';
 import math from './math/index.js';
@@ -75,7 +76,7 @@ import tabs from './tabs/index.js';
 // they keep are as written, without its marks. tabs comes last, so the
 // words it compares are the ones the others leave as text; only the `late`
 // plugins, which find the words an aside chooses, come after it.
-export const FEATURES = checkRequires([openUntil, asides, fields, tasks, qa, definitions, sizes, alerts, attributions, styles, columns, date, scripture, scriptureLds, search, rfc, count, social, math, arrows, emoji, highlight, mermaid, headline, number, badges, steps, ingredients, puzzles, tabs]);
+export const FEATURES = checkRequires([openUntil, asides, fields, tasks, qa, definitions, sizes, alerts, attributions, styles, columns, date, scripture, scriptureLds, search, rfc, count, progress, social, math, arrows, emoji, highlight, mermaid, headline, number, badges, steps, ingredients, puzzles, tabs]);
 
 /**
  * Throws unless each feature's `requires` names features in the list that

@@ -2,7 +2,7 @@
  * The features the renderer is built from, in the order their markdown-it
  * plugins are applied. Each is a directory here holding what it needs:
  *
- *   { name, requires?, plugin?, html?, css?, raw?, late?, matter?, preview?, lazy? }
+ *   { name, requires?, plugin?, html?, css?, raw?, late?, matter?, closes?, preview?, lazy? }
  *
  * - `requires`: the names of the features this one is built on, whose
  *   tokens, classes or events it reads, as steps reads tasks' boxes and
@@ -22,6 +22,10 @@
  *   matter as the feature's own, not the page's meta: asides' aliases,
  *   `reviewer #: Josh`. What it returns goes on `env.entries`, with the
  *   feature's `name` (src/page.js).
+ * - `closes`: `(entry) => ms`, for an entry the feature claimed that says
+ *   when the page closes, becoming a record that can't be worked: the
+ *   page is drawn `closed` past the earliest (src/page.js), and the server
+ *   refuses what the page's inputs write long after it.
  * - `preview`: the path of a script the server loads into the preview frame,
  *   where it can use static/preview-api.js, or a list of them, loaded in
  *   order.
@@ -30,6 +34,7 @@
  *   pages don't.
  */
 
+import openUntil from './open-until/index.js';
 import asides from './asides/index.js';
 import fields from './fields/index.js';
 import tasks from './tasks/index.js';
@@ -60,7 +65,9 @@ import ingredients from './ingredients/index.js';
 import columns from './columns/index.js';
 import tabs from './tabs/index.js';
 
-// styles comes after qa and attributions: a `:::` block marks a line after
+// open-until comes first, so that in the preview frame the page is judged
+// open or closed before any other feature puts back what it kept. styles
+// comes after qa and attributions: a `:::` block marks a line after
 // qa has made it a list item, and after an attribution's dash is marked, as
 // it does any other. highlight comes before puzzles, which wraps the fence
 // rule it finds, as mermaid, headline and number do. columns comes after
@@ -68,7 +75,7 @@ import tabs from './tabs/index.js';
 // they keep are as written, without its marks. tabs comes last, so the
 // words it compares are the ones the others leave as text; only the `late`
 // plugins, which find the words an aside chooses, come after it.
-export const FEATURES = checkRequires([asides, fields, tasks, qa, definitions, sizes, alerts, attributions, styles, columns, date, scripture, scriptureLds, search, rfc, count, social, math, arrows, emoji, highlight, mermaid, headline, number, badges, steps, ingredients, puzzles, tabs]);
+export const FEATURES = checkRequires([openUntil, asides, fields, tasks, qa, definitions, sizes, alerts, attributions, styles, columns, date, scripture, scriptureLds, search, rfc, count, social, math, arrows, emoji, highlight, mermaid, headline, number, badges, steps, ingredients, puzzles, tabs]);
 
 /**
  * Throws unless each feature's `requires` names features in the list that

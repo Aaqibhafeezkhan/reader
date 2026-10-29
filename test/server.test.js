@@ -322,3 +322,32 @@ test('a request addressed to another host is refused, unless the server was star
     named.close();
   }
 });
+
+test('a save of what a record\'s inputs wrote is refused a day after it closed, and what\'s typed into it never is', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-record-'));
+  const text = '---\nopen-until: 2026-10-28 04:00\n---\n\n- [ ] a\n';
+  fs.writeFileSync(path.join(dir, 'day.md'), text);
+  let clock = new Date(2026, 9, 29, 3, 59).getTime();
+  const own = createServer({ root: dir, now: () => clock }).server;
+  await new Promise((r) => own.listen(0, '127.0.0.1', r));
+  const put = async (body) => {
+    const { mtime } = await (await fetch(`http://127.0.0.1:${own.address().port}/api/file?path=day.md`)).json();
+    return fetch(`http://127.0.0.1:${own.address().port}/api/file`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: 'day.md', baseMtime: mtime, ...body }),
+    });
+  };
+  try {
+    // Closed, but within the day's grace, for a server whose zone isn't the reader's.
+    assert.equal((await put({ text: text.replace('[ ]', '[x]'), worked: true })).status, 200);
+    clock = new Date(2026, 9, 29, 4, 0).getTime();
+    const refused = await put({ text, worked: true });
+    assert.equal(refused.status, 423);
+    assert.match((await refused.json()).error, /day\.md is a record/);
+    assert.match(fs.readFileSync(path.join(dir, 'day.md'), 'utf8'), /\[x\]/);
+    assert.equal((await put({ text: `${text}\nA note, after.\n` })).status, 200, 'typed into the file');
+    // A page without a time is never a record.
+    assert.equal((await put({ text: '- [x] a\n', worked: true })).status, 200);
+  } finally {
+    own.close();
+  }
+});

@@ -53,7 +53,7 @@ export function isDeck(src) {
   return typeOf(split(src).meta) !== 'document';
 }
 
-export function slides(src, { file, read } = {}) {
+export function slides(src, { file, read, now } = {}) {
   const { meta, entries, slides: chunks } = split(src);
   const title = titleOf(meta, file);
   let css = '';
@@ -68,7 +68,7 @@ export function slides(src, { file, read } = {}) {
     const own = liftBackground(lifted.notes);
     const moved = liftTransition(own.notes);
     const { notes, at, budget } = readNotes(moved.notes);
-    const r = render(lifted.body, { file, read, line, shared, entries, background: own.background ?? behind, fonts: meta, matter: meta, deck: true });
+    const r = render(lifted.body, { file, read, line, shared, entries, background: own.background ?? behind, fonts: meta, matter: meta, deck: true, now });
     css ||= `${r.css}\n${CSS}`;
     out.push({ body: titled(unmast(r.body), lifted.body), notes, notesHtml: renderNotes(notes), line, at, budget, transition: moved.transition ?? leaving });
   }
@@ -83,9 +83,9 @@ export function slides(src, { file, read } = {}) {
  * A deck as a workbook's pages: each slide drawn as a document is, not as a
  * stage, with nothing of the slide's notes. `line` is where the page starts
  * in the file, and, unless `lines` is false, its blocks carry theirs
- * (`data-line`). `drawn` and `exported` are as render() takes them.
+ * (`data-line`). `drawn`, `exported` and `now` are as render() takes them.
  */
-export function pages(src, { file, read, lines = true, drawn, exported } = {}) {
+export function pages(src, { file, read, lines = true, drawn, exported, now } = {}) {
   const { meta, entries, slides: chunks } = split(src);
   let css = '';
   const out = [];
@@ -96,7 +96,7 @@ export function pages(src, { file, read, lines = true, drawn, exported } = {}) {
     const lifted = lift(text);
     if (!lifted.body.trim()) continue;
     const own = liftBackground(lifted.notes);
-    const r = render(lifted.body, { file, read, line, shared, entries, background: own.background ?? behind, fonts: meta, matter: meta, lines, drawn, exported });
+    const r = render(lifted.body, { file, read, line, shared, entries, background: own.background ?? behind, fonts: meta, matter: meta, lines, drawn, exported, now });
     css ||= r.css;
     out.push({ body: unmast(r.body), line });
   }

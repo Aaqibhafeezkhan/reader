@@ -48,17 +48,26 @@ export async function doSave({ explicit, force }) {
   if (text === state.saved && !explicit) return;
 
   setSaveState('saving…');
+  // What the page's inputs wrote goes up as theirs once (server.js): if
+  // it's refused, it goes up with what's typed next, as the typing's.
+  const worked = state.worked;
+  state.worked = false;
   try {
     const out = await api('PUT', '/api/file', {
-      path: cur.path, text, baseMtime: state.mtime, explicit, force,
+      path: cur.path, text, baseMtime: state.mtime, explicit, force, worked,
     });
     if (state.current?.path !== cur.path) return;
     saved(cur.path, text, out.mtime);
   } catch (err) {
     if (err.status === 409) {
+      state.worked ||= worked;
       setConflict(true);
       setSaveState('not saved', 'err');
+    } else if (err.status === 423) {
+      setSaveState('not saved', 'err');
+      toast(err.message, true);
     } else {
+      state.worked ||= worked;
       setSaveState('not saved', 'err');
       const away = err.status === undefined || err.status >= 500;
       // Said once, not on every try while the server is away.
@@ -94,7 +103,7 @@ export function saveOnLeave() {
     method: 'PUT',
     keepalive: true,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ path, text, baseMtime: state.mtime }),
+    body: JSON.stringify({ path, text, baseMtime: state.mtime, worked: state.worked }),
   }).then((res) => (res.ok ? res.json() : null)).catch(() => null);
   state.saving = state.saving.then(() => sent).then((out) => {
     if (!out || state.current?.path !== path) return;

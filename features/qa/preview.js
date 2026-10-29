@@ -4,7 +4,9 @@
  * a click, or Enter or Space on it, writes its line with `[x]` or without
  * (`data-on`, `data-off`); the re-render that follows fades the card.
  * Where the page can't be worked (`Preview.workable`), as on a slide, it
- * takes neither. Runs in the preview frame.
+ * takes neither, and when it stops being workable while it's showing, as a
+ * page past its time does, it's taken out of the keyboard's way. Runs in
+ * the preview frame.
  */
 (() => {
   const toggle = (label) => {
@@ -16,6 +18,10 @@
   document.addEventListener('click', (e) => {
     const label = Preview.workable && e.target.closest && e.target.closest('.qa-toggle');
     if (label) toggle(label);
+  });
+  window.addEventListener('preview:workable', () => {
+    if (Preview.workable) return;
+    for (const label of document.querySelectorAll('.qa-toggle[tabindex]')) Preview.shut(label, { tabindex: null, title: null, 'aria-disabled': 'true' });
   });
   document.addEventListener('keydown', (e) => {
     const label = Preview.workable && e.target.closest && e.target.closest('.qa-toggle');

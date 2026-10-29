@@ -66,6 +66,9 @@
   font-style: italic;
 }
 .field-value > textarea::placeholder { color: var(--gm-ink-soft); font-style: italic; opacity: 1; }
+/* Not in a record (static/preview-api.js), where a blank left empty was
+   left empty: one drawn before the page closed loses its hint as it does. */
+.closed .field-value[data-hint]:empty::before { content: none; }
 @media (forced-colors: active) {
   .field-value[data-hint]:empty::before, .field-value > textarea::placeholder { color: GrayText; }
 }

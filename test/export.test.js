@@ -99,6 +99,19 @@ test('a document with --- between its parts is saved whole, masthead and all', a
   assert.doesNotMatch(html, /class="gm-page"|@page numbered \{ size/);
 });
 
+test('an exported page says until when it could be edited, with no count down, or that it no longer can, its boxes shut', async () => {
+  const form = (until) => `---\nopen-until: ${until}\n---\n\n- [ ] a\n\n@ Name {e.g. Ada}:\n`;
+  const root = dir({ 'open.md': form('2999-01-01 09:30'), 'shut.md': form('2000-01-01') });
+  await reader(root, 'open.md', 'shut.md', '--no-draw');
+  const open = fs.readFileSync(path.join(root, 'open.html'), 'utf8');
+  assert.match(open, />Editable Until 9:30 on 1 January 2999<span class="open-until-away"><\/span></);
+  assert.match(open, /<input type="checkbox" class="task-box"(?![^>]*disabled)[^>]*>/, 'a box ticks there, unsaved, as on any exported page');
+  const shut = fs.readFileSync(path.join(root, 'shut.html'), 'utf8');
+  assert.match(shut, /aria-label="No Longer Editable. Closed at the end of 1 January 2000"[^>]*>No Longer Editable</);
+  assert.match(shut, /<input type="checkbox" class="task-box"[^>]* disabled>/);
+  assert.doesNotMatch(shut, /data-hint="/);
+});
+
 test('slides print across the sheet, a workbook down it, unless print: says', async () => {
   const root = dir({
     'talk.md': '---\ntype: slides\n---\n\n# One\n\n---\n\n# Two\n',

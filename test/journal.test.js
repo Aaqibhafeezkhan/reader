@@ -9,6 +9,12 @@ import { outline } from '../static/app/sections.js';
 // each feature lands, this should say what it now draws.
 const JOURNAL = readFileSync(new URL('./fixtures/journal.md', import.meta.url), 'utf8');
 
+// It's open until 4:00 the next morning, by the clock of whoever has it:
+// the evening it's filled in, and the moment it's a record.
+const EVENING = new Date(2026, 9, 27, 21, 0).getTime();
+const CLOSING = new Date(2026, 9, 28, 4, 0).getTime();
+const drawn = (now) => pages(JOURNAL, { file: 'journal.md', now }).pages.map((p) => p.body);
+
 test('the daily journal is a workbook of its twelve pages, in order', () => {
   const out = pages(JOURNAL, { file: 'journal.md' });
   const titles = out.pages.map((p) => p.body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<[^>]+>/g, '').trim());
@@ -27,12 +33,36 @@ test('it says it\'s a workbook: worked a page at a time, its pages the outline\'
 });
 
 test('its fields say what goes in them: a hint, faint in the blank, not part of its label', () => {
-  const out = pages(JOURNAL, { file: 'journal.md' });
-  const all = out.pages.map((p) => p.body).join('\n');
+  const all = drawn(EVENING).join('\n');
   const hinted = [...all.matchAll(/<span class="field-label">([^<]*)<\/span><span class="field-value"[^>]* data-hint="([^"]*)"/g)]
     .map(([, label, hint]) => [label, hint]);
   assert.equal(hinted.length, 13);
   assert.deepEqual(hinted.slice(0, 2), [['What did you do?', 'Only for C'], ['1', 'I\'m grateful for…']]);
   assert.ok(hinted.some(([label, hint]) => label === 'The Way of Kings' && hint === 'What would you tell someone to make them pick it up?'));
   assert.doesNotMatch(all, /class="field-label">[^<]*\{/, 'no label shows its braces');
+});
+
+test('the evening it\'s filled in, each page says until when, and its boxes, choices and blanks can be worked', () => {
+  const out = drawn(EVENING);
+  for (const body of out) {
+    assert.match(body, /<p class="open-until" data-until="2026-10-28 04:00"[^>]*>Editable Until 4:00 on 28 October 2026<span class="open-until-away"><\/span><\/p>/);
+  }
+  const all = out.join('\n');
+  assert.doesNotMatch(all, /<input[^>]* disabled/);
+  assert.equal(all.match(/role="textbox"/g).length, 13);
+  // A minute before, still.
+  assert.doesNotMatch(drawn(CLOSING - 60 * 1000).join('\n'), /No Longer Editable|disabled/);
+});
+
+test('from 4:00 the next morning it\'s a record: each page says so, every box and choice is shut, and no blank asks for more', () => {
+  const out = drawn(CLOSING);
+  for (const body of out) {
+    assert.match(body, /<p class="open-until open-until-closed" role="note" tabindex="0" aria-label="No Longer Editable. Closed at 4:00 on 28 October 2026"[^>]*>No Longer Editable<\/p>/);
+  }
+  const all = out.join('\n');
+  const inputs = all.match(/<input[^>]*>/g);
+  assert.equal(inputs.length, 40);
+  assert.ok(inputs.every((i) => / disabled/.test(i)), 'every box and choice is shut');
+  assert.doesNotMatch(all, /role="textbox"|data-hint|aria-placeholder|tabindex="0" role="button"|task-reset/, 'nothing to type in, pick or press');
+  assert.equal(all.match(/<span class="field-blank">blank<\/span>/g).length, 13, 'its blanks left empty are said to be blank, with no hint');
 });

@@ -67,6 +67,16 @@ test('its singing warmup names each note in a button that plays it, the evening 
   }
 });
 
+test('its singing warmup has a timer for each step, to start, the evening it\'s filled in and as a record', () => {
+  for (const now of [EVENING, CLOSING]) {
+    const warmup = drawn(now)[10];
+    const timers = [...warmup.matchAll(/<span class="timer" role="group" aria-label="Timer, ([^"]*)" data-seconds="(\d+)"[^>]*><span class="timer-time" role="timer">([^<]*)<\/span><button type="button" class="timer-go">Start<\/button>/g)]
+      .map((m) => m.slice(1));
+    assert.deepEqual(timers, [['2 minutes', '120', '2:00'], ['3 minutes', '180', '3:00'], ['4 minutes', '240', '4:00'], ['5 minutes', '300', '5:00']]);
+    assert.doesNotMatch(warmup, /timer:/, 'none is left as typed');
+  }
+});
+
 test('the evening it\'s filled in, each page says until when, and its boxes, choices and blanks can be worked', () => {
   const out = drawn(EVENING);
   for (const body of out) {

@@ -194,6 +194,29 @@ progress:[] packed
 The bar fills as the boxes are ticked, in Work too.
 On a slide, on an exported page, or once the page is a record (below), it shows the boxes as the file has them.
 
+## Timers
+
+`timer:[2m]` is a timer: its time, and a **Start** button.
+Started, it counts down, and can be paused, resumed or reset; it doesn't start by itself.
+
+::: tabs
++++ Source
+```markdown
+Breathe in for four and out for six. timer:[2m]
+```
++++ Rendered
+Breathe in for four and out for six. timer:[2m]
+:::
+
+The time is in hours, minutes and seconds, each a number and its letter, in that order: `90s`, `2m`, `1m30s`, `1h`.
+Anything else (`timer:[soon]`) stays as typed.
+Several on a page each run on their own.
+
+At zero it stops, says *Time’s up*, and sounds three short tones; a screen reader hears it then, and not the count as it goes.
+Nothing of it is written to the file, so it runs on a slide, in Work, and on a page past its `open-until:` too.
+Going to another page or slide doesn't stop it: it still sounds at zero, and shows where it got to when you come back.
+An exported page only says how long, having nothing to count down with.
+
 ## Closing a form
 
 Some pages are filled in for a while and are then a record: a day's checklist, a sign-up sheet, a quiz.

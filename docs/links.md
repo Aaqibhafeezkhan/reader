@@ -102,6 +102,7 @@ in the brackets are shown instead of the address.
 | `fb:jzheaux[]` | `facebook.com/jzheaux` | facebook.com/jzheaux |
 | `insta:jzheaux[]` | `instagram.com/jzheaux` | @jzheaux |
 | `yt:jzheaux[]` | `youtube.com/@jzheaux` | @jzheaux |
+| `yt:v/FcWl8WgKP8E[]` | `youtube.com/watch?v=FcWl8WgKP8E` | youtu.be/FcWl8WgKP8E |
 | `gh:jzheaux[my GitHub]` | `github.com/jzheaux` | my GitHub |
 
 ::: tabs
@@ -116,6 +117,40 @@ in the brackets are shown instead of the address.
 - bluesky:jzheaux[]
 - yt:jzheaux[]
 :::
+
+A YouTube video goes by its own path, `yt:v/<id>`, as a LinkedIn company does, since a handle can look like a video's id.
+
+## Linking, or showing
+
+Markdown draws a line between linking to something and showing it: `[text](url)` links, and `![alt](url)` shows.
+Each of the short links above follows it too.
+What goes before its brackets is a URL, for a markdown link or image, and the link's words stand for the brackets:
+
+| You write | Means |
+| --- | --- |
+| `yt:v/FcWl8WgKP8E[Body scan]` | a link, with the site's mark |
+| `[Body scan](yt:v/FcWl8WgKP8E)` | the same link, as a markdown link |
+| `![Body scan](yt:v/FcWl8WgKP8E)` | what it links to, on the page |
+| `[plowshares](scripture:isaiah/2/1-5)` | the same as `scripture:isaiah/2/1-5[plowshares]` |
+| `[Isaiah 2:1-5](scripture:)` | the same as `scripture:[Isaiah 2:1-5]` |
+
+Each kind of link decides what it shows.
+Until one has something to show, `![]()` is just the link, its alt text the words, so nothing breaks.
+Videos come first; a passage's text, an issue's card or an RFC's section may follow.
+Elsewhere, a markdown reader can't load `![alt](yt:...)` as an image, so it shows the alt text, and the file still reads as plain text.
+
+::: tabs
++++ Source
+```markdown
+- Breathe with [a body scan](yt:v/FcWl8WgKP8E).
+- ![The 404](rfc:9110#section-15.5), and [the ticket](gh:jzheaux/reader#196).
+```
++++ Rendered
+- Breathe with [a body scan](yt:v/FcWl8WgKP8E).
+- ![The 404](rfc:9110#section-15.5), and [the ticket](gh:jzheaux/reader#196).
+:::
+
+A link to an image, `![](photo.jpg)`, is drawn as it always was, and so is a definition's `!term`: `![` starts an image, never a term.
 
 ## Other files
 

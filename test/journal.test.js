@@ -58,6 +58,15 @@ test('its to-dos count how many are reviewed, and each book how far it\'s read',
   assert.deepEqual(bars(drawn(CLOSING)[3]), [['0', '10', 'reviewed', '0 of 10']]);
 });
 
+test('its singing warmup names each note in a button that plays it, the evening it\'s filled in and as a record', () => {
+  for (const now of [EVENING, CLOSING]) {
+    const warmup = drawn(now)[10];
+    const notes = [...warmup.matchAll(/<button type="button" class="pitch" data-hz="([^"]*)" aria-label="Play (\w+)">\2<\/button>/g)].map((m) => m[2]);
+    assert.deepEqual(notes, ['C4', 'G3', 'G4', 'C5', 'G4', 'C5', 'E4', 'A4', 'G4', 'B4', 'A4', 'C5', 'A4', 'B4', 'C5', 'B4', 'C5', 'C5']);
+    assert.doesNotMatch(warmup, /pitch:/, 'none is left as typed');
+  }
+});
+
 test('the evening it\'s filled in, each page says until when, and its boxes, choices and blanks can be worked', () => {
   const out = drawn(EVENING);
   for (const body of out) {

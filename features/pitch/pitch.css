@@ -1,0 +1,34 @@
+/* A note: its name in a small button, a quaver before it, that reads with
+ * the words around it. */
+.pitch {
+  white-space: nowrap;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: inherit;
+}
+button.pitch {
+  padding: 0 0.4em 0 0.3em;
+  margin: 0 0.05em;
+  line-height: 1.3;
+  background: color-mix(in srgb, var(--gm-accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gm-accent) 45%, transparent);
+  border-radius: 0.7em;
+  cursor: pointer;
+}
+.pitch::before {
+  content: "♪" / "";
+  margin-right: 0.2em;
+  color: var(--gm-accent);
+  font-size: 0.9em;
+}
+button.pitch:hover, button.pitch.pitch-playing {
+  background: color-mix(in srgb, var(--gm-accent) 20%, transparent);
+  border-color: var(--gm-accent);
+}
+button.pitch:focus-visible { outline: 2px solid var(--gm-accent); outline-offset: 1px; }
+/* In the system's colours, a button's own, and one sounding is marked. */
+@media (forced-colors: active) {
+  .pitch::before { color: inherit; }
+  button.pitch { border-color: ButtonText; }
+  button.pitch.pitch-playing { outline: 2px solid Highlight; outline-offset: 1px; }
+}

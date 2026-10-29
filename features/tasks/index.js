@@ -36,7 +36,7 @@ import { schemeRule } from '../scheme.js';
 import { workable, shut } from '../blank.js';
 
 const TASK = /^([ \t]*(?:>[ \t]*|~(?![^\s~])[ \t]*|~[^\s~]+[ \t]+)*(?:[-*+]|\d{1,9}[.)])[ \t]+)(?:((?:\[[ xX]\]){1,9})|\(([ xX])\))(?=[ \t]|$)/;
-const NAMED = new Set(['count', 'ingredient_key', 'ingredient_use']);
+const NAMED = new Set(['count', 'ingredient_key', 'ingredient_use', 'pitch']);
 const HEADING = /^( {0,3}#{1,6}[ \t]+)\[([ xX])\](?=[ \t]|$)/;
 const [OPEN, CLOSE] = MARKS.tasks;
 const PLACED = new RegExp(`${OPEN}(\\d+)${CLOSE}`, 'g');
@@ -235,7 +235,7 @@ function stageBox({ line, stage, lines, stages, name, pictured }) {
  * label around them would make every link among them tick the box too.
  */
 function nameOf(children) {
-  // Words other features set apart (a count, an ingredient) carry theirs too.
+  // Words other features set apart (a count, an ingredient, a note) carry theirs too.
   const words = children.filter((t) => t.type === 'text' || t.type === 'code_inline' || NAMED.has(t.type)).map((t) => t.content);
   return unplaced(words.join('')).replace(/\s+/g, ' ').trim();
 }

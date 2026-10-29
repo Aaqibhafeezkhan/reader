@@ -64,7 +64,7 @@ export function frame(html, opts) {
 
 export function preview(opts = {}) {
   const f = frame(read('static/preview.html'), { url: 'http://localhost:8734/preview.html', ...opts });
-  run(f.window, 'static/preview-api.js', 'static/spoken.js', ...FEATURES.flatMap((x) => [x.preview ?? []].flat()), 'static/ink.js', 'static/preview.js');
+  run(f.window, 'static/preview-api.js', 'static/spoken.js', 'static/tone.js', ...FEATURES.flatMap((x) => [x.preview ?? []].flat()), 'static/ink.js', 'static/preview.js');
   const show = (body, m = {}) => f.send({ type: 'render', css: '', body, ...m });
   return { ...f, show };
 }

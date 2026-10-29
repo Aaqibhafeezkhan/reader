@@ -92,8 +92,9 @@ const speakerMore = {
   light: resolve({ ...speakerDark, ...declared(block(after(speaker, MORE), ':root {')), ...speakerLight, ...declared(block(after(speaker, MORE), ':root[data-chosen="light"] {')) }),
 };
 
-// the document's: the light set, the dark over it, and what each is for
-const meaning = declared(block(columns, ':root {\n  --gm-accent'));
+// the document's: the light set, the dark over it, and what each is for,
+// an asides key's colours among them
+const meaning = { ...declared(block(columns, ':root {\n  --gm-accent')), ...declared(block(asides, ':root {\n  --gm-key-1')) };
 const lightSet = declared(block(columns, '/* colours, light */'));
 const doc = {
   light: resolve({ ...lightSet, ...meaning }),

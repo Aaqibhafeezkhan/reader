@@ -5,8 +5,7 @@
  * pane is narrower than that, so keep the gutter down to phone width. */
 @media screen and (min-width: 30rem) {
   .gm-pair, .gm-colheads { grid-template-columns: var(--gm-speaker-col) var(--gm-aside-col); }
-  .gm-aside-cell { margin: 0; }
-  .gm-aside-cell + .gm-aside-cell { margin-top: 0.6rem; }
+  .gm-asides > * { margin: 0; }
   .gm-colheads .gm-h-aside { display: block; }
 }
 @media screen and (max-width: 46rem) {

@@ -13,6 +13,9 @@
   --gm-serif: "Iowan Old Style", Charter, "Palatino Linotype", Palatino, Georgia, serif;
   --gm-sans: "Avenir Next", Avenir, "Helvetica Neue", Inter, system-ui, sans-serif;
   --gm-mono: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  /* the face the text is set in, for words set in a font of their own to
+   * fall back on: a cell set in another (an aside's) says so here too */
+  --gm-face: var(--gm-serif);
 
   --gm-base: 10.75pt;
   --gm-lead: 1.5;
@@ -203,15 +206,6 @@
   --gm-important: var(--gm-violet);
   --gm-warning: var(--gm-amber);
   --gm-caution: var(--gm-red);
-  /* a key's reviewers and topics, as an aside's are */
-  --gm-key-1: var(--gm-red);
-  --gm-key-2: var(--gm-green);
-  --gm-key-3: var(--gm-violet);
-  --gm-key-4: var(--gm-amber);
-  --gm-key-5: var(--gm-blue);
-  --gm-key-6: var(--gm-rose);
-  --gm-key-7: var(--gm-moss);
-  --gm-key-8: var(--gm-slate);
   /* code, the family taken a fifth of the way to the ink */
   --gm-code-keyword: color-mix(in srgb, var(--gm-rose) 80%, var(--gm-ink));
   --gm-code-string: color-mix(in srgb, var(--gm-moss) 80%, var(--gm-ink));
@@ -336,19 +330,20 @@ body {
 }
 
 /* A row's two cells must start on the same line, so the leading margin is
- * stripped all the way down the first-child chain of each cell -- otherwise a
- * list's own top margin pushes the speaker down and the alignment reads as
- * accidental. */
+ * stripped all the way down the first-child chain of each cell -- the
+ * speaker's, and each note's in the margin, whichever feature drew it --
+ * otherwise a list's own top margin pushes the speaker down and the
+ * alignment reads as accidental. */
 /* `*:first-child` rather than `:where(:first-child)` on purpose: :where()
  * carries no specificity and would lose to the element rules below, leaving
  * the two columns a few pixels out of true. */
 .gm-speaker *:first-child,
-.gm-aside-cell *:first-child,
+.gm-asides > * *:first-child,
 .gm-speaker > *:first-child,
-.gm-aside-cell > *:first-child { margin-top: 0; }
+.gm-asides > * > *:first-child { margin-top: 0; }
 
 .gm-speaker > *:last-child,
-.gm-aside-cell > *:last-child { margin-bottom: 0; }
+.gm-asides > * > *:last-child { margin-bottom: 0; }
 
 /* With those margins gone, rows are kept apart as paragraphs are -- unless
  * the row goes on with a list or a quote from the row before. */
@@ -437,6 +432,7 @@ th, td { border: 0.75px solid var(--gm-rule); padding: 0.3rem 0.5rem; text-align
 
 @media screen and (max-width: 46rem) {
   .gm-pair, .gm-colheads { grid-template-columns: 1fr; }
-  .gm-aside-cell { margin: 0.4rem 0 0.9rem; }
+  /* each note under its passage */
+  .gm-asides > * { margin: 0.4rem 0 0.9rem; }
   .gm-colheads .gm-h-aside { display: none; }
 }

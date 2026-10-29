@@ -109,3 +109,39 @@ test('on a slide or an exported page, no field is a box: it reads as its label a
   assert.doesNotMatch(render(md).body, /disabled/);
   assert.doesNotMatch(render(md).body, /field-blank/, 'in the editor, a blank is a box to fill in');
 });
+
+test('a label\'s hint, in braces at its end, is said and shown in the blank, not part of its name', () => {
+  const { body } = render('@ Hours of sleep {e.g. 7.5}:\n@ Book { What would you argue about? }::: no\n@ Time {e.g. 10:30}: 9:15\n');
+  assert.match(body, /data-head="@ Hours of sleep \{e.g. 7.5\}:"><span class="field-label">Hours of sleep<\/span><span class="field-value" data-value="" tabindex="0" role="textbox" aria-label="Hours of sleep" data-hint="e.g. 7.5" aria-placeholder="e.g. 7.5"><\/span><\/span>/);
+  assert.match(body, /data-head="@ Book \{ What would you argue about\? \}:::" data-lines="3" style="--lines: 3"><span class="field-label">Book<\/span><span class="field-value" data-value="no"[^>]* data-hint="What would you argue about\?"/);
+  // A colon in a hint doesn't end the label.
+  assert.match(body, /data-head="@ Time \{e.g. 10:30\}:"><span class="field-label">Time<\/span><span class="field-value" data-value="9:15"[^>]* data-hint="e.g. 10:30"/);
+});
+
+test('braces that are escaped, empty, the whole label or not at its end are the label\'s own', () => {
+  const { body } = render('@ Set \\{a, b\\}:\n@ Empty {}:\n@ {only}:\n@ Mid {x} label:\n@ Odd { : no\n@ Half {a\\}:\n');
+  const labels = [...body.matchAll(/<span class="field-label">([^<]*)<\/span>/g)].map((m) => m[1]);
+  assert.deepEqual(labels, ['Set {a, b}', 'Empty {}', '{only}', 'Mid {x} label', 'Odd {', 'Half {a}']);
+  assert.doesNotMatch(body, /data-hint/);
+  assert.match(body, /data-head="@ Set \\\{a, b\\\}:"/);
+});
+
+test('a hinted field of choices is named by its label alone', () => {
+  const { body } = render('@ Session {pick one}: ( ) A (x) B\n');
+  assert.match(body, /data-head="@ Session \{pick one\}:" data-choices[^>]*><span class="field-label" id="field-0">Session<\/span>/);
+});
+
+test('on a slide or an exported page, an empty field still shows its hint, and says it after "blank"', () => {
+  const md = '@ Hours {e.g. 7.5}:\n@ Name {first}: Josh\n';
+  const deck = `# One\n\n${md}\n---\n\n# Two\n`;
+  for (const [where, body] of [['a slide', slides(deck).slides[0].body], ['an exported page', render(md, { exported: true }).body]]) {
+    assert.match(body, /<span class="field-value" data-value="" data-hint="e.g. 7.5"><\/span><span class="field-blank">blank, e.g. 7.5<\/span>/, `on ${where}`);
+    assert.match(body, /<span class="field-value" data-value="Josh" data-hint="first">Josh<\/span><\/span>/, `on ${where}`);
+    assert.doesNotMatch(body, /aria-placeholder/, `on ${where}, it isn't a box`);
+  }
+});
+
+test('the stylesheet shows a hint only in an empty blank, and keeps it from being said twice', () => {
+  const { css } = render('@ A {b}:\n');
+  assert.match(css, /\.field-value\[data-hint\]:empty::before \{[^}]*content: attr\(data-hint\) \/ "";/);
+});

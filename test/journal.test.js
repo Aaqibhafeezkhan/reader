@@ -25,3 +25,14 @@ test('it says it\'s a workbook: worked a page at a time, its pages the outline\'
   assert.equal(talk, false);
   assert.equal(entries.length, 12);
 });
+
+test('its fields say what goes in them: a hint, faint in the blank, not part of its label', () => {
+  const out = pages(JOURNAL, { file: 'journal.md' });
+  const all = out.pages.map((p) => p.body).join('\n');
+  const hinted = [...all.matchAll(/<span class="field-label">([^<]*)<\/span><span class="field-value"[^>]* data-hint="([^"]*)"/g)]
+    .map(([, label, hint]) => [label, hint]);
+  assert.equal(hinted.length, 13);
+  assert.deepEqual(hinted.slice(0, 2), [['What did you do?', 'Only for C'], ['1', 'I\'m grateful for…']]);
+  assert.ok(hinted.some(([label, hint]) => label === 'The Way of Kings' && hint === 'What would you tell someone to make them pick it up?'));
+  assert.doesNotMatch(all, /class="field-label">[^<]*\{/, 'no label shows its braces');
+});

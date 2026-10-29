@@ -63,10 +63,28 @@ writes it into the file; `Esc` puts it back; `Tab` and `⇧Tab` write it and
 move to the next field or the one before. The value is shown just as typed,
 with no markdown.
 
+A field can say what goes in it: text in braces at the end of its label is a **hint**, shown faint in the blank until something's filled in.
+It goes with the label, before the colon, since what follows the colon is the value.
+It isn't part of the label, and a screen reader hears it as the blank's placeholder.
+
+::: tabs
++++ Source
+```markdown
+@ Hours of sleep last night {e.g. 7.5}:
+@ The Way of Kings {What would you argue with the author about?}:::
+```
++++ Rendered
+@ Hours of sleep last night {e.g. 7.5}:
+@ The Way of Kings {What would you argue with the author about?}:::
+:::
+
+A label that really ends in braces escapes them, `@ Set \{a, b\}:`.
+
 On a slide being presented, or on an exported page, a field can't be filled
-in: it reads as its label and what's written there, or as blank. A field of
-choices, below, shows the one picked, and on a slide it can't be changed. On
-an exported page its buttons can be clicked, but nothing is saved.
+in: it reads as its label and what's written there, or as blank, still
+showing its hint. A field of choices, below, shows the one picked, and on a
+slide it can't be changed. On an exported page its buttons can be clicked,
+but nothing is saved.
 
 A field whose value is nothing but `( )` choices is one to pick from, its
 radio buttons in a row after the label. Clicking one writes `(x)` in front

@@ -62,7 +62,7 @@ test('an aside in a ::: block keeps its mark', () => {
 });
 
 test('the stylesheet comes with the feature', () => {
-  assert.match(render('x\n').css, /\.font \{ font-family: var\(--font\), var\(--gm-serif\); \}/);
+  assert.match(render('x\n').css, /\.font \{ font-family: var\(--font\), var\(--gm-face\); \}/);
 });
 
 test('a line in a ::: block can open with bold or italics around punctuation', () => {

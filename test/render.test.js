@@ -87,6 +87,14 @@ test('without asides, a page is one column, its ~ lines are text, and each block
   assert.match(body, /<blockquote class="quoted" data-line="19">\n<p data-line="19">Quoted words\.<\/p>\n<p class="quote-by" data-line="20">Dana<\/p>/);
 });
 
+test("without asides, the stylesheet names neither an aside's cell nor its key's colours", () => {
+  const { css } = withoutAsides()('Words.\n\n~ a thought\n');
+  assert.doesNotMatch(css, /gm-aside-cell|--gm-key-/);
+  // The margin's own class aligns any note's cell, and the preview frame sets its margin.
+  assert.match(css, /\.gm-asides > \* > \*:first-child/);
+  assert.match(readFileSync(new URL('../static/preview.css', import.meta.url), 'utf8'), /\.gm-asides > \* \{ margin: 0; \}/);
+});
+
 test("without asides, a page's reviewers show in its byline by name, and its topics don't", () => {
   const src = '---\ntitle: T\nauthor: Ann\nreviewer #: Josh\nreviewer m: Maria, teal\ntopic c: Coherence\nreviewer: Kim\n---\n\nWords.\n\n~#c a thought\n';
   const { body, css } = withoutAsides()(src);

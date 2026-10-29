@@ -40,7 +40,7 @@ download into reader.
 
 - [Asides](asides.md): your own voice in the margin, who it's from and what
   it's about, and the words it means
-- [Styling text](text.md): colors and fonts, arrows, math, emoji
+- [Styling text](text.md): colors and fonts, arrows, math, notes to play, emoji
 - [Links](links.md): scripture, RFCs, searches, profiles, other files
 - [Notes on a talk](notes.md): questions and answers, retro cards,
   definitions, quotes

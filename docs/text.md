@@ -102,6 +102,27 @@ In short, math:[well-known code ~= fast code].
 
 A `-` joining two words (`well-known`) stays a hyphen.
 
+## Notes
+
+`pitch:[C4]` names a note in a small button that plays it, a tone that fades in a couple of seconds.
+The note is in scientific pitch: a letter, a `#` or `b` if it's sharp or flat, and its octave, with A4 at 440 Hz and middle C at C4.
+Words in brackets after a note show instead of its name.
+
+::: tabs
++++ Source
+```markdown
+- Start around pitch:[C4], slide down to pitch:[G3] and back up.
+- Range: pitch:[G4] -> pitch:[Bb4], then pitch:C5[the top].
+```
++++ Rendered
+- Start around pitch:[C4], slide down to pitch:[G3] and back up.
+- Range: pitch:[G4] -> pitch:[Bb4], then pitch:C5[the top].
+:::
+
+Playing a note changes nothing in the file, so it plays on a slide, in Work, and on a page past its `open-until:` too.
+An exported page only names the note, having nothing to play it with.
+Something that isn't a note (`pitch:[H9]`) stays as typed, as does one in code.
+
 ## Emoji
 
 Emoji shortcodes like `:tada:` show as 🎉 in the rendered pane but stay as

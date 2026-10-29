@@ -11,8 +11,8 @@ The daily self-care dashboard of 2026-10-27, as a workbook, the way the 0.0.4
 milestone means to write it: the acceptance test for "can a daily journal be
 built on reader-markdown" (test/journal.test.js). Much of it is syntax 0.0.4
 promises and reader doesn't read yet: pitch (#29), timers (#30), videos
-(#31, #196), Work's count of pages done (#36), grid and row (#44, #45), item
-backgrounds (#47), a stylesheet (#48) and cards (#49).
+(#31, #196), grid and row (#44, #45), item backgrounds (#47), a
+stylesheet (#48) and cards (#49).
 Personal to-dos are made generic; the rest is that day's.
 -->
 

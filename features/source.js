@@ -93,6 +93,10 @@ export const MARKS = {
  * - `done`: the token is a thing to be done, a box, and whether it is (true
  *   or false), with the `line` it's on; a choice isn't one. What counts
  *   what's done counts these (`progress:[]`), whichever feature drew them.
+ * - `answered`: the token is a question, choices of which one is to be
+ *   picked, and whether one is (true or false); on the page it carries
+ *   `data-answered`. What says whether a page is done (Work's dots) counts
+ *   these with the things to be done.
  * - `notExported`: draw nothing for the token on an exported page, because
  *   another feature already shows there what it says, and nothing on that
  *   page could change it (a step's box, whose badge says whether it's done).

@@ -1,12 +1,14 @@
 /**
  * A deck being worked through: a workbook, a page to a slide, one shown at a
  * time. Under it are Back and Next and a dot for each page, filled once the
- * page is done; a long one's dots go in blocks (see dots.js).
+ * page is done (see done.js), and a bar of how many are; a long one's dots
+ * go in blocks (see dots.js).
  */
 
 import { el } from './state.js';
 import { renderNow } from './render.js';
 import { layout } from './dots.js';
+import { mark, tally, drawDone } from './done.js';
 
 const book = {
   pages: null,          // [{ body, line }] while a deck is being worked through
@@ -62,27 +64,6 @@ export function wirePages() {
   el.pageNext.addEventListener('click', () => turn(1));
 }
 
-const HEADINGS = 'h1, h2, h3, h4, h5, h6';
-const checked = (box) => box.hasAttribute('checked');
-
-/**
- * A page's name, from its first heading, and whether it's done: by its
- * opening heading's checkbox if it has one; otherwise when every task on it
- * is ticked and every choice made. With none of those there's nothing to
- * do on it, and `done` is null.
- */
-export function mark(body, i) {
-  const doc = new DOMParser().parseFromString(`<body>${body}</body>`, 'text/html');
-  const heading = doc.querySelector(HEADINGS);
-  const title = heading?.textContent.trim() || `Page ${i + 1}`;
-  const own = heading?.querySelector(':scope > .task-box');
-  if (own) return { title, done: checked(own) };
-  const tasks = [...doc.querySelectorAll('.task-box')];
-  const choices = Map.groupBy(doc.querySelectorAll('.choice-box'), (box) => box.name);
-  if (!tasks.length && !choices.size) return { title, done: null };
-  return { title, done: tasks.every(checked) && [...choices.values()].every((group) => group.some(checked)) };
-}
-
 function dot({ title, done }, i, index) {
   const dot = document.createElement('button');
   dot.type = 'button';
@@ -102,19 +83,18 @@ function dot({ title, done }, i, index) {
  */
 function block(marks, from, to) {
   const range = `${from + 1}–${to}`;
-  const counted = marks.slice(from, to).filter((m) => m.done != null);
-  const done = counted.filter((m) => m.done).length;
-  const mark = document.createElement('button');
-  mark.type = 'button';
-  mark.className = 'page-block';
-  mark.textContent = from + 1;
-  mark.style.setProperty('--done', `${counted.length ? (100 * done) / counted.length : 0}%`);
-  mark.classList.toggle('done', counted.length > 0 && done === counted.length);
-  const summary = `Pages ${range}${counted.length ? `, ${done} of ${counted.length} done` : ''}`;
-  mark.title = summary;
-  mark.setAttribute('aria-label', summary);
-  mark.addEventListener('click', () => turnTo(from));
-  return mark;
+  const { done, of } = tally(marks.slice(from, to));
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'page-block';
+  b.textContent = from + 1;
+  b.style.setProperty('--done', `${of ? (100 * done) / of : 0}%`);
+  b.classList.toggle('done', of > 0 && done === of);
+  const summary = `Pages ${range}${of ? `, ${done} of ${of} done` : ''}`;
+  b.title = summary;
+  b.setAttribute('aria-label', summary);
+  b.addEventListener('click', () => turnTo(from));
+  return b;
 }
 
 function draw() {
@@ -128,9 +108,8 @@ function draw() {
     return li;
   }));
   if (had) el.pageDots.querySelector('[aria-current="page"]')?.focus();
-  const counted = marks.filter((m) => m.done != null);
-  const done = counted.filter((m) => m.done).length;
-  el.pageCount.textContent = `${index + 1} of ${pages.length}${counted.length ? ` · ${done} done` : ''}`;
+  el.pageCount.textContent = `Page ${index + 1} of ${pages.length}`;
+  drawDone(el.pageDone, marks);
   // Back at the first page, or Next at the last, can't keep the keyboard.
   const at = document.activeElement;
   el.pageBack.disabled = index === 0;

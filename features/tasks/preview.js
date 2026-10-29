@@ -9,7 +9,8 @@
  * feature can have a box done by sending it, or its list item, a
  * `preview:complete`: a plain box is ticked, a staged one filled all the way.
  * A box says whether it's done (`data-done`), and when that changes on the
- * page, sends `preview:done`, for whatever counts what's done.
+ * page, sends `preview:done`, for whatever counts what's done; a list of
+ * choices says whether one's picked (`data-answered`).
  * Where the page can't be worked (`Preview.workable`), as on a slide, none
  * of them takes a click or a key; when it stops being workable while it's
  * showing, as a page past its time does, they're shut as the server would
@@ -69,6 +70,7 @@
       .filter((x) => x.before[0] !== x.after[0]);
     for (const b of group) b.defaultChecked = b.checked;
     if (box.type === 'checkbox') markDone(box, box.checked);
+    else box.closest('[data-answered]')?.setAttribute('data-answered', 'true');
     if (edits.length) Preview.edit(edits, { undo: true });
   });
 
@@ -125,6 +127,7 @@
         edits.push(boxLine(b, false));
         b.checked = b.defaultChecked = false;
         if (b.type === 'checkbox') markDone(b, false);
+        else b.closest('[data-answered]')?.setAttribute('data-answered', 'false');
       }
     }
     for (const b of document.querySelectorAll('.stage-box')) {

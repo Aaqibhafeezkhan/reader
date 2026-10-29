@@ -27,8 +27,8 @@ out to the files.
   each part is an entry, named by its first heading, or by its first line
   when it has none. Its `#` to `###` headings are under it.
 - Without `---`, the outline is the `#` to `###` headings, nested.
-- In a talk (a deck with speaker notes, or `type: slides` in its front
-  matter), each slide is an entry, named by its title, and the headings in a
+- In a talk (`type: slides` in its front matter; see
+  [Work and present](presenting.md)), each slide is an entry, named by its title, and the headings in a
   slide aren't listed. A slide that holds only a `#` heading starts a
   section, and the slides after it, up to the next one, are under it.
 

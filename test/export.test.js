@@ -76,7 +76,7 @@ test('export replaces a link where its page goes, and leaves what it pointed at 
 });
 
 test('a deck is saved as its pages, without its notes, each a numbered sheet on paper', async () => {
-  const root = dir({ 'deck.md': '---\ntitle: Packet\nbackground: navy\n---\n\n# One\n\n<!-- a note -->\n\ntext\n*Page 1*\n---\n\n# Two\n\n<!-- background: none -->\n' });
+  const root = dir({ 'deck.md': '---\ntitle: Packet\ntype: workbook\nbackground: navy\n---\n\n# One\n\n<!-- a note -->\n\ntext\n*Page 1*\n---\n\n# Two\n\n<!-- background: none -->\n' });
   await reader(root, 'deck.md', '--no-draw');
   const html = fs.readFileSync(path.join(root, 'deck.html'), 'utf8');
   assert.match(html, /<title>Packet<\/title>/);
@@ -90,11 +90,20 @@ test('a deck is saved as its pages, without its notes, each a numbered sheet on 
   assert.match(html, /@page numbered \{\n {2}@bottom-center \{\n {4}content: counter\(page\);/);
 });
 
-test('a deck with speaker notes prints across the sheet, one without down it, unless print: says', async () => {
+test('a document with --- between its parts is saved whole, masthead and all', async () => {
+  const root = dir({ 'day.md': '---\ntitle: Day one\nrequires: reader 0.0.3\n---\n\n# Keynote\n\n<!-- a note -->\n\n---\n\n# Lunch\n' });
+  await reader(root, 'day.md', '--no-draw');
+  const html = fs.readFileSync(path.join(root, 'day.html'), 'utf8');
+  assert.match(html, /gm-masthead[\s\S]*Day one[\s\S]*reader 0\.0\.3/);
+  assert.match(html, /Keynote[\s\S]*<hr>[\s\S]*Lunch/);
+  assert.doesNotMatch(html, /class="gm-page"|@page numbered \{ size/);
+});
+
+test('slides print across the sheet, a workbook down it, unless print: says', async () => {
   const root = dir({
-    'talk.md': '# One\n\n<!-- say this -->\n\n---\n\n# Two\n',
-    'packet.md': '# One\n\n---\n\n# Two\n',
-    'turned.md': '---\nprint: Landscape\n---\n\n# One\n\n---\n\n# Two\n',
+    'talk.md': '---\ntype: slides\n---\n\n# One\n\n---\n\n# Two\n',
+    'packet.md': '---\ntype: workbook\n---\n\n# One\n\n<!-- a note -->\n\n---\n\n# Two\n',
+    'turned.md': '---\ntype: workbook\nprint: Landscape\n---\n\n# One\n\n---\n\n# Two\n',
   });
   await reader(root, 'talk.md', 'packet.md', 'turned.md', '--no-draw');
   const size = (name) => /@page numbered \{ size: (\w+); \}/.exec(fs.readFileSync(path.join(root, name), 'utf8'))?.[1];

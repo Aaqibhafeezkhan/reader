@@ -59,6 +59,7 @@ test('without ---, the headings are the outline, nested by level', () => {
 
 test('in a talk, slides are entries, gathered under a section\'s title slide', () => {
   const talk = [
+    '---', 'type: slides', '---',
     '# Opening', '', '## not listed', '<!-- hello -->',
     '---', '# Part one',
     '---', '# Slide A', 'text',
@@ -69,7 +70,16 @@ test('in a talk, slides are entries, gathered under a section\'s title slide', (
   const { entries, talk: isTalk } = outline(talk);
   assert.equal(isTalk, true);
   assert.deepEqual(shape(entries), ['Opening', ['Part one', ['Slide A', 'An image slide']], ['Part two', ['Slide B']]]);
-  assert.deepEqual([entries[1].line, entries[1].end], [5, 11]);
+  assert.deepEqual([entries[1].line, entries[1].end], [8, 14]);
+});
+
+test('a talk says so: without `type: slides`, its notes don\'t make one', () => {
+  const parts = '# Opening\n\n## listed\n<!-- hello -->\n---\n# Part one\n';
+  const { entries, talk } = outline(parts);
+  assert.equal(talk, false);
+  assert.deepEqual(shape(entries), [['Opening', ['listed']], 'Part one']);
+  assert.equal(outline(`---\ntype: workbook\n---\n${parts}`).talk, false);
+  assert.equal(outline(`---\ntype: Slides\n---\n${parts}`).talk, true);
 });
 
 test('a heading in a note or a code fence is not an entry', () => {

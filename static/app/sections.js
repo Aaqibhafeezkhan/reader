@@ -7,7 +7,7 @@
  *   heading or, without one, its first line. The `#` to `###` headings
  *   after that are nested under it.
  * - Without `---` (an ideas page), the `#` to `###` headings themselves.
- * - In a talk (a deck with speaker notes, or `type: slides`), the slides,
+ * - In a talk, `type: slides` in the front matter, the slides,
  *   by their titles, and not the headings inside them. A slide that holds
  *   only a `#` heading, a section's title slide, gathers the slides after
  *   it up to the next one.
@@ -20,7 +20,7 @@
  * No DOM here, so the tests can run it.
  */
 
-import { frontMatter, fenced } from '../markdown.js';
+import { frontMatter, fenced, typeOf } from '../markdown.js';
 
 const SEPARATOR = /^---[ \t]*$/;
 const HEADING = /^ {0,3}(#{1,6})[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*$/;
@@ -50,9 +50,7 @@ export function outline(src) {
     if (m) headings.push({ level: m[1].length, title: plain(m[2].replace(/^\[[ xX]\][ \t]+/, '')), line: i });
   });
 
-  const notes = lines.some((l, i) => i >= (matter?.end ?? 0) && seen[i] !== null && l.includes('<!--'));
-  const type = String(matter?.meta.type || '').toLowerCase();
-  const talk = parts.length > 1 && (type === 'slides' || (notes && type !== 'workbook'));
+  const talk = parts.length > 1 && typeOf(matter?.meta) === 'slides';
 
   let entries;
   if (parts.length <= 1) entries = nest(headings.filter((h) => h.level <= DEEPEST), lines.length, 'heading');

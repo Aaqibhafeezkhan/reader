@@ -48,27 +48,30 @@ test('render puts asides in the gutter column', async () => {
   assert.equal(out.deck, false);
 });
 
-test('render says whether the text is a deck, for the Present button', async () => {
-  const out = await (await json('POST', '/api/render', { text: '---\ntitle: x\n---\n\n# One\n\n---\n\n# Two\n' })).json();
-  assert.equal(out.deck, true);
+test('render says whether the text is a deck, by its type:, for the Present button', async () => {
+  const deck = async (text) => (await (await json('POST', '/api/render', { text })).json()).deck;
+  assert.equal(await deck('---\ntype: slides\n---\n\n# One\n\n---\n\n# Two\n'), true);
+  assert.equal(await deck('---\ntype: workbook\n---\n\n# One\n\n---\n\n# Two\n'), true);
+  // Without one it's a document, notes and --- and all.
+  assert.equal(await deck('---\ntitle: x\n---\n\n# One\n\n<!-- a note -->\n\n---\n\n# Two\n'), false);
 });
 
 test('render gives a deck being worked through as pages, and a document as itself', async () => {
-  const deck = await (await json('POST', '/api/render', { text: '# One\n\n---\n\n# [x] Two\n', path: 'talk.md', pages: true })).json();
+  const deck = await (await json('POST', '/api/render', { text: '---\ntype: workbook\n---\n\n# One\n\n---\n\n# [x] Two\n', path: 'talk.md', pages: true })).json();
   assert.equal(deck.deck, true);
-  assert.deepEqual(deck.pages.map((p) => p.line), [0, 3]);
+  assert.deepEqual(deck.pages.map((p) => p.line), [3, 7]);
   assert.match(deck.pages[1].body, /<h1 class="task-heading"/);
   // A deck with no `title:` is titled with its file's name, as the editor is.
   assert.equal(deck.title, 'talk');
-  const titled = await (await json('POST', '/api/render', { text: '---\ntitle: Talk\n---\n\n# One\n\n---\n\n# Two\n', path: 'talk.md', pages: true })).json();
+  const titled = await (await json('POST', '/api/render', { text: '---\ntitle: Talk\ntype: slides\n---\n\n# One\n\n---\n\n# Two\n', path: 'talk.md', pages: true })).json();
   assert.equal(titled.title, 'Talk');
-  const doc = await (await json('POST', '/api/render', { text: '# One\n', pages: true })).json();
+  const doc = await (await json('POST', '/api/render', { text: '# One\n\n---\n\n# Two\n', pages: true })).json();
   assert.equal(doc.pages, undefined);
   assert.match(doc.body, /One/);
 });
 
 test('a deck\'s pages come with its title, for the page\'s frame', async () => {
-  const deck = await (await json('POST', '/api/render', { text: '---\ntitle: Talk\n---\n\n# One\n\n---\n\n# Two\n', pages: true })).json();
+  const deck = await (await json('POST', '/api/render', { text: '---\ntitle: Talk\ntype: slides\n---\n\n# One\n\n---\n\n# Two\n', pages: true })).json();
   assert.equal(deck.title, 'Talk');
 });
 

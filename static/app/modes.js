@@ -6,6 +6,7 @@ import { el, state, deck, dirty, remembered, remember } from './state.js';
 import { save } from './saving.js';
 import { renderNow } from './render.js';
 import { openAt } from './pages.js';
+import { frontMatter, typeOf } from '../markdown.js';
 
 // At this width and under the list doesn't fit beside the panes, so ☰ and
 // ⌘\ open it over them instead; picking a file, Esc or a click elsewhere
@@ -72,17 +73,33 @@ export function wireDrawer() {
 export function restoreLayout() {
   if (remembered('reader:sidebar') === 'hidden') toggleSidebar(true);
   if (remembered('reader:help') === 'shown') toggleHelp(true);
-  // 'read' is what work mode was called.
-  if (['work', 'read'].includes(remembered('reader:mode'))) setWorking(true);
+  if (chosenWork()) setWorking(true);
   deck.notes = remembered('reader:notes') === 'shown';
+}
+
+// 'read' is what work mode was called.
+const chosenWork = () => ['work', 'read'].includes(remembered('reader:mode'));
+
+/**
+ * The mode the file `text` opens in, by its `type:` (static/markdown.js): a
+ * workbook in Work, to fill in; slides in Edit, to write, with Present
+ * beside it; and a document in whichever was last chosen. Opening a file
+ * isn't choosing one, so it's not remembered, and the keyboard stays where
+ * it is. The caller draws the file.
+ */
+export function openIn(text) {
+  const type = typeOf(frontMatter(text.replace(/\r\n?/g, '\n').split('\n'))?.meta);
+  setWorking(type === 'workbook' || (type === 'document' && chosenWork()), { chosen: false });
 }
 
 /**
  * Work mode: the rendered page full width, to read and to fill in, the
  * editor out of reach. A deck is a workbook there, a page at a time
- * (pages.js), opened on the page the cursor was on.
+ * (pages.js), opened on the page the cursor was on. `chosen` is false when
+ * it's not the user who picked it: then it's neither remembered nor drawn,
+ * and the editor isn't focused.
  */
-export function setWorking(on) {
+export function setWorking(on, { chosen = true } = {}) {
   const changed = state.working !== on;
   state.working = on;
   el.split.classList.toggle('work-mode', on);
@@ -91,13 +108,13 @@ export function setWorking(on) {
   el.workBtn.title = on ? 'Back to editing (⌘. or Esc)' : 'Work through it without editing (⌘.)';
   if (changed) {
     if (on) openAt(el.editor.value.slice(0, el.editor.selectionStart).split('\n').length - 1);
-    renderNow();
+    if (chosen) renderNow();
   }
   if (on) {
     if (document.activeElement === el.editor) el.editor.blur();
     if (dirty()) save();
-  } else if (state.current?.type === 'md' && !deck.open) {
+  } else if (chosen && state.current?.type === 'md' && !deck.open) {
     el.editor.focus({ preventScroll: true });
   }
-  remember('reader:mode', on ? 'work' : 'edit');
+  if (chosen) remember('reader:mode', on ? 'work' : 'edit');
 }

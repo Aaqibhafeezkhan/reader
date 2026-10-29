@@ -11,6 +11,7 @@ import { toast } from './status.js';
 import * as moves from './moves.js';
 import { treatAsDeck } from './fit.js';
 import { findScreens, roomScreen, speakerFeatures, placeSpeaker } from './screens.js';
+import { mark, drawDone } from './done.js';
 
 //
 // A file in the format of https://github.com/maaslalani/slides -- slides
@@ -86,6 +87,8 @@ export async function loadDeck() {
   deck.index = Math.min(deck.index, deck.slides.length - 1);
   deck.reveal = Math.min(deck.reveal, deck.slides[deck.index].steps);
   el.deckBy.textContent = [deck.meta.author, deck.meta.date].filter(Boolean).join(' · ');
+  // Beside it, how many slides are done, as the file has them.
+  drawDone(el.deckDone, deck.slides.map((s, i) => mark(s.body, i)));
   if (deck.open) announce();
   return true;
 }

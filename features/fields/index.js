@@ -120,6 +120,9 @@ export function fields(md) {
       if (!found[k]) return null;
       const t = new state.Token(found[k].inline ? 'field_inline' : 'field', 'span', 0);
       t.meta = found[k];
+      // A field of choices is a question (see source.js's tags).
+      const picks = !t.meta.inline && choices(t.meta.text, t.meta.head, t.meta.value);
+      if (picks) t.meta = { ...t.meta, answered: picks.some((c) => c.checked) };
       return t;
     });
     // One field to a line: the line break after one is the field's own.
@@ -134,8 +137,8 @@ export function fields(md) {
     const open = `<span class="field" data-line="${line}" data-text="${escapeAttr(text)}" data-head="${escapeAttr(head)}"`;
     const picks = choices(text, head, value);
     if (picks) {
-      // Its buttons a group, named by its label.
-      return `${open} data-choices role="radiogroup" aria-labelledby="field-${line}"><span class="field-label" id="field-${line}">${escapeHtml(label)}</span><span class="field-choices">`
+      // Its buttons a group, named by its label, and a question.
+      return `${open} data-choices data-answered="${picks.some((c) => c.checked)}" role="radiogroup" aria-labelledby="field-${line}"><span class="field-label" id="field-${line}">${escapeHtml(label)}</span><span class="field-choices">`
         + picks.map((c) => `<label class="field-choice"><input type="radio" class="choice-box" name="field-${line}"`
           + ` data-on="${escapeAttr(c.on)}"${c.checked ? ' checked' : ''}${shut(env)}> ${escapeHtml(c.label)}</label>`).join('')
         + '</span></span>';

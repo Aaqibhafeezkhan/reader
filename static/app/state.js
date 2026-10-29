@@ -17,9 +17,9 @@ export const el = {
   conflict: $('conflict'), reloadBtn: $('reloadBtn'), overwriteBtn: $('overwriteBtn'),
   dirtyDot: $('dirtyDot'), counts: $('counts'), cursor: $('cursor'), measure: $('measure'), toast: $('toast'),
   workBtn: $('workBtn'), presentBtn: $('presentBtn'), presentWrap: $('presentWrap'), fitPop: $('fitPop'),
-  pages: $('pages'), pageBack: $('pageBack'), pageNext: $('pageNext'), pageDots: $('pageDots'), pageCount: $('pageCount'),
+  pages: $('pages'), pageBack: $('pageBack'), pageNext: $('pageNext'), pageDots: $('pageDots'), pageCount: $('pageCount'), pageDone: $('pageDone'),
   goto: $('goto'), gotoInput: $('gotoInput'), gotoList: $('gotoList'),
-  deck: $('deck'), stage: $('stage'), deckNotes: $('deckNotes'), deckBy: $('deckBy'), deckCount: $('deckCount'), deckSays: $('deckSays'), bar: $('bar'),
+  deck: $('deck'), stage: $('stage'), deckNotes: $('deckNotes'), deckBy: $('deckBy'), deckDone: $('deckDone'), deckCount: $('deckCount'), deckSays: $('deckSays'), bar: $('bar'),
   deckFoot: $('deckFoot'), overview: $('overview'),
 };
 

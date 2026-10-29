@@ -42,6 +42,15 @@ test('choice items become radio buttons, one group to a list', () => {
   assert.match(body, /name="choice-3" data-line="9" [^>]*> no/);
 });
 
+test('a list of choices is a question, and says whether one is picked', () => {
+  const { body } = render('- ( ) red\n- (x) blue\n  - ( ) navy\n  - ( ) sky\n- ( ) green\n\ntext\n\n- [ ] trash\n');
+  assert.match(body, /<ul data-answered="true">\n<li class="task"><input type="radio"[^>]*> red/);
+  assert.match(body, /<ul data-answered="false">\n<li class="task"><input type="radio"[^>]*> navy/);
+  assert.equal(body.match(/data-answered/g).length, 2, 'a list of boxes is no question');
+  // A choice isn't a thing to be done, so a bar doesn't count it.
+  assert.match(render('progress:[] done\n\n- (x) red\n- [ ] trash\n').body, /0 of 1/);
+});
+
 test('choice boxes not heading a list item are left as typed', () => {
   const { body } = render('```\n- ( ) fenced\n```\n\na ( ) b\n\n- ( )x\n');
   assert.doesNotMatch(body, /radio/);
@@ -83,7 +92,7 @@ test('on a slide, every box and choice is drawn as it stands and can\'t be chang
   for (const input of inputs) assert.match(input, / disabled>$/);
   assert.match(body, /<input type="checkbox" class="task-box" data-line="5" [^>]* checked disabled> Prep/);
   assert.match(body, /<input type="radio" class="choice-box" name="choice-\d+" [^>]*aria-label="coffee" checked disabled>/);
-  assert.match(body, /<span class="stage-box" role="img" aria-label="onion: have \(1 of 3\)" title="have">/);
+  assert.match(body, /<span class="stage-box" role="img" aria-label="onion: have \(1 of 3\)" title="have" data-done="false">/);
   assert.doesNotMatch(body, /<button|task-reset/);
   const page = render(md).body;
   assert.doesNotMatch(page, /disabled/, 'in the editor, every one can be changed');
@@ -174,7 +183,7 @@ test('an empty log is added to under its heading', () => {
 test('an exported page\'s staged box is a picture of how far it\'s got, not a control', () => {
   const md = '---\nmultibox:\n  stages: have, prepped, used\n---\n\n* [x][ ][ ] onion\n* [ ] salt\n';
   const { body } = render(md, { exported: true });
-  assert.match(body, /<span class="stage-box" role="img" aria-label="onion: have \(1 of 3\)" title="have"><i class="on"><\/i><i><\/i><i><\/i><\/span> <span class="stage-name">have<\/span>/);
+  assert.match(body, /<span class="stage-box" role="img" aria-label="onion: have \(1 of 3\)" title="have" data-done="false"><i class="on"><\/i><i><\/i><i><\/i><\/span> <span class="stage-name">have<\/span>/);
   assert.doesNotMatch(body, /<button/);
   assert.match(body, /<input type="checkbox" class="task-box"[^>]*> salt/, 'a plain box can still be ticked, on paper or on screen');
   assert.doesNotMatch(body, /disabled/);

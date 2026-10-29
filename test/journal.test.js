@@ -3,6 +3,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { pages, isDeck } from '../src/slides.js';
 import { outline } from '../static/app/sections.js';
+import { app, globals } from './dom.js';
+
+// What Work counts done is read in the app, from the pages it's sent.
+globals(app());
+const { mark, tally } = await import('../static/app/done.js');
 
 // The daily journal 0.0.4 is to make possible, written ahead of the syntax it
 // promises (see its comment). What reader can't read yet shows as written; as
@@ -76,4 +81,14 @@ test('from 4:00 the next morning it\'s a record: each page says so, every box an
   assert.ok(inputs.every((i) => / disabled/.test(i)), 'every box and choice is shut');
   assert.doesNotMatch(all, /role="textbox"|data-hint|aria-placeholder|tabindex="0" role="button"|task-reset/, 'nothing to type in, pick or press');
   assert.equal(all.match(/<span class="field-blank">blank<\/span>/g).length, 13, 'its blanks left empty are said to be blank, with no hint');
+});
+
+test('Work counts its pages done, by a heading\'s box or a choice made, and still does once it\'s a record', () => {
+  const count = (src, now) => tally(pages(src, { file: 'journal.md', now }).pages.map((p, i) => mark(p.body, i)));
+  // Every page has something to do, and none of it's done yet.
+  assert.deepEqual(count(JOURNAL, EVENING), { done: 0, of: 12 });
+  const filled = JOURNAL.replace("# [ ] Today's Celebrations", "# [x] Today's Celebrations")
+    .replace('- ( ) **B** · Running', '- (x) **B** · Running');
+  assert.deepEqual(count(filled, EVENING), { done: 2, of: 12 });
+  assert.deepEqual(count(filled, CLOSING), { done: 2, of: 12 });
 });

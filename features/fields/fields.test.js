@@ -37,7 +37,7 @@ test('a field in a ::: block is styled with it', () => {
 
 test('a field of ( ) choices is radio buttons in a row, each knowing its line with only it picked', () => {
   const { body } = render('@ Session: ( ) Sat AM  (x) Sat PM ( ) Sun (late)\n');
-  assert.match(body, /<span class="field" data-line="0" data-text="@ Session: \( \) Sat AM {2}\(x\) Sat PM \( \) Sun \(late\)" data-head="@ Session:" data-choices role="radiogroup" aria-labelledby="field-0"><span class="field-label" id="field-0">Session<\/span><span class="field-choices">/);
+  assert.match(body, /<span class="field" data-line="0" data-text="@ Session: \( \) Sat AM {2}\(x\) Sat PM \( \) Sun \(late\)" data-head="@ Session:" data-choices data-answered="true" role="radiogroup" aria-labelledby="field-0"><span class="field-label" id="field-0">Session<\/span><span class="field-choices">/);
   const radios = [...body.matchAll(/<label class="field-choice"><input type="radio" class="choice-box" name="field-0" data-on="([^"]*)"( checked)?> ([^<]*)<\/label>/g)]
     .map(([, on, checked, label]) => ({ on, checked: Boolean(checked), label }));
   assert.deepEqual(radios, [

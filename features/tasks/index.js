@@ -80,10 +80,18 @@ export function tasks(md) {
     // the asides' own parses, so each list's choices are a group of their own.
     const count = state.env.shared ?? tasks;
     const lists = [];
+    const opens = [];
+    // A list of choices is a question, answered once one's picked.
+    const questions = new Map();
     for (let i = 0; i < tokens.length; i++) {
       const t = tokens[i];
-      if (t.type === 'bullet_list_open' || t.type === 'ordered_list_open') lists.push(count.taskLists = (count.taskLists ?? 0) + 1);
-      else if (t.type === 'bullet_list_close' || t.type === 'ordered_list_close') lists.pop();
+      if (t.type === 'bullet_list_open' || t.type === 'ordered_list_open') {
+        lists.push(count.taskLists = (count.taskLists ?? 0) + 1);
+        opens.push(t);
+      } else if (t.type === 'bullet_list_close' || t.type === 'ordered_list_close') {
+        lists.pop();
+        opens.pop();
+      }
       else if (t.type === 'list_item_open' || t.type === 'heading_open') {
         const heading = t.type === 'heading_open';
         const inline = tokens[i + 1]?.type === 'paragraph_open' ? tokens[i + 2] : tokens[i + 1];
@@ -98,8 +106,13 @@ export function tasks(md) {
         input.meta = { ...box, group: lists.at(-1), name: nameOf(inline.children) };
         // A box is a thing to be done; a choice isn't (see source.js's tags).
         if (!box.radio) input.meta.done = box.checked;
+        else if (opens.length) questions.set(opens.at(-1), Boolean(questions.get(opens.at(-1)) || box.checked));
         inline.children.unshift(input);
       }
+    }
+    for (const [list, answered] of questions) {
+      list.meta = { ...list.meta, answered };
+      list.attrSet('data-answered', String(answered));
     }
     // Anywhere else, a box goes back to what was typed.
     const typed = (k) => {
@@ -211,7 +224,7 @@ function stageBox({ line, stage, lines, stages, name, pictured }) {
   const pips = lines.slice(1).map((_, k) => `<i${k < stage ? ' class="on"' : ''}></i>`).join('');
   const shown = stages?.[stage - 1] && stage < n ? ` <span class="stage-name">${escapeHtml(stages[stage - 1])}</span>` : '';
   // Where it can't be filled, it only says how far it's got.
-  if (pictured) return `<span class="stage-box" role="img" aria-label="${escapeAttr(label)}" title="${escapeAttr(now)}">${pips}</span>${shown} `;
+  if (pictured) return `<span class="stage-box" role="img" aria-label="${escapeAttr(label)}" title="${escapeAttr(now)}" data-done="${stage === n}">${pips}</span>${shown} `;
   return `<button type="button" class="stage-box" role="checkbox" aria-checked="${stage === n ? 'true' : stage ? 'mixed' : 'false'}"`
     + ` aria-label="${escapeAttr(label)}" title="${escapeAttr(`${now}${next}`)}" data-line="${line}" data-stage="${stage}" data-done="${stage === n}"`
     + ` data-lines="${escapeAttr(JSON.stringify(lines))}">${pips}</button>${shown} `;

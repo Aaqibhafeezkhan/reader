@@ -208,6 +208,12 @@ button, .ghost { font: inherit; font-size: 13px; border-radius: 7px; cursor: poi
 }
 .page-block:hover { border-color: var(--ink); color: var(--ink); }
 .page-block.done { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+/* how many pages are done, beside the dots and on a deck being presented */
+.page-done { display: inline-flex; align-items: center; font-size: 12px; color: var(--ink-soft); white-space: nowrap; }
+.page-done[hidden] { display: none; }
+.page-done .progress { display: inline-flex; align-items: center; gap: 6px; }
+.page-done progress { width: 72px; height: 6px; accent-color: var(--accent); }
+.page-done .progress-count { font-variant-numeric: tabular-nums; }
 .page-count { font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pages button:disabled { opacity: .35; cursor: default; }
 
@@ -447,6 +453,8 @@ button, .ghost { font: inherit; font-size: 13px; border-radius: 7px; cursor: poi
 }
 /* out of the room's sight, but for a moment as the deck opens, on hover,
    and while ? keeps them */
+.deck-by { display: inline-flex; align-items: center; gap: 12px; }
+.deck-foot .page-done { color: inherit; }
 .deck-foot .deck-keys { opacity: 0; transition: opacity .2s; }
 .deck-foot:hover .deck-keys, .deck.keys-shown .deck-keys { opacity: 1; }
 

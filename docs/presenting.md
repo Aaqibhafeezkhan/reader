@@ -41,8 +41,11 @@ be, with nothing of its notes. It opens on the page the cursor was on.
   one to go to that page. `⌥←` and `⌥→` turn the page too, as does a swipe.
 - A page is done, and its dot filled, when its opening heading's checkbox is
   checked (`# [x] Warm-up`). A page whose heading has no checkbox is done
-  when every task on it is ticked and every radio list has a choice. A page
+  when every task on it is ticked and every radio list, or field of choices, has a choice. A page
   with nothing to tick doesn't count either way.
+- Beside the dots, a bar and a count say how many pages are done, "7 of 12 done", of those with something to do; it fills as boxes are ticked.
+  Beside it is the page showing, "Page 3 of 12".
+  A workbook with nothing to do on any page has no bar.
 
 ## Decks
 
@@ -75,6 +78,8 @@ paging: Slide %d / %d
   slide there.
 - Present opens on the slide under the cursor. If the file changes on disk
   while you present (say you fix a typo in vim), the deck reloads in place.
+- A deck with something to do on its slides shows the same bar while it's presented, beside its author and date at its foot, counting its slides done as the file has them.
+  A record past its `open-until:` still shows its count.
 - A slide being presented is only shown: its boxes, choices, fields, dates
   and cards show as they stand and can't be changed. Work is where a deck
   is filled in. To show a box being ticked, repeat the slide with it ticked.

@@ -128,6 +128,7 @@
     const was = field.dataset.text;
     const now = e.target.dataset.on;
     field.dataset.text = now;
+    field.dataset.answered = 'true';
     if (now !== was) Preview.edit([{ from: line, to: line + 1, before: [was], after: [now] }], { undo: true });
   });
 

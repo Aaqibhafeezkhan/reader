@@ -29,13 +29,14 @@
     return BLOCK.test(node.tagName) ? ` ${text} ` : text;
   }
 
-  /** A field as its label and what's in it: `Name: Josh`, `Thoughts: blank`. */
+  /** A field as its label and what's in it: `Name: Josh`, `Thoughts: blank`, `Hours: blank, e.g. 7.5`. */
   function field(node, k) {
     const label = node.querySelector(':scope > .field-label');
     const value = node.querySelector(':scope > .field-value');
     let said = value ? spoken(value, k).trim() : '';
     // An empty definition says so only through the stylesheet.
-    if (!said) said = node.matches('.def-blank') ? 'not yet defined' : 'blank';
+    // An empty field says what goes there, if it's hinted (features/blank.js).
+    if (!said) said = node.matches('.def-blank') ? 'not yet defined' : ['blank', value?.dataset.hint].filter(Boolean).join(', ');
     return label ? ` ${spoken(label, k).trim()}: ${said} ` : ` ${said} `;
   }
 

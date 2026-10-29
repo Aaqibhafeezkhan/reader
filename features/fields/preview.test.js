@@ -78,6 +78,14 @@ test('Esc puts a field back as it was, and writes nothing', async () => {
   assert.equal(fields[0].querySelector('.field-value').textContent, 'Josh');
 });
 
+test('a hinted blank keeps its hint while it\'s typed in, and writes it back with its label', async () => {
+  const { edits, open, fill } = page('@ Hours {e.g. 7.5}:\n@ Name: Josh\n');
+  assert.equal(open(0).placeholder, 'e.g. 7.5');
+  assert.equal(open(1).placeholder, '');
+  await fill(0, '8');
+  assert.deepEqual(lines(edits), ['@ Hours {e.g. 7.5}: 8']);
+});
+
 test('a field in a sentence is written into its place, and the ones after it move along', async () => {
   const { fields, edits, fill } = page('I am [@ name: Josh] and [@ age:] years, from [@ city: x].\n');
   await fill(0, 'Joshua');

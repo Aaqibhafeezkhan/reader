@@ -52,6 +52,7 @@
     input.value = value ?? before;
     input.rows = 1;
     input.setAttribute('aria-label', slot.getAttribute('aria-label') ?? fieldLabel(field));
+    if (slot.dataset.hint) input.placeholder = slot.dataset.hint;
     input.spellcheck = false;
     slot.replaceChildren(input);
     const fit = () => {

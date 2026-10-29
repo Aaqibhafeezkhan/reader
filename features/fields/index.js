@@ -6,6 +6,13 @@
  *   @ My Name: Josh
  *   @ Date:
  *
+ * Braces at the end of the label are its hint, what goes in the blank,
+ * shown faint there while it's empty (features/blank.js). They aren't part
+ * of the label, but are of the head, so they're written back with it; a
+ * label that really ends in braces escapes them, `@ Set \{a, b\}:`.
+ *
+ *   @ Hours of sleep {e.g. 7.5}:
+ *
  * The field carries its line, the line as written and its head (up to the
  * colons), so the preview can open the blank for typing and write the new
  * value back after the head. The value is shown as typed, with no markdown.
@@ -33,14 +40,24 @@
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { beforeExtract, readLines, placeholder, MARKS, splitText, escapeHtml, escapeAttr } from '../source.js';
-import { typable, unfilled, shut } from '../blank.js';
+import { typable, hinted, unfilled, shut } from '../blank.js';
 
-const FIELD = /^@[ \t]+([^:\n]*?[^:\s])[ \t]*(:+)[ \t]*(.*?)[ \t]*$/;
-const HEAD = /^@[ \t]+[^:\n]*?[^:\s][ \t]*:+/;
+// A label is any but a colon, though one can be in its hint's braces.
+const BRACED = '\\{[^}\\n]*\\}';
+const LABEL = `(?:${BRACED}|[^:\\n{]|\\{(?![^}\\n]*\\}))*?(?:${BRACED}|[^:\\s{]|\\{(?![^}\\n]*\\}))`;
+const FIELD = new RegExp(`^@[ \\t]+(${LABEL})[ \\t]*(:+)[ \\t]*(.*?)[ \\t]*$`);
+const HEAD = new RegExp(`^@[ \\t]+${LABEL}[ \\t]*:+`);
+const HINT = /^(.*?[^\s])[ \t]*(?<!\\)\{[ \t]*([^}\n]*?[^\s])[ \t]*(?<!\\)\}$/;
 const [OPEN, CLOSE] = MARKS.fields;
 const PLACED = new RegExp(`${OPEN}(\\d+)${CLOSE}`, 'g');
 const MARK = /\(([ xX])\)/g;
 const INLINE = /\[@[ \t]+([^\]:\n]*?[^\]:\s])[ \t]*(?::[ \t]*([^\]\n]*?))?[ \t]*\](?![([])/g;
+/** `label` and its hint, in braces at its end: `{ label, hint }`, any `\{` and `\}` in it as braces. */
+function labelled(label) {
+  const [, rest = label, hint = ''] = HINT.exec(label) ?? [];
+  return { label: rest.replace(/\\([{}])/g, '$1'), hint };
+}
+
 const CODE = /(`+)[\s\S]*?[^`]\1(?!`)|(`+)\2(?!`)/g;
 
 /** The inline fields in `line`, outside its code spans: `[{ start, end, label, value }]`. */
@@ -88,8 +105,8 @@ export function fields(md) {
           return out.slice(0, f.start) + placeholder(OPEN, CLOSE, found.length - 1) + out.slice(f.end);
         }, line);
       }
-      return line.replace(FIELD, (m, label, colons, value) => {
-        found.push({ line: n, text: line, head: HEAD.exec(line)[0], label, value, lines: colons.length });
+      return line.replace(FIELD, (m, written, colons, value) => {
+        found.push({ line: n, text: line, head: HEAD.exec(line)[0], ...labelled(written), value, lines: colons.length });
         return placeholder(OPEN, CLOSE, found.length - 1);
       });
     });
@@ -113,7 +130,7 @@ export function fields(md) {
   });
 
   md.renderer.rules.field = (tokens, i, opts, env) => {
-    const { line, text, head, label, value, lines } = tokens[i].meta;
+    const { line, text, head, label, hint, value, lines } = tokens[i].meta;
     const open = `<span class="field" data-line="${line}" data-text="${escapeAttr(text)}" data-head="${escapeAttr(head)}"`;
     const picks = choices(text, head, value);
     if (picks) {
@@ -127,7 +144,7 @@ export function fields(md) {
     const tall = lines > 1 ? ` data-lines="${lines}" style="--lines: ${lines}"` : '';
     return `${open}${tall}>`
       + `<span class="field-label">${escapeHtml(label)}</span>`
-      + `<span class="field-value" data-value="${v}"${typable(label, env)}>${v}</span>${unfilled(value, env)}</span>`;
+      + `<span class="field-value" data-value="${v}"${typable(label, env)}${hinted(hint, env)}>${v}</span>${unfilled(value, env, hint)}</span>`;
   };
 
   // The blank first, so the sentence lines up with what's written on it.

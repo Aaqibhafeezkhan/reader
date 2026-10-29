@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { workable, typable, unfilled, shut } from './blank.js';
+import { workable, typable, hinted, unfilled, shut } from './blank.js';
 
 test('a page can be worked in the editor, but not on a slide or once exported', () => {
   assert.equal(workable({}), true);
@@ -25,4 +25,17 @@ test('an empty blank says it\'s blank only where it can\'t be filled in', () => 
   assert.equal(unfilled('', { exported: true }), '<span class="field-blank">blank</span>');
   assert.equal(unfilled('', { deck: true }), '<span class="field-blank">blank</span>');
   assert.equal(unfilled('Josh', { exported: true }), '');
+});
+
+test('a hint is a box\'s placeholder where it can be typed in, and only shown where it can\'t', () => {
+  assert.equal(hinted('', {}), '');
+  assert.equal(hinted('e.g. "7.5"', {}), ' data-hint="e.g. &quot;7.5&quot;" aria-placeholder="e.g. &quot;7.5&quot;"');
+  assert.equal(hinted('e.g. 7.5', { deck: true }), ' data-hint="e.g. 7.5"');
+  assert.equal(hinted('e.g. 7.5', { exported: true }), ' data-hint="e.g. 7.5"');
+});
+
+test('an empty blank that can\'t be filled in says its hint after it\'s blank', () => {
+  assert.equal(unfilled('', { deck: true }, 'e.g. <7>'), '<span class="field-blank">blank, e.g. &lt;7&gt;</span>');
+  assert.equal(unfilled('', {}, 'e.g. 7'), '');
+  assert.equal(unfilled('8', { deck: true }, 'e.g. 7'), '');
 });

@@ -335,6 +335,11 @@ test('on a slide, a reveal says back what it showed: the title, then each step',
     ['One', 'the first point', 'the second point', 'Thoughts: blank', 'Name: Josh']);
 });
 
+test('on a slide, an empty field says its hint after it\'s blank', () => {
+  assert.deepEqual(saying('# One\n\n@ Hours {e.g. 7.5}:\n\n@ Name {first}: Josh\n', 1, 2),
+    ['One', 'Hours: blank, e.g. 7.5', 'Name: Josh']);
+});
+
 test('the overview names a slide by its title as the stage says it, an image in it by its alt', () => {
   const markdown = '# Why ![a rocket](r.png) *really* wins\n\nbody\n';
   assert.deepEqual(saying(markdown), ['Why a rocket really wins']);

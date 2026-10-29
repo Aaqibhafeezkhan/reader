@@ -9,7 +9,8 @@
  *
  * `data-line` is the line it's on, `data-text` that line as written, and
  * `data-head` what goes before the value when it's written back (`@ Notes:`,
- * `!SLAB:`). The fields feature's preview opens any blank for typing and
+ * `!SLAB:`). A blank can say what goes in it while it's empty, its hint
+ * (`hinted`). The fields feature's preview opens any blank for typing and
  * writes `head value` back to its line. Without fields, a blank is only read.
  *
  * And whether a page can be worked at all, where it's drawn, is asked here,
@@ -18,7 +19,7 @@
  * (static/preview-api.js), which every feature's clicks and keys go by.
  */
 
-import { escapeAttr } from './source.js';
+import { escapeAttr, escapeHtml } from './source.js';
 
 /**
  * Can the page be worked where it's drawn -- a blank filled in, a date
@@ -46,10 +47,26 @@ export function typable(label, env) {
 }
 
 /**
- * Where a blank can't be filled in, an empty one says so to a screen reader
- * ("Thoughts: blank"), unseen. Kept out of the blank itself, which is
- * drawn by whether it's empty.
+ * A blank's hint, what goes in it (`e.g. 7.5`): `data-hint`, which the
+ * stylesheet shows faint in it while it's empty, and where it can be typed
+ * in, `aria-placeholder`, so it's heard as a box's placeholder is, after
+ * its name. Where it can't be, `unfilled` says it. Not part of its label,
+ * so not of its name. Shown wherever the blank is empty, worked or not: on
+ * a slide or an exported page it still says what goes there.
  */
-export function unfilled(value, env) {
-  return value || workable(env) ? '' : '<span class="field-blank">blank</span>';
+export function hinted(hint, env) {
+  if (!hint) return '';
+  const h = escapeAttr(hint);
+  return workable(env) ? ` data-hint="${h}" aria-placeholder="${h}"` : ` data-hint="${h}"`;
+}
+
+/**
+ * Where a blank can't be filled in, an empty one says so to a screen reader
+ * ("Thoughts: blank"), unseen, and what goes there, if it's hinted
+ * ("Hours: blank, e.g. 7.5"). Kept out of the blank itself, which is drawn
+ * by whether it's empty.
+ */
+export function unfilled(value, env, hint = '') {
+  if (value || workable(env)) return '';
+  return `<span class="field-blank">blank${hint ? `, ${escapeHtml(hint)}` : ''}</span>`;
 }

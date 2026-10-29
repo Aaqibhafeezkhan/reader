@@ -44,7 +44,7 @@ download into reader.
 - [Links](links.md): scripture, RFCs, searches, profiles, other files
 - [Notes on a talk](notes.md): questions and answers, retro cards,
   definitions, quotes
-- [Forms and checklists](forms.md): tasks, fields to fill in, blanks, dates
+- [Forms and checklists](forms.md): tasks, fields to fill in, blanks, dates, timers
 - [Layout](layout.md): `:::` blocks, columns, tabs, compare, callouts,
   number badges
 - [Code](code.md): highlighting, picked lines, callouts, output

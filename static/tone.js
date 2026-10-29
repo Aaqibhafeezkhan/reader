@@ -4,10 +4,12 @@
  * played (features/pitch) or a timer run out.
  *
  *   Tone.play(hz, { seconds })   a promise, settled when the tone has faded
+ *   Tone.wake()                  sound readied, from a click or a key, for later
  *
  * The browser starts sound only on a click or a key, so a tone is played
- * from one; the frame's sandbox and its Content-Security-Policy let Web
- * Audio be, as it fetches nothing. Where there's no Web Audio, or the
+ * from one, or sound is woken by one for a tone played later (a timer's
+ * start, for its zero); the frame's sandbox and its Content-Security-Policy
+ * let Web Audio be, as it fetches nothing. Where there's no Web Audio, or the
  * browser won't start it, nothing sounds and the promise still settles.
  * Tones played over each other are each quiet enough not to clip.
  */
@@ -24,15 +26,20 @@ window.Tone = (() => {
     return context;
   };
 
-  function play(hz, { seconds = 1.8 } = {}) {
+  function wake() {
     let ctx;
     try {
       ctx = audio();
     } catch {
-      ctx = null;
+      return null;
     }
+    if (ctx?.state === 'suspended') ctx.resume().catch(() => {});
+    return ctx;
+  }
+
+  function play(hz, { seconds = 1.8 } = {}) {
+    const ctx = wake();
     if (!ctx || !(hz > 0)) return Promise.resolve();
-    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
     const at = ctx.currentTime;
     const wave = ctx.createOscillator();
     const fade = ctx.createGain();
@@ -54,5 +61,5 @@ window.Tone = (() => {
     });
   }
 
-  return { play };
+  return { play, wake };
 })();

@@ -4,13 +4,36 @@ title: Work and present
 
 ← [Contents](index.md)
 
+## What a document is
+
+`type:` in the front matter says what a file is, so reader doesn't guess it from its `---` breaks or its notes:
+
+```markdown
+---
+title: Daily Dashboard
+type: workbook
+---
+```
+
+- **`document`**, what a file without a `type:` is.
+  A `---` between its parts, as a day of talks taken down in one file has, makes each part an outline entry, and it's still one document: shown, saved and printed whole, with its masthead.
+  It opens in whichever of Work and Edit you last chose.
+- **`workbook`**, a packet to fill in a page at a time.
+  It opens in Work, a page to each part, and prints down the sheet.
+- **`slides`**, a deck to present.
+  It opens in Edit, with **Present** beside it, and prints across the sheet.
+  Its outline lists its slides.
+
+A workbook and slides are both decks: either can be worked through in Work a page at a time, presented, and saved as its pages.
+A file opened in the mode its type picks doesn't change the mode you chose for documents.
+
 ## Work
 
 **Work** (`⌘.`) hides the file list and the editor and gives the rendered page
 the whole window, to read and to fill in. Nothing can be typed into the file, but task checkboxes
 and radio buttons still toggle, fields can be filled in, and puzzles can be played. `⌘.` or `Esc` goes back to editing. The mode is remembered.
 
-A deck (below) is a workbook in Work: each slide is a page, shown one at a
+A deck (below), `type: workbook` or `type: slides`, is a workbook in Work: each slide is a page, shown one at a
 time as a document is, at the size it's written and as long as it needs to
 be, with nothing of its notes. It opens on the page the cursor was on.
 
@@ -23,12 +46,14 @@ be, with nothing of its notes. It opens on the page the cursor was on.
 
 ## Decks
 
-A file in the format of [slides](https://github.com/maaslalani/slides) also
-gets **Present** (`⌘⇧.`). One file then works for both: `slides` in the
-terminal and here in the browser.
+A file in the format of [slides](https://github.com/maaslalani/slides), with
+`type: slides` in its front matter, also gets **Present** (`⌘⇧.`), and so
+does a workbook. One file then works for both: `slides` in the terminal and
+here in the browser.
 
 ```markdown
 ---
+type: slides
 author: Josh Cummings
 date: October 2026
 paging: Slide %d / %d
@@ -102,8 +127,8 @@ always makes a slide smaller, and `⌘+` makes it bigger when there's room,
 and never smaller.
 
 Hover **Present** to see which slides shrink below 80%, or don't fit at
-all, at the speaker view's size (1280×720); click one to go to it. Not
-every file with a `---` is a deck, so nothing is measured until you hover
+all, at the speaker view's size (1280×720); click one to go to it.
+Nothing is measured until you hover
 Present or present the file; after that, it's measured again as you edit.
 
 ## While presenting

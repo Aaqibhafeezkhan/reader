@@ -12,8 +12,9 @@ the images it takes from the directory inside it. Nothing in that file draws:
 a diagram or a puzzle is in it as the preview drew it, the puzzle as far as
 it's been played.
 
-A deck is saved as its pages, as Work shows them, one after another and
-without its speaker notes.
+A deck, `type: slides` or `type: workbook`, is saved as its pages, as Work
+shows them, one after another and without its speaker notes. A document is
+saved whole, `---` parts and all, with its masthead.
 
 ## Paper
 
@@ -25,8 +26,8 @@ a puzzle is bigger and there's more room to write. A page too long for one
 sheet runs onto the next as it is, and takes its number too. (The saved
 file, printed itself, leaves its pages at reading size.)
 
-A deck with speaker notes is taken for a talk and printed across the
-sheet, landscape; one without, for a packet, and printed down it.
+Slides (`type: slides`) print across the sheet, landscape, and a workbook
+(`type: workbook`) down it, portrait.
 `print: landscape` or `print: portrait` in the front matter says otherwise.
 Backgrounds are left off paper; they're set for a screen. The numbers need
 Chrome 131 or later; other browsers print the sheets without them.

@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { pages } from '../src/slides.js';
+import { pages, isDeck } from '../src/slides.js';
+import { outline } from '../static/app/sections.js';
 
 // The daily journal 0.0.4 is to make possible, written ahead of the syntax it
 // promises (see its comment). What reader can't read yet shows as written; as
@@ -15,4 +16,12 @@ test('the daily journal is a workbook of its twelve pages, in order', () => {
     'Today’s Celebrations', 'Daily Exercise', 'Meditation', 'Work To-Do', 'Gratitude Practice', 'Body Check-In',
     'Social Connection', 'Personal To-Do', 'Learning &amp; Reading', 'Body Scan &amp; Stretch', 'Singing Warmup', 'How are you feeling?',
   ]);
+});
+
+test('it says it\'s a workbook: worked a page at a time, its pages the outline\'s entries, not a talk\'s slides', () => {
+  // And it opens in Work (type-app.test.js).
+  assert.equal(isDeck(JOURNAL), true);
+  const { talk, entries } = outline(JOURNAL);
+  assert.equal(talk, false);
+  assert.equal(entries.length, 12);
 });

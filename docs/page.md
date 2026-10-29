@@ -14,8 +14,9 @@ Front matter (`Title`, `Author`, `Date`, `Tags`, `Speaker`, `Listener`)
 becomes the masthead; without a `Title` the file name is used. `Speaker`
 and `Listener` head the two columns, the text's and the asides'. Any other
 key shows in the byline as `key: value`, but for those reader reads itself
-(`font:`, `background:` and the rest below, and a deck's `type:`, `time:`,
-`paging:` and `transition:`) and one holding keys of its own (`multibox:`).
+(`font:`, `background:` and the rest below, `type:` (see
+[Work and present](presenting.md)), and a deck's `time:`, `paging:` and
+`transition:`) and one holding keys of its own (`multibox:`).
 
 ```markdown
 ---

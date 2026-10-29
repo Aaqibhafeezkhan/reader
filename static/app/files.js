@@ -14,6 +14,7 @@ import { renderNow, showPreview, showEmpty } from './render.js';
 import { scheduleGutter } from './lines.js';
 import { setSaveState, updateCounts, toast } from './status.js';
 import { updatePresentable } from './deck.js';
+import { openIn } from './modes.js';
 import { folderView, filtered, findGroup, groupOf, hasFolder, dirOf, splitPath } from './versions.js';
 import { branch, rename, trash, promote } from './manage.js';
 import { drawOutline, entryKey, pickKey } from './outline.js';
@@ -384,6 +385,8 @@ export async function open(p) {
     el.editor.disabled = false;
     el.editor.scrollTop = 0;
     el.editor.setSelectionRange(0, 0);
+    // A workbook opens in Work, slides in Edit, a document as last chosen.
+    openIn(file.text);
     showPreview();
     renderNow({ resetScroll: true });
   }

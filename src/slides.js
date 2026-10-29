@@ -32,23 +32,25 @@
  * `key: value` line there is read and taken out of the notes shown (its
  * `background:` here, its `transition:`, its `at:` and `time:` in pacing.js).
  *
- * The same file is a workbook when it's worked through and not presented
+ * A file is a deck when it says so, with `type: slides` in its front
+ * matter, or `type: workbook`, a deck worked through rather than presented
  * (`pages`): each slide a page of the document, at the size it's written.
+ * Without a type it's a document, whatever `---` breaks or notes it has.
  */
 
 import { render, renderNotes, titleOf } from './render.js';
 import { readNotes, plan, planEnd, duration } from './pacing.js';
 import { readBackground, liftBackground } from './background.js';
 import { readTransition, liftTransition } from './transition.js';
-import { frontMatter, fenced } from '../static/markdown.js';
+import { frontMatter, fenced, typeOf } from '../static/markdown.js';
 import { matterEntry } from './page.js';
 
 const SEPARATOR = /^---[ \t]*$/;
 const NOTE = /<!--([\s\S]*?)-->/g;
 
-/** Is there a slide break in `src` after its front matter? */
+/** Is `src` a deck, `type: slides` or `type: workbook`, rather than a document? */
 export function isDeck(src) {
-  return split(src).slides.length > 1;
+  return typeOf(split(src).meta) !== 'document';
 }
 
 export function slides(src, { file, read } = {}) {

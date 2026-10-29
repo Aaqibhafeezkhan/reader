@@ -58,6 +58,19 @@ export function frontMatter(lines, { entry } = {}) {
   return { end: close + 1, meta, entries };
 }
 
+const TYPES = ['slides', 'workbook'];
+
+/**
+ * What a document says it is, by `type:` in its front matter `meta`:
+ * `slides`, to present; `workbook`, a packet to fill in a page at a time;
+ * or, without one of those, a `document`. What it does follows from that,
+ * and nothing is guessed from its `---` breaks or its speaker notes.
+ */
+export function typeOf(meta) {
+  const type = String(meta?.type ?? '').trim().toLowerCase();
+  return TYPES.includes(type) ? type : 'document';
+}
+
 function unquote(v) {
   return /^(["']).*\1$/.test(v) ? v.slice(1, -1) : v;
 }

@@ -124,9 +124,11 @@ test('a title alone in its row leaves no empty row behind', () => {
   assert.equal(body.match(/<div class="gm-|<div class="slide-|<div>/g).length, body.match(/<\/div>/g).length);
 });
 
-test('isDeck needs a break after the front matter', () => {
-  assert.equal(isDeck(DECK), true);
-  assert.equal(isDeck('---\ntitle: x\n---\n\n# just a note\n'), false);
+test('isDeck goes by type:, not by --- or notes', () => {
+  assert.equal(isDeck(DECK), false);
+  assert.equal(isDeck(`---\ntype: slides\n${DECK.slice(4)}`), true);
+  assert.equal(isDeck('---\ntype: Workbook\n---\n\n# One page\n'), true);
+  assert.equal(isDeck('---\ntype: notes\n---\n\n# One\n\n---\n\n# Two\n'), false);
   assert.equal(isDeck('# a note\n\nwith prose\n'), false);
 });
 

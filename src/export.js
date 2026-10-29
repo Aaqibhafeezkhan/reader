@@ -17,6 +17,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { render, titleOf } from './render.js';
+import { typeOf } from '../static/markdown.js';
 import { isDeck, pages } from './slides.js';
 import { LIGHT_COLOURS } from './columns.js';
 import { escapeHtml, escapeAttr } from '../features/source.js';
@@ -112,13 +113,13 @@ ${body.includes('class="gm-bg"') ? INK : ''}</body>
 
 /**
  * Which way a deck's sheets are turned: as `print:` says, `portrait` or
- * `landscape`; else landscape for slides to present, which have speaker
- * notes, and portrait for a packet to fill in, which hasn't.
+ * `landscape`; else landscape for `type: slides`, and portrait for a
+ * workbook, a packet to fill in.
  */
-function orientation(text, meta) {
+function orientation(meta) {
   const said = meta.print?.toLowerCase();
   if (['portrait', 'landscape'].includes(said)) return said;
-  return /<!--/.test(text) ? 'landscape' : 'portrait';
+  return typeOf(meta) === 'slides' ? 'landscape' : 'portrait';
 }
 
 /**
@@ -129,7 +130,7 @@ function deck(text, { file, read, drawn }) {
   const { css, meta, pages: list } = pages(text, { file, read, drawn, lines: false, exported: true });
   if (!list.length) return null;
   return {
-    css: `${css}${PAGES_CSS}@page numbered { size: ${orientation(text, meta)}; }\n`,
+    css: `${css}${PAGES_CSS}@page numbered { size: ${orientation(meta)}; }\n`,
     body: list.map((p) => `<div class="gm-page">\n${p.body.trim()}\n</div>`).join('\n'),
     title: titleOf(meta, file),
   };

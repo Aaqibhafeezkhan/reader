@@ -102,14 +102,14 @@ export default [
   // (its own, the puzzles' and the features') are classic scripts sharing
   // `window.Preview` and `window.Puzzles`, Mermaid's `window.mermaid`, and
   // `window.Ink` (ink.js) and `window.Tone` (tone.js). The app and the speaker view have `window.Theme`
-  // (theme.js) and `window.Overview` (overview.js); the app and the preview
+  // (theme.js), `window.Frames` (frames.js) and `window.Overview` (overview.js); the app and the preview
   // frame `window.Spoken` (spoken.js).
   {
     files: ['static/app/*.js', 'static/edits.js'],
-    languageOptions: { sourceType: 'module', globals: { ...globals.browser, Theme: 'readonly', Overview: 'readonly', Spoken: 'readonly' } },
+    languageOptions: { sourceType: 'module', globals: { ...globals.browser, Theme: 'readonly', Frames: 'readonly', Overview: 'readonly', Spoken: 'readonly' } },
   },
   {
-    files: ['static/preview-api.js', 'static/preview.js', 'static/ink.js', 'static/theme.js', 'static/speaker.js', 'static/overview.js', 'static/spoken.js', 'static/views.js', 'static/awake.js', 'static/tone.js', ...FRAME],
-    languageOptions: { sourceType: 'script', globals: { ...globals.browser, Preview: 'readonly', Puzzles: 'readonly', mermaid: 'readonly', Ink: 'readonly', Tone: 'readonly', Theme: 'readonly', Overview: 'readonly', Spoken: 'readonly' } },
+    files: ['static/preview-api.js', 'static/preview.js', 'static/ink.js', 'static/theme.js', 'static/frames.js', 'static/speaker.js', 'static/overview.js', 'static/spoken.js', 'static/views.js', 'static/awake.js', 'static/tone.js', ...FRAME],
+    languageOptions: { sourceType: 'script', globals: { ...globals.browser, Preview: 'readonly', Puzzles: 'readonly', mermaid: 'readonly', Ink: 'readonly', Tone: 'readonly', Theme: 'readonly', Frames: 'readonly', Overview: 'readonly', Spoken: 'readonly' } },
   },
 ];

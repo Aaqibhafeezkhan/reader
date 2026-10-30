@@ -12,7 +12,7 @@
  * every other window of the app's.
  */
 (() => {
-  const frames = () => [...document.querySelectorAll('iframe')].map((f) => f.contentWindow);
+  const frames = () => [...document.querySelectorAll('iframe')];
 
   /**
    * One list, kept in storage at `key`: `ask` and `set` are the messages a
@@ -29,11 +29,12 @@
         return kept;
       }
     };
-    const tell = (frame) => frame?.postMessage(told(list()), '*');
+    const tell = (frame) => Frames.post(frame, told(list()));
 
     window.addEventListener('message', (e) => {
-      if (!frames().includes(e.source)) return;
-      if (e.data?.type === ask) tell(e.source);
+      const from = frames().find((f) => f.contentWindow === e.source);
+      if (!from) return;
+      if (e.data?.type === ask) tell(from);
       else if (e.data?.type === set && typeof e.data.key === 'string') {
         kept = put(list(), e.data).slice(0, most);
         try {

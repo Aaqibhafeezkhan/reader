@@ -110,7 +110,7 @@ function topOf(n) {
 export function sendScroll() {
   sending = 0;
   if (leader !== 'editor' || !synced() || !shown()) return;
-  el.preview.contentWindow.postMessage({ type: 'scroll', line: lineAt(el.editor.scrollTop) }, '*');
+  Frames.post(el.preview, { type: 'scroll', line: lineAt(el.editor.scrollTop) });
 }
 
 /** The page was scrolled to `line`: the editor follows. */

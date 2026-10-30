@@ -41,7 +41,7 @@
     window.parent.postMessage({ type: 'view', key, value }, '*');
   });
   window.addEventListener('message', (e) => {
-    if (e.source !== window.parent || e.data?.type !== 'viewed' || typeof e.data.views !== 'object') return;
+    if (!Preview.fromApp(e) || e.data?.type !== 'viewed' || typeof e.data.views !== 'object') return;
     views = e.data.views ?? {};
     show(document);
   });

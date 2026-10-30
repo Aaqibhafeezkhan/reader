@@ -17,7 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createContent, DOC_EXTS } from './content.js';
 import { exportHtml } from './export.js';
-import { createServer } from './server.js';
+import { createServer, listenFrames } from './server.js';
 import { findBrowser, openBrowser } from './browser.js';
 
 const USAGE = `usage: reader export <file>... [--out <file>] [--no-draw]
@@ -54,9 +54,11 @@ export async function main(argv) {
     if (!browser) {
       warn('no Chrome or Chromium found (set CHROME_PATH): diagrams are left as their text');
     } else {
-      const { server } = createServer({ root });
+      const made = createServer({ root });
+      const { server } = made;
       await new Promise((r) => server.listen(0, '127.0.0.1', r));
       try {
+        await listenFrames(made);
         const page = await openBrowser(browser, `http://127.0.0.1:${server.address().port}/`);
         draw = page.drawn;
         stop = async () => {

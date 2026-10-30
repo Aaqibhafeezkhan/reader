@@ -29,6 +29,12 @@
  *     diagram): a slide is fitted again then, and a measurement of it
  *     waits for it.
  *
+ *   Preview.fromApp(e)
+ *     Whether a message is the app's: from the page around the frame, at
+ *     one of the app's origins, which the server names in the frame's
+ *     `<meta name="app">` as its `frame-ancestors` does. What the frame
+ *     sends goes to `'*'`: its policy lets nothing but the app frame it.
+ *
  *   Preview.deck
  *     Whether a slide is showing, when clicks and keys drive the deck.
  *
@@ -59,6 +65,7 @@
  *     marked `closed`; when it changes, `preview:closed` is sent.
  */
 (() => {
+  const APP = (document.querySelector('meta[name="app"]')?.content ?? '').split(/\s+/).filter(Boolean);
   const hooks = [];
   const pending = new Set();
   // The edits asked for in this turn, under their options, in the order asked.
@@ -82,6 +89,7 @@
     stowed.clear();
   };
   window.Preview = {
+    fromApp: (e) => e.source === window.parent && APP.includes(e.origin),
     deck: false,
     get workable() {
       return workable;

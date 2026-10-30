@@ -26,9 +26,19 @@
  *
  * Nor another site's page: a request it makes says so (Sec-Fetch-Site), and
  * one for the API or a file of the user's is refused (`foreign`), and every
- * response but those the preview needs says it's for this origin only
- * (Cross-Origin-Resource-Policy), for a browser that doesn't say. Else a page
- * anywhere could load a note's .js as a script and read what it set.
+ * response but a note's images, which the preview shows, says it's for this
+ * origin only (Cross-Origin-Resource-Policy), for a browser that doesn't say.
+ * Else a page anywhere could load a note's .js as a script and read what it set.
+ *
+ * The preview frames have an origin of their own, apart from the app's, which
+ * serves what a frame loads and nothing else: preview.html, its scripts and
+ * styles, and the scripts features draw into it (`serveFrame`). At a loopback
+ * name it's `frames.localhost` on the app's own port, told apart by Host:
+ * another site, so another process and other cookies. Where that name can't be
+ * had (Safari asks the system, which doesn't know it; the app opened by a
+ * network name), it's a second listener, `frames`, on a port of its own: the
+ * same site as the app, so it would be sent the app's cookies. The app must
+ * never use cookies. The page finds out which it can have (static/frames.js).
  *
  * Files from the content directory are served sandboxed: an HTML or SVG file
  * there, opened from a link in a note, would otherwise run its scripts as
@@ -95,6 +105,14 @@ const PREVIEW_SCRIPTS = served('preview').map(([src]) => `<script src="${src}"><
 
 const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]']);
 
+// The preview frames' name, on the app's port. Chromium and Electron take any
+// .localhost name as this machine, without asking DNS.
+export const FRAME_HOST = 'frames.localhost';
+
+// What the frames' origin serves of static/ besides preview.html: what it names.
+const PREVIEW_HTML = path.join(STATIC_DIR, 'preview.html');
+const FRAME_FILES = new Set([...fs.readFileSync(PREVIEW_HTML, 'utf8').matchAll(/\s(?:src|href)="(\/[^"]+)"/g)].map((m) => m[1]));
+
 // What each field of a request's body must be, when it's there at all.
 const FIELDS = {
   text: 'string', path: 'string', name: 'string', from: 'string', to: 'string', base: 'string', trash: 'string',
@@ -118,11 +136,13 @@ function decode(part) {
 // file of the app's own. The preview may take inline styles, since the
 // rendered document brings its own (the theme, a ::: block's colors, an
 // image's size), and images from anywhere a note points; it fetches
-// nothing, and only the app may frame it. Neither the app nor the speaker
-// view may be framed at all. The page a document is printed from takes the
-// exported file written into it, which brings its styles and images inline
-// and runs nothing.
-const POLICY = (directives) => Object.entries(directives).map(([k, v]) => `${k} ${v}`).join('; ');
+// nothing, and only the app may frame it, from the frames' own origin
+// (`frame-ancestors` and `base-uri` there name the app's). Neither the app
+// nor the speaker view may be framed at all; they frame the preview from its
+// origin, and may ask whether its name answers (`framing`). The page a
+// document is printed from takes the exported file written into it, which
+// brings its styles and images inline and runs nothing.
+const POLICY = (directives) => Object.entries(directives).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join('; ');
 const LOCKED = {
   'default-src': "'none'",
   'base-uri': "'none'",
@@ -130,7 +150,7 @@ const LOCKED = {
   'object-src': "'none'",
 };
 const PAGE_POLICIES = {
-  'index.html': POLICY({
+  'index.html': {
     ...LOCKED,
     'script-src': "'self'",
     'style-src': "'self'",
@@ -140,36 +160,36 @@ const PAGE_POLICIES = {
     'frame-src': "'self'",
     'worker-src': "'self'",
     'frame-ancestors': "'none'",
-  }),
-  'speaker.html': POLICY({
+  },
+  'speaker.html': {
     ...LOCKED,
     'script-src': "'self'",
     'style-src': "'self'",
     'img-src': "'self' data:",
-    'frame-src': "'self'",
     'frame-ancestors': "'none'",
-  }),
-  'preview.html': POLICY({
+  },
+  // At the frames' origin, where `base-uri` (a note's links and images
+  // resolve from the app's content directory) and `frame-ancestors` are the
+  // app's origins (serveFrame).
+  'preview.html': {
     ...LOCKED,
-    // A note's links and images resolve from the content directory.
-    'base-uri': "'self'",
     'script-src': "'self'",
     'style-src': "'self' 'unsafe-inline'",
     'img-src': '* data: blob:',
     'font-src': "'self' data:",
-    'frame-ancestors': "'self'",
-  }),
-  'print.html': POLICY({
+    'frame-ancestors': "'none'",
+  },
+  'print.html': {
     ...LOCKED,
     'style-src': "'unsafe-inline'",
     'img-src': 'data:',
     'font-src': 'data:',
     'frame-ancestors': "'self'",
-  }),
+  },
 };
 
 // Any other page runs nothing and can't be framed.
-const UNLISTED_PAGE = POLICY({ ...LOCKED, 'frame-ancestors': "'none'" });
+const UNLISTED_PAGE = { ...LOCKED, 'frame-ancestors': "'none'" };
 
 // A script in the content directory is served as text, never to be run: no
 // page loads one, and any page could otherwise run it and read what it set.
@@ -178,11 +198,12 @@ const CONTENT_TYPES = { ...TYPES, '.js': TYPES['.txt'], '.mjs': TYPES['.txt'] };
 // Whether a request is another site's to refuse. A link followed from
 // anywhere (a message, a bookmark, another device's copy of a line's address)
 // is a top-level visit, which that site can't read, and is let through. The
-// preview frames are sandboxed, with no origin of their own, so everything
-// they load is cross-site too, with no Referer to tell it from anyone else's:
-// the app's own scripts and styles, which hold nothing of the user's, and a
-// note's images. What's refused is the rest: the API, and the user's files
-// asked for by anything but a visit or an image.
+// preview frames are another origin, and sandboxed besides, so what they ask
+// of the app is cross-site, or same-site from the frames' port, with no
+// Referer to tell it from anyone else's: all they need of it is a note's
+// images. What's refused is the rest: the API, and the user's files asked
+// for by anything but a visit or an image. The frames' own files are their
+// origin's, never the app's.
 function foreign(req, route) {
   const meta = (name) => req.headers[`sec-fetch-${name}`];
   if ([undefined, 'none', 'same-origin'].includes(meta('site'))) return false;
@@ -198,37 +219,90 @@ function foreign(req, route) {
 // and a PDF can't reach the API anyway.
 const CONTENT_SANDBOX = { 'Content-Security-Policy': 'sandbox' };
 
-/** `now` is the clock a record is judged by. */
+/**
+ * `now` is the clock a record is judged by. `server` is the app; `frames`,
+ * the preview frames' second port, listens once it does (`listenFrames`), and
+ * closes with it.
+ */
 export function createServer({ root, allowHosts = [], now = Date.now }) {
   const content = createContent(root);
   const hosts = new Set([...LOOPBACK, ...allowHosts.map((h) => h.toLowerCase())]);
 
-  const server = http.createServer(async (req, res) => {
+  const listener = (handler) => http.createServer(async (req, res) => {
     // For this origin only, unless what's sent is for the preview (`open`).
     res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
     try {
-      await handle(req, res);
+      await handler(req, res);
     } catch (err) {
       const status = err.status || 500;
       if (status === 500) console.error(err);
       sendJson(res, { error: err.message, mtime: err.mtime }, status);
     }
   });
+  const server = listener(handle);
+  const frames = listener((req, res) => {
+    if (!hosts.has(nameOf(req))) return send(res, 403, 'forbidden host', 'text/plain');
+    return serveFrame(open(res), req, 'port');
+  });
+  server.on('close', () => frames.close());
+
+  // The frames' port is as far from the app's as the browser sees them as it
+  // is here, so both can be published elsewhere together (Docker's -p).
+  const apart = () => (frames.address()?.port ?? 0) - server.address().port;
+
+  // Where the preview frames are for a page of the app's at `req`: `name`, at
+  // a loopback name only, and `port`.
+  function framesFor(req) {
+    const host = nameOf(req);
+    const port = portOf(req);
+    return {
+      name: LOOPBACK.has(host) ? `http://${FRAME_HOST}:${port}` : null,
+      port: `http://${host}:${port + apart()}`,
+    };
+  }
+
+  // The app's origins, which alone may frame a preview served at `req`.
+  // Not [::1], which a policy can't name: the app sends it on to 127.0.0.1.
+  function appFor(req, via) {
+    if (via === 'name') return ['127.0.0.1', 'localhost'].map((name) => `http://${name}:${portOf(req)}`);
+    return [`http://${nameOf(req)}:${portOf(req) - apart()}`];
+  }
+
+  // What a preview frame loads, from the frames' own origin, `via` its name
+  // or its port; nothing else is there. Opaque frames load it too, so it goes
+  // without CORP.
+  function serveFrame(res, req, via) {
+    if (!['GET', 'HEAD'].includes(req.method)) return send(res, 405, 'method not allowed', 'text/plain');
+    const route = routeOf(req);
+    if (route === '/preview.html') {
+      const app = appFor(req, via).join(' ');
+      const html = fs.readFileSync(PREVIEW_HTML, 'utf8')
+        .replace('<!-- scripts -->', PREVIEW_SCRIPTS)
+        .replace('<!-- app -->', `<meta name="app" content="${app}">`);
+      const policy = { ...PAGE_POLICIES['preview.html'], 'base-uri': app, 'frame-ancestors': app };
+      return send(res, 200, html, TYPES['.html'], { 'Content-Security-Policy': POLICY(policy) });
+    }
+    if (FEATURE_SCRIPTS.has(route)) return sendFile(res, FEATURE_SCRIPTS.get(route));
+    if (FRAME_FILES.has(route)) return sendFile(res, path.join(STATIC_DIR, route.slice(1)));
+    return send(res, 404, 'not found', 'text/plain');
+  }
 
   // A puzzle's board kept in a file of its own, read from the content root.
   const read = (rel) => content.read(rel).text;
 
   async function handle(req, res) {
-    const host = (req.headers.host || '').replace(/:\d+$/, '').toLowerCase();
+    const host = nameOf(req);
+    if (host === FRAME_HOST) return serveFrame(open(res), req, 'name');
     if (!hosts.has(host)) return send(res, 403, 'forbidden host', 'text/plain');
 
-    let url;
-    try {
-      url = new URL(req.url, 'http://localhost');
-    } catch {
-      throw badRequest('malformed address');
-    }
+    const url = urlOf(req);
     const route = url.pathname;
+    // The same machine, by the one loopback name a policy can't name; by
+    // localhost, which is ::1 too, when that's all that's listened on.
+    if (host === '[::1]') {
+      const to = server.address().address === '::1' ? 'localhost' : '127.0.0.1';
+      return send(res, 307, '', 'text/plain', { Location: `http://${to}:${portOf(req)}${route}${url.search}` });
+    }
     if (foreign(req, route)) return send(res, 403, 'cross-site request refused', 'text/plain');
 
     if (req.method === 'GET' || req.method === 'HEAD') {
@@ -238,7 +312,6 @@ export function createServer({ root, allowHosts = [], now = Date.now }) {
       if (route === '/api/tree') return sendJson(res, { files: content.list() });
       if (route === '/api/file') return sendJson(res, content.read(url.searchParams.get('path')));
       if (route === '/api/export') return sendExport(res, url.searchParams.get('path') || '');
-      if (FEATURE_SCRIPTS.has(route)) return sendFile(open(res), FEATURE_SCRIPTS.get(route));
       if (route.startsWith('/content/')) {
         const rel = decode(route.slice('/content/'.length));
         const { abs } = content.statFile(rel);
@@ -247,7 +320,7 @@ export function createServer({ root, allowHosts = [], now = Date.now }) {
         if (type.startsWith('image/')) open(res);
         return send(res, 200, fs.readFileSync(abs), type, ext === '.pdf' ? {} : CONTENT_SANDBOX);
       }
-      return serveStatic(open(res), route);
+      return serveStatic(res, route);
     }
 
     if (!['POST', 'PUT'].includes(req.method)) return send(res, 405, 'method not allowed', 'text/plain');
@@ -319,20 +392,72 @@ export function createServer({ root, allowHosts = [], now = Date.now }) {
     if (path.relative(STATIC_REAL, fs.realpathSync.native(abs)).split(path.sep).join('/') !== rel) {
       return send(res, 404, 'not found', 'text/plain');
     }
-    const csp = PAGE_POLICIES[rel] ?? (path.extname(rel) === '.html' ? UNLISTED_PAGE : undefined);
-    const policy = csp ? { 'Content-Security-Policy': csp } : {};
-    if (rel === 'preview.html') {
-      const html = fs.readFileSync(abs, 'utf8').replace('<!-- scripts -->', PREVIEW_SCRIPTS);
-      return send(res, 200, html, TYPES['.html'], policy);
+    // The frames' own origin's, never the app's.
+    if (rel === 'preview.html') return send(res, 404, 'not found', 'text/plain');
+    if (rel === 'index.html' || rel === 'speaker.html') {
+      const { name, port } = framesFor(res.req);
+      const html = fs.readFileSync(abs, 'utf8')
+        .replace('<!-- frames -->', `<meta name="frames"${name ? ` data-name="${name}"` : ''} data-port="${port}">`);
+      return send(res, 200, html, TYPES['.html'], { 'Content-Security-Policy': POLICY(framing(PAGE_POLICIES[rel], name, port)) });
     }
-    return sendFile(res, abs, policy);
+    const csp = PAGE_POLICIES[rel] ?? (path.extname(rel) === '.html' ? UNLISTED_PAGE : undefined);
+    return sendFile(res, abs, csp ? { 'Content-Security-Policy': POLICY(csp) } : {});
   }
 
-  return { server, content };
+  return { server, frames, content };
 }
 
-// What a sandboxed preview frame loads, which a browser counts as another
-// origin's: the app's own files, and a note's images.
+/**
+ * Listens `frames` (from createServer) beside `server`, once that listens, at
+ * the same address: on `port`, or 0 for any; and, `anyPort`, on any that's
+ * free when `port` isn't. Resolves to the port it's on.
+ */
+export function listenFrames({ server, frames }, port = 0, { anyPort = false } = {}) {
+  const { address } = server.address();
+  return new Promise((resolve, reject) => {
+    const listening = () => {
+      frames.off('error', failed);
+      resolve(frames.address().port);
+    };
+    const failed = (err) => {
+      if (anyPort && port !== 0 && err.code === 'EADDRINUSE') {
+        port = 0;
+        frames.listen(0, address);
+        return;
+      }
+      frames.off('listening', listening);
+      frames.off('error', failed);
+      reject(err);
+    };
+    frames.once('listening', listening);
+    frames.on('error', failed);
+    frames.listen(port > 65535 ? 0 : port, address);
+  });
+}
+
+// The page with its frames: they may come from the frames' origin, by `name`
+// or by `port`, and the name may be asked whether it answers.
+function framing(policy, name, port) {
+  const and = (have, ...more) => [have, ...more].filter(Boolean).join(' ');
+  return { ...policy, 'frame-src': and(policy['frame-src'], name, port), 'connect-src': and(policy['connect-src'], name) };
+}
+
+// The name a request is addressed to, less its port, and the port.
+const nameOf = (req) => (req.headers.host || '').replace(/:\d+$/, '').toLowerCase();
+const portOf = (req) => Number((req.headers.host || '').match(/:(\d+)$/)?.[1] ?? 80);
+
+function urlOf(req) {
+  try {
+    return new URL(req.url, 'http://localhost');
+  } catch {
+    throw badRequest('malformed address');
+  }
+}
+
+const routeOf = (req) => urlOf(req).pathname;
+
+// What a frame loads that a browser counts as another origin's: the frames'
+// own files, to the opaque frames, and a note's images.
 function open(res) {
   res.removeHeader('Cross-Origin-Resource-Policy');
   return res;

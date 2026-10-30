@@ -6,6 +6,8 @@
 <title>speaker view</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🎤</text></svg>">
 <script src="/theme.js"></script>
+<!-- frames -->
+<script src="/frames.js"></script>
 <link rel="stylesheet" href="/speaker.css">
 <link rel="stylesheet" href="/overview.css">
 </head>
@@ -13,13 +15,13 @@
   <main id="speaker">
     <section class="now">
       <div class="label">Now</div>
-      <div class="screen"><iframe id="now" src="/preview.html" title="Current slide" tabindex="-1" sandbox="allow-scripts"></iframe></div>
+      <div class="screen"><iframe id="now" data-preview title="Current slide" tabindex="-1" sandbox="allow-scripts"></iframe></div>
     </section>
     <section class="next">
       <div>
         <div class="label">Next</div>
         <div class="screen">
-          <iframe id="next" src="/preview.html" title="Next slide" tabindex="-1" sandbox="allow-scripts"></iframe>
+          <iframe id="next" data-preview title="Next slide" tabindex="-1" sandbox="allow-scripts"></iframe>
           <div class="end" id="end" hidden>End of the deck</div>
         </div>
       </div>

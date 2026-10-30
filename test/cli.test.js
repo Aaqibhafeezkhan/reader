@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import http from 'node:http';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
@@ -33,7 +34,18 @@ test('the address printed is the one listened on', async () => {
   const { url, stop } = await start('--host', '::1', '--port', '0');
   try {
     assert.match(url, /^http:\/\/\[::1\]:\d+\/$/);
-    assert.equal((await fetch(url + 'api/tree')).status, 200);
+    // Sent on to a name a policy can name, which is ::1 too.
+    const port = new URL(url).port;
+    const res = await fetch(url + 'api/tree?x=1', { redirect: 'manual' });
+    assert.equal(res.status, 307);
+    assert.equal(res.headers.get('location'), `http://localhost:${port}/api/tree?x=1`);
+    const status = await new Promise((resolve, reject) => {
+      http.get({ host: '::1', port, path: '/api/tree', headers: { Host: `localhost:${port}` } }, (r) => {
+        r.resume();
+        resolve(r.statusCode);
+      }).on('error', reject);
+    });
+    assert.equal(status, 200);
   } finally {
     await stop();
   }
@@ -87,6 +99,9 @@ test('an argument it doesn\'t know is refused, saying which', () => {
     [['--port', '-1'], /--port must be a number/],
     [['-p', '80a'], /--port must be a number/],
     [['--port=1.5'], /--port must be a number/],
+    [['--frame-port', 'x'], /--frame-port must be a number/],
+    [['--frame-port'], /--frame-port must be a number/],
+    [['--port', '9000', '--frame-port=9000'], /--port and --frame-port must differ/],
     [[path.join(root, 'a.md')], /not a directory: .*a\.md/],
     [[path.join(root, 'missing')], /not a directory: .*missing/],
   ];
@@ -137,6 +152,57 @@ test('a --port given that is busy is refused, not moved on from', async () => {
     const out = run(dir(), '--no-browser', '--port', String(port));
     assert.equal(out.status, 1);
     assert.match(out.stderr, new RegExp(`port ${port} is busy; pick another with --port`));
+  } finally {
+    held.close();
+  }
+});
+
+/** Where the page at `url` is told its frames are, by name and by port. */
+async function framesAt(url) {
+  const html = await (await fetch(url)).text();
+  const meta = /<meta name="frames"(?: data-name="([^"]+)")? data-port="([^"]+)">/.exec(html);
+  return { name: meta[1], port: meta[2] };
+}
+
+test('the frames\' port is up by the time the address is printed: the one after the app\'s, or the one asked for (gh-206)', async () => {
+  const held = await hold(0);
+  const { port: free } = held.address();
+  held.close();
+  for (const [args, want] of [[['--port', '0'], (p) => p + 1], [['--port', '0', '--frame-port', String(free)], () => free]]) {
+    const { url, stop } = await start(...args);
+    try {
+      const at = Number(new URL(url).port);
+      const { name, port } = await framesAt(url);
+      assert.equal(name, `http://frames.localhost:${at}`);
+      assert.equal(port, `http://127.0.0.1:${want(at)}`);
+      assert.equal((await fetch(`${port}/preview.html`)).status, 200, args.join(' '));
+    } finally {
+      await stop();
+    }
+  }
+});
+
+test('a --frame-port given that is busy is refused; the one after the app\'s, when busy, moves to one free', async () => {
+  const held = await hold(0);
+  const { port } = held.address();
+  try {
+    const out = run(dir(), '--no-browser', '--port', '0', '--frame-port', String(port));
+    assert.equal(out.status, 1);
+    assert.match(out.stderr, new RegExp(`port ${port} is busy; pick another with --frame-port`));
+    if (port > 1) {
+      const app = await hold(port - 1);
+      if (app) {
+        app.close();
+        const { url, stop } = await start('--port', String(port - 1));
+        try {
+          const frames = (await framesAt(url)).port;
+          assert.notEqual(Number(new URL(frames).port), port);
+          assert.equal((await fetch(`${frames}/preview.html`)).status, 200);
+        } finally {
+          await stop();
+        }
+      }
+    }
   } finally {
     held.close();
   }

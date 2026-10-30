@@ -24,7 +24,7 @@ export function whenReady(frame, { signal } = {}) {
         resolve();
       }
     };
-    const ping = () => frame.contentWindow?.postMessage({ type: 'ping' }, '*');
+    const ping = () => Frames.post(frame, { type: 'ping' });
     signal?.addEventListener('abort', () => done.abort(), { once: true });
     window.addEventListener('message', heard, { signal: done.signal });
     frame.addEventListener('load', ping, { signal: done.signal });
@@ -55,7 +55,7 @@ export async function renderNow({ resetScroll = false } = {}) {
   // A deck being worked through shows the one page it's turned to.
   const page = setPages(out.pages, path);
   await state.previewReady;
-  el.preview.contentWindow.postMessage({
+  Frames.post(el.preview, {
     type: 'render',
     css: out.css,
     body: page ? page.body : out.body,
@@ -65,7 +65,7 @@ export async function renderNow({ resetScroll = false } = {}) {
     lines: el.editor.value.split('\n').length,
     // drawn in the app's theme, unless its own background says otherwise
     dark: Theme.dark(),
-  }, '*');
+  });
   // What's above may have grown or shrunk; put the page back level.
   if (!resetScroll) sendScroll();
 }

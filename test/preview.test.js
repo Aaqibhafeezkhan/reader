@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { render } from '../src/render.js';
 import { slides } from '../src/slides.js';
-import { preview, app, globals, frame, run, settle } from './dom.js';
+import { APP, preview, app, globals, frame, run, settle } from './dom.js';
 
 const BASE = 'http://localhost:8734/content/notes/';
 
@@ -14,6 +14,16 @@ function showing(markdown, m = {}) {
   const link = (text) => [...p.document.querySelectorAll('a')].find((a) => a.textContent === text);
   return { ...p, link };
 }
+
+test('the frame takes what the app sends, and nothing from another origin or another window (gh-206)', () => {
+  const p = preview();
+  p.send({ type: 'render', css: '', body: '<p>from elsewhere</p>' }, { origin: 'http://evil.example' });
+  p.send({ type: 'render', css: '', body: '<p>from the frames themselves</p>' }, { origin: 'http://frames.localhost:8734' });
+  p.window.dispatchEvent(new p.window.MessageEvent('message', { data: { type: 'render', css: '', body: '<p>from a child</p>' }, source: {}, origin: APP }));
+  assert.doesNotMatch(p.document.body.innerHTML, /from/);
+  p.show('<p>from the app</p>');
+  assert.match(p.document.body.innerHTML, /from the app/);
+});
 
 test('a relative link or image is to the file in the content directory, and no further up than its top', () => {
   const { document, link } = showing([

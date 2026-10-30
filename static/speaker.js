@@ -21,7 +21,7 @@ function whenReady(frame) {
     window.addEventListener('message', (e) => {
       if (e.source === frame.contentWindow && e.data?.type === 'ready') resolve();
     });
-    const ping = () => frame.contentWindow?.postMessage({ type: 'ping' }, '*');
+    const ping = () => Frames.post(frame, { type: 'ping' });
     frame.addEventListener('load', ping);
     ping();
   });
@@ -37,13 +37,13 @@ const shown = { now: -1, next: -1 };
 async function show(name, i, reveal) {
   await ready[name];
   const slide = deck.slides[i];
-  const frame = $(name).contentWindow;
-  if (shown[name] === i && slide) return frame.postMessage({ type: 'reveal', reveal, scale: deck.scale }, '*');
+  const frame = $(name);
+  if (shown[name] === i && slide) return Frames.post(frame, { type: 'reveal', reveal, scale: deck.scale });
   shown[name] = i;
-  frame.postMessage({
+  Frames.post(frame, {
     type: 'render', css: deck.css, body: slide ? slide.body : '', title: deck.title, base: deck.base, resetScroll: true,
     deck: true, reveal, dim: name === 'now', dark: Theme.dark(), scale: deck.scale,
-  }, '*');
+  });
 }
 
 function draw({ fresh = false } = {}) {

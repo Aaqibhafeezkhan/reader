@@ -32,7 +32,7 @@
     window.parent.postMessage({ type: 'pick', key }, '*');
   });
   window.addEventListener('message', (e) => {
-    if (e.source !== window.parent || e.data?.type !== 'picked' || !Array.isArray(e.data.keys)) return;
+    if (!Preview.fromApp(e) || e.data?.type !== 'picked' || !Array.isArray(e.data.keys)) return;
     picked = e.data.keys;
     show(document);
   });

@@ -148,9 +148,9 @@ export async function showSlide({ render = true, transition, say } = {}) {
   await deck.stageReady;
   if (!deck.open || deck.index !== i) return;
   if (say) say = { ...say, index: i, reveal: deck.reveal };
-  el.stage.contentWindow.postMessage(render
+  Frames.post(el.stage, render
     ? { type: 'render', css: deck.css, body: slide.body, title: deck.title, base: baseFor(state.current.path), resetScroll: true, deck: true, reveal: deck.reveal, transition, dark: Theme.dark(), scale: deck.scale, say }
-    : { type: 'reveal', reveal: deck.reveal, scale: deck.scale, say }, '*');
+    : { type: 'reveal', reveal: deck.reveal, scale: deck.scale, say });
   el.deckCount.textContent = paging(i);
   // Said aloud as it changes, the slide's number and how far into it; and
   // what showed, once the stage says (revealed).
@@ -352,7 +352,7 @@ function sizeKey(e) {
  */
 function resize(scale) {
   deck.scale = scale;
-  el.stage.contentWindow.postMessage({ type: 'reveal', reveal: deck.reveal, scale }, '*');
+  Frames.post(el.stage, { type: 'reveal', reveal: deck.reveal, scale });
   deck.channel?.postMessage({ type: 'scale', scale });
   overview?.redraw();
   el.deckSays.textContent = `Text ${Math.round(scale * 100)}%`;
@@ -384,7 +384,7 @@ export function deckKey(e, { overview: toOverview = true } = {}) {
     // reach while presenting.
     case 'Tab':
       el.stage.focus();
-      el.stage.contentWindow.postMessage({ type: 'tab', back: e.shiftKey }, '*');
+      Frames.post(el.stage, { type: 'tab', back: e.shiftKey });
       break;
     default: return false;
   }

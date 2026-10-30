@@ -92,7 +92,7 @@ async function draw({ css, body }, p) {
   frame.sandbox = 'allow-scripts';
   frame.tabIndex = -1;
   frame.setAttribute('aria-hidden', 'true');
-  frame.src = '/preview.html';
+  Frames.load(frame);
   let heard;
   const gone = new AbortController();
   try {
@@ -104,8 +104,8 @@ async function draw({ css, body }, p) {
       setTimeout(() => reject(new Error('its diagrams took too long to draw')), DRAW_TIMEOUT);
       document.body.append(frame);
       whenReady(frame, { signal: gone.signal }).then(() => {
-        frame.contentWindow.postMessage({ type: 'render', css, body, base: baseFor(p), resetScroll: true }, '*');
-        frame.contentWindow.postMessage({ type: 'drawn' }, '*');
+        Frames.post(frame, { type: 'render', css, body, base: baseFor(p), resetScroll: true });
+        Frames.post(frame, { type: 'drawn' });
       });
     });
   } finally {

@@ -59,6 +59,7 @@ in a `::: tabs` block, its `+++ Source` and `+++ Rendered` tabs.
 | `features/mark.js`, `features/color.js` | a mark, words circled, underlined or highlighted, as styles draws one (`[quick]{circle}`) and asides does (`~a[quick]`); and the colours an author names, in the family's hue for each, as marks and an aside's key draw them |
 | `features/fence.js` | what goes with a code fence, after it: its `output` fence and the notes on its marked lines, as highlight draws them and a layout keeps them in the fence's pane |
 | `features/names.js` | the colour and generic font names CSS knows, for a style's `{red georgia}` and the front matter's `background:` and `font:` |
+| `features/scheme.js` | short links, `scheme:path[label]`, as each scheme's feature declares one (`scripture:`, `rfc:`, `gh:`, `yt:`, ...): read in the text, and as the URL of a `[text](...)` link or a `![alt](...)` image, which shows what the scheme has to show, or else links |
 | `features/asides/` | asides: lifted out of the source (`preprocess.js`), who they're from and what they're about (`key.js`), each a note in the page's margin, its cell drawn by the feature (`index.js`) and styled (`asides.css`), and the words they choose, marked last of all (`marks.js`, the feature's `late` plugin) and tied to them by a line (`preview.js`) |
 | `features/puzzles/` | puzzle fences: found and wrapped (`index.js`), drawn, played and posted back in the preview (`preview.js`) |
 | `features/puzzles/kinds/` | one file per kind of puzzle; a file here is a fence name |

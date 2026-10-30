@@ -144,7 +144,7 @@ export function applyEdit({ edits, undo = false, drawn = false }, { fromStage = 
     t.setSelectionRange(selectionStart, selectionEnd);
     // The keyboard goes back to the page, on the box it ticked.
     if (had && had !== t && had !== document.body) had.focus({ preventScroll: true });
-    if (had === el.preview) el.preview.contentWindow.postMessage({ type: 'refocus' }, '*');
+    if (had === el.preview) Frames.post(el.preview, { type: 'refocus' });
   } else {
     t.setRangeText(change.text, change.start, change.end);
     if (drawn) {

@@ -28,7 +28,7 @@ export function goToLine(line, { focus = true } = {}) {
   t.setSelectionRange(start, start);
   setAt(n, { goto: true });
   if (state.working) {
-    el.preview.contentWindow.postMessage({ type: 'scroll', line: n }, '*');
+    Frames.post(el.preview, { type: 'scroll', line: n });
     return;
   }
   if (focus) t.focus({ preventScroll: true });

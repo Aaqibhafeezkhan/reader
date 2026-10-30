@@ -6,10 +6,12 @@
  *
  *   page(html)            a page of `html`, a whole document or what goes in its body
  *   file('static/x.html') a page of one of reader's own
- *   app()                 the app's page, with what its <head> runs (theme.js, spoken.js, overview.js)
+ *   app()                 the app's page, with what its <head> runs (theme.js, frames.js, spoken.js, overview.js)
+ *   frames(window)        runs frames.js, the frames' origin taken as known (FRAMES), so nothing is asked
  *   run(window, ...files) runs reader's scripts in the page, as its <script>s would
  *   frame(html)           a page in a frame: `posted` is what it sends the page
- *                         around it, `send` sends it something from there
+ *                         around it, `send` sends it something from there,
+ *                         from the app's origin (`APP`) unless told another
  *   settle()              the end of the turn, when the edits a page holds go up
  *   preview()             the preview frame as the server serves it, every feature's
  *                         script in it: `show(body)` draws a render, as the app sends one
@@ -41,7 +43,18 @@ export function page(html = '', { url = 'http://localhost:8734/' } = {}) {
 
 export const file = (path, opts) => page(read(path), opts);
 
-export const app = (opts) => run(file('static/index.html', opts), 'static/theme.js', 'static/spoken.js', 'static/overview.js');
+export const app = (opts) => run(frames(run(file('static/index.html', opts), 'static/theme.js')), 'static/spoken.js', 'static/overview.js');
+
+// Where the preview frames are, by name, for a page at APP.
+export const FRAMES = 'http://frames.localhost:8734';
+
+export function frames(window) {
+  const meta = Object.assign(window.document.createElement('meta'), { name: 'frames' });
+  Object.assign(meta.dataset, { name: FRAMES, port: 'http://localhost:8735' });
+  window.document.head.prepend(meta);
+  window.sessionStorage.setItem('reader:frames', 'name');
+  return run(window, 'static/frames.js');
+}
 
 export function run(window, ...files) {
   for (const path of files) vm.runInContext(read(path), window, { filename: path });
@@ -53,17 +66,22 @@ export function run(window, ...files) {
 const immediately = setImmediate;
 export const settle = () => new Promise((resolve) => immediately(resolve));
 
-export function frame(html, opts) {
+// The app's origin, as a frame has it from the server (`<meta name="app">`).
+export const APP = 'http://localhost:8734';
+
+export function frame(html = '', opts) {
   const window = page(html, opts);
+  const app = Object.assign(window.document.createElement('meta'), { name: 'app', content: APP });
+  window.document.head.prepend(app);
   const posted = [];
   const parent = { postMessage: (data) => posted.push(structuredClone(data)) };
   Object.defineProperty(window, 'parent', { value: parent, configurable: true });
-  const send = (data) => window.dispatchEvent(new window.MessageEvent('message', { data, source: parent }));
+  const send = (data, { origin = APP } = {}) => window.dispatchEvent(new window.MessageEvent('message', { data, source: parent, origin }));
   return { window, document: window.document, posted, send };
 }
 
 export function preview(opts = {}) {
-  const f = frame(read('static/preview.html'), { url: 'http://localhost:8734/preview.html', ...opts });
+  const f = frame(read('static/preview.html'), { url: 'http://frames.localhost:8734/preview.html', ...opts });
   run(f.window, 'static/preview-api.js', 'static/spoken.js', 'static/tone.js', ...FEATURES.flatMap((x) => [x.preview ?? []].flat()), 'static/ink.js', 'static/preview.js');
   const show = (body, m = {}) => f.send({ type: 'render', css: '', body, ...m });
   return { ...f, show };

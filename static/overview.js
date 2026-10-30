@@ -145,7 +145,7 @@
       frame.tabIndex = -1;
       frame.setAttribute('aria-hidden', 'true');
       frame.setAttribute('sandbox', 'allow-scripts');
-      frame.src = '/preview.html';
+      Frames.load(frame);
       screen.append(frame);
       fit(frame);
       waiting.set(frame, Number(li.dataset.index));
@@ -154,7 +154,7 @@
     /** Draws again the thumbnails drawn so far, as the deck now draws a slide (at its text size). */
     function redraw() {
       for (const frame of root.querySelectorAll('iframe')) {
-        if (!waiting.has(frame)) frame.contentWindow?.postMessage(draw(Number(frame.closest('li').dataset.index)), '*');
+        if (!waiting.has(frame)) Frames.post(frame, draw(Number(frame.closest('li').dataset.index)));
       }
     }
 
@@ -168,7 +168,7 @@
       for (const [frame, i] of waiting) {
         if (e.source !== frame.contentWindow) continue;
         waiting.delete(frame);
-        if (slides[i]) frame.contentWindow.postMessage(draw(i), '*');
+        if (slides[i]) Frames.post(frame, draw(i));
       }
     });
     window.addEventListener('resize', () => {

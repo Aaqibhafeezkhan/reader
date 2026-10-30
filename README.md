@@ -44,7 +44,7 @@ Without Node, or on a NAS, there's an image for `linux/amd64` and
 `linux/arm64`, serving whatever is mounted at `/docs`:
 
 ```console
-$ docker run --rm -p 127.0.0.1:8734:8734 -v ~/notes:/docs jzheaux/reader
+$ docker run --rm -p 127.0.0.1:8734:8734 -p 127.0.0.1:8735:8735 -v ~/notes:/docs jzheaux/reader
 ```
 
 Reaching it from other devices, a `compose.yaml` and the rest are in

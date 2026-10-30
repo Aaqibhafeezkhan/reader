@@ -95,9 +95,9 @@ function measure(body, path) {
       resolve({ zoom: e.data.zoom, fits: e.data.fits });
     };
     window.addEventListener('message', done);
-    el.measure.contentWindow.postMessage({
+    Frames.post(el.measure, {
       type: 'render', css, body, base: baseFor(path), resetScroll: true, deck: true, reveal: Infinity, measure: id,
-    }, '*');
+    });
   });
 }
 

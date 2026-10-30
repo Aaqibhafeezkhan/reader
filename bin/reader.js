@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- *   reader <dir> [--port 8734] [--no-browser] [--open <file>] [--host <address> --allow-host <name>]
+ *   reader <dir> [--port 8734] [--frame-port 8735] [--no-browser] [--open <file>] [--host <address> --allow-host <name>]
  *   reader export <file>... [--out <file>] [--no-draw]
  *   reader --version
  *
@@ -11,16 +11,20 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-import { createServer } from '../src/server.js';
+import { createServer, listenFrames } from '../src/server.js';
 import { version } from '../src/version.js';
 
-const USAGE = `usage: reader <dir> [--port 8734] [--no-browser] [--open <file>]
-                     [--host <addr> --allow-host <name>]
+const USAGE = `usage: reader <dir> [--port 8734] [--frame-port 8735] [--no-browser]
+                     [--open <file>] [--host <addr> --allow-host <name>]
        reader export <file>... [--out <file>] [--no-draw]
        reader --version
 
   <dir>          the content directory to serve (default: current directory)
   --port <n>     port to listen on (default: 8734, or the next free one)
+  --frame-port <n>
+                 port the preview frames are served on where the browser
+                 can't have them at frames.localhost: Safari, or another
+                 device (default: the port after --port's, or a free one)
   --no-browser   don't open a browser tab
   --open <file>  open this file first (path relative to <dir>)
   --host <addr>  address to listen on (default: 127.0.0.1); 0.0.0.0 for every
@@ -34,7 +38,7 @@ const USAGE = `usage: reader <dir> [--port 8734] [--no-browser] [--open <file>]
 `;
 
 function parseArgs(argv) {
-  const opts = { dir: null, port: null, browser: true, open: null, host: '127.0.0.1', allowHosts: [] };
+  const opts = { dir: null, port: null, framePort: null, browser: true, open: null, host: '127.0.0.1', allowHosts: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '-h' || a === '--help') {
@@ -47,6 +51,10 @@ function parseArgs(argv) {
       opts.port = portNumber(argv[++i]);
     } else if (a.startsWith('--port=')) {
       opts.port = portNumber(a.slice('--port='.length));
+    } else if (a === '--frame-port') {
+      opts.framePort = portNumber(argv[++i]);
+    } else if (a.startsWith('--frame-port=')) {
+      opts.framePort = portNumber(a.slice('--frame-port='.length));
     } else if (a === '--no-browser') {
       opts.browser = false;
     } else if (a === '--open') {
@@ -64,7 +72,10 @@ function parseArgs(argv) {
       fail(`unexpected argument ${a}\n\n${USAGE}`);
     }
   }
-  if (opts.port !== null && (!Number.isInteger(opts.port) || opts.port < 0 || opts.port > 65535)) fail('--port must be a number');
+  for (const [name, port] of [['--port', opts.port], ['--frame-port', opts.framePort]]) {
+    if (port !== null && (!Number.isInteger(port) || port < 0 || port > 65535)) fail(`${name} must be a number`);
+  }
+  if (opts.port !== null && opts.port !== 0 && opts.port === opts.framePort) fail('--port and --frame-port must differ');
   return opts;
 }
 
@@ -111,7 +122,8 @@ if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) fail(`not a director
 const at = EVERYWHERE.has(opts.host) ? '127.0.0.1' : opts.host.includes(':') ? `[${opts.host}]` : opts.host;
 const allowHosts = LOCAL.has(opts.host) || EVERYWHERE.has(opts.host) ? opts.allowHosts : [...opts.allowHosts, at];
 
-const { server, content } = createServer({ root: dir, allowHosts });
+const made = createServer({ root: dir, allowHosts });
+const { server, content } = made;
 
 // Without --port, count up from 8734 so each directory gets its own instance
 // and the URLs stay about the same from run to run.
@@ -136,8 +148,17 @@ server.on('error', (err) => {
 
 server.listen(port, opts.host);
 
-server.on('listening', () => {
+// The preview frames' second port beside it, before the address is printed:
+// the one asked for, or the next after the app's, or else any that's free.
+server.on('listening', async () => {
   const { port } = server.address();
+  try {
+    await listenFrames(made, opts.framePort ?? port + 1, { anyPort: opts.framePort === null });
+  } catch (err) {
+    fail(err.code === 'EADDRINUSE'
+      ? `port ${opts.framePort} is busy; pick another with --frame-port, or leave it off to use a free one.`
+      : err.message);
+  }
   const hash = opts.open ? `#${encodeURIComponent(opts.open)}` : '';
   const url = `http://${at}:${port}/${hash}`;
   const count = content.list().length;

@@ -6,6 +6,8 @@
 <title>reader</title>
 <!-- before the stylesheet, so the page is drawn in the look chosen from the first -->
 <script src="/theme.js"></script>
+<!-- frames -->
+<script src="/frames.js"></script>
 <script src="/spoken.js"></script>
 <script src="/overview.js"></script>
 <link rel="stylesheet" href="/style.css">
@@ -49,7 +51,8 @@
   </nav>
 
   <section class="pane view-pane" id="viewPane">
-    <iframe id="preview" src="/preview.html" title="Rendered document"
+    <!-- data-preview: frames.js points it at the frames' own origin -->
+    <iframe id="preview" data-preview title="Rendered document"
       sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"></iframe>
     <div class="pdf-view" id="pdfView" hidden></div>
     <div class="empty" id="empty" hidden></div>
@@ -108,7 +111,7 @@
 </main>
 
 <div class="deck" id="deck" tabindex="-1" role="dialog" aria-modal="true" aria-label="Slides" hidden>
-  <iframe id="stage" src="/preview.html" title="Slide" tabindex="-1" sandbox="allow-scripts"></iframe>
+  <iframe id="stage" data-preview title="Slide" tabindex="-1" sandbox="allow-scripts"></iframe>
   <div class="deck-notes" id="deckNotes" hidden></div>
   <footer class="deck-foot" id="deckFoot">
     <span class="deck-by"><span id="deckBy"></span><span class="page-done" id="deckDone" hidden></span></span>
@@ -129,7 +132,7 @@
 <div class="toast" id="toast" role="status" hidden></div>
 
 <!-- where each slide is measured, at the speaker view's size; see app/fit.js -->
-<iframe class="measure" id="measure" src="/preview.html" title="" tabindex="-1" aria-hidden="true" sandbox="allow-scripts"></iframe>
+<iframe class="measure" id="measure" data-preview title="" tabindex="-1" aria-hidden="true" sandbox="allow-scripts"></iframe>
 
 <script src="/views.js"></script>
 <script src="/awake.js"></script>

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { file, run } from './dom.js';
+import { file, frames, run } from './dom.js';
 
 /**
  * The speaker view, loaded as speaker.html loads it, on a clock that reads
@@ -23,7 +23,7 @@ function speaker() {
     },
     setInterval() {},
   });
-  run(window, 'static/theme.js', 'static/overview.js', 'static/speaker.js');
+  run(frames(run(window, 'static/theme.js')), 'static/overview.js', 'static/speaker.js');
   const $ = (id) => window.document.getElementById(id);
   const press = (key) => window.dispatchEvent(new window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
   return { now, $, sent, press, window, clock: window.clock, say: (data) => heard({ data }) };
@@ -274,7 +274,7 @@ test("both frames are sent the deck's title", async () => {
     const contentWindow = { postMessage: (m) => sent[name].push(m) };
     Object.defineProperty(window.document.getElementById(name), 'contentWindow', { value: contentWindow, configurable: true });
   }
-  run(window, 'static/theme.js', 'static/overview.js', 'static/speaker.js');
+  run(frames(run(window, 'static/theme.js')), 'static/overview.js', 'static/speaker.js');
   // Each frame says it's ready, as preview.html does.
   for (const name of ['now', 'next']) {
     const source = window.document.getElementById(name).contentWindow;

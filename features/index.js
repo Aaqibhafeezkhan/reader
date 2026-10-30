@@ -31,7 +31,8 @@
  *   order.
  * - `lazy`: the path of a script, or a list of them, served for the preview
  *   frame to load itself, when a page needs it: a big one, say, that most
- *   pages don't.
+ *   pages don't. It's named from the frame's `location`, not its `<base>`,
+ *   which is the app's (CONTRIBUTING.md).
  */
 
 import openUntil from './open-until/index.js';

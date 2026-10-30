@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { page, run } from './dom.js';
+import { frames as framed, page, run } from './dom.js';
 
 /**
  * A page of two preview frames with views.js loaded: `told[i]` is what the
@@ -19,7 +19,7 @@ function app({ stored, storage = true, of = 'viewed' } = {}) {
   if (!storage) {
     Object.defineProperty(window, 'localStorage', { get() { throw new Error('no storage here'); } });
   }
-  run(window, 'static/views.js');
+  run(framed(window), 'static/views.js');
   const ask = (i, data) => window.dispatchEvent(new window.MessageEvent('message', { data, source: frames[i] ?? {} }));
   const latest = (i) => told[i].at(-1)?.[of === 'picked' ? 'keys' : 'views'];
   return { window, told, ask, latest };

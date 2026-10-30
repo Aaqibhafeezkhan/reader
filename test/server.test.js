@@ -4,9 +4,9 @@ import fs from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
-import { createServer } from '../src/server.js';
+import { createServer, listenFrames } from '../src/server.js';
 
-let server, base, root;
+let server, base, root, frames;
 
 before(async () => {
   root = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-srv-'));
@@ -14,9 +14,12 @@ before(async () => {
   fs.writeFileSync(path.join(root, 'page.html'), '<script>fetch("/api/tree")</script>');
   fs.writeFileSync(path.join(root, 'pic.svg'), '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
   fs.writeFileSync(path.join(root, 'doc.pdf'), '%PDF-1.4\n');
-  ({ server } = createServer({ root }));
+  const made = createServer({ root });
+  ({ server } = made);
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   base = `http://127.0.0.1:${server.address().port}`;
+  // The frames' second port.
+  frames = `http://127.0.0.1:${await listenFrames(made)}`;
 });
 
 after(() => server.close());
@@ -211,11 +214,13 @@ test('a script in the content directory is served as text, for this origin only'
   for (const url of ['/api/tree', '/content/page.html', '/content/doc.pdf']) {
     assert.equal((await fetch(base + url)).headers.get('cross-origin-resource-policy'), 'same-origin', url);
   }
-  // What the sandboxed preview loads, which the browser counts as another origin's.
-  fs.writeFileSync(path.join(root, 'dot.png'), Buffer.from('iVBORw0KGgo=', 'base64'));
-  for (const url of ['/preview.js', '/features/qa/preview.js', '/content/dot.png']) {
-    assert.equal((await fetch(base + url)).headers.get('cross-origin-resource-policy'), null, url);
+  // The app's own files are its own; the frames load theirs from their own origin (gh-206).
+  for (const url of ['/', '/app/main.js', '/style.css', '/preview.js', '/frames.js']) {
+    assert.equal((await fetch(base + url)).headers.get('cross-origin-resource-policy'), 'same-origin', url);
   }
+  // What a preview frame, another origin's and opaque besides, loads of the app's: a note's images.
+  fs.writeFileSync(path.join(root, 'dot.png'), Buffer.from('iVBORw0KGgo=', 'base64'));
+  assert.equal((await fetch(base + '/content/dot.png')).headers.get('cross-origin-resource-policy'), null);
 });
 
 test("another site's page can't ask for the API or the user's files, but a link from it opens them", async () => {
@@ -241,9 +246,9 @@ test("another site's page can't ask for the API or the user's files, but a link 
     assert.equal(await ask('/content/doc.pdf', from(site, 'navigate', 'document')), 200, site);
     assert.equal(await ask('/content/doc.pdf', from(site, 'navigate', 'document'), 'HEAD'), 200, site);
   }
-  // The sandboxed preview has no origin, so its scripts, styles and a note's images come cross-site.
-  for (const [url, dest] of [['/preview.js', 'script'], ['/preview.css', 'style'], ['/features/qa/preview.js', 'script'], ['/content/dot.png', 'image']]) {
-    assert.equal(await ask(url, from('cross-site', 'no-cors', dest)), 200, url);
+  // The preview frames are another origin, by name (cross-site) or by port (same-site), and ask for a note's images.
+  for (const site of ['cross-site', 'same-site']) {
+    assert.equal(await ask('/content/dot.png', from(site, 'no-cors', 'image')), 200, site);
   }
   // The app itself, a page typed in, and a client that doesn't say.
   assert.equal(await ask('/content/config.js', from('same-origin', 'no-cors', 'script')), 200);
@@ -253,29 +258,31 @@ test("another site's page can't ask for the API or the user's files, but a link 
 });
 
 test('the preview loads a script for each kind of puzzle and each feature that has one', async () => {
-  const html = await (await fetch(base + '/preview.html')).text();
+  const html = await (await fetch(frames + '/preview.html')).text();
   assert.match(html, /<script src="\/features\/puzzles\/preview\.js"><\/script>/);
   for (const kind of ['sudoku', 'tracks', 'wordsearch', 'coord', 'maze']) {
     assert.match(html, new RegExp(`<script src="/features/puzzles/kinds/${kind}\\.js"></script>`));
-    assert.equal((await fetch(`${base}/features/puzzles/kinds/${kind}.js`)).status, 200);
+    assert.equal((await fetch(`${frames}/features/puzzles/kinds/${kind}.js`)).status, 200);
   }
   // The core comes before the kinds that register with it.
   assert.ok(html.indexOf('/features/puzzles/preview.js') < html.indexOf('/features/puzzles/kinds/'));
   for (const name of ['fields', 'tasks', 'qa']) {
     assert.match(html, new RegExp(`<script src="/features/${name}/preview\\.js"></script>`));
-    const res = await fetch(`${base}/features/${name}/preview.js`);
+    const res = await fetch(`${frames}/features/${name}/preview.js`);
     assert.equal(res.status, 200);
     assert.match(res.headers.get('content-type'), /javascript/);
   }
   assert.doesNotMatch(html, /<!-- scripts -->/);
   // Only the scripts features name are served from there.
   for (const other of ['/features/fields/index.js', '/features/qa/index.js', '/features/index.js', '/features/puzzles/index.js', '/puzzles/sudoku.js']) {
-    assert.equal((await fetch(base + other)).status, 404, other);
+    assert.equal((await fetch(frames + other)).status, 404, other);
   }
+  // Nor from the app, whose page loads none of them.
+  assert.equal((await fetch(`${base}/features/qa/preview.js`)).status, 404);
 });
 
 test('each page says what it may load: its own scripts only, nothing inline', async () => {
-  const policy = async (url) => (await fetch(base + url)).headers.get('content-security-policy');
+  const policy = async (url) => (await fetch((url === '/preview.html' ? frames : base) + url)).headers.get('content-security-policy');
   for (const page of ['/', '/speaker.html', '/preview.html']) {
     const csp = await policy(page);
     assert.match(csp, /default-src 'none'/, page);
@@ -284,24 +291,157 @@ test('each page says what it may load: its own scripts only, nothing inline', as
   }
   assert.match(await policy('/'), /frame-ancestors 'none'/);
   assert.match(await policy('/'), /style-src 'self'(;|$)/);
-  assert.match(await policy('/preview.html'), /frame-ancestors 'self'/);
+  assert.match(await policy('/preview.html'), new RegExp(`frame-ancestors ${base}(;|$)`));
   assert.match(await policy('/preview.html'), /style-src 'self' 'unsafe-inline'/);
   const print = await policy('/print.html');
   assert.match(print, /default-src 'none'/);
   assert.doesNotMatch(print, /script-src/);
   assert.match(print, /style-src 'unsafe-inline'/);
   for (const page of ['index.html', 'speaker.html', 'preview.html', 'print.html']) {
-    const html = await (await fetch(`${base}/${page}`)).text();
+    const html = await (await fetch(`${page === 'preview.html' ? frames : base}/${page}`)).text();
     assert.doesNotMatch(html, /<script>|<script(?![^>]*\bsrc=)[^>]*>|\son[a-z]+=/i, `${page} has no inline script`);
   }
+});
+
+// What the server answers on `port` for `path`, asked by the name `host`.
+const asking = (port, host, path, { method = 'GET', headers = {}, body } = {}) => new Promise((resolve, reject) => {
+  const req = http.request({ host: '127.0.0.1', port, path, method, headers: { Host: host, ...headers } }, (res) => {
+    let text = '';
+    res.setEncoding('utf8');
+    res.on('data', (c) => { text += c; });
+    res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: text }));
+  });
+  req.on('error', reject);
+  req.end(body);
+});
+
+// Where a page of the app's is told its frames are, and what its policy lets it frame and ask.
+async function told(port, host, page) {
+  const { body, headers } = await asking(port, host, page);
+  const meta = /<meta name="frames"(?: data-name="([^"]+)")? data-port="([^"]+)">/.exec(body);
+  const csp = headers['content-security-policy'];
+  const directive = (name) => new RegExp(`(?:^|; )${name} ([^;]*)`).exec(csp)?.[1];
+  return { name: meta[1], port: meta[2], frameSrc: directive('frame-src'), connectSrc: directive('connect-src') };
+}
+
+test('at a loopback name, the app is told its frames are frames.localhost on its own port, else their second port (gh-206)', async () => {
+  const port = server.address().port;
+  const second = new URL(frames).port;
+  for (const name of ['127.0.0.1', 'localhost']) {
+    const app = await told(port, `${name}:${port}`, '/');
+    assert.equal(app.name, `http://frames.localhost:${port}`, name);
+    assert.equal(app.port, `http://${name}:${second}`, name);
+    assert.equal(app.frameSrc, `'self' ${app.name} ${app.port}`, name);
+    // To ask whether the name answers, and nothing more.
+    assert.equal(app.connectSrc, `'self' ${app.name}`, name);
+    const speaker = await told(port, `${name}:${port}`, '/speaker.html');
+    assert.equal(speaker.frameSrc, `${app.name} ${app.port}`, name);
+    assert.equal(speaker.connectSrc, app.name, name);
+  }
+  // At any other name, only the second port, at that name.
+  const lan = createServer({ root, allowHosts: ['my-nas'] });
+  await new Promise((r) => lan.server.listen(0, '127.0.0.1', r));
+  try {
+    const at = lan.server.address().port;
+    const frameAt = await listenFrames(lan);
+    const app = await told(at, `my-nas:${at}`, '/');
+    assert.equal(app.name, undefined);
+    assert.equal(app.port, `http://my-nas:${frameAt}`);
+    assert.equal(app.frameSrc, `'self' http://my-nas:${frameAt}`);
+    assert.equal(app.connectSrc, "'self'");
+    const preview = await asking(frameAt, `my-nas:${frameAt}`, '/preview.html');
+    assert.match(preview.headers['content-security-policy'], new RegExp(`frame-ancestors http://my-nas:${at}(;|$)`));
+    assert.equal((await asking(frameAt, `evil.example:${frameAt}`, '/preview.html')).status, 403);
+  } finally {
+    await new Promise((r) => lan.server.close(r));
+  }
+});
+
+test('the preview frames\' origin, by name or by port, serves what a frame loads and nothing else (gh-206)', async () => {
+  const port = server.address().port;
+  const second = new URL(frames).port;
+  const ways = {
+    name: { at: port, host: `frames.localhost:${port}`, app: `http://127.0.0.1:${port} http://localhost:${port}` },
+    port: { at: second, host: `127.0.0.1:${second}`, app: base },
+  };
+  for (const [via, { at, host, app }] of Object.entries(ways)) {
+    const get = (url, opts) => asking(at, host, url, opts);
+    const preview = await get('/preview.html');
+    assert.equal(preview.status, 200, via);
+    // Only the app may frame it, at either loopback name by name; not [::1], which a policy can't name.
+    const csp = preview.headers['content-security-policy'];
+    assert.match(csp, new RegExp(`frame-ancestors ${app}(;|$)`), via);
+    assert.match(csp, new RegExp(`base-uri ${app};`), via);
+    assert.match(csp, /script-src 'self';/, via);
+    // And it's told the same, to know the app's messages by.
+    assert.match(preview.body, new RegExp(`<meta name="app" content="${app}">`), via);
+    assert.equal((await get('/preview.html', { method: 'HEAD' })).status, 200, via);
+    // Opaque frames load its files too, so they're for anyone.
+    for (const url of ['/preview.js', '/preview.css', '/preview-api.js', '/spoken.js', '/tone.js', '/ink.js',
+      '/features/qa/preview.js', '/features/mermaid/vendor/mermaid.min.js']) {
+      const res = await get(url, { method: 'HEAD' });
+      assert.equal(res.status, 200, `${via} ${url}`);
+      assert.equal(res.headers['cross-origin-resource-policy'], undefined, `${via} ${url}`);
+    }
+    for (const url of ['/', '/index.html', '/speaker.html', '/print.html', '/style.css', '/app/main.js', '/theme.js', '/frames.js',
+      '/views.js', '/vendor/pdf.min.mjs', '/api/tree', '/api/info', '/api/file?path=note.md', '/content/note.md', '/content/pic.svg',
+      '/api/export?path=note.md', '/features/qa/index.js', '/../package.json', '/%2e%2e/package.json']) {
+      assert.equal((await get(url)).status, 404, `${via} ${url}`);
+    }
+    for (const method of ['POST', 'PUT', 'DELETE']) {
+      const res = await get('/api/file', { method, headers: { 'Content-Type': 'application/json' }, body: '{"path":"note.md","text":"x"}' });
+      assert.equal(res.status, 405, `${via} ${method}`);
+    }
+  }
+  assert.notEqual(fs.readFileSync(path.join(root, 'note.md'), 'utf8'), 'x');
+  // A frame's request to the app's API is cross-site by name, same-site by port, and refused either way.
+  for (const [site, origin] of [['cross-site', `http://frames.localhost:${port}`], ['same-site', frames]]) {
+    const headers = { Origin: origin, 'Sec-Fetch-Site': site, 'Sec-Fetch-Mode': 'cors', 'Sec-Fetch-Dest': 'empty' };
+    assert.equal((await asking(port, `127.0.0.1:${port}`, '/api/tree', { headers })).status, 403, site);
+    const put = await asking(port, `127.0.0.1:${port}`, '/api/file', {
+      method: 'PUT', headers: { ...headers, 'Content-Type': 'application/json' }, body: '{"path":"note.md","text":"x"}',
+    });
+    assert.equal(put.status, 403, site);
+  }
+  // The app serves the preview no longer.
+  assert.equal((await fetch(base + '/preview.html')).status, 404);
+});
+
+test('published on other ports, the frames\' port keeps its distance from the app\'s (gh-206)', async () => {
+  const port = server.address().port;
+  const apart = Number(new URL(frames).port) - port;
+  const app = await told(port, 'localhost:9000', '/');
+  assert.equal(app.name, 'http://frames.localhost:9000');
+  assert.equal(app.port, `http://localhost:${9000 + apart}`);
+  const preview = await asking(Number(new URL(frames).port), `localhost:${9000 + apart}`, '/preview.html');
+  assert.match(preview.headers['content-security-policy'], /frame-ancestors http:\/\/localhost:9000(;|$)/);
+});
+
+test('[::1] is sent on to 127.0.0.1, the same port and address, since a policy can\'t name it (gh-206)', async () => {
+  const port = server.address().port;
+  for (const [path, method] of [['/', 'GET'], ['/#notes/a.md', 'GET'], ['/api/tree?x=1', 'GET'], ['/api/file', 'PUT']]) {
+    const res = await asking(port, `[::1]:${port}`, path, { method });
+    assert.equal(res.status, 307, path);
+    assert.equal(res.headers.location, `http://127.0.0.1:${port}${path.replace(/#.*/, '')}`, path);
+  }
+});
+
+test('the frames\' port closes with the app\'s', async () => {
+  const made = createServer({ root });
+  await new Promise((r) => made.server.listen(0, '127.0.0.1', r));
+  await listenFrames(made);
+  assert.ok(made.frames.listening);
+  await new Promise((r) => made.server.close(r));
+  assert.equal(made.frames.listening, false);
 });
 
 test('a page is served only by its own name, so no spelling of it comes without its policy', async () => {
   for (const url of ['/PREVIEW.HTML', '/Preview.html', '/INDEX.HTML', '/Speaker.html', '/APP/main.js']) {
     const res = await fetch(base + url);
     assert.equal(res.status, 404, url);
+    assert.equal((await fetch(frames + url)).status, 404, url);
   }
-  assert.equal((await fetch(base + '/preview.html')).status, 200);
+  assert.equal((await fetch(frames + '/preview.html')).status, 200);
 });
 
 test('a request addressed to another host is refused, unless the server was started with its name', async () => {

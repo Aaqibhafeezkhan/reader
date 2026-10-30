@@ -28,7 +28,9 @@
   function load() {
     loaded ??= new Promise((done, failed) => {
       const script = document.createElement('script');
-      script.src = '/features/mermaid/vendor/mermaid.min.js';
+      // The frame's own origin, from its location: a bare path would resolve
+      // against the frame's <base>, the app's /content/, where it isn't.
+      script.src = new URL('/features/mermaid/vendor/mermaid.min.js', location.href).href;
       script.onload = () => {
         done();
       };

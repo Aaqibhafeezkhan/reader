@@ -11,7 +11,7 @@
 import { app, BrowserWindow, Menu, dialog, shell } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
-import { createServer } from '../src/server.js';
+import { createServer, listenFrames } from '../src/server.js';
 import { load, save, ports, remember, forget } from './folders.js';
 
 const DOCS = 'https://jzheaux.github.io/reader/';
@@ -81,11 +81,17 @@ async function openFolder(dir) {
     return;
   }
 
-  const { server } = createServer({ root: dir });
+  const made = createServer({ root: dir });
+  const { server } = made;
   let port;
   try {
     port = await listen(server, ports(load(settings()), dir));
+    // The frames are frames.localhost on the folder's own port, which
+    // Electron, as Chromium, takes as this machine; their second port is
+    // only where the name can't be had, so any free one does.
+    await listenFrames(made);
   } catch (err) {
+    if (server.listening) server.close();
     dialog.showErrorBox('Reader', `Couldn't open ${dir}: ${err.message}`);
     return;
   }

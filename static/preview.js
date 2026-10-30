@@ -1,6 +1,7 @@
 /**
- * The preview frame: loaded once, sandboxed (an opaque origin), after
- * preview-api.js and the scripts that use it. The parent posts the rendered
+ * The preview frame: loaded once, from the frames' own origin (frames.js)
+ * and sandboxed (an opaque origin), after preview-api.js and the scripts that
+ * use it. The parent posts the rendered
  * document in and this swaps it into place, keeping the scroll position; it
  * also steps through a slide, scrolls in step with the editor, shows the image
  * an image link points to, and hands the app's shortcuts back up.
@@ -414,7 +415,7 @@
   }
 
   window.addEventListener('message', (e) => {
-    if (e.source !== window.parent) return;
+    if (!Preview.fromApp(e)) return;
     const m = e.data || {};
     if (m.type === 'ping') {
       window.parent.postMessage({ type: 'ready' }, '*');

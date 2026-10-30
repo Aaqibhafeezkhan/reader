@@ -38,14 +38,14 @@ $ reader ~/Documents/notes
 
 Opens <http://127.0.0.1:8734/>. `Ctrl-C` stops it. Nothing leaves your machine.
 
-Run it again on another directory and that one gets the next free port
-(8735, 8736, …), so each directory has its own tab. `--port` asks for one port
-exactly.
+Run it again on another directory and that one gets the next free ports
+(8736, and 8737 for its preview; then 8738, …), so each directory has its own
+tab. `--port` asks for one port exactly.
 
 ## Options
 
 ```console
-$ reader [dir] [--port 8734] [--no-browser] [--open <file>]
+$ reader [dir] [--port 8734] [--frame-port 8735] [--no-browser] [--open <file>]
          [--host <address>] [--allow-host <name>]...
 $ reader export <file>... [--out <file>] [--no-draw]
 $ reader --version
@@ -55,6 +55,13 @@ $ reader --version
 only on `127.0.0.1` and rejects requests addressed to any other host name;
 `--host` and `--allow-host` open it to other devices (below). It rejects
 any path that would leave `dir`, including through symlinks.
+
+The page's preview is served apart from the app, so that what a document
+draws can't reach your files: at `frames.localhost` on the app's port, where
+the browser can have that name, and else on a second port, `--frame-port`,
+by default the one after the app's (or any free one, if that's taken).
+Safari, and a browser on another device, use the second port, so a firewall
+or a container that lets the first through has to let the second through too.
 
 `reader export` saves documents as HTML; see [Export and print](exporting.md).
 

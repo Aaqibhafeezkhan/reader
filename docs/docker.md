@@ -15,7 +15,7 @@ Documentation: <https://jzheaux.github.io/reader/>.
 ## Run
 
 ```console
-$ docker run --rm -p 127.0.0.1:8734:8734 -v ~/notes:/docs jzheaux/reader
+$ docker run --rm -p 127.0.0.1:8734:8734 -p 127.0.0.1:8735:8735 -v ~/notes:/docs jzheaux/reader
 ```
 
 Then open <http://localhost:8734/>. `Ctrl-C` stops it.
@@ -27,20 +27,26 @@ Then open <http://localhost:8734/>. `Ctrl-C` stops it.
   whichever port you like: `-p 127.0.0.1:9000:8734` for
   <http://localhost:9000/>. Leaving out `127.0.0.1:` publishes it on every
   address the machine has, so other devices can reach it too.
+- **Port 8735** serves the page's preview, apart from the app, where the
+  browser can't have it at `frames.localhost` on the app's own port: in
+  Safari, and on another device. Publish it beside 8734, one port after
+  wherever that goes: `-p 127.0.0.1:9000:8734 -p 127.0.0.1:9001:8735`.
+  Without it, Chrome and Edge on this machine still work; Safari shows a
+  blank page.
 - **The user** is `node`, uid 1000, not root. A directory mounted from the
   host has to be writable by 1000, or the container run as its owner:
   `--user "$(id -u):$(id -g)"`.
 
 ## From another device
 
-To reach it from other devices, publish the port on every address (`-p
-8734:8734`). reader also answers only requests addressed to `localhost` or
-`127.0.0.1` unless it's told the names other devices reach it by; that guards
-against other web sites, not other devices. Reaching the NAS as `nas.local`,
+To reach it from other devices, publish the ports on every address (`-p
+8734:8734 -p 8735:8735`). reader also answers only requests addressed to
+`localhost` or `127.0.0.1` unless it's told the names other devices reach it
+by; that guards against other web sites, not other devices. Reaching the NAS as `nas.local`,
 or by its address, name each after the image:
 
 ```console
-$ docker run -d --name reader -p 8734:8734 -v /volume1/notes:/docs \
+$ docker run -d --name reader -p 8734:8734 -p 8735:8735 -v /volume1/notes:/docs \
     jzheaux/reader --allow-host nas.local --allow-host 192.168.1.20
 ```
 
@@ -62,6 +68,7 @@ services:
     command: ["--allow-host", "nas.local"]
     ports:
       - "8734:8734"
+      - "8735:8735"
     volumes:
       - /volume1/notes:/docs
     restart: unless-stopped

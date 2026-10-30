@@ -1,6 +1,6 @@
 # reader, serving the directory mounted at /docs:
 #
-#   docker run -p 127.0.0.1:8734:8734 -v ~/notes:/docs jzheaux/reader
+#   docker run -p 127.0.0.1:8734:8734 -p 127.0.0.1:8735:8735 -v ~/notes:/docs jzheaux/reader
 #
 # Options given after the image name are added to the ones here, so
 # `... jzheaux/reader --allow-host nas.local` lets the NAS be reached by name.
@@ -21,7 +21,9 @@ COPY features features
 RUN mkdir /docs && chown node:node /docs
 USER node
 VOLUME /docs
-EXPOSE 8734
+# 8735 serves the preview frames where a browser can't have them at
+# frames.localhost on 8734 (Safari, or another device).
+EXPOSE 8734 8735
 
-ENTRYPOINT ["node", "bin/reader.js", "/docs", "--host", "0.0.0.0", "--port", "8734", "--no-browser"]
+ENTRYPOINT ["node", "bin/reader.js", "/docs", "--host", "0.0.0.0", "--port", "8734", "--frame-port", "8735", "--no-browser"]
 CMD []

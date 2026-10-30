@@ -1,10 +1,11 @@
 /**
  * The preview frame: loaded once, from the frames' own origin (frames.js)
- * and sandboxed (an opaque origin), after preview-api.js and the scripts that
- * use it. The parent posts the rendered
- * document in and this swaps it into place, keeping the scroll position; it
- * also steps through a slide, scrolls in step with the editor, shows the image
- * an image link points to, and hands the app's shortcuts back up.
+ * and sandboxed, after preview-api.js and the scripts that use it. The app's
+ * preview and stage have that origin, for a video's player (index.html); the
+ * other frames' is opaque. The parent posts the rendered document in and this
+ * swaps it into place, keeping the scroll position; it also steps through a
+ * slide, scrolls in step with the editor, shows the image an image link points
+ * to, and hands the app's shortcuts back up.
  */
 (() => {
   const theme = document.getElementById('theme');
@@ -346,6 +347,8 @@
     // Whether the page can be worked, settled before the features put back
     // what they kept: a slide can't be (features/blank.js).
     Preview.workable = !m.deck;
+    // Run, in Work or on a slide, rather than written, in Edit.
+    Preview.running = Boolean(m.deck || m.working);
     // What features and puzzles were in the middle of carries over.
     Preview.replace(document.body, () => {
       // Put together out of the page first, so no image is asked for

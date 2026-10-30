@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { page, run, settle } from './dom.js';
 
 const NAME = 'http://frames.localhost:8791';
@@ -89,4 +90,22 @@ test('a message to a frame goes to its own origin, or to any where it has none (
     window.Frames.post(f, { type: 'ping' });
   }
   assert.deepEqual(sent, ['*', NAME, PORT, '/']);
+});
+
+test('the app\'s preview and stage have the frames\' origin, for a video, and are sent messages there; the rest stay opaque (gh-31)', async () => {
+  const html = fs.readFileSync(new URL('../static/index.html', import.meta.url), 'utf8');
+  const frames = html.match(/<iframe[^>]*data-preview[^>]*><\/iframe>/g).join('');
+  const window = page(`<meta name="frames" data-name="${NAME}" data-port="${PORT}">${frames}`, { url: 'http://127.0.0.1:8791/' });
+  window.fetch = () => Promise.resolve({});
+  run(window, 'static/frames.js');
+  await settle();
+  const sent = {};
+  for (const f of window.document.querySelectorAll('iframe')) {
+    Object.defineProperty(f, 'contentWindow', { value: { postMessage: (m, to) => { sent[f.id] = to; } } });
+    window.Frames.post(f, { type: 'ping' });
+  }
+  assert.deepEqual(sent, { preview: NAME, stage: NAME, measure: '*' });
+  for (const id of ['preview', 'stage']) {
+    assert.match(window.document.getElementById(id).getAttribute('allow'), /^autoplay \*; encrypted-media \*; picture-in-picture \*$/, id);
+  }
 });

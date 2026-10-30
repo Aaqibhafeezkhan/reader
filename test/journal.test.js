@@ -112,11 +112,13 @@ test('Work counts its pages done, by a heading\'s box or a choice made, and stil
   assert.deepEqual(count(filled, CLOSING), { done: 2, of: 12 });
 });
 
-test('its videos are links to them, not images that can\'t load, until they\'re on the page (#31)', () => {
-  const out = drawn(EVENING);
-  const videos = (body) => [...body.matchAll(/<a class="social social-yt" href="https:\/\/www\.youtube\.com\/watch\?v=([\w-]+)">/g)].map(([, id]) => id);
-  assert.equal(videos(out[2]).length, 7);
-  assert.equal(videos(out[2])[0], '-Fy2GxrurO4');
-  assert.equal(videos(out[9]).length, 4);
-  assert.doesNotMatch(out.join('\n'), /<img src="yt:/);
+test('its videos are on the page, each a card to play it from, its choice named for it (#31)', () => {
+  for (const out of [drawn(EVENING), drawn(CLOSING)]) {
+    const videos = (body) => [...body.matchAll(/<span class="video" data-video="([\w-]+)"[^>]*><button type="button" class="video-screen video-play" aria-label="Play ([^"]+)">/g)].map(([, id, name]) => [id, name]);
+    assert.equal(videos(out[2]).length, 7);
+    assert.deepEqual(videos(out[2])[0], ['-Fy2GxrurO4', 'Kirtan · Kirtan Kriya Meditation · Dr Ameeta Gajjar']);
+    assert.equal(videos(out[9]).length, 4);
+    assert.match(out[2], /aria-label="Kirtan · Kirtan Kriya Meditation · Dr Ameeta Gajjar"[^>]*> <span class="video" data-video="-Fy2GxrurO4"/);
+    assert.doesNotMatch(out.join('\n'), /<img src="yt:|youtube-nocookie/);
+  }
 });

@@ -137,11 +137,13 @@ function decode(part) {
 // rendered document brings its own (the theme, a ::: block's colors, an
 // image's size), and images from anywhere a note points; it fetches
 // nothing, and only the app may frame it, from the frames' own origin
-// (`frame-ancestors` and `base-uri` there name the app's). Neither the app
-// nor the speaker view may be framed at all; they frame the preview from its
-// origin, and may ask whether its name answers (`framing`). The page a
-// document is printed from takes the exported file written into it, which
-// brings its styles and images inline and runs nothing.
+// (`frame-ancestors` and `base-uri` there name the app's). It frames one
+// thing itself: YouTube's player, from its no-cookie site, for a video's
+// card (features/social). Neither the app nor the speaker view may be framed
+// at all; they frame the preview from its origin, and may ask whether its
+// name answers (`framing`). The page a document is printed from takes the
+// exported file written into it, which brings its styles and images inline
+// and runs nothing.
 const POLICY = (directives) => Object.entries(directives).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join('; ');
 const LOCKED = {
   'default-src': "'none'",
@@ -177,6 +179,7 @@ const PAGE_POLICIES = {
     'style-src': "'self' 'unsafe-inline'",
     'img-src': '* data: blob:',
     'font-src': "'self' data:",
+    'frame-src': 'https://www.youtube-nocookie.com',
     'frame-ancestors': "'none'",
   },
   'print.html': {

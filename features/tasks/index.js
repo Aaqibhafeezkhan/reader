@@ -36,7 +36,7 @@ import { schemeRule } from '../scheme.js';
 import { workable, shut } from '../blank.js';
 
 const TASK = /^([ \t]*(?:>[ \t]*|~(?![^\s~])[ \t]*|~[^\s~]+[ \t]+)*(?:[-*+]|\d{1,9}[.)])[ \t]+)(?:((?:\[[ xX]\]){1,9})|\(([ xX])\))(?=[ \t]|$)/;
-const NAMED = new Set(['count', 'ingredient_key', 'ingredient_use', 'pitch', 'timer']);
+const NAMED = new Set(['count', 'ingredient_key', 'ingredient_use', 'pitch', 'timer', 'scheme_shown']);
 const HEADING = /^( {0,3}#{1,6}[ \t]+)\[([ xX])\](?=[ \t]|$)/;
 const [OPEN, CLOSE] = MARKS.tasks;
 const PLACED = new RegExp(`${OPEN}(\\d+)${CLOSE}`, 'g');

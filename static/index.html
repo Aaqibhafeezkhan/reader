@@ -51,9 +51,19 @@
   </nav>
 
   <section class="pane view-pane" id="viewPane">
-    <!-- data-preview: frames.js points it at the frames' own origin -->
+    <!-- data-preview: frames.js points it at the frames' own origin.
+         allow-same-origin: YouTube's player, framed in the page for a video's
+         card, won't start in a frame with an opaque origin, and a frame inside
+         this one can have no more than it does (gh-31). It gives the frame the
+         frames' origin, never the app's, so it can't reach this page, take
+         off its own sandbox or ask the API as the app; it keeps its own
+         storage, and messages to it go to that origin, not to any (frames.js).
+         allow: a frame from another origin may autoplay only if each frame
+         around it passes that down, so a card plays on its first press; `*`,
+         since the src is another origin, set once frames.js knows which. -->
     <iframe id="preview" data-preview title="Rendered document"
-      sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"></iframe>
+      allow="autoplay *; encrypted-media *; picture-in-picture *"
+      sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
     <div class="pdf-view" id="pdfView" hidden></div>
     <div class="empty" id="empty" hidden></div>
     <nav class="pages" id="pages" aria-label="Pages" hidden>
@@ -111,7 +121,9 @@
 </main>
 
 <div class="deck" id="deck" tabindex="-1" role="dialog" aria-modal="true" aria-label="Slides" hidden>
-  <iframe id="stage" data-preview title="Slide" tabindex="-1" sandbox="allow-scripts"></iframe>
+  <!-- allow-same-origin and allow: for a video on a slide, as #preview's say -->
+  <iframe id="stage" data-preview title="Slide" tabindex="-1"
+    allow="autoplay *; encrypted-media *; picture-in-picture *" sandbox="allow-scripts allow-same-origin"></iframe>
   <div class="deck-notes" id="deckNotes" hidden></div>
   <footer class="deck-foot" id="deckFoot">
     <span class="deck-by"><span id="deckBy"></span><span class="page-done" id="deckDone" hidden></span></span>

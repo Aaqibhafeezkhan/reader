@@ -150,6 +150,43 @@ Elsewhere, a markdown reader can't load `![alt](yt:...)` as an image, so it show
 - ![The 404](rfc:9110#section-15.5), and [the ticket](gh:jzheaux/reader#196).
 :::
 
+### Videos
+
+`![alt](yt:v/<id>)` puts a YouTube video on the page, from `youtube-nocookie.com`.
+A channel, `![](yt:jzheaux)`, is still a link.
+
+What it is depends on whether the page is being written or run:
+
+| Where | What it is |
+| --- | --- |
+| Edit | a card: the video's thumbnail, the alt text as its caption; press it and the player takes its place and starts |
+| Work, and a slide | YouTube's player from the start, stopped; one press on its own play button plays it, with sound |
+| the overview, the speaker view | the card |
+| an exported page | the card, as a link to the video on YouTube |
+
+In Edit the page is drawn again at each keystroke, so nothing is asked of YouTube's player until the card is pressed, by a click or with Enter or Space; the thumbnail is an image, as any image on the web is.
+Safari won't start a video with sound from a press on the card, so there it starts muted, to be turned up in the player.
+Typing above it while it plays leaves it playing, in a browser that can move it without loading it again (Chrome, Edge and the desktop app); elsewhere it's put back, stopped.
+
+Work and a deck are shown a page or a slide at a time, so YouTube is asked for a video only once its page is turned to.
+A video that's no longer on the page, a line taken out or another slide, stops.
+
+As a radio or task item, the box is named for the video and still records the choice in the file; playing is the video's own business, and writes nothing.
+So a video plays in a record that can no longer be worked (`open-until:`), and on a slide, where boxes can't be ticked.
+
+::: tabs
++++ Source
+```markdown
+- ( ) ![Body scan · 5 minutes](yt:v/FcWl8WgKP8E)
+- ( ) ![Morning stretch](yt:v/w6iG0mNHK28)
+```
++++ Rendered
+- ( ) ![Body scan · 5 minutes](yt:v/FcWl8WgKP8E)
+- ( ) ![Morning stretch](yt:v/w6iG0mNHK28)
+:::
+
+In Edit, Rendered shows two cards; press `⌘.` for Work and each is the player.
+
 A link to an image, `![](photo.jpg)`, is drawn as it always was, and so is a definition's `!term`: `![` starts an image, never a term.
 
 ## Other files

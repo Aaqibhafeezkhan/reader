@@ -435,6 +435,18 @@ test('the frames\' port closes with the app\'s', async () => {
   assert.equal(made.frames.listening, false);
 });
 
+test('the preview may frame YouTube\'s player, from its no-cookie site, and nothing else (gh-31)', async () => {
+  const port = server.address().port;
+  const second = new URL(frames).port;
+  for (const [at, host] of [[port, `frames.localhost:${port}`], [second, `127.0.0.1:${second}`]]) {
+    const csp = (await asking(at, host, '/preview.html')).headers['content-security-policy'];
+    assert.match(csp, /frame-src https:\/\/www\.youtube-nocookie\.com(;|$)/, host);
+  }
+  for (const page of ['/', '/speaker.html']) {
+    assert.doesNotMatch((await fetch(base + page)).headers.get('content-security-policy'), /youtube/, page);
+  }
+});
+
 test('a page is served only by its own name, so no spelling of it comes without its policy', async () => {
   for (const url of ['/PREVIEW.HTML', '/Preview.html', '/INDEX.HTML', '/Speaker.html', '/APP/main.js']) {
     const res = await fetch(base + url);

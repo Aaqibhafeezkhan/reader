@@ -14,7 +14,7 @@
  *     scheme: 'scripture',
  *     path: /[\w/.:-]* /,
  *     link: (path, label) => ({ href, label, attrs?, after? }) | null,
- *     show: (found, alt) => html | null,
+ *     show: (found, alt, env) => html | null,
  *   })
  *
  * The label is markdown, as in any link. `attrs` are more attributes for the
@@ -26,9 +26,12 @@
  * links where `scripture:isaiah/2/1-5[plowshares]` does, its words standing
  * for the brackets. And as markdown's `![alt](photo.jpg)` shows what it links
  * to, so does `![alt](yt:v/…)`, when the scheme has a `show`: what it draws
- * for what `link` found, in the place of the image. A scheme with nothing to
- * show (no `show`, or one that returns null) leaves the link, so nothing
- * breaks; elsewhere, the alt text reads as it's written.
+ * for what `link` found, in the place of the image, given the render's `env`
+ * (an exported page may want it drawn otherwise). It's a `scheme_shown`
+ * token, its words the alt text, for what names a line by what it says (a
+ * task's box). A scheme with nothing to show (no `show`, or one that returns
+ * null) leaves the link, so nothing breaks; elsewhere, the alt text reads as
+ * it's written.
  */
 
 const BEFORE = /[\w\\]/;
@@ -103,9 +106,10 @@ function knowScheme(md, scheme, entry) {
     // links as they'll be drawn, not the short links they were written as.
     md.core.ruler.after('inline', 'scheme_urls', (state) => {
       for (const t of state.tokens) {
-        if (t.type === 'inline' && t.children) t.children = resolve(md, state.Token, t.children);
+        if (t.type === 'inline' && t.children) t.children = resolve(md, state, t.children);
       }
     });
+    md.renderer.rules.scheme_shown = (tokens, i) => tokens[i].meta.html;
   }
   KNOWN.get(md).set(scheme, entry);
 }
@@ -130,7 +134,7 @@ const words = (tokens) => tokens.map((t) => {
 }).join('');
 
 /** An inline token list, its short-link URLs resolved. */
-function resolve(md, Token, tokens) {
+function resolve(md, { Token, env }, tokens) {
   const html = (content, level) => Object.assign(new Token('html_inline', '', 0), { content, level });
   const out = [];
   for (let i = 0; i < tokens.length; i++) {
@@ -153,8 +157,11 @@ function resolve(md, Token, tokens) {
       const hit = lookUp(md, t.attrGet('src') ?? '', t.content);
       if (!hit) { out.push(t); continue; }
       const { found, known } = hit;
-      const shown = known.show?.(found, t.content);
-      if (shown) { out.push(html(shown, t.level)); continue; }
+      const shown = known.show?.(found, t.content, env);
+      if (shown) {
+        out.push(Object.assign(new Token('scheme_shown', '', 0), { content: t.content, meta: { html: shown }, level: t.level }));
+        continue;
+      }
       // Nothing to show: the link, its words the alt text, or the scheme's.
       const open = new Token('link_open', 'a', 1);
       const title = t.attrGet('title');

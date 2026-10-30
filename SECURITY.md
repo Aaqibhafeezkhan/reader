@@ -45,3 +45,12 @@ with no origin of its own, to any. A request a frame makes of the app is
 another site's, or another origin's, and refused but for a document's images.
 The app opened at `[::1]` is sent on to `127.0.0.1`, since a policy can't name
 an IPv6 address.
+
+The preview and the slide frame keep the frames' origin in their sandbox
+(`allow-same-origin`), since YouTube's player, which a video's card frames
+from `www.youtube-nocookie.com` and nothing else, won't start in a frame with
+an opaque origin. That origin is never the app's, so they can't reach the app
+or lift their own sandbox; they have storage of their own. The frames that
+measure a slide, draw the overview and the speaker view, and draw a page's
+diagrams for export keep an opaque origin, and show a video's card, not its
+player.

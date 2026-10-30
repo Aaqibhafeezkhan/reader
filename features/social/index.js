@@ -23,10 +23,15 @@
  * where it goes, out of sight: "@jzheaux on Instagram", read aloud, where
  * the page shows the mark and "@jzheaux". A name that already says its site
  * (`github.com/jzheaux`, `[my GitHub]`) needs no more.
+ *
+ * And `![Body scan](yt:v/FcWl8WgKP8E)` shows the video, a card to play it
+ * from (video.js).
  */
 
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { schemeLinks } from '../scheme.js';
+import { videoCard } from './video.js';
 
 const bare = (name) => name.replace(/^@/, '');
 
@@ -119,6 +124,7 @@ export function social(md) {
           after: site && `<span class="social-site"> on ${site}</span>`,
         };
       },
+      ...(scheme === 'yt' ? { show: videoCard } : {}),
     });
   }
 }
@@ -130,7 +136,7 @@ function mask(icon) {
   return `url("data:image/svg+xml,${encodeURIComponent(svg).replace(/%20/g, ' ').replace(/%2F/g, '/').replace(/%3D/g, '=').replace(/%3A/g, ':')}")`;
 }
 
-const CSS = `${fs.readFileSync(new URL('./social.css', import.meta.url), 'utf8')}${
+const CSS = `${fs.readFileSync(new URL('./social.css', import.meta.url), 'utf8')}${fs.readFileSync(new URL('./video.css', import.meta.url), 'utf8')}${
   Object.entries(SITES).map(([scheme, { icon, color }]) =>
     `a.social-${scheme}::before { --mark: ${mask(icon)};${color ? ` background-color: ${color};` : ''} }`).join('\n')}\n`;
 
@@ -138,4 +144,6 @@ export default {
   name: 'social',
   plugin: social,
   css: CSS,
+  // Drawn into the preview frame, to play a video.
+  preview: fileURLToPath(new URL('./preview.js', import.meta.url)),
 };

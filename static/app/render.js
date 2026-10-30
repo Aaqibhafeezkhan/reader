@@ -63,6 +63,7 @@ export async function renderNow({ resetScroll = false } = {}) {
     base: baseFor(path),
     resetScroll,
     lines: el.editor.value.split('\n').length,
+    working: state.working,
     // drawn in the app's theme, unless its own background says otherwise
     dark: Theme.dark(),
   });

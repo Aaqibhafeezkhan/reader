@@ -38,6 +38,11 @@
  *   Preview.deck
  *     Whether a slide is showing, when clicks and keys drive the deck.
  *
+ *   Preview.running
+ *     Whether the page is being run, in Work or on a slide, rather than
+ *     written, in Edit, where it's drawn again at each keystroke. Each
+ *     render sets it, before the features put back what they kept.
+ *
  *   Preview.workable
  *     Whether the page can be worked here: a blank filled in, a box
  *     ticked, a choice or a date picked, a card marked done, a step lit.

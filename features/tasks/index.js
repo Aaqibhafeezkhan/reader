@@ -236,7 +236,9 @@ function stageBox({ line, stage, lines, stages, name, pictured }) {
  */
 function nameOf(children) {
   // Words other features set apart (a count, an ingredient, a note, a timer) carry theirs too.
-  const words = children.filter((t) => t.type === 'text' || t.type === 'code_inline' || NAMED.has(t.type)).map((t) => t.content);
+  // A line break between them is a space, so two lines don't run together.
+  const words = children.filter((t) => t.type === 'text' || t.type === 'code_inline' || t.type === 'softbreak' || t.type === 'hardbreak' || NAMED.has(t.type))
+    .map((t) => (t.type.endsWith('break') ? ' ' : t.content));
   return unplaced(words.join('')).replace(/\s+/g, ' ').trim();
 }
 

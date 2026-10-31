@@ -206,3 +206,8 @@ test('a box says it\'s a thing to be done, and whether it is, for whatever count
   const tagged = tokens.flatMap((t) => t.children ?? []).filter((t) => t.type === 'task_box').map((t) => t.meta.done);
   assert.deepEqual(tagged, [true, false, false, undefined]);
 });
+
+test('a box\'s name has a space where its words go onto another line', () => {
+  const { body } = render('- ( ) **Navy Day**\n  Kept in the US.\n');
+  assert.match(body, /aria-label="Navy Day Kept in the US\."/);
+});

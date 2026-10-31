@@ -100,6 +100,10 @@
     document.documentElement.style.setProperty('--fit', String(z));
   }
 
+  // Code on the slide, not code kept out of sight for a screen reader, as
+  // a drawn diagram keeps its source (features/mermaid), a pixel wide.
+  const code = () => [...document.querySelectorAll('.gm-doc pre')].filter((pre) => pre.clientWidth > 1);
+
   function fits() {
     const doc = document.querySelector('.gm-doc');
     if (doc.offsetHeight > innerHeight + 1) return false;
@@ -107,7 +111,7 @@
     // wrap, past them.
     const right = doc.getBoundingClientRect().right - parseFloat(getComputedStyle(doc).paddingRight);
     if ([...doc.querySelectorAll('.gm-pair > *')].some((c) => c.getBoundingClientRect().right > right + 1)) return false;
-    return [...doc.querySelectorAll('pre')].every((pre) => pre.scrollWidth <= pre.clientWidth + 1);
+    return code().every((pre) => pre.scrollWidth <= pre.clientWidth + 1);
   }
 
   /** The largest zoom from FLOOR to `top` at which the slide fits, or null. */
@@ -161,7 +165,7 @@
       return;
     }
     let zoom = sized();
-    const wrapped = zoom == null && [...document.querySelectorAll('.gm-doc pre')].some((pre) => pre.scrollWidth > pre.clientWidth + 1);
+    const wrapped = zoom == null && code().some((pre) => pre.scrollWidth > pre.clientWidth + 1);
     if (wrapped) {
       root.classList.add('fit-wrap');
       zoom = sized();

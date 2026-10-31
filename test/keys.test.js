@@ -54,3 +54,15 @@ test('the page hands ⌘⌥↑ and ⌘⌥↓ up, and leaves ⌥↑ and ⌥↓ to
   assert.equal(press({ metaKey: true, altKey: true }), true);
   assert.equal(press({ altKey: true }), false);
 });
+
+test('Return keeps the line\'s indent, and adds none to a line that has none', async () => {
+  // happy-dom has no execCommand, so the edit is made by setRangeText.
+  window.document.execCommand = () => false;
+  el.editor.value = '1) Try it:\n   ```\n   node bin/reader.js';
+  el.editor.setSelectionRange(el.editor.value.length, el.editor.value.length);
+  assert.equal((await pressing('Enter')).taken, true);
+  assert.equal(el.editor.value, '1) Try it:\n   ```\n   node bin/reader.js\n   ');
+  el.editor.setSelectionRange(10, 10);
+  assert.equal((await pressing('Enter')).taken, false);
+  assert.equal((await pressing('Enter', { shiftKey: true })).taken, false);
+});

@@ -12,6 +12,7 @@ title: Keys
 | `⌘P` | print the document, a deck a page to a sheet |
 | `⌘B` `⌘I` `⌘K` | bold, italic, link |
 | `Tab` | indent two spaces |
+| `Return` | a new line, indented as the one before |
 | `Esc`, then `Tab` | leave the editor |
 | `⌘⇧C` | copy the file and line (or lines selected) |
 | `⌃G` | go to a page, a slide, a line (`:340`) or a heading |

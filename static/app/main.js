@@ -255,5 +255,16 @@ function onKey(e) {
   if (e.key === 'Tab' && !leaving && !meta && !e.altKey && el.editor.selectionStart === el.editor.selectionEnd && !e.shiftKey) {
     e.preventDefault();
     replaceSelection('  ');
+    return;
+  }
+  // Enter keeps the line's indent, so a list item's next line, or a code
+  // block's inside it, stays in the item.
+  if (e.key === 'Enter' && !meta && !e.altKey && !e.shiftKey && !e.isComposing) {
+    const t = el.editor;
+    const line = t.value.slice(t.value.lastIndexOf('\n', t.selectionStart - 1) + 1, t.selectionStart);
+    const indent = /^[ \t]*/.exec(line)[0];
+    if (!indent) return;
+    e.preventDefault();
+    replaceSelection(`\n${indent}`);
   }
 }

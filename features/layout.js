@@ -16,7 +16,9 @@
  *   :::
  *
  * A `grid` lays what's in it out in columns instead: a list's items, or
- * else its blocks (features/grid).
+ * else its blocks (features/grid). `cards` draws each of them as a card, a
+ * choice to tap (features/cards), and is a grid's word too: `::: grid 2
+ * cards`.
  *
  * The styles feature reads the fences and leaves each line that's a
  * layout's as a mark of its own: the opening, the mark and the layout's
@@ -30,12 +32,12 @@
 import { isOutput, readNotes } from './fence.js';
 import { MARKS } from './source.js';
 
-export const LAYOUTS = ['columns', 'row', 'tabs', 'compare', 'grid'];
+export const LAYOUTS = ['columns', 'row', 'tabs', 'compare', 'grid', 'cards'];
 
 /**
  * The words a layout reads on its own fence, not styles: `::: row
  * reverse`, a grid's count of columns (`::: grid 2`), and the look of its
- * cells (`cards`, features/grid).
+ * cells, as cards (`::: grid 2 cards`, features/cards).
  */
 export const WORDS = { row: ['reverse'], grid: [/^\d+$/, 'cards'] };
 

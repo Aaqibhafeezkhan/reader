@@ -139,7 +139,7 @@ test('its videos are on the page, each a card to play it from, its choice named 
 
 test('its choices are laid out in grids, two or three across, each still one group to pick from (#44)', () => {
   for (const out of [drawn(EVENING), drawn(CLOSING)]) {
-    const grids = out.map((body) => [...body.matchAll(/<div class="grid grid-items grid-cards" style="--grid: (\d)"[^>]*>\n<ul[^>]*>([\s\S]*?)<\/ul>\n<\/div>/g)]
+    const grids = out.map((body) => [...body.matchAll(/<div class="grid grid-items cards" style="--grid: (\d)"[^>]*>\n<ul[^>]*>([\s\S]*?)<\/ul>\n<\/div>/g)]
       .map(([, n, items]) => [Number(n), items.match(/<li/g).length, new Set(items.match(/name="choice-\d+"/g)).size]));
     // Across, items, and groups: exercise, meditation, body scan, feelings.
     assert.deepEqual(grids[1], [[2, 4, 1]]);
@@ -149,6 +149,25 @@ test('its choices are laid out in grids, two or three across, each still one gro
     assert.equal(grids.flat().length, 4);
     assert.doesNotMatch(out.join('\n'), /'grid'|'\d'|'cards'/, 'neither grid, its count nor its look is a font');
   }
+});
+
+test('its choices are cards: the box over each, the chosen one checked, and shut once it\'s a record (#49)', () => {
+  const cards = (body) => [...body.matchAll(/<div class="grid grid-items cards"[^>]*>\n<ul[^>]*>([\s\S]*?)<\/ul>\n<\/div>/g)].map((m) => m[1]);
+  const evening = drawn(EVENING);
+  // Exercise, meditation, body scan, feelings: every item is a card with its box first in it, to lie over it.
+  assert.deepEqual([1, 2, 9, 11].map((n) => cards(evening[n]).length), [1, 1, 1, 1]);
+  for (const n of [1, 2, 9, 11]) {
+    const items = cards(evening[n])[0].split('<li').slice(1);
+    assert.ok(items.every((item) => /^ class="(?:bg )?task"[^>]*><input type="radio" class="choice-box" name="choice-\d+"/.test(item)), `page ${n + 1}`);
+  }
+  // A video's play button is its own, inside the card; a feeling's closest word is a choice of its own inside it.
+  assert.match(cards(evening[2])[0], /<input type="radio" class="choice-box"[^>]*> <span class="video"[^>]*><button type="button" class="video-screen video-play"/);
+  assert.equal(cards(evening[11])[0].match(/<span class="field"[^>]*role="radiogroup"/g).length, 4);
+  // Picked, its card is the chosen one, and as a record still is, but can't be changed.
+  const filled = JOURNAL.replace('- ( ) **B** · Running', '- (x) **B** · Running');
+  const record = pages(filled, { file: 'journal.md', now: CLOSING }).pages[1].body;
+  assert.match(cards(record)[0], /<input type="radio" class="choice-box"[^>]*checked disabled> <strong>B<\/strong> · Running/);
+  assert.doesNotMatch(cards(drawn(EVENING)[1])[0], /disabled/);
 });
 
 test('how it\'s feeling is a choice of four, each with its own closest word to pick', () => {
@@ -162,9 +181,10 @@ test('how it\'s feeling is a choice of four, each with its own closest word to p
   assert.doesNotMatch(feeling.replace(/<[^>]*>/g, ''), /@ Closest word/, 'none is left as typed');
 });
 
-test('each feeling is tinted its own background, its choice and closest word in it, the evening it\'s filled in and as a record (#47)', () => {
+test('each feeling is a card tinted its own background, its choice and closest word in it, the evening it\'s filled in and as a record (#47)', () => {
   for (const now of [EVENING, CLOSING]) {
     const feeling = drawn(now)[11];
+    assert.match(feeling, /<div class="grid grid-items cards" style="--grid: 2"/);
     const items = [...feeling.matchAll(/<li class="bg task" style="--bg: (\w+)"[^>]*><input type="radio" class="choice-box"[^>]*> <strong>([^<]+)<\/strong>\n<span class="field"/g)]
       .map(([, bg, name]) => [name, bg]);
     assert.deepEqual(items, [

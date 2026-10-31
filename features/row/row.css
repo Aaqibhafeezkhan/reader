@@ -1,0 +1,20 @@
+/* the first block at its own width, the rest beside it, top-aligned; the
+   rest goes under once it hasn't room for a few words beside it */
+.row {
+  display: flex; flex-wrap: wrap; align-items: flex-start;
+  gap: 0.6em 1em; margin: 1rem 0;
+}
+.row-reverse { flex-direction: row-reverse; }
+.row-lead { flex: 0 1 auto; max-width: 50%; min-width: 0; }
+.row-rest { flex: 1 1 10em; min-width: 0; }
+.row-lead > :first-child, .row-rest > :first-child { margin-top: 0; }
+.row-lead > :last-child, .row-rest > :last-child { margin-bottom: 0; }
+/* a cover or a portrait: just the image, as small as it's sized */
+.row-lead > img, .row-lead > a > img { display: block; max-width: 100%; height: auto; }
+.row-lead > a { display: block; }
+/* the lines beside it closer together than paragraphs apart */
+.row-rest > p { margin: 0.2em 0; }
+/* a bar beside it takes the width that's left */
+.row-rest > p:has(> .progress:first-child) { display: flex; align-items: center; gap: 0.4em; }
+.row-rest > p > .progress:first-child { flex: 1; }
+.row-rest > p > .progress:first-child progress { flex: 1; width: auto; min-width: 3em; }

@@ -116,3 +116,6 @@ only the height. A title still goes before it.
 +++ Rendered
 ![a page with a margin](images/page.svg "Asides, beside the text" =320x)
 :::
+
+First in a `::: row`, beside its text, an image is just the image, with no
+caption (see Row in [Layout](layout.md)).

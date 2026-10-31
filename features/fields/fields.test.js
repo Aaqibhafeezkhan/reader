@@ -145,3 +145,18 @@ test('the stylesheet shows a hint only in an empty blank, and keeps it from bein
   const { css } = render('@ A {b}:\n');
   assert.match(css, /\.field-value\[data-hint\]:empty::before \{[^}]*content: attr\(data-hint\) \/ "";/);
 });
+
+test('a field indented under a list item is a field in that item, and keeps its indent when written', () => {
+  const { body } = render('- ( ) **High energy**\n  @ Closest word: ( ) Angry ( ) Anxious\n- [ ] Read\n\n  @ What did you read?:\n');
+  const items = body.split('<li').slice(1);
+  assert.match(items[0], /<span class="field" data-line="1" data-text=" {2}@ Closest word: \( \) Angry \( \) Anxious" data-head=" {2}@ Closest word:" data-choices/);
+  assert.match(items[0], /data-on=" {2}@ Closest word: \(x\) Angry \( \) Anxious"/);
+  assert.match(items[1], /<span class="field" data-line="4" data-text=" {2}@ What did you read\?:" data-head=" {2}@ What did you read\?:"><span class="field-label">What did you read\?<\/span>/);
+});
+
+test('an indented field that isn\'t under a list item\'s text, or is in an indented code block, is left as typed', () => {
+  const { body } = render('- item\n\n        @ Code: x\n\nPara\n  @ Lazy: x\n');
+  assert.doesNotMatch(body, /class="field"/);
+  assert.match(body, /<pre><code> {2}@ Code: x\n<\/code><\/pre>/);
+  assert.match(body, /@ Lazy: x/);
+});

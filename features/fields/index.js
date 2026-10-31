@@ -45,8 +45,8 @@ import { typable, hinted, unfilled, shut } from '../blank.js';
 // A label is any but a colon, though one can be in its hint's braces.
 const BRACED = '\\{[^}\\n]*\\}';
 const LABEL = `(?:${BRACED}|[^:\\n{]|\\{(?![^}\\n]*\\}))*?(?:${BRACED}|[^:\\s{]|\\{(?![^}\\n]*\\}))`;
-const FIELD = new RegExp(`^@[ \\t]+(${LABEL})[ \\t]*(:+)[ \\t]*(.*?)[ \\t]*$`);
-const HEAD = new RegExp(`^@[ \\t]+${LABEL}[ \\t]*:+`);
+const FIELD = new RegExp(`^([ \\t]*)@[ \\t]+(${LABEL})[ \\t]*(:+)[ \\t]*(.*?)[ \\t]*$`);
+const HEAD = new RegExp(`^[ \\t]*@[ \\t]+${LABEL}[ \\t]*:+`);
 const HINT = /^(.*?[^\s])[ \t]*(?<!\\)\{[ \t]*([^}\n]*?[^\s])[ \t]*(?<!\\)\}$/;
 const [OPEN, CLOSE] = MARKS.fields;
 const PLACED = new RegExp(`${OPEN}(\\d+)${CLOSE}`, 'g');
@@ -77,6 +77,22 @@ function inlineFields(line) {
  * The choices in `value`, if that's all it is: `[{ label, checked, on }]`,
  * `on` being `line` as it reads with only that one picked.
  */
+/**
+ * Whether the line at `at` is where a field may start: at the line's start,
+ * or indented into a list item, under the item's own text, as a line of it.
+ */
+function inItem(lines, at) {
+  const indent = lines[at].match(/^[ \t]*/)[0].length;
+  if (!indent) return true;
+  for (let k = at - 1; k >= 0; k--) {
+    const before = lines[k].match(/^([ \t]*)(\S.*)?$/);
+    if (!before?.[2] || before[1].length >= indent) continue;
+    const item = /^(?:[-*+]|\d+[.)])[ \t]+/.exec(before[2]);
+    return Boolean(item) && before[1].length + item[0].length <= indent;
+  }
+  return false;
+}
+
 function choices(line, head, value) {
   if (!value.startsWith('(')) return null;
   const parts = value.split(MARK);
@@ -97,17 +113,18 @@ function choices(line, head, value) {
 export function fields(md) {
   beforeExtract(md, 'field_lines', (state) => {
     const found = [];
-    readLines(state, (line, n) => {
-      if (!FIELD.test(line)) {
+    readLines(state, (line, n, lines, at) => {
+      if (!FIELD.test(line) || !inItem(lines, at)) {
         // Back to front, so each one's place on the line is still as written.
         return inlineFields(line).reduceRight((out, f) => {
           found.push({ ...f, line: n, text: line, inline: true });
           return out.slice(0, f.start) + placeholder(OPEN, CLOSE, found.length - 1) + out.slice(f.end);
         }, line);
       }
-      return line.replace(FIELD, (m, written, colons, value) => {
+      // Its indent stays, so a field under a list item is in that item.
+      return line.replace(FIELD, (m, indent, written, colons, value) => {
         found.push({ line: n, text: line, head: HEAD.exec(line)[0], ...labelled(written), value, lines: colons.length });
-        return placeholder(OPEN, CLOSE, found.length - 1);
+        return indent + placeholder(OPEN, CLOSE, found.length - 1);
       });
     });
     if (found.length) state.env.fields = found;
@@ -125,6 +142,10 @@ export function fields(md) {
       if (picks) t.meta = { ...t.meta, answered: picks.some((c) => c.checked) };
       return t;
     });
+    // An indented code block shows a field as it's written.
+    for (const t of state.tokens) {
+      if (t.type === 'code_block') t.content = t.content.replace(PLACED, (m, k) => found[k].text.trimStart());
+    }
     // One field to a line: the line break after one is the field's own.
     for (const block of state.tokens) {
       if (block.type !== 'inline') continue;

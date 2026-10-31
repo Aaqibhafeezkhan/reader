@@ -154,6 +154,7 @@ Elsewhere, a markdown reader can't load `![alt](yt:...)` as an image, so it show
 
 `![alt](yt:v/<id>)` puts a YouTube video on the page, from `youtube-nocookie.com`.
 A channel, `![](yt:jzheaux)`, is still a link.
+Alone in its paragraph, it's as wide as the paragraph, up to the size YouTube shows it at; in a line of words, a list item or beside another video, it's a smaller card.
 
 What it is depends on whether the page is being written or run:
 

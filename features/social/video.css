@@ -10,6 +10,8 @@
   color: inherit;
   text-decoration: none;
 }
+/* alone in its paragraph (video.js), as wide as the paragraph, to 40rem */
+.video.video-alone { display: block; width: auto; max-width: 40rem; }
 .video-screen {
   position: relative;
   display: block;

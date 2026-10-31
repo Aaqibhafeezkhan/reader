@@ -31,7 +31,7 @@
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { schemeLinks } from '../scheme.js';
-import { videoCard } from './video.js';
+import { videoCard, alone } from './video.js';
 
 const bare = (name) => name.replace(/^@/, '');
 
@@ -143,6 +143,8 @@ const CSS = `${fs.readFileSync(new URL('./social.css', import.meta.url), 'utf8')
 export default {
   name: 'social',
   plugin: social,
+  // A video alone in its paragraph as wide as the page lets it be.
+  html: alone,
   css: CSS,
   // Drawn into the preview frame, to play a video.
   preview: fileURLToPath(new URL('./preview.js', import.meta.url)),

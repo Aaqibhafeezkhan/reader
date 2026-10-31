@@ -6,16 +6,27 @@ import { slides } from '../../src/slides.js';
 import { frame, preview, run, settle } from '../../test/dom.js';
 import { FEATURES } from '../index.js';
 
-const card = (body) => body.match(/<span class="video"[^]*?<\/span><\/span>|<span class="video"[^>]*><button[^]*?<\/button><\/span>/)?.[0];
+const card = (body) => body.match(/<span class="video[" ][^]*?<\/span><\/span>|<span class="video[" ][^>]*><button[^]*?<\/button><\/span>/)?.[0];
 
 test('![alt](yt:v/<id>) is a card: the thumbnail, a button to play it named for the alt, and the alt as its caption', () => {
   const { body } = render('![Body scan · 5 minutes](yt:v/FcWl8WgKP8E)\n');
-  assert.equal(card(body), '<span class="video" data-video="FcWl8WgKP8E" data-title="Body scan · 5 minutes">'
+  assert.equal(card(body), '<span class="video video-alone" data-video="FcWl8WgKP8E" data-title="Body scan · 5 minutes">'
     + '<button type="button" class="video-screen video-play" aria-label="Play Body scan · 5 minutes">'
     + '<img class="video-thumb" src="https://img.youtube.com/vi/FcWl8WgKP8E/hqdefault.jpg" alt=""></button>'
     + '<span class="video-caption">Body scan · 5 minutes</span></span>');
   assert.doesNotMatch(body, /youtube-nocookie|<iframe/, 'nothing of the player until it\'s pressed');
   assert.doesNotMatch(body, /<figure/);
+});
+
+test('alone in its paragraph, it\'s the paragraph\'s width; in words, a list or beside another, the card\'s', () => {
+  const alone = (src, opts) => (render(src, opts).body.match(/class="video[ "][^"]*/g) ?? []).map((c) => c.includes('video-alone'));
+  assert.deepEqual(alone('![Body scan](yt:v/FcWl8WgKP8E)\n'), [true]);
+  assert.deepEqual(alone('::: tabs\n+++ Meditate\n![Body scan](yt:v/FcWl8WgKP8E)\n:::\n'), [true]);
+  assert.deepEqual(alone('![Body scan](yt:v/FcWl8WgKP8E)\n', { exported: true }), [true]);
+  assert.deepEqual(alone('Watch ![Body scan](yt:v/FcWl8WgKP8E) now.\n'), [false]);
+  assert.deepEqual(alone('![Body scan](yt:v/FcWl8WgKP8E) then.\n'), [false]);
+  assert.deepEqual(alone('![a](yt:v/FcWl8WgKP8E) ![b](yt:v/w6iG0mNHK28)\n'), [false, false]);
+  assert.deepEqual(alone('- ( ) ![Body scan](yt:v/FcWl8WgKP8E)\n'), [false]);
 });
 
 test('without alt text it\'s still a video to play, with no caption', () => {

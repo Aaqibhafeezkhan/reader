@@ -33,3 +33,16 @@ export function videoCard(found, alt, env) {
     + `<button type="button" class="video-screen video-play" aria-label="${escapeAttr(`Play ${title}`)}">${thumb}</button>`
     + `${caption}</span>`;
 }
+
+// A paragraph holding one card and nothing else: what's between its first
+// tag and its last has no other card in it.
+const ALONE = /<p((?: [^>]*)?)>(<(span|a) class="video")((?:(?!class="video")[\s\S])*?<\/\3>)<\/p>/g;
+
+/**
+ * A video alone in its paragraph is the paragraph's width, as a picture
+ * alone in one is a figure, up to the size YouTube shows it at; one in a
+ * line of words, a list item or beside another keeps the card's own size.
+ */
+export function alone(html) {
+  return html.replace(ALONE, (m, attrs, open, tag, rest) => `<p${attrs}>${open.replace('class="video"', 'class="video video-alone"')}${rest}</p>`);
+}

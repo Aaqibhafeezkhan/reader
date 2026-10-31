@@ -140,6 +140,8 @@ export function fields(md) {
       if (!found[k]) return null;
       const t = new state.Token(found[k].inline ? 'field_inline' : 'field', 'span', 0);
       t.meta = found[k];
+      // A blank in a sentence reads as what goes there, in a name made of the sentence.
+      if (found[k].inline) t.content = found[k].label;
       // A field of choices is a question (see source.js's tags).
       const picks = !t.meta.inline && choices(t.meta.text, t.meta.head, t.meta.value);
       if (picks) t.meta = { ...t.meta, answered: picks.some((c) => c.checked) };

@@ -1,1 +1,50 @@
 .font { font-family: var(--font), var(--gm-face); }
+
+/* A background an author names (`bg-mistyrose`, index.js), as `--bg`: taken
+ * in OKLCH to a pale ground in the light, at least --gm-bg-l-min light and
+ * at most --gm-bg-c-max vivid, so the page's ink reads on it; and in the
+ * dark to a deep one of the same hue, at most --gm-bg-l-max light, so the
+ * dark page's pale ink does. Not the ink turned over: whatever is written
+ * on it stays the page's. With more contrast asked for, paler, and deeper.
+ * What it comes to is --item-bg, on the element, for a look that draws its
+ * own ground (a grid's cards) to take up; an item without one has none. */
+:root { --gm-bg-l-min: 0.95; --gm-bg-l-max: 1; --gm-bg-c-max: 0.05; }
+:root.gm-dark { --gm-bg-l-min: 0; --gm-bg-l-max: 0.32; --gm-bg-c-max: 0.06; }
+@media (prefers-contrast: more) {
+  :root { --gm-bg-l-min: 0.97; --gm-bg-c-max: 0.03; }
+  :root.gm-dark { --gm-bg-l-min: 0; --gm-bg-l-max: 0.26; --gm-bg-c-max: 0.04; }
+}
+/* A browser without relative colours draws it as it's written in the
+ * light, and a little of it over the paper in the dark. */
+.bg { --item-bg: var(--bg); background: var(--item-bg); }
+:root.gm-dark .bg { --item-bg: color-mix(in srgb, var(--bg) 15%, var(--gm-paper)); }
+@supports (color: oklch(from red clamp(0, l, 1) min(c, 1) h)) {
+  .bg, :root.gm-dark .bg { --item-bg: oklch(from var(--bg) clamp(var(--gm-bg-l-min), l, var(--gm-bg-l-max)) min(c, var(--gm-bg-c-max)) h); }
+}
+li:not(.bg) { --item-bg: initial; }
+
+/* On a span, a highlighter; on a block or a list item, a box, with room
+ * round what's in it and its corners rounded. An item's box takes in its
+ * bullet or checkbox: it's drawn out into the list's margin, where they
+ * sit, and has room to the left of them as round the rest. */
+span.bg { padding: 0 0.15em; border-radius: 0.2em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+div.bg, p.bg, h1.bg, h2.bg, h3.bg, h4.bg, h5.bg, h6.bg, li.bg, td.bg, th.bg {
+  --bg-pad: 0.6em;
+  padding: calc(var(--bg-pad) * 0.7) var(--bg-pad);
+  border-radius: 6px;
+}
+div.bg { margin: 1rem 0; }
+div.bg > :first-child { margin-top: 0; }
+div.bg > :last-child { margin-bottom: 0; }
+:is(ul, ol) > li.bg {
+  --bg-mark: 1.35rem;
+  padding-left: calc(var(--bg-mark) + var(--bg-pad));
+  margin-left: calc(-1 * var(--bg-mark));
+}
+:is(ul, ol) > li.bg + li.bg { margin-top: 0.3em; }
+
+/* In the system's colours, a background gives way to the system's; a line
+ * round it still sets what it holds apart. */
+@media (forced-colors: active) {
+  .bg { border: 1px solid CanvasText; }
+}

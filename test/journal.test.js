@@ -161,3 +161,18 @@ test('how it\'s feeling is a choice of four, each with its own closest word to p
   assert.ok(items.every((item) => /<span class="field-label" id="field-\d+">Closest word<\/span>/.test(item)));
   assert.doesNotMatch(feeling.replace(/<[^>]*>/g, ''), /@ Closest word/, 'none is left as typed');
 });
+
+test('each feeling is tinted its own background, its choice and closest word in it, the evening it\'s filled in and as a record (#47)', () => {
+  for (const now of [EVENING, CLOSING]) {
+    const feeling = drawn(now)[11];
+    const items = [...feeling.matchAll(/<li class="bg task" style="--bg: (\w+)"[^>]*><input type="radio" class="choice-box"[^>]*> <strong>([^<]+)<\/strong>\n<span class="field"/g)]
+      .map(([, bg, name]) => [name, bg]);
+    assert.deepEqual(items, [
+      ['High energy · Unpleasant', 'mistyrose'],
+      ['High energy · Pleasant', 'lemonchiffon'],
+      ['Low energy · Unpleasant', 'lavender'],
+      ['Low energy · Pleasant', 'honeydew'],
+    ]);
+    assert.doesNotMatch(feeling.replace(/<[^>]*>/g, ''), /\{|bg-/, 'no braces are left as typed');
+  }
+});

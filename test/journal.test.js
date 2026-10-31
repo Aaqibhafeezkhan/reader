@@ -39,7 +39,7 @@ test('it says it\'s a workbook: worked a page at a time, its pages the outline\'
 
 test('its fields say what goes in them: a hint, faint in the blank, not part of its label', () => {
   const all = drawn(EVENING).join('\n');
-  const hinted = [...all.matchAll(/<span class="field-label">([^<]*)<\/span><span class="field-value"[^>]* data-hint="([^"]*)"/g)]
+  const hinted = [...all.matchAll(/<span class="field-label[^"]*">([^<]*)<\/span><span class="field-value"[^>]* data-hint="([^"]*)"/g)]
     .map(([, label, hint]) => [label, hint]);
   assert.equal(hinted.length, 13);
   assert.deepEqual(hinted.slice(0, 2), [['What did you do?', 'Only for C'], ['1', 'I\'m grateful for…']]);

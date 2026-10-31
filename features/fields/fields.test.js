@@ -151,7 +151,7 @@ test('a field indented under a list item is a field in that item, and keeps its 
   const items = body.split('<li').slice(1);
   assert.match(items[0], /<span class="field" data-line="1" data-text=" {2}@ Closest word: \( \) Angry \( \) Anxious" data-head=" {2}@ Closest word:" data-choices/);
   assert.match(items[0], /data-on=" {2}@ Closest word: \(x\) Angry \( \) Anxious"/);
-  assert.match(items[1], /<span class="field" data-line="4" data-text=" {2}@ What did you read\?:" data-head=" {2}@ What did you read\?:"><span class="field-label">What did you read\?<\/span>/);
+  assert.match(items[1], /<span class="field" data-line="4" data-text=" {2}@ What did you read\?:" data-head=" {2}@ What did you read\?:"><span class="field-label field-label-stop">What did you read\?<\/span>/);
 });
 
 test('an indented field that isn\'t under a list item\'s text, or is in an indented code block, is left as typed', () => {
@@ -159,4 +159,10 @@ test('an indented field that isn\'t under a list item\'s text, or is in an inden
   assert.doesNotMatch(body, /class="field"/);
   assert.match(body, /<pre><code> {2}@ Code: x\n<\/code><\/pre>/);
   assert.match(body, /@ Lazy: x/);
+});
+
+test('a label that ends in its own stop, as a question does, is marked so it takes no colon', () => {
+  const { body } = render('@ Anything else you learned today?:\n@ Name:\n');
+  assert.match(body, /<span class="field-label field-label-stop">Anything else you learned today\?<\/span>/);
+  assert.match(body, /<span class="field-label">Name<\/span>/);
 });

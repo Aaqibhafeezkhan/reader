@@ -25,6 +25,7 @@
   color: var(--gm-ink-soft);
 }
 .field-label::after { content: ":"; }
+.field-label-stop::after { content: none; }
 /* A rule under each line of the blank, on the page itself, with room round
    what's written on it. */
 .field-value {

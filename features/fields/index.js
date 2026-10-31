@@ -93,6 +93,9 @@ function inItem(lines, at) {
   return false;
 }
 
+/** A label's class: one that ends in its own stop, as a question does, takes no colon. */
+const labelClass = (label) => (/[?!.:…]$/.test(label) ? 'field-label field-label-stop' : 'field-label');
+
 function choices(line, head, value) {
   if (!value.startsWith('(')) return null;
   const parts = value.split(MARK);
@@ -159,7 +162,7 @@ export function fields(md) {
     const picks = choices(text, head, value);
     if (picks) {
       // Its buttons a group, named by its label, and a question.
-      return `${open} data-choices data-answered="${picks.some((c) => c.checked)}" role="radiogroup" aria-labelledby="field-${line}"><span class="field-label" id="field-${line}">${escapeHtml(label)}</span><span class="field-choices">`
+      return `${open} data-choices data-answered="${picks.some((c) => c.checked)}" role="radiogroup" aria-labelledby="field-${line}"><span class="${labelClass(label)}" id="field-${line}">${escapeHtml(label)}</span><span class="field-choices">`
         + picks.map((c) => `<label class="field-choice"><input type="radio" class="choice-box" name="field-${line}"`
           + ` data-on="${escapeAttr(c.on)}"${c.checked ? ' checked' : ''}${shut(env)}> ${escapeHtml(c.label)}</label>`).join('')
         + '</span></span>';
@@ -167,7 +170,7 @@ export function fields(md) {
     const v = escapeHtml(value);
     const tall = lines > 1 ? ` data-lines="${lines}" style="--lines: ${lines}"` : '';
     return `${open}${tall}>`
-      + `<span class="field-label">${escapeHtml(label)}</span>`
+      + `<span class="${labelClass(label)}">${escapeHtml(label)}</span>`
       + `<span class="field-value" data-value="${v}"${typable(label, env)}${hinted(hint, env)}>${v}</span>${unfilled(value, env, hint)}</span>`;
   };
 
@@ -178,7 +181,7 @@ export function fields(md) {
     return `<span class="field field-inline" data-line="${line}" data-text="${escapeAttr(text)}"`
       + ` data-head="${escapeAttr(`[@ ${label}`)}" data-start="${start}" data-end="${end}">`
       + `<span class="field-value" data-value="${v}"${typable(label, env)}>${v}</span>`
-      + `<span class="field-label">${escapeHtml(label)}</span>${unfilled(value, env)}</span>`;
+      + `<span class="${labelClass(label)}">${escapeHtml(label)}</span>${unfilled(value, env)}</span>`;
   };
 }
 

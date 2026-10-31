@@ -1,0 +1,81 @@
+/* cards: a list's items (or the blocks) in one column, each bordered, the
+   chosen one in the accent (features/cards). An item's own background sets
+   --card-bg, which it keeps, chosen or not. */
+.cards { --card-gap: 0.6rem; margin: 1rem 0; }
+.cards > :is(ul, ol) { display: grid; gap: var(--card-gap); margin: 0; padding: 0; list-style: none; }
+/* in a grid, the grid lays them out (features/grid); a card holds its own box, so needs no margin for it */
+.grid.grid-items.cards > :is(ul, ol) > li { margin: 0; }
+.cards > :is(ul, ol) > li, .cards > :is(.card, .grid-cell) {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--gm-rule-strong);
+  border-radius: 8px;
+  background: var(--card-bg, transparent);
+  list-style: none;
+}
+.cards > .card + .card { margin-top: var(--card-gap); }
+.cards > :is(.card, .grid-cell) > :first-child { margin-top: 0; }
+.cards > :is(.card, .grid-cell) > :last-child { margin-bottom: 0; }
+
+/* Its own radio or box lies over the whole card, unseen: a click anywhere on
+   it picks it, and its keyboard ring is the card's. */
+.cards > :is(ul, ol) > li > :is(.choice-box, .task-box) {
+  appearance: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  cursor: pointer;
+}
+.cards > :is(ul, ol) > li > :is(.choice-box, .task-box):focus-visible { outline: 3px solid var(--gm-accent); outline-offset: 2px; }
+/* What takes its own clicks in a card is above that: a link, a video's
+   play button or its player, a field and its choices, a box with stages. */
+.cards > :is(ul, ol) > li :is(a, button, iframe, label, .field) { position: relative; z-index: 2; }
+
+/* a card that can be picked answers the pointer; one on a slide, in a record, doesn't */
+.cards > :is(ul, ol) > li:has(> :is(.choice-box, .task-box):not(:disabled)):hover { border-color: var(--gm-ink-soft); }
+.unworkable .cards > :is(ul, ol) > li > :is(.choice-box, .task-box) { cursor: default; }
+
+/* chosen: the accent's border, heavier, and a light fill, unless it has a ground of its own */
+.cards > :is(ul, ol) > li:has(> .choice-box:checked) {
+  border-color: var(--gm-accent);
+  box-shadow: inset 0 0 0 1px var(--gm-accent);
+  background: var(--card-bg, color-mix(in srgb, var(--gm-accent) 10%, var(--gm-paper)));
+}
+/* a task done: filled, its words faded */
+.cards > :is(ul, ol) > li:has(> .task-box:checked) {
+  background: var(--card-bg, var(--gm-wash));
+  color: var(--gm-ink-done);
+}
+/* and a round badge at the corner of each, a mark on the border */
+.cards > :is(ul, ol) > li:has(> :is(.choice-box, .task-box):checked)::after {
+  content: "✓";
+  position: absolute;
+  top: -0.55rem;
+  right: -0.55rem;
+  z-index: 3;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 50%;
+  background: var(--gm-accent);
+  color: var(--gm-paper);
+  font: 700 0.75rem/1.3rem var(--gm-sans);
+  text-align: center;
+  pointer-events: none;
+}
+.cards > :is(ul, ol) > li:has(> .task-box:checked)::after { background: var(--gm-ink-done); }
+
+@media (forced-colors: active) {
+  .cards > :is(ul, ol) > li, .cards > :is(.card, .grid-cell) { border-color: CanvasText; }
+  .cards > :is(ul, ol) > li:has(> .choice-box:checked) { border-color: Highlight; outline: 2px solid Highlight; outline-offset: -3px; }
+  .cards > :is(ul, ol) > li:has(> :is(.choice-box, .task-box):checked)::after { forced-color-adjust: none; background: Highlight; color: HighlightText; }
+  .cards > :is(ul, ol) > li > :is(.choice-box, .task-box):focus-visible { outline-color: Highlight; }
+}

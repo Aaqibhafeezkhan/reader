@@ -18,8 +18,8 @@
  *
  * The styles feature reads the fences, leaving this block's as the marks in
  * features/layout.js, with the grid's own words (`WORDS`) after the name:
- * its count, and any other, a look for its cells (`cards`), is a class
- * here, `grid-<word>`.
+ * its count, and any other, a look for its cells, is a class here named
+ * as the word is: `cards` draws them as cards (features/cards).
  */
 
 import fs from 'node:fs';
@@ -46,7 +46,7 @@ function rule(state, startLine, endLine, silent) {
   open.map = [startLine, Math.min(end + 1, endLine)];
   // A list alone in it is laid out by its items; they're its cells.
   const items = cells.length === 1 && LIST.includes(cells[0].tokens[0].type);
-  const classes = ['grid', items && 'grid-items', ...own.filter((w) => w !== count).map((w) => `grid-${w}`)];
+  const classes = ['grid', items && 'grid-items', ...own.filter((w) => w !== count)];
   open.attrs = [['class', classes.filter(Boolean).join(' ')]];
   if (Number(count) > 0) open.attrs.push(['style', `--grid: ${Number(count)}`]);
 

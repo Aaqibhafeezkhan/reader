@@ -96,7 +96,7 @@ test('from 4:00 the next morning it\'s a record: each page says so, every box an
   }
   const all = out.join('\n');
   const inputs = all.match(/<input[^>]*>/g);
-  assert.equal(inputs.length, 40);
+  assert.equal(inputs.length, 64);
   assert.ok(inputs.every((i) => / disabled/.test(i)), 'every box and choice is shut');
   assert.doesNotMatch(all, /role="textbox"|data-hint|aria-placeholder|tabindex="0" role="button"|task-reset/, 'nothing to type in, pick or press');
   assert.equal(all.match(/<span class="field-blank">blank<\/span>/g).length, 13, 'its blanks left empty are said to be blank, with no hint');
@@ -121,4 +121,15 @@ test('its videos are on the page, each a card to play it from, its choice named 
     assert.match(out[2], /aria-label="Kirtan · Kirtan Kriya Meditation · Dr Ameeta Gajjar"[^>]*> <span class="video" data-video="-Fy2GxrurO4"/);
     assert.doesNotMatch(out.join('\n'), /<img src="yt:|youtube-nocookie/);
   }
+});
+
+test('how it\'s feeling is a choice of four, each with its own closest word to pick', () => {
+  const feeling = drawn(EVENING)[11];
+  const items = feeling.split('<li').slice(1);
+  assert.equal(items.length, 4);
+  const words = items.map((item) => [...item.matchAll(/<label class="field-choice"><input type="radio" class="choice-box" name="field-\d+"[^>]*> (\w+)<\/label>/g)].map((m) => m[1]));
+  assert.deepEqual(words.map((w) => w.length), [6, 6, 6, 6]);
+  assert.deepEqual(words[3], ['Calm', 'Content', 'Peaceful', 'Relaxed', 'Grateful', 'Serene']);
+  assert.ok(items.every((item) => /<span class="field-label" id="field-\d+">Closest word<\/span>/.test(item)));
+  assert.doesNotMatch(feeling.replace(/<[^>]*>/g, ''), /@ Closest word/, 'none is left as typed');
 });

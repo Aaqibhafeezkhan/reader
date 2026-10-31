@@ -1,6 +1,6 @@
 /**
- * Layouts: `:::` blocks named `columns`, `tabs` or `compare`, which set the
- * blocks in them out as panes -- side by side, or one at a time. Each block
+ * Layouts: `:::` blocks named `columns`, `row`, `tabs` or `compare`, which
+ * set the blocks in them out as panes -- side by side, or one at a time. Each block
  * in one is a pane, unless `+++` lines are written in it; then what's between
  * two is, and a word after the `+++` names the pane that follows:
  *
@@ -17,7 +17,7 @@
  *
  * The styles feature reads the fences and leaves each line that's a
  * layout's as a mark of its own: the opening, the mark and the layout's
- * name; each `+++`, the mark and its label; the closing. A private-use
+ * name, then any of its own words written on the fence (`WORDS`); each `+++`, the mark and its label; the closing. A private-use
  * character each, which markdown passes through untouched and nothing else
  * writes. A layout's rule finds its own opening and splits what's in it
  * into panes with `panes()`.
@@ -26,7 +26,10 @@
 import { isOutput, readNotes } from './fence.js';
 import { MARKS } from './source.js';
 
-export const LAYOUTS = ['columns', 'tabs', 'compare'];
+export const LAYOUTS = ['columns', 'row', 'tabs', 'compare'];
+
+/** The words a layout reads on its own fence, not styles: `::: row reverse`. */
+export const WORDS = { row: ['reverse'] };
 
 export const [OPEN, DIVIDER, CLOSE] = MARKS.layout;
 
@@ -35,7 +38,13 @@ const text = (state, n) => state.src.slice(state.bMarks[n] + state.tShift[n], st
 
 /** Whether `line` of the source opens a `name` layout. */
 export function opens(state, line, name) {
-  return text(state, line) === OPEN + name;
+  const t = text(state, line);
+  return t === OPEN + name || t.startsWith(`${OPEN}${name} `);
+}
+
+/** The layout's own words on the fence that opens at `line` (`WORDS`). */
+export function words(state, line) {
+  return text(state, line).slice(OPEN.length).split(' ').slice(1);
 }
 
 /**

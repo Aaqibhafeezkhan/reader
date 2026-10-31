@@ -58,6 +58,20 @@ test('its to-dos count how many are reviewed, and each book how far it\'s read',
   assert.deepEqual(bars(drawn(CLOSING)[3]), [['0', '10', 'reviewed', '0 of 10']]);
 });
 
+test('each book on the reading page is a row: its cover, small, beside its title and how far it\'s read (#45)', () => {
+  const reading = drawn(EVENING)[8];
+  const rows = [...reading.matchAll(/<div class="row"[^>]*>\n<div class="row-lead"[^>]*><img src="[^"]+" alt="" style="width: 56px"><\/div>\n<div class="row-rest"[^>]*>\n<p[^>]*><strong><a href="[^"]+">([^<]+)<\/a><\/strong> · ([^<]+)<\/p>\n(?:<p[^>]*><span class="progress"><progress value="(\d+)")?/g)]
+    .map(([, title, author, read]) => [title, author, read]);
+  assert.deepEqual(rows, [
+    ['Moral Ambition', 'Rutger Bregman', undefined],
+    ['The Way of Kings', 'Brandon Sanderson', '326'],
+    ['Smart but Scattered', 'Peg Dawson', '22'],
+    ['My Friends', 'Fredrik Backman', '241'],
+    ['The Stranger', 'Albert Camus, Matthew Ward', undefined],
+  ]);
+  assert.doesNotMatch(reading, /<figure|::: row|\*\*/, 'no cover is a figure, and nothing shows as typed');
+});
+
 test('its singing warmup names each note in a button that plays it, the evening it\'s filled in and as a record', () => {
   for (const now of [EVENING, CLOSING]) {
     const warmup = drawn(now)[10];

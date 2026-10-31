@@ -67,6 +67,7 @@ import badges from './badges/index.js';
 import steps from './steps/index.js';
 import ingredients from './ingredients/index.js';
 import columns from './columns/index.js';
+import row from './row/index.js';
 import tabs from './tabs/index.js';
 
 // open-until comes first, so that in the preview frame the page is judged
@@ -74,12 +75,12 @@ import tabs from './tabs/index.js';
 // comes after qa and attributions: a `:::` block marks a line after
 // qa has made it a list item, and after an attribution's dash is marked, as
 // it does any other. highlight comes before puzzles, which wraps the fence
-// rule it finds, as mermaid, headline and number do. columns comes after
-// styles, which leaves it the lines its blocks open and close on. date comes after fields and tasks, so the lines
+// rule it finds, as mermaid, headline and number do. columns and row come after
+// styles, which leaves them the lines their blocks open and close on. date comes after fields and tasks, so the lines
 // they keep are as written, without its marks. tabs comes last, so the
 // words it compares are the ones the others leave as text; only the `late`
 // plugins, which find the words an aside chooses, come after it.
-export const FEATURES = checkRequires([openUntil, asides, fields, tasks, qa, definitions, sizes, alerts, attributions, styles, columns, date, scripture, scriptureLds, search, rfc, pitch, timer, count, progress, social, math, arrows, emoji, highlight, mermaid, headline, number, badges, steps, ingredients, puzzles, tabs]);
+export const FEATURES = checkRequires([openUntil, asides, fields, tasks, qa, definitions, sizes, alerts, attributions, styles, columns, row, date, scripture, scriptureLds, search, rfc, pitch, timer, count, progress, social, math, arrows, emoji, highlight, mermaid, headline, number, badges, steps, ingredients, puzzles, tabs]);
 
 /**
  * Throws unless each feature's `requires` names features in the list that

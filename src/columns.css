@@ -329,6 +329,11 @@ body {
   align-items: start;
 }
 
+/* A cell is no wider than its column: a code block's long line scrolls in
+ * the block, rather than widening the row and pushing the margin off the
+ * page. */
+.gm-pair > * { min-width: 0; }
+
 /* A row's two cells must start on the same line, so the leading margin is
  * stripped all the way down the first-child chain of each cell -- the
  * speaker's, and each note's in the margin, whichever feature drew it --

@@ -10,12 +10,13 @@ ol.badges > li.step > .task-box, ol.badges > li.step > p > .task-box {
   opacity: 0;
   cursor: pointer;
 }
-ol.badges > li.step::before { cursor: pointer; }
+ol.badges > li.step:not(.gm-cont)::before { cursor: pointer; }
 /* Where the page can't be worked (static/preview-api.js), as on a slide, the
    badge only says whether the step's done. */
 .unworkable ol.badges > li.step > .task-box, .unworkable ol.badges > li.step > p > .task-box,
 .unworkable ol.badges > li.step::before { cursor: default; }
-ol.badges > li.step-done::before { content: "✓"; background: var(--gm-ink-soft); }
+/* not on the rest of a step an aside split off, which has no badge */
+ol.badges > li.step-done:not(.gm-cont)::before { content: "✓"; background: var(--gm-ink-soft); }
 ol.badges > li.step-done { color: var(--gm-ink-soft); }
 ol.badges > li.step:has(> .task-box:focus-visible, > p > .task-box:focus-visible)::before {
   outline: 2px solid var(--gm-accent);

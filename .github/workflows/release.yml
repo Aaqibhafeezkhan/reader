@@ -2,7 +2,8 @@ name: Release
 
 # Tags main as vX.Y.Z and publishes a GitHub release whose notes list the
 # issues it addresses: those closed in the version's milestone, and those a
-# commit since the last tag says it closes. Run by hand once the milestone's
+# commit since the last tag says it closes, less those labelled review or
+# polish, which no user would notice. Run by hand once the milestone's
 # review is done. Then pushes its Docker image (docker.yml) and adds the
 # desktop app's installers (desktop.yml).
 on:
@@ -61,7 +62,7 @@ jobs:
           range=${previous:+$previous..}HEAD
           {
             gh issue list --milestone "$VERSION" --state closed --limit 500 \
-              --json number,labels --jq '.[] | select(all(.labels[]; .name != "review")) | .number'
+              --json number --jq '.[].number'
             git log --format=%B "$range" | grep -oiE 'closes gh-[0-9]+' | grep -oE '[0-9]+' || true
           } | sort -un > issues.txt
 
@@ -69,8 +70,9 @@ jobs:
             echo "## Issues"
             echo
             while read -r n; do
-              gh issue view "$n" --json number,title,state,url \
-                --jq 'select(.state == "CLOSED") | "- \(.title) ([#\(.number)](\(.url)))"' 2>/dev/null || true
+              gh issue view "$n" --json number,title,state,url,labels \
+                --jq 'select(.state == "CLOSED" and all(.labels[]; .name != "review" and .name != "polish"))
+                  | "- \(.title) ([#\(.number)](\(.url)))"' 2>/dev/null || true
             done < issues.txt
             echo
             if [ -n "$previous" ]; then

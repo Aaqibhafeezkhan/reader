@@ -211,3 +211,9 @@ test('a box\'s name has a space where its words go onto another line', () => {
   const { body } = render('- ( ) **Navy Day**\n  Kept in the US.\n');
   assert.match(body, /aria-label="Navy Day Kept in the US\."/);
 });
+
+test('a choice or box with a blank in its line writes the line back as written, and names the blank', () => {
+  const { body } = render('- ( ) **C** · [@ Something else]\n- [ ] Buy [@ what] today\n');
+  assert.match(body, /data-on="- \(x\) \*\*C\*\* · \[@ Something else\]" data-off="- \( \) \*\*C\*\* · \[@ Something else\]" aria-label="C · Something else"/);
+  assert.match(body, /data-on="- \[x\] Buy \[@ what\] today" data-off="- \[ \] Buy \[@ what\] today" aria-label="Buy what today"/);
+});

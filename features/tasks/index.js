@@ -36,7 +36,7 @@ import { schemeRule } from '../scheme.js';
 import { workable, shut } from '../blank.js';
 
 const TASK = /^([ \t]*(?:>[ \t]*|~(?![^\s~])[ \t]*|~[^\s~]+[ \t]+)*(?:[-*+]|\d{1,9}[.)])[ \t]+)(?:((?:\[[ xX]\]){1,9})|\(([ xX])\))(?=[ \t]|$)/;
-const NAMED = new Set(['count', 'ingredient_key', 'ingredient_use', 'pitch', 'timer', 'scheme_shown']);
+const NAMED = new Set(['field_inline', 'count', 'ingredient_key', 'ingredient_use', 'pitch', 'timer', 'scheme_shown']);
 const HEADING = /^( {0,3}#{1,6}[ \t]+)\[([ xX])\](?=[ \t]|$)/;
 const [OPEN, CLOSE] = MARKS.tasks;
 const PLACED = new RegExp(`${OPEN}(\\d+)${CLOSE}`, 'g');
@@ -45,24 +45,27 @@ const AT_HEAD = new RegExp(`^${OPEN}(\\d+)${CLOSE}[ \\t]?`);
 export function tasks(md) {
   beforeExtract(md, 'task_lines', (state) => {
     const boxes = [];
-    readLines(state, (line, n) => {
+    readLines(state, (line, n, lines, i) => {
       const written = HEADING.test(line) ? HEADING : TASK;
+      // What's written back is the line as it's written, not as another
+      // feature has marked it (a blank in it, a field's placeholder).
+      const raw = written.test(state.env.written?.[i] ?? '') ? state.env.written[i] : line;
       return line.replace(written, (m, lead, box, radio) => {
         const radioButton = box === undefined;
         // A heading's one box is its mark alone.
         const marks = radioButton ? [radio] : box.length === 1 ? [box] : [...box.matchAll(/\[([ xX])\]/g)].map((b) => b[1]);
         if (marks.length > 1) {
           // At stage k, the first k boxes are filled.
-          const at = (k) => line.replace(written, (t, l) => `${l}${marks.map((_, j) => `[${j < k ? 'x' : ' '}]`).join('')}`);
+          const at = (k) => raw.replace(written, (t, l) => `${l}${marks.map((_, j) => `[${j < k ? 'x' : ' '}]`).join('')}`);
           const stage = marks.filter((x) => x !== ' ').length;
           const lines = marks.map((_, k) => at(k)).concat(at(marks.length));
           // The line as it's written, whatever order or case its marks are in.
-          lines[stage] = line;
+          lines[stage] = raw;
           boxes.push({ line: n, staged: true, stage, checked: stage === marks.length, lines });
         } else {
           const mark = marks[0];
           const checked = mark !== ' ';
-          const as = (on) => (checked && on ? line : line.replace(written, (t, l, b) => `${l}${b ? '[' : '('}${on ? 'x' : ' '}${b ? ']' : ')'}`));
+          const as = (on) => (checked && on ? raw : raw.replace(written, (t, l, b) => `${l}${b ? '[' : '('}${on ? 'x' : ' '}${b ? ']' : ')'}`));
           boxes.push({ line: n, radio: radioButton, mark, checked, on: as(true), off: as(false) });
         }
         return `${lead}${placeholder(OPEN, CLOSE, boxes.length - 1)}`;

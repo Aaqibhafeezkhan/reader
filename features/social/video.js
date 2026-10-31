@@ -22,7 +22,7 @@ export function videoCard(found, alt, env) {
   const id = ID.exec(found.href)?.[1];
   if (!id) return null;
   const words = alt.replace(/\s+/g, ' ').trim();
-  const thumb = `<img class="video-thumb" src="https://img.youtube.com/vi/${id}/hqdefault.jpg" alt="" loading="lazy">`;
+  const thumb = `<img class="video-thumb" src="https://img.youtube.com/vi/${id}/hqdefault.jpg" alt="">`;
   const caption = words ? `<span class="video-caption">${escapeHtml(words)}</span>` : '';
   if (env.exported) {
     return `<a class="video" href="${escapeAttr(found.href)}"><span class="video-screen">${thumb}</span>${caption}`

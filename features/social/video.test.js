@@ -12,7 +12,7 @@ test('![alt](yt:v/<id>) is a card: the thumbnail, a button to play it named for 
   const { body } = render('![Body scan · 5 minutes](yt:v/FcWl8WgKP8E)\n');
   assert.equal(card(body), '<span class="video" data-video="FcWl8WgKP8E" data-title="Body scan · 5 minutes">'
     + '<button type="button" class="video-screen video-play" aria-label="Play Body scan · 5 minutes">'
-    + '<img class="video-thumb" src="https://img.youtube.com/vi/FcWl8WgKP8E/hqdefault.jpg" alt="" loading="lazy"></button>'
+    + '<img class="video-thumb" src="https://img.youtube.com/vi/FcWl8WgKP8E/hqdefault.jpg" alt=""></button>'
     + '<span class="video-caption">Body scan · 5 minutes</span></span>');
   assert.doesNotMatch(body, /youtube-nocookie|<iframe/, 'nothing of the player until it\'s pressed');
   assert.doesNotMatch(body, /<figure/);
@@ -48,7 +48,7 @@ test('it plays on a slide and in a record, which can\'t be worked', () => {
 
 test('exported, it\'s the thumbnail as a link to the video, which plays it on YouTube', () => {
   const { body } = render('- ( ) ![Body scan](yt:v/FcWl8WgKP8E)\n\n![](yt:v/w6iG0mNHK28)\n', { exported: true });
-  assert.match(body, /<a class="video" href="https:\/\/www\.youtube\.com\/watch\?v=FcWl8WgKP8E"><span class="video-screen"><img class="video-thumb" src="https:\/\/img\.youtube\.com\/vi\/FcWl8WgKP8E\/hqdefault\.jpg" alt="" loading="lazy"><\/span><span class="video-caption">Body scan<\/span><span class="video-site"> on YouTube<\/span><\/a>/);
+  assert.match(body, /<a class="video" href="https:\/\/www\.youtube\.com\/watch\?v=FcWl8WgKP8E"><span class="video-screen"><img class="video-thumb" src="https:\/\/img\.youtube\.com\/vi\/FcWl8WgKP8E\/hqdefault\.jpg" alt=""><\/span><span class="video-caption">Body scan<\/span><span class="video-site"> on YouTube<\/span><\/a>/);
   assert.match(body, /<span class="video-site">A video on YouTube<\/span>/);
   assert.doesNotMatch(body, /<button[^>]*video|youtube-nocookie/);
 });

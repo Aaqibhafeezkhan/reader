@@ -36,6 +36,12 @@ const DIV = /^[ \t]{0,3}:::(?:[ \t]+([\w-]+(?:[ \t]+[\w-]+)*))?[ \t]*$/;
 const NAMES = /^\{([\w-]+(?:[ \t]+[\w-]+)*)\}/;
 const [OPEN, CLOSE] = MARKS.styles;
 const MARK = new RegExp(`${OPEN}([^${CLOSE}]*)${CLOSE}`, 'g');
+// A list item's own styles, as written, and a `:::` block's background.
+const [ITEM_OPEN, ITEM_CLOSE] = MARKS.items;
+const ITEM_MARK = new RegExp(`${ITEM_OPEN}([^${ITEM_CLOSE}]*)${ITEM_CLOSE}`, 'g');
+const [BOX_OPEN, BOX_CLOSE] = MARKS.box;
+// A list item's first line, ending in braces after a space: `- ( ) **A** {bg-honeydew}`.
+const ITEM = /^[ \t]*(?:>[ \t]*)*(?:[-*+]|\d{1,9}[.)])[ \t].*?\S([ \t]+\{([\w-]+(?:[ \t]+[\w-]+)*)\}[ \t]*)$/;
 // What opens a line's block, for the marker to go after.
 // An aside's `~` can carry aliases and the words it's about: `~c[the lazy dog] `.
 const PREFIX = /^[ \t]*(?:~[^\s~[]*(?:\[(?:[^\]\\\n]|\\.)+\](?:\{[a-z]+\})?)?[ \t]+|[>~][ \t]*)*(?:(?:[-*+]|\d{1,9}[.)])[ \t]+)?(?:#{1,6}[ \t]+)?/;
@@ -48,6 +54,7 @@ const PLUS = /^[ \t]{0,3}\+{3,}(?:[ \t]+(.*?))?[ \t]*$/;
 
 export function styles(md) {
   beforeExtract(md, 'style_lines', lines);
+  md.block.ruler.before('fence', 'style_box', box, { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
   md.inline.ruler.before('link', 'style_span', span);
   md.core.ruler.before('inline', 'style_unmark', unmark);
   // Before other features look at the text: a marker isn't theirs to see.
@@ -76,12 +83,19 @@ function lines(state) {
         // A layout's own words (`::: row reverse`) go with it, not the styles.
         const own = names.map((n) => n.toLowerCase()).filter((n) => owns(layout, n));
         const style = (n) => !LAYOUTS.includes(n.toLowerCase()) && !own.includes(n.toLowerCase());
-        open.push({ names: names.filter(style), layout });
-        return layout ? indent + LAYOUT_OPEN + [layout, ...own].join(' ') : '';
+        // A background on a block that isn't a layout is one box round it all.
+        const bg = !layout && names.find(background);
+        open.push({ names: names.filter((n) => style(n) && !(bg && background(n))), layout, bg });
+        if (layout) return indent + LAYOUT_OPEN + [layout, ...own].join(' ');
+        return bg ? indent + BOX_OPEN + bg.slice(3).toLowerCase() : '';
       }
-      if (open.length) return open.pop().layout ? indent + LAYOUT_CLOSE : '';
+      if (open.length) {
+        const o = open.pop();
+        return o.layout ? indent + LAYOUT_CLOSE : o.bg ? indent + BOX_CLOSE : '';
+      }
       return line;
     }
+    line = item(line);
     const plus = PLUS.exec(line);
     if (plus && open.some((o) => o.layout)) return indent + DIVIDER + (plus[1] ?? '');
     // Innermost first, so its font leads and its color wins.
@@ -89,6 +103,27 @@ function lines(state) {
     return names ? mark(line, names) : line;
   }).join('\n');
 }
+
+/** Whether `name` is a background: `bg-` and a CSS color name. */
+const background = (name) => /^bg-/i.test(name) && COLORS.has(name.slice(3).toLowerCase());
+
+/** Whether `name` is one a list item's braces can hold: a color, a background, a generic font. */
+const known = (name) => COLORS.has(name.toLowerCase()) || background(name) || GENERIC.has(name.toLowerCase());
+
+/**
+ * A list item's line ending in braces of style names, after a space, with
+ * the braces a marker that keeps them as written, for the item to take
+ * once the blocks are parsed. Braces naming anything else -- a field's
+ * hint, a word -- are left as they are.
+ */
+function item(line) {
+  const m = ITEM.exec(line);
+  if (!m || !m[2].split(/\s+/).every(known)) return line;
+  return line.slice(0, -m[1].length) + ITEM_OPEN + m[1] + ITEM_CLOSE;
+}
+
+/** Puts back an item's braces where they turned out not to be its first line's. */
+const written = (s) => s.replace(ITEM_MARK, '$1');
 
 /**
  * Leave a marker naming `names` inside the block this line belongs to, after
@@ -113,7 +148,10 @@ function mark(line, names) {
  * emphasis, nor `"` a quote.
  */
 function unmark(state) {
-  for (const t of state.tokens) {
+  const tokens = state.tokens;
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (t.type === 'inline' && t.content.includes(ITEM_OPEN)) own(tokens, i);
     if (t.type !== 'inline' || !t.content.includes(OPEN)) continue;
     let names = null;
     t.content = t.content.replace(MARK, (m, n) => {
@@ -122,6 +160,21 @@ function unmark(state) {
     });
     t.meta = { ...t.meta, styles: names };
   }
+}
+
+/**
+ * An item's braces, on the first line of the list item the inline token at
+ * `i` opens, are that item's styles; anywhere else they stay as written.
+ */
+function own(tokens, i) {
+  const t = tokens[i];
+  const li = tokens[i - 1]?.type === 'paragraph_open' && tokens[i - 2]?.type === 'list_item_open' ? tokens[i - 2] : null;
+  const firstLine = t.content.indexOf('\n') < 0 ? t.content.length : t.content.indexOf('\n');
+  t.content = t.content.replace(ITEM_MARK, (m, braces, at) => {
+    if (!li || li.meta?.own || at > firstLine) return braces;
+    li.meta = { ...li.meta, own: braces.trim().slice(1, -1) };
+    return '';
+  });
 }
 
 /**
@@ -134,24 +187,60 @@ function blocks(state) {
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
     if (t.type === 'code_block' || t.type === 'fence') {
-      t.content = t.content.replace(MARK, '');
+      t.content = written(t.content.replace(MARK, ''));
       continue;
     }
     if (t.type !== 'inline' || !t.children) continue;
     let names = t.meta?.styles ?? null;
     for (const c of t.children) {
       if (c.type !== 'text' && c.type !== 'code_inline') continue;
-      c.content = c.content.replace(MARK, (m, n) => {
+      c.content = written(c.content.replace(MARK, (m, n) => {
         if (c.type === 'text') names ??= n;
         return '';
-      });
+      }));
     }
     const block = names && holder(tokens, i);
     if (block && !block.meta?.styled) {
       block.meta = { ...block.meta, styled: true };
-      apply(block, names);
+      // An item's own styles come before its block's, so its color wins.
+      apply(block, block.meta.own ? `${block.meta.own} ${names}` : names);
     }
   }
+  for (const t of tokens) {
+    if (t.type !== 'list_item_open' || !t.meta?.own || t.meta.styled) continue;
+    t.meta = { ...t.meta, styled: true };
+    apply(t, t.meta.own);
+  }
+}
+
+/**
+ * A `:::` block with a background, which the line pass left as marks of
+ * its own: what's in it, in one box with that background.
+ */
+function box(state, startLine, endLine, silent) {
+  if (state.sCount[startLine] - state.blkIndent >= 4) return false;
+  const text = (n) => state.src.slice(state.bMarks[n] + state.tShift[n], state.eMarks[n]);
+  const first = text(startLine);
+  if (!first.startsWith(BOX_OPEN)) return false;
+  if (silent) return true;
+  // To the end that's its own, past any box inside it.
+  let end = startLine + 1;
+  for (let depth = 0; end < endLine; end++) {
+    const line = text(end);
+    if (line.startsWith(BOX_OPEN)) depth++;
+    else if (line === BOX_CLOSE && !depth--) break;
+  }
+  const open = state.push('style_box_open', 'div', 1);
+  open.block = true;
+  open.map = [startLine, Math.min(end + 1, endLine)];
+  apply(open, `bg-${first.slice(BOX_OPEN.length).trim()}`);
+  const { lineMax } = state;
+  state.lineMax = end;
+  state.md.block.tokenize(state, startLine + 1, end);
+  state.lineMax = lineMax;
+  state.push('style_box_close', 'div', -1).block = true;
+  state.line = Math.min(end + 1, endLine);
+  return true;
 }
 
 /** The element an inline token's text shows in. */
@@ -204,23 +293,27 @@ function span(state, silent) {
 
 /**
  * Adds `names` to a token's attributes: a CSS color name sets the color (the
- * first one given wins); every other name is a font, tried in order before
- * falling back to the page's own, and marks the element `font` for the
- * stylesheet.
+ * first one given wins), and `bg-` and one its background, `--bg` for the
+ * stylesheet to keep readable, marking the element `bg`; every other name
+ * is a font, tried in order before falling back to the page's own, and
+ * marks the element `font` for the stylesheet.
  */
 function apply(token, names) {
   let color = null;
+  let bg = null;
   const fonts = [];
   for (const name of names.trim().split(/\s+/)) {
     const key = name.toLowerCase();
     if (COLORS.has(key)) color ??= key;
+    else if (background(key)) bg ??= key.slice(3);
     else fonts.push(GENERIC.has(key) ? key : `'${name.replace(/-/g, ' ')}'`);
   }
-  const css = [color && `color: ${color}`, fonts.length && `--font: ${fonts.join(', ')}`].filter(Boolean).join('; ');
-  if (fonts.length) {
-    const cls = token.attrGet('class');
-    if (cls) token.attrSet('class', `font ${cls}`);
-    else token.attrs = [['class', 'font'], ...(token.attrs || [])];
+  const css = [color && `color: ${color}`, bg && `--bg: ${bg}`, fonts.length && `--font: ${fonts.join(', ')}`].filter(Boolean).join('; ');
+  for (const [cls, on] of [['bg', bg], ['font', fonts.length]]) {
+    if (!on) continue;
+    const had = token.attrGet('class');
+    if (had) token.attrSet('class', `${cls} ${had}`);
+    else token.attrs = [['class', cls], ...(token.attrs || [])];
   }
   const style = token.attrGet('style');
   token.attrSet('style', style ? `${style.replace(/;?\s*$/, '; ')}${css}` : css);

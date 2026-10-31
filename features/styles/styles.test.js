@@ -83,3 +83,56 @@ test('inside a ::: block, a glossary, displayed math and callouts are still them
   assert.match(body, /<p class="math-display" style="color: red">/);
   assert.match(body, /<ol class="callout-notes">\n<li data-callout="1"[^>]*><span class="callout" data-n="1"><\/span><span>the first<\/span><\/li>/);
 });
+
+test('braces at the end of a list item\'s first line style the whole item, its box included', () => {
+  const { body } = render('- ( ) **High** · excited {bg-lemonchiffon}\n  @ Closest word: ( ) Happy ( ) Joyful\n- [ ] task {red  monospace}\n- plain {Navy}\n');
+  assert.match(body, /<li class="bg task" style="--bg: lemonchiffon"><input type="radio" class="choice-box"[^>]* data-on="- \(x\) \*\*High\*\* · excited \{bg-lemonchiffon\}"[^>]*> <strong>High<\/strong> · excited\n<span class="field"/);
+  assert.match(body, /<li class="font task" style="color: red; --font: monospace"><input type="checkbox"[^>]*> task<\/li>/);
+  assert.match(body, /<li style="color: navy">plain<\/li>/);
+  assert.doesNotMatch(body.replace(/data-[a-z]+="[^"]*"/g, ''), /\{|[\uE000-\uE009]/);
+});
+
+test('braces that aren\'t all style names, or aren\'t at the end of an item\'s first line after a space, stay as typed', () => {
+  const src = '- a {placeholder}\n- b {red georgia}\n- c [d]{red}\n- e{red}\n- f {red} g\n- h\n  i {red}\n\nj {red}\n\n    - k {red}\n\n- `l {red}`\n- m\n  @ Name {red}: x\n';
+  const { body } = render(src);
+  assert.match(body, /<li>a \{placeholder\}<\/li>/);
+  assert.match(body, /<li>b \{red georgia\}<\/li>/);
+  assert.match(body, /<li>c <span style="color: red">d<\/span><\/li>/);
+  assert.match(body, /<li>e\{red\}<\/li>/);
+  assert.match(body, /<li>f \{red\} g<\/li>/);
+  assert.match(body, /<li>h\ni \{red\}<\/li>/);
+  assert.match(body, /<p>j \{red\}<\/p>/);
+  assert.match(body, /<pre><code>- k \{red\}\n<\/code><\/pre>/);
+  assert.match(body, /<li><code>l \{red\}<\/code><\/li>/);
+  assert.match(body, /data-hint="red"/);
+  assert.doesNotMatch(body, /<li [^>]*style=|[\uE000-\uE009]/);
+});
+
+test('an item\'s own color wins over its ::: block\'s, whose font still comes after', () => {
+  const { body } = render('::: gray georgia\n- mine {blue}\n- theirs\n:::\n');
+  assert.match(body, /<li class="font" style="color: blue; --font: 'georgia'">mine<\/li>/);
+  assert.match(body, /<li class="font" style="color: gray; --font: 'georgia'">theirs<\/li>/);
+});
+
+test('bg- and a color name is a background: a span\'s, a ::: block\'s round all of it, an item\'s', () => {
+  const { body } = render('[marked]{bg-Yellow darkred} [x]{bg-nothing}\n\n::: bg-aliceblue slategray\none\n\n::: bg-honeydew\ntwo\n:::\n:::\n\n- item {bg-mistyrose}\n');
+  assert.match(body, /<span class="bg" style="color: darkred; --bg: yellow">marked<\/span>/);
+  assert.match(body, /<span class="font" style="--font: 'bg nothing'">x<\/span>/);
+  assert.match(body, /<div class="bg" style="--bg: aliceblue">\n<p style="color: slategray">one<\/p>\n<div class="bg" style="--bg: honeydew">\n<p style="color: slategray">two<\/p>\n<\/div>\n<\/div>/);
+  assert.match(body, /<li class="bg" style="--bg: mistyrose">item<\/li>/);
+  assert.doesNotMatch(body, /[\uE000-\uE009]|:::/);
+});
+
+test('in a layout, a background tints each of its cells', () => {
+  const { body } = render('::: grid 2 bg-lavender\n- a\n- b\n:::\n');
+  assert.match(body, /<div class="grid grid-items" style="--grid: 2"[^>]*>\n<ul>\n<li class="bg" style="--bg: lavender">a<\/li>\n<li class="bg" style="--bg: lavender">b<\/li>/);
+});
+
+test('a background is kept readable, its ground told to a card as --item-bg, and outlined in the system\'s colours', () => {
+  const { css } = render('x\n');
+  assert.match(css, /\.bg \{ --item-bg: var\(--bg\); background: var\(--item-bg\); \}/);
+  assert.match(css, /--item-bg: oklch\(from var\(--bg\) clamp\(var\(--gm-bg-l-min\), l, var\(--gm-bg-l-max\)\) min\(c, var\(--gm-bg-c-max\)\) h\)/);
+  assert.match(css, /li:not\(\.bg\) \{ --item-bg: initial; \}/);
+  assert.match(css, /li\.bg \{ --card-bg: var\(--item-bg\); \}/);
+  assert.match(css, /@media \(forced-colors: active\) \{\n {2}\.bg \{ border: 1px solid CanvasText; \}/);
+});

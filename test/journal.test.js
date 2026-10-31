@@ -158,7 +158,7 @@ test('its choices are cards: the box over each, the chosen one checked, and shut
   assert.deepEqual([1, 2, 9, 11].map((n) => cards(evening[n]).length), [1, 1, 1, 1]);
   for (const n of [1, 2, 9, 11]) {
     const items = cards(evening[n])[0].split('<li').slice(1);
-    assert.ok(items.every((item) => /^ class="task"[^>]*><input type="radio" class="choice-box" name="choice-\d+"/.test(item)), `page ${n + 1}`);
+    assert.ok(items.every((item) => /^ class="(?:bg )?task"[^>]*><input type="radio" class="choice-box" name="choice-\d+"/.test(item)), `page ${n + 1}`);
   }
   // A video's play button is its own, inside the card; a feeling's closest word is a choice of its own inside it.
   assert.match(cards(evening[2])[0], /<input type="radio" class="choice-box"[^>]*> <span class="video"[^>]*><button type="button" class="video-screen video-play"/);
@@ -179,4 +179,20 @@ test('how it\'s feeling is a choice of four, each with its own closest word to p
   assert.deepEqual(words[3], ['Calm', 'Content', 'Peaceful', 'Relaxed', 'Grateful', 'Serene']);
   assert.ok(items.every((item) => /<span class="field-label" id="field-\d+">Closest word<\/span>/.test(item)));
   assert.doesNotMatch(feeling.replace(/<[^>]*>/g, ''), /@ Closest word/, 'none is left as typed');
+});
+
+test('each feeling is a card tinted its own background, its choice and closest word in it, the evening it\'s filled in and as a record (#47)', () => {
+  for (const now of [EVENING, CLOSING]) {
+    const feeling = drawn(now)[11];
+    assert.match(feeling, /<div class="grid grid-items cards" style="--grid: 2"/);
+    const items = [...feeling.matchAll(/<li class="bg task" style="--bg: (\w+)"[^>]*><input type="radio" class="choice-box"[^>]*> <strong>([^<]+)<\/strong>\n<span class="field"/g)]
+      .map(([, bg, name]) => [name, bg]);
+    assert.deepEqual(items, [
+      ['High energy · Unpleasant', 'mistyrose'],
+      ['High energy · Pleasant', 'lemonchiffon'],
+      ['Low energy · Unpleasant', 'lavender'],
+      ['Low energy · Pleasant', 'honeydew'],
+    ]);
+    assert.doesNotMatch(feeling.replace(/<[^>]*>/g, ''), /\{|bg-/, 'no braces are left as typed');
+  }
 });

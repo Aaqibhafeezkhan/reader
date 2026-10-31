@@ -70,6 +70,8 @@ function rule(state, startLine, endLine, silent) {
 
 export default {
   name: 'grid',
+  // An item with a background (styles' `bg`) fills its cell (grid.css).
+  requires: ['styles'],
   plugin: grid,
   css: fs.readFileSync(new URL('./grid.css', import.meta.url), 'utf8'),
 };

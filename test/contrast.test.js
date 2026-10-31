@@ -426,3 +426,48 @@ test("in the system's own colours, what a ground or a shadow said is said anothe
   assert.match(under(read('features/asides/marks.css')), /\.mk-lines path \{ stroke: CanvasText; \}/);
 });
 
+
+// A background an author names, as features/styles/styles.css takes it in
+// OKLCH: at its palest, in the light, at --gm-bg-l-min and --gm-bg-c-max,
+// and at its brightest, in the dark, at --gm-bg-l-max; in every hue, brought
+// into sRGB as a browser does, by giving up chroma.
+const bgCss = read('features/styles/styles.css');
+const oklch = (l, c, h) => {
+  const rgb = (chroma) => {
+    const [a, b] = [chroma * Math.cos((h * Math.PI) / 180), chroma * Math.sin((h * Math.PI) / 180)];
+    const [L, M, S] = [l + 0.3963377774 * a + 0.2158037573 * b, l - 0.1055613458 * a - 0.0638541728 * b, l - 0.0894841775 * a - 1.291485548 * b].map((v) => v ** 3);
+    return [4.0767416621 * L - 3.3077115913 * M + 0.2309699292 * S, -1.2684380046 * L + 2.6097574011 * M - 0.3413193965 * S, -0.0041960863 * L - 0.7034186147 * M + 1.707614701 * S];
+  };
+  let [lo, hi] = [0, c];
+  for (let k = 0; k < 20; k++) {
+    const mid = (lo + hi) / 2;
+    if (rgb(mid).every((v) => v >= -1e-4 && v <= 1 + 1e-4)) lo = mid;
+    else hi = mid;
+  }
+  const gamma = (v) => 255 * (v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055);
+  return toHex(rgb(lo).map((v) => gamma(Math.min(1, Math.max(0, v)))));
+};
+const grounds = (vars, dark) => {
+  const [l, c] = [Number(dark ? vars['gm-bg-l-max'] : vars['gm-bg-l-min']), Number(vars['gm-bg-c-max'])];
+  return Array.from({ length: 24 }, (_, k) => [k * 15, oklch(l, c, k * 15)]);
+};
+
+test("a background an author names keeps the document's inks readable on it, light and dark, and with more contrast asked for", () => {
+  const lightVars = declared(block(bgCss, ':root {'));
+  const darkVars = { ...lightVars, ...declared(block(bgCss, ':root.gm-dark {')) };
+  const moreLight = { ...lightVars, ...declared(block(after(bgCss, MORE), ':root {')) };
+  const moreDark = { ...moreLight, ...darkVars, ...declared(block(after(bgCss, MORE), ':root.gm-dark {')) };
+  for (const [theme, vars, t, dark] of [['light', lightVars, doc.light, false], ['dark', darkVars, doc.dark, true]]) {
+    for (const [hue, ground] of grounds(vars, dark)) {
+      for (const ink of ['ink', 'ink-soft', 'accent']) readable(t[`gm-${ink}`], ground, `${theme} --gm-${ink} on a background of hue ${hue}`);
+    }
+  }
+  for (const [theme, vars, t, dark] of [['light', moreLight, docMore.light, false], ['dark', moreDark, docMore.dark, true]]) {
+    for (const [hue, ground] of grounds(vars, dark)) {
+      for (const ink of ['ink', 'ink-soft']) clear(t[`gm-${ink}`], ground, `more contrast, ${theme} --gm-${ink} on a background of hue ${hue}`);
+    }
+  }
+  // without relative colours, the dark's is 15% of it over the paper: white, at the brightest
+  assert.match(bgCss, /:root\.gm-dark \.bg \{ --item-bg: color-mix\(in srgb, var\(--bg\) 15%, var\(--gm-paper\)\); \}/);
+  for (const ink of ['ink', 'ink-soft', 'accent']) readable(doc.dark[`gm-${ink}`], mix('#ffffff', 0.15, doc.dark['gm-paper']), `dark --gm-${ink} on white, 15% over the paper`);
+});

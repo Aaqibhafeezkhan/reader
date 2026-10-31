@@ -11,6 +11,8 @@
 /* a list's items are the cells: each holds its own bullet, number or box, in its margin */
 .grid.grid-items > :is(ul, ol) { margin: 0; padding-left: 0; }
 .grid.grid-items > :is(ul, ol) > li { margin: 0 0 0 1.35rem; min-width: 0; }
+/* one with a background of its own (features/styles) is a box round its mark too: it fills its cell */
+.grid.grid-items > :is(ul, ol) > li.bg { margin: 0; }
 /* on a phone, one column */
 @media (max-width: 32em) {
   .grid:not(.grid-items), .grid.grid-items > :is(ul, ol) { grid-template-columns: minmax(0, 1fr); }

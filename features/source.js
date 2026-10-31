@@ -64,6 +64,9 @@ export function readLines(state, fn) {
 export const MARKS = {
   tasks: ['\uE000', '\uE001'],
   styles: ['\uE002', '\uE003'],
+  // A list item's own styles, on its first line; a `:::` block's background's start and end (features/styles).
+  items: ['\uE004', '\uE005'],
+  box: ['\uE008', '\uE009'],
   attributions: ['\uE007'],
   sizes: ['\uE00E', '\uE00F'],
   fields: ['\uE010', '\uE012'],

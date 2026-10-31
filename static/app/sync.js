@@ -110,6 +110,9 @@ function topOf(n) {
 export function sendScroll() {
   sending = 0;
   if (leader !== 'editor' || !synced() || !shown()) return;
+  // An editor that holds the whole file doesn't scroll, so its top says
+  // nothing of where the reader is: the page stays where it was put.
+  if (el.editor.scrollHeight <= el.editor.clientHeight) return;
   Frames.post(el.preview, { type: 'scroll', line: lineAt(el.editor.scrollTop) });
 }
 

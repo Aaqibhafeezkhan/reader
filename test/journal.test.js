@@ -122,3 +122,17 @@ test('its videos are on the page, each a card to play it from, its choice named 
     assert.doesNotMatch(out.join('\n'), /<img src="yt:|youtube-nocookie/);
   }
 });
+
+test('its choices are laid out in grids, two or three across, each still one group to pick from (#44)', () => {
+  for (const out of [drawn(EVENING), drawn(CLOSING)]) {
+    const grids = out.map((body) => [...body.matchAll(/<div class="grid grid-items" style="--grid: (\d)"[^>]*>\n<ul[^>]*>([\s\S]*?)<\/ul>\n<\/div>/g)]
+      .map(([, n, items]) => [Number(n), items.match(/<li/g).length, new Set(items.match(/name="choice-\d+"/g)).size]));
+    // Across, items, and groups: exercise, meditation, body scan, feelings.
+    assert.deepEqual(grids[1], [[2, 4, 1]]);
+    assert.deepEqual(grids[2], [[3, 7, 1]]);
+    assert.deepEqual(grids[9], [[2, 4, 1]]);
+    assert.deepEqual(grids[11], [[2, 4, 1]]);
+    assert.equal(grids.flat().length, 4);
+    assert.doesNotMatch(out.join('\n'), /'grid'|'\d'/, 'neither grid nor its count is a font');
+  }
+});

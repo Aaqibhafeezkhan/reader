@@ -15,9 +15,13 @@
  *   ```
  *   :::
  *
+ * A `grid` lays what's in it out in columns instead: a list's items, or
+ * else its blocks (features/grid).
+ *
  * The styles feature reads the fences and leaves each line that's a
- * layout's as a mark of its own: the opening, the mark and the layout's
- * name; each `+++`, the mark and its label; the closing. A private-use
+ * layout's as a mark of its own: the opening, the mark, the layout's name
+ * and any words on the line that are the layout's own (`words()`); each
+ * `+++`, the mark and its label; the closing. A private-use
  * character each, which markdown passes through untouched and nothing else
  * writes. A layout's rule finds its own opening and splits what's in it
  * into panes with `panes()`.
@@ -26,7 +30,21 @@
 import { isOutput, readNotes } from './fence.js';
 import { MARKS } from './source.js';
 
-export const LAYOUTS = ['columns', 'tabs', 'compare'];
+export const LAYOUTS = ['columns', 'tabs', 'compare', 'grid'];
+
+/**
+ * The words on a layout's `:::` line, besides its name, that are its own
+ * rather than styles: a grid's count of columns. A word a layout comes to
+ * read (a look for its cells, say) goes here, and reaches it by `words()`.
+ */
+const OWN = {
+  grid: (word) => /^\d+$/.test(word),
+};
+
+/** Whether `word`, on a `layout`'s `:::` line, is the layout's own. */
+export function owns(layout, word) {
+  return OWN[layout]?.(word.toLowerCase()) ?? false;
+}
 
 export const [OPEN, DIVIDER, CLOSE] = MARKS.layout;
 
@@ -35,7 +53,13 @@ const text = (state, n) => state.src.slice(state.bMarks[n] + state.tShift[n], st
 
 /** Whether `line` of the source opens a `name` layout. */
 export function opens(state, line, name) {
-  return text(state, line) === OPEN + name;
+  const open = text(state, line);
+  return open === OPEN + name || open.startsWith(`${OPEN}${name} `);
+}
+
+/** The layout's own words on the `:::` line it opens on (`owns()`), lowercased. */
+export function words(state, line) {
+  return text(state, line).slice(OPEN.length).split(' ').slice(1).map((w) => w.toLowerCase());
 }
 
 /**

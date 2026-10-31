@@ -4,7 +4,8 @@ title: Layout
 
 ← [Contents](index.md)
 
-A `:::` block named `columns`, `tabs` or `compare` lays out what's in it.
+A `:::` block named `columns`, `grid`, `tabs` or `compare` lays out what's
+in it.
 Any other `:::` block styles it (see [Styling text](text.md)).
 
 ## Columns
@@ -75,6 +76,42 @@ weekly code change
 * automatic
 :::
 :::
+
+## Grid
+
+A `:::` block named `grid`, with a number after it, sets what's in it out
+**in that many columns**, row by row. A list in it lays out its items;
+otherwise each block is a cell:
+
+::: tabs
++++ Source
+```markdown
+::: grid 2
+- ( ) **A** · Strength training
+- ( ) **B** · Running
+- ( ) **C** · Something else
+- ( ) **D** · I did not exercise today
+:::
+```
++++ Rendered
+::: grid 2
+- ( ) **A** · Strength training
+- ( ) **B** · Running
+- ( ) **C** · Something else
+- ( ) **D** · I did not exercise today
+:::
+:::
+
+- The list stays one list: choices in a grid are still one choice, and
+  boxes still tick.
+- Cells in a row are the same height, with a gap between them.
+- With no number, `::: grid` fits as many columns as there's room for.
+- On a narrower page it has fewer columns, and on a phone, one.
+- For a cell of more than one block, put a `+++` line between the cells,
+  as in columns.
+- The other names on the line are styles for everything in it:
+  `::: grid 2 gray`. Grids nest in other `:::` blocks, and they in it.
+- Elsewhere, it's a list, or the blocks one after another.
 
 ## Tabs
 

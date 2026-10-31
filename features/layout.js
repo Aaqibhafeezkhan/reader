@@ -15,9 +15,13 @@
  *   ```
  *   :::
  *
+ * A `grid` lays what's in it out in columns instead: a list's items, or
+ * else its blocks (features/grid).
+ *
  * The styles feature reads the fences and leaves each line that's a
  * layout's as a mark of its own: the opening, the mark and the layout's
- * name, then any of its own words written on the fence (`WORDS`); each `+++`, the mark and its label; the closing. A private-use
+ * name, then any of its own words written on the fence (`WORDS`); each
+ * `+++`, the mark and its label; the closing. A private-use
  * character each, which markdown passes through untouched and nothing else
  * writes. A layout's rule finds its own opening and splits what's in it
  * into panes with `panes()`.
@@ -26,10 +30,19 @@
 import { isOutput, readNotes } from './fence.js';
 import { MARKS } from './source.js';
 
-export const LAYOUTS = ['columns', 'row', 'tabs', 'compare'];
+export const LAYOUTS = ['columns', 'row', 'tabs', 'compare', 'grid'];
 
-/** The words a layout reads on its own fence, not styles: `::: row reverse`. */
-export const WORDS = { row: ['reverse'] };
+/**
+ * The words a layout reads on its own fence, not styles: `::: row
+ * reverse`, a grid's count of columns (`::: grid 2`), and the look of its
+ * cells (`cards`, features/grid).
+ */
+export const WORDS = { row: ['reverse'], grid: [/^\d+$/, 'cards'] };
+
+/** Whether `word` on a `layout`'s fence is one of its `WORDS`. */
+export function owns(layout, word) {
+  return (WORDS[layout] ?? []).some((w) => (typeof w === 'string' ? w === word : w.test(word)));
+}
 
 export const [OPEN, DIVIDER, CLOSE] = MARKS.layout;
 

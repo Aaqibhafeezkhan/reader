@@ -99,6 +99,24 @@ of it, and `( )` in front of the rest.
 @ Session: ( ) Sat AM (x) Sat PM ( ) Sun AM ( ) Sun PM
 :::
 
+A field can go under a list item, indented to the item's text, to ask more
+about that item:
+
+::: tabs
++++ Source
+```markdown
+- ( ) **High energy · Pleasant**
+  @ Closest word: ( ) Excited ( ) Happy ( ) Joyful
+- ( ) **Low energy · Pleasant**
+  @ Closest word: ( ) Calm ( ) Content ( ) Serene
+```
++++ Rendered
+- ( ) **High energy · Pleasant**
+  @ Closest word: ( ) Excited ( ) Happy ( ) Joyful
+- ( ) **Low energy · Pleasant**
+  @ Closest word: ( ) Calm ( ) Content ( ) Serene
+:::
+
 ## Blanks in a sentence
 
 A blank can also sit inside a sentence, filled in the way a madlib is:

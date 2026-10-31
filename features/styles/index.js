@@ -20,10 +20,10 @@
  * letters, and that block takes the styles. Blocks nest; the innermost's
  * font leads and its color wins.
  *
- * `columns`, `tabs`, `compare` and `grid` are not styles but layouts: a
- * block named one has its fences, and the `+++` lines in it, left as the
- * layouts' marks (features/layout.js), with any words on it that are the
- * layout's own, a grid's count; its other names are its styles.
+ * `columns`, `row`, `tabs`, `compare` and `grid` are not styles but
+ * layouts: a block named one has its fences, and the `+++` lines in it, left
+ * as the layouts' marks (features/layout.js), with the layout's own words
+ * (`reverse`, a grid's count), and any other names on it are its styles.
  */
 
 import fs from 'node:fs';
@@ -73,11 +73,11 @@ function lines(state) {
       if (div[1]) {
         const names = div[1].trim().split(/\s+/);
         const layout = names.map((n) => n.toLowerCase()).find((n) => LAYOUTS.includes(n));
-        // The layout's own words go with its name: a grid's count.
-        const own = (n) => layout && (n.toLowerCase() === layout || owns(layout, n));
-        open.push({ names: names.filter((n) => !own(n)), layout });
-        const words = names.filter((n) => own(n) && n.toLowerCase() !== layout);
-        return layout ? indent + LAYOUT_OPEN + [layout, ...words].join(' ') : '';
+        // A layout's own words (`::: row reverse`) go with it, not the styles.
+        const own = names.map((n) => n.toLowerCase()).filter((n) => owns(layout, n));
+        const style = (n) => !LAYOUTS.includes(n.toLowerCase()) && !own.includes(n.toLowerCase());
+        open.push({ names: names.filter(style), layout });
+        return layout ? indent + LAYOUT_OPEN + [layout, ...own].join(' ') : '';
       }
       if (open.length) return open.pop().layout ? indent + LAYOUT_CLOSE : '';
       return line;

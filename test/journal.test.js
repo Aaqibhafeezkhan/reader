@@ -58,6 +58,20 @@ test('its to-dos count how many are reviewed, and each book how far it\'s read',
   assert.deepEqual(bars(drawn(CLOSING)[3]), [['0', '10', 'reviewed', '0 of 10']]);
 });
 
+test('each book on the reading page is a row: its cover, small, beside its title and how far it\'s read (#45)', () => {
+  const reading = drawn(EVENING)[8];
+  const rows = [...reading.matchAll(/<div class="row"[^>]*>\n<div class="row-lead"[^>]*><img src="[^"]+" alt="" style="width: 56px"><\/div>\n<div class="row-rest"[^>]*>\n<p[^>]*><strong><a href="[^"]+">([^<]+)<\/a><\/strong> · ([^<]+)<\/p>\n(?:<p[^>]*><span class="progress"><progress value="(\d+)")?/g)]
+    .map(([, title, author, read]) => [title, author, read]);
+  assert.deepEqual(rows, [
+    ['Moral Ambition', 'Rutger Bregman', undefined],
+    ['The Way of Kings', 'Brandon Sanderson', '326'],
+    ['Smart but Scattered', 'Peg Dawson', '22'],
+    ['My Friends', 'Fredrik Backman', '241'],
+    ['The Stranger', 'Albert Camus, Matthew Ward', undefined],
+  ]);
+  assert.doesNotMatch(reading, /<figure|::: row|\*\*/, 'no cover is a figure, and nothing shows as typed');
+});
+
 test('its singing warmup names each note in a button that plays it, the evening it\'s filled in and as a record', () => {
   for (const now of [EVENING, CLOSING]) {
     const warmup = drawn(now)[10];
@@ -96,7 +110,7 @@ test('from 4:00 the next morning it\'s a record: each page says so, every box an
   }
   const all = out.join('\n');
   const inputs = all.match(/<input[^>]*>/g);
-  assert.equal(inputs.length, 40);
+  assert.equal(inputs.length, 64);
   assert.ok(inputs.every((i) => / disabled/.test(i)), 'every box and choice is shut');
   assert.doesNotMatch(all, /role="textbox"|data-hint|aria-placeholder|tabindex="0" role="button"|task-reset/, 'nothing to type in, pick or press');
   assert.equal(all.match(/<span class="field-blank">blank<\/span>/g).length, 13, 'its blanks left empty are said to be blank, with no hint');
@@ -125,7 +139,7 @@ test('its videos are on the page, each a card to play it from, its choice named 
 
 test('its choices are laid out in grids, two or three across, each still one group to pick from (#44)', () => {
   for (const out of [drawn(EVENING), drawn(CLOSING)]) {
-    const grids = out.map((body) => [...body.matchAll(/<div class="grid grid-items" style="--grid: (\d)"[^>]*>\n<ul[^>]*>([\s\S]*?)<\/ul>\n<\/div>/g)]
+    const grids = out.map((body) => [...body.matchAll(/<div class="grid grid-items grid-cards" style="--grid: (\d)"[^>]*>\n<ul[^>]*>([\s\S]*?)<\/ul>\n<\/div>/g)]
       .map(([, n, items]) => [Number(n), items.match(/<li/g).length, new Set(items.match(/name="choice-\d+"/g)).size]));
     // Across, items, and groups: exercise, meditation, body scan, feelings.
     assert.deepEqual(grids[1], [[2, 4, 1]]);
@@ -133,6 +147,17 @@ test('its choices are laid out in grids, two or three across, each still one gro
     assert.deepEqual(grids[9], [[2, 4, 1]]);
     assert.deepEqual(grids[11], [[2, 4, 1]]);
     assert.equal(grids.flat().length, 4);
-    assert.doesNotMatch(out.join('\n'), /'grid'|'\d'/, 'neither grid nor its count is a font');
+    assert.doesNotMatch(out.join('\n'), /'grid'|'\d'|'cards'/, 'neither grid, its count nor its look is a font');
   }
+});
+
+test('how it\'s feeling is a choice of four, each with its own closest word to pick', () => {
+  const feeling = drawn(EVENING)[11];
+  const items = feeling.split('<li').slice(1);
+  assert.equal(items.length, 4);
+  const words = items.map((item) => [...item.matchAll(/<label class="field-choice"><input type="radio" class="choice-box" name="field-\d+"[^>]*> (\w+)<\/label>/g)].map((m) => m[1]));
+  assert.deepEqual(words.map((w) => w.length), [6, 6, 6, 6]);
+  assert.deepEqual(words[3], ['Calm', 'Content', 'Peaceful', 'Relaxed', 'Grateful', 'Serene']);
+  assert.ok(items.every((item) => /<span class="field-label" id="field-\d+">Closest word<\/span>/.test(item)));
+  assert.doesNotMatch(feeling.replace(/<[^>]*>/g, ''), /@ Closest word/, 'none is left as typed');
 });

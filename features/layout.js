@@ -1,6 +1,6 @@
 /**
- * Layouts: `:::` blocks named `columns`, `tabs` or `compare`, which set the
- * blocks in them out as panes -- side by side, or one at a time. Each block
+ * Layouts: `:::` blocks named `columns`, `row`, `tabs` or `compare`, which
+ * set the blocks in them out as panes -- side by side, or one at a time. Each block
  * in one is a pane, unless `+++` lines are written in it; then what's between
  * two is, and a word after the `+++` names the pane that follows:
  *
@@ -19,8 +19,8 @@
  * else its blocks (features/grid).
  *
  * The styles feature reads the fences and leaves each line that's a
- * layout's as a mark of its own: the opening, the mark, the layout's name
- * and any words on the line that are the layout's own (`words()`); each
+ * layout's as a mark of its own: the opening, the mark and the layout's
+ * name, then any of its own words written on the fence (`WORDS`); each
  * `+++`, the mark and its label; the closing. A private-use
  * character each, which markdown passes through untouched and nothing else
  * writes. A layout's rule finds its own opening and splits what's in it
@@ -30,20 +30,18 @@
 import { isOutput, readNotes } from './fence.js';
 import { MARKS } from './source.js';
 
-export const LAYOUTS = ['columns', 'tabs', 'compare', 'grid'];
+export const LAYOUTS = ['columns', 'row', 'tabs', 'compare', 'grid'];
 
 /**
- * The words on a layout's `:::` line, besides its name, that are its own
- * rather than styles: a grid's count of columns. A word a layout comes to
- * read (a look for its cells, say) goes here, and reaches it by `words()`.
+ * The words a layout reads on its own fence, not styles: `::: row
+ * reverse`, a grid's count of columns (`::: grid 2`), and the look of its
+ * cells (`cards`, features/grid).
  */
-const OWN = {
-  grid: (word) => /^\d+$/.test(word),
-};
+export const WORDS = { row: ['reverse'], grid: [/^\d+$/, 'cards'] };
 
-/** Whether `word`, on a `layout`'s `:::` line, is the layout's own. */
+/** Whether `word` on a `layout`'s fence is one of its `WORDS`. */
 export function owns(layout, word) {
-  return OWN[layout]?.(word.toLowerCase()) ?? false;
+  return (WORDS[layout] ?? []).some((w) => (typeof w === 'string' ? w === word : w.test(word)));
 }
 
 export const [OPEN, DIVIDER, CLOSE] = MARKS.layout;
@@ -53,13 +51,13 @@ const text = (state, n) => state.src.slice(state.bMarks[n] + state.tShift[n], st
 
 /** Whether `line` of the source opens a `name` layout. */
 export function opens(state, line, name) {
-  const open = text(state, line);
-  return open === OPEN + name || open.startsWith(`${OPEN}${name} `);
+  const t = text(state, line);
+  return t === OPEN + name || t.startsWith(`${OPEN}${name} `);
 }
 
-/** The layout's own words on the `:::` line it opens on (`owns()`), lowercased. */
+/** The layout's own words on the fence that opens at `line` (`WORDS`). */
 export function words(state, line) {
-  return text(state, line).slice(OPEN.length).split(' ').slice(1).map((w) => w.toLowerCase());
+  return text(state, line).slice(OPEN.length).split(' ').slice(1);
 }
 
 /**

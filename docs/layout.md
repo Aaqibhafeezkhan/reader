@@ -4,8 +4,8 @@ title: Layout
 
 ← [Contents](index.md)
 
-A `:::` block named `columns`, `grid`, `tabs` or `compare` lays out what's
-in it.
+A `:::` block named `columns`, `row`, `grid`, `tabs` or `compare` lays out
+what's in it.
 Any other `:::` block styles it (see [Styling text](text.md)).
 
 ## Columns
@@ -76,6 +76,46 @@ weekly code change
 * automatic
 :::
 :::
+
+## Row
+
+A `:::` block named `row` sets its first block **beside the rest**, at
+that block's own width, and stacks the others in the width that's left,
+top-aligned: a cover beside a book's title, a portrait beside a bio.
+
+::: tabs
++++ Source
+```markdown
+::: row
+![](images/cover.svg =56x)
+
+**[Pride and Prejudice](https://www.gutenberg.org/ebooks/1342)** · Jane Austen
+
+progress:[326/432] pages
+:::
+```
++++ Rendered
+::: row
+![](images/cover.svg =56x)
+
+**[Pride and Prejudice](https://www.gutenberg.org/ebooks/1342)** · Jane Austen
+
+progress:[326/432] pages
+:::
+:::
+
+- An image alone in the first block is just the image, as small as its
+  size makes it, not a figure with a caption. Its alt text is still its
+  name, for a screen reader.
+- A bar of how far along beside it takes the width that's left.
+- For a first block of more than one block, a portrait and its caption,
+  put a `+++` line after it. Then what's before the first `+++` is the
+  first block, and everything after it is beside it.
+- `::: row reverse` puts the first block on the right. The other names on
+  the line are styles, as on any `:::` block.
+- In a narrow window, it stays a row while the rest has room for a few
+  words beside the first block, and then the rest goes under it.
+- An aside written in a row, or right after it, sits beside all of it.
 
 ## Grid
 

@@ -17,8 +17,9 @@
  * `:::` block (`::: grid 2 gray`), and grids nest in other `:::` blocks.
  *
  * The styles feature reads the fences, leaving this block's as the marks in
- * features/layout.js, with the count after the name; any other word that
- * comes to be a grid's own there (`owns()`) is a class here, `grid-<word>`.
+ * features/layout.js, with the grid's own words (`WORDS`) after the name:
+ * its count, and any other, a look for its cells (`cards`), is a class
+ * here, `grid-<word>`.
  */
 
 import fs from 'node:fs';

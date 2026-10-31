@@ -4,8 +4,8 @@ title: Layout
 
 ← [Contents](index.md)
 
-A `:::` block named `columns`, `row`, `grid`, `tabs` or `compare` lays out
-what's in it.
+A `:::` block named `columns`, `row`, `grid`, `cards`, `tabs` or `compare`
+lays out what's in it.
 Any other `:::` block styles it (see [Styling text](text.md)).
 
 ## Columns
@@ -149,9 +149,48 @@ otherwise each block is a cell:
 - On a narrower page it has fewer columns, and on a phone, one.
 - For a cell of more than one block, put a `+++` line between the cells,
   as in columns.
+- `::: grid 2 cards` draws each cell as a card (see [Cards](#cards)).
 - The other names on the line are styles for everything in it:
   `::: grid 2 gray`. Grids nest in other `:::` blocks, and they in it.
 - Elsewhere, it's a list, or the blocks one after another.
+
+## Cards
+
+A `:::` block named `cards` draws each item of a list in it as **a card**:
+a border round it, to tap anywhere to choose it.
+
+::: tabs
++++ Source
+```markdown
+::: cards
+- ( ) **A** · Strength training
+- (x) **B** · Running
+- ( ) **C** · Something else
+:::
+```
++++ Rendered
+::: cards
+- ( ) **A** · Strength training
+- (x) **B** · Running
+- ( ) **C** · Something else
+:::
+:::
+
+- The chosen card is drawn in the accent, a border and a light fill, with
+  a tick at its corner. A checked task's card is filled, its words faded.
+- Clicking anywhere on a card chooses it, or ticks it, and with the
+  keyboard the ring goes round the whole card. A link, a video's play
+  button or a field's own choices in a card still take their own clicks.
+- A plain list's items are cards with nothing to choose: links to go to,
+  things to read. Without a list, each block is a card, or what's between
+  `+++` lines.
+- `::: grid 2 cards` lays the cards out in a grid (see [Grid](#grid)).
+- An item with a background of its own keeps it, and shows it's chosen by
+  its border.
+- On a slide, or once the page is a record, the chosen card
+  still shows, and none answers the pointer.
+- The other names on the line are styles, as on any `:::` block.
+  Elsewhere, it's a list.
 
 ## Tabs
 

@@ -36,6 +36,8 @@ be chosen, and choosing one clears the others' `(x)`.
 A heading takes a checkbox too, `## [ ] Stretch`, to mark what's under it
 done; `## \[ ] Stretch` keeps the brackets as typed. Boxes in a row,
 `- [ ][ ][ ]`, are one box with stages (see [Recipes](recipes.md)).
+A list in `::: cards` draws each choice as a card, to tap anywhere (see
+[Cards](layout.md#cards)).
 
 ## Fields
 

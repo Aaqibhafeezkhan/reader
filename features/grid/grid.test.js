@@ -53,7 +53,7 @@ test('the other names on the line are styles, its count is not, and it nests in 
   assert.match(html, /^<div class="grid grid-items" style="--grid: 2">/);
   assert.match(html, /<li class="font" style="color: red; --font: 'georgia'">a<\/li>/);
   assert.doesNotMatch(html, /'2'|'grid'/);
-  assert.match(speaker('::: grid 3 cards red\na\n:::\n'), /^<div class="grid grid-cards" style="--grid: 3">\n<div class="grid-cell">\n<p style="color: red">a<\/p>/, 'its own words are classes');
+  assert.match(speaker('::: grid 3 cards red\na\n:::\n'), /^<div class="grid cards" style="--grid: 3">\n<div class="grid-cell">\n<p style="color: red">a<\/p>/, 'its own words are classes');
   const nested = speaker('::: blue\n::: grid 2\none\n\ntwo\n:::\n:::\n');
   assert.match(nested, /^<div class="grid" style="--grid: 2">\n<div class="grid-cell">\n<p style="color: blue">one<\/p>/);
   const inColumns = speaker('::: columns\nleft\n+++\n::: grid 2\na\n\nb\n:::\n:::\n');

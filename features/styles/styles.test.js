@@ -133,5 +133,6 @@ test('a background is kept readable, its ground told to a card as --item-bg, and
   assert.match(css, /\.bg \{ --item-bg: var\(--bg\); background: var\(--item-bg\); \}/);
   assert.match(css, /--item-bg: oklch\(from var\(--bg\) clamp\(var\(--gm-bg-l-min\), l, var\(--gm-bg-l-max\)\) min\(c, var\(--gm-bg-c-max\)\) h\)/);
   assert.match(css, /li:not\(\.bg\) \{ --item-bg: initial; \}/);
+  assert.match(css, /li\.bg \{ --card-bg: var\(--item-bg\); \}/);
   assert.match(css, /@media \(forced-colors: active\) \{\n {2}\.bg \{ border: 1px solid CanvasText; \}/);
 });

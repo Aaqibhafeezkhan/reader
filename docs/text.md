@@ -57,6 +57,61 @@ until the closing line.
 :::
 :::
 
+A list item takes styles of its own from braces at the end of its first
+line, after a space. They style the whole item, its bullet or box
+included, and its cell in a grid. Braces naming anything but colors,
+backgrounds and the generic fonts (`serif`, `monospace`, ...) stay as
+typed:
+
+::: tabs
++++ Source
+```markdown
+- ( ) **High energy · Pleasant**: excited, happy {bg-lemonchiffon}
+- ( ) **Low energy · Pleasant**: calm, content {bg-honeydew}
+- ( ) Not sure yet {gray}
+```
++++ Rendered
+- ( ) **High energy · Pleasant**: excited, happy {bg-lemonchiffon}
+- ( ) **Low energy · Pleasant**: calm, content {bg-honeydew}
+- ( ) Not sure yet {gray}
+:::
+
+### Backgrounds
+
+`bg-` and a CSS color name sets a background, wherever a style can go. On
+a few words it's a highlighter; on a `:::` block or a list item it's a
+box round the whole of it, with its corners rounded:
+
+::: tabs
++++ Source
+```markdown
+Some [words to find again]{bg-yellow} in a sentence.
+
+::: bg-aliceblue
+A whole passage on a pale blue,
+
+- its lists included.
+:::
+```
++++ Rendered
+Some [words to find again]{bg-yellow} in a sentence.
+
+::: bg-aliceblue
+A whole passage on a pale blue,
+
+- its lists included.
+:::
+:::
+
+- The page keeps the words on it readable: a background is drawn pale on
+  a light page and deep, in the same hue, on a dark one, whatever color
+  was named. The words stay the page's own.
+- In a layout (`::: grid 2 bg-lavender`), each cell takes the background.
+- An item drawn as a card keeps its background, chosen or not (see
+  [Cards](layout.md#cards)).
+- In the system's high-contrast colors, a background gives way to the
+  system's, and a line round it still sets it apart.
+
 A `:::` block can also lay out what's in it; see [Layout](layout.md).
 
 ## Arrows

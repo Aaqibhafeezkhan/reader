@@ -217,6 +217,30 @@
   --gm-code-addition: color-mix(in srgb, var(--gm-green) 80%, var(--gm-ink));
 }
 
+/* How light a colour an author gives can be, where it's drawn as text or
+ * lettered in the paper. A name features/color.js knows is the family's hue
+ * already, and drawn exactly as it's defined; a `#hex`, or a name it
+ * doesn't know, is taken in OKLCH to the family's lightness at most in the
+ * light, and at least in the dark, so it reads as the family does. One
+ * deeper than that in the light, or brighter in the dark, is left as it
+ * is. With more contrast asked for, deeper, and brighter and less vivid,
+ * to 7:1. */
+:root { --gm-own-l-min: 0; --gm-own-l-max: 0.5; --gm-own-c-max: 0.4; }
+:root.gm-dark { --gm-own-l-min: 0.78; --gm-own-l-max: 1; }
+@media (prefers-contrast: more) {
+  :root { --gm-own-l-max: 0.4; }
+  :root.gm-dark { --gm-own-l-min: 0.86; --gm-own-c-max: 0.15; }
+}
+
+/* An element in a colour an author gave (`.gm-own`) sets it as `--own`,
+ * and draws in `--gm-own`: that colour kept as light or as dark as the
+ * family, by the bounds above. A browser without relative colours draws it
+ * as it's written. */
+.gm-own { --gm-own: var(--own); }
+@supports (color: oklch(from red clamp(0, l, 1) min(c, 1) h)) {
+  .gm-own { --gm-own: oklch(from var(--own) clamp(var(--gm-own-l-min), l, var(--gm-own-l-max)) min(c, var(--gm-own-c-max)) h); }
+}
+
 /* The system's own colours (forced-colors: active, as Windows' contrast
  * themes are): the browser draws text, grounds and borders in them anyway,
  * but not an SVG's strokes and fills (a puzzle's), nor what a feature says

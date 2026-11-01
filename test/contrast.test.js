@@ -105,6 +105,20 @@ const docMore = {
   light: resolve({ ...lightSet, ...moreLight, ...meaning }),
   dark: resolve({ ...lightSet, ...moreLight, ...declared(block(columns, '/* colours, dark */')), ...declared(block(after(columns, '/* colours, more contrast */'), ':root.gm-dark {')), ...meaning }),
 };
+// static/ink.js letters an author's background in whichever of the page's
+// inks reads better on it; JavaScript can't take them from the cascade, so
+// it copies them, and here they're kept the same
+test("ink.js's inks are the page's, light and dark", () => {
+  const ink = read('static/ink.js');
+  const copied = (name) => {
+    const m = new RegExp(`const ${name} = \\[(.+?)\\];`).exec(ink);
+    assert.ok(m, name);
+    return toHex(m[1].split(',').map(Number));
+  };
+  assert.equal(copied('DARK_INK'), doc.light['gm-ink']);
+  assert.equal(copied('LIGHT_INK'), doc.dark['gm-ink']);
+});
+
 const FAMILY = ['red', 'amber', 'moss', 'green', 'blue', 'violet', 'rose', 'slate'];
 
 test('no text is drawn in the faint ink', () => {
@@ -280,16 +294,16 @@ const capped = (hex, { lo, hi, cmax }) => {
 };
 
 test('a colour an author names reads as text, in light and dark, and at 7:1 with more contrast asked for', () => {
-  // the bounds, and the rules that draw with them
-  const BOUNDS = '/* How light a colour an author names';
+  // the bounds, the one rule that keeps a colour to them, and what reads it
+  const BOUNDS = '/* How light a colour an author gives';
   const set = (css) => {
     const d = declared(css);
-    return { lo: d['gm-key-l-min'], hi: d['gm-key-l-max'], cmax: d['gm-key-c-max'] };
+    return { lo: d['gm-own-l-min'], hi: d['gm-own-l-max'], cmax: d['gm-own-c-max'] };
   };
-  const base = set(block(after(asides, BOUNDS), ':root {'));
-  const darker = set(block(after(asides, BOUNDS), ':root.gm-dark {'));
-  const more = set(block(after(after(asides, BOUNDS), MORE), ':root {'));
-  const moreDark = set(block(after(after(asides, BOUNDS), MORE), ':root.gm-dark {'));
+  const base = set(block(after(columns, BOUNDS), ':root {'));
+  const darker = set(block(after(columns, BOUNDS), ':root.gm-dark {'));
+  const more = set(block(after(after(columns, BOUNDS), MORE), ':root {'));
+  const moreDark = set(block(after(after(columns, BOUNDS), MORE), ':root.gm-dark {'));
   const merge = (...sets) => Object.fromEntries(['lo', 'hi', 'cmax'].map((k) => [k, Number(sets.findLast((x) => x[k] !== undefined)[k])]));
   const themes = [
     ['light', merge(base), doc.light, 4.5],
@@ -297,14 +311,17 @@ test('a colour an author names reads as text, in light and dark, and at 7:1 with
     ['light, more contrast', merge(base, more), docMore.light, 7],
     ['dark, more contrast', merge(base, more, darker, moreDark), docMore.dark, 7],
   ];
-  const cap = (v) => `oklch(from var(--${v}) clamp(var(--gm-key-l-min), l, var(--gm-key-l-max)) min(c, var(--gm-key-c-max)) h)`;
+  const cap = 'oklch(from var(--own) clamp(var(--gm-own-l-min), l, var(--gm-own-l-max)) min(c, var(--gm-own-c-max)) h)';
+  assert.ok(columns.includes(`  .gm-own { --gm-own: ${cap}; }`), 'the clamp');
+  assert.ok(columns.includes('\n.gm-own { --gm-own: var(--own); }'), 'as written, without relative colours');
   const marksCss = read('features/asides/marks.css');
-  assert.ok(asides.includes(`.gm-who.gm-own { background: ${cap('by')}`), 'a chip');
-  assert.ok(asides.includes(`.gm-topic.gm-own { color: ${cap('topic')}`), 'a pill');
-  assert.ok(marksCss.includes(`.mk-about.gm-own { color: color-mix(in srgb, ${cap('mk')} 55%, var(--gm-ink)); }`), 'the words an aside chose');
+  assert.ok(asides.includes('.gm-who.gm-own { --own: var(--by); background: var(--gm-own); }'), 'a chip');
+  assert.ok(asides.includes('.gm-topic.gm-own { --own: var(--topic); color: var(--gm-own); }'), 'a pill');
+  assert.ok(marksCss.includes('.mk-about.gm-own { --own: var(--mk); color: color-mix(in srgb, var(--gm-own) 55%, var(--gm-ink)); }'), 'the words an aside chose');
   // only there: the family, and the colours dealt from it, are drawn exactly as they're defined
   for (const css of [columns, asides, marksCss]) {
-    for (const [rule] of css.matchAll(/^.*oklch\(from var\(--(?:by|topic|mk)\b.*$/gm)) assert.match(rule, /^ *\.(?:gm-who|gm-topic|mk-about)\.gm-own \{/, rule);
+    assert.equal(css.match(/oklch\(from var\(/g)?.length ?? 0, css === columns ? 1 : 0, 'the clamp is written once');
+    for (const [rule] of css.matchAll(/^.*var\(--gm-own\).*$/gm)) assert.match(rule, /^ *\.(?:gm-who|gm-topic|mk-about)\.gm-own \{/, rule);
   }
   assert.match(asides, /\n\.gm-who \{ color: var\(--gm-paper\); background: var\(--by, var\(--gm-accent\)\); \}/);
   assert.match(asides, /\n\.gm-topic \{ color: var\(--topic, var\(--gm-accent\)\);/);

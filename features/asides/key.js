@@ -26,7 +26,7 @@
  */
 
 import { STYLES } from '../mark.js';
-import { inFamily } from '../color.js';
+import { inFamily, ownColor } from '../color.js';
 
 const ENTRY = /^\s*(reviewer|topic)\s+(\S)\s*:\s*(.+?)\s*$/i;
 const COLOR = /^(?:#[0-9a-f]{3,8}|[a-z]+)$/i;
@@ -34,6 +34,15 @@ const COLOR = /^(?:#[0-9a-f]{3,8}|[a-z]+)$/i;
 // The family's hues, as asides.css names them for a key, which read as
 // text on the page, light or dark, and the page on them.
 const PALETTE = Array.from({ length: 8 }, (_, i) => `var(--gm-key-${i + 1})`);
+
+/**
+ * The class for something drawn in an alias's colour, a chip, a pill or
+ * the words an aside chose: ` gm-own` for a colour an author wrote that
+ * isn't the family's, for the page to keep readable (src/columns.css), or ''.
+ */
+export function ownClass(color) {
+  return ownColor(color) ? ' gm-own' : '';
+}
 
 /** A front matter line declaring an alias -> `{ kind, alias, name, color, style }`, or null. */
 export function readEntry(line) {

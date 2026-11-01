@@ -23,9 +23,20 @@
  * its own play button plays it, with sound, in any browser. Only in a frame
  * with an origin of its own, where it can play: the overview's, the speaker
  * view's and the measuring frame's keep the card, and ask nothing of YouTube.
+ * And only where it's at least YouTube's smallest size, 200px wide: below
+ * that YouTube draws its compact player, whose middle, play button and all,
+ * does nothing when pressed (a card in a grid of three, say). There the card
+ * stays until pressed, and its player then starts, as anywhere else.
  */
 (() => {
   const ID = /^[\w-]+$/;
+  // YouTube's smallest player, in CSS pixels wide.
+  const SMALLEST = 200;
+  // Too small for a player from the start; 0 is a page not laid out, which can't tell.
+  const small = (card) => {
+    const width = card.querySelector('.video-play')?.offsetWidth ?? 0;
+    return width > 0 && width < SMALLEST;
+  };
   // The players, by their card's key.
   const players = new Map();
   const moves = typeof Element.prototype.moveBefore === 'function';
@@ -92,7 +103,7 @@
       // window.origin, not location's, which a sandboxed frame keeps from its address.
       if (Preview.running && (window.origin ?? location.origin) !== 'null') {
         for (const card of root.querySelectorAll('.video[data-video]')) {
-          if (!card.querySelector('.video-play') || !ID.test(card.dataset.video)) continue;
+          if (!card.querySelector('.video-play') || !ID.test(card.dataset.video) || small(card)) continue;
           const key = keyOf(card, root);
           const frame = player(card, false);
           players.set(key, frame);

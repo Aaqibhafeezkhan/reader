@@ -10,7 +10,9 @@
  * `preview:complete`: a plain box is ticked, a staged one filled all the way.
  * A box says whether it's done (`data-done`), and when that changes on the
  * page, sends `preview:done`, for whatever counts what's done; a list of
- * choices says whether one's picked (`data-answered`).
+ * choices says whether one's picked (`data-answered`). A choice is picked,
+ * too, when something inside it is answered (`preview:answered`), as a
+ * blank in its line filled in, or a field under it.
  * Where the page can't be worked (`Preview.workable`), as on a slide, none
  * of them takes a click or a key; when it stops being workable while it's
  * showing, as a page past its time does, they're shut as the server would
@@ -59,10 +61,8 @@
     for (const b of document.querySelectorAll('.task-reset, .task-log')) Preview.shut(b, { hidden: '' });
   });
 
-  document.addEventListener('change', (e) => {
-    const box = e.target;
-    // A field's choices share a line, and the field writes it (fields/preview.js).
-    if (!box.matches || !box.matches('input.task-box, input.choice-box') || box.closest('.field')) return;
+  /** Box `box` written as it now reads, and the rest of its choices with it. */
+  const answer = (box) => {
     const group = box.type === 'radio'
       ? [...document.querySelectorAll('input.choice-box')].filter((b) => b.name === box.name)
       : [box];
@@ -72,6 +72,29 @@
     if (box.type === 'checkbox') markDone(box, box.checked);
     else box.closest('[data-answered]')?.setAttribute('data-answered', 'true');
     if (edits.length) Preview.edit(edits, { undo: true });
+  };
+
+  document.addEventListener('change', (e) => {
+    const box = e.target;
+    // A field's choices share a line, and the field writes it (fields/preview.js).
+    if (!box.matches || !box.matches('input.task-box, input.choice-box') || box.closest('.field')) return;
+    answer(box);
+  });
+
+  // Something answered inside a choice, a blank in its line or a field
+  // under it, picks the choice; its line goes up with the answer's, as one
+  // edit (preview-api.js). Picking another later leaves the answer be.
+  document.addEventListener('preview:answered', (e) => {
+    if (!Preview.workable) return;
+    for (let item = e.target.closest?.('li'); item; item = item.parentElement?.closest('li')) {
+      const box = item.querySelector(':scope > input.choice-box, :scope > p > input.choice-box');
+      if (!box) continue;
+      if (!box.defaultChecked) {
+        box.checked = true;
+        answer(box);
+      }
+      return;
+    }
   });
 
   // Asked of a box, or of the list item it begins: done, if it isn't. Its

@@ -5,11 +5,32 @@ li.task > .choice-box, li.task > p > .choice-box {
   vertical-align: -0.1em;
   cursor: pointer;
 }
-.task-heading > .task-box {
-  width: 0.8em; height: 0.8em;
-  margin: 0 0.3em 0 0;
-  vertical-align: -0.02em;
+/* A heading's box: its title, then a Done pill at the end of its line,
+   filled in the accent once its section is done, the title in done ink. */
+.task-heading { display: flex; align-items: baseline; gap: 0.75em; }
+.task-heading > .section-title { flex: 1; min-width: 0; }
+.section-done {
+  flex: none;
+  align-self: center;
+  font: 600 0.8rem/1 var(--gm-sans);
+  letter-spacing: normal;
+  text-transform: none;
+  padding: 0.35em 0.85em;
+  border: 1px solid var(--gm-rule);
+  border-radius: 1em;
+  background: none;
+  color: var(--gm-ink-soft);
   cursor: pointer;
+}
+.section-done::after { content: "Done"; }
+.section-done[aria-pressed="true"] { background: var(--gm-accent); border-color: var(--gm-accent); color: var(--gm-paper); }
+.section-done[aria-pressed="true"]::after { content: "\2713  Done"; }
+.section-done:not([aria-pressed="true"]):not(:disabled):hover { color: var(--gm-ink); border-color: var(--gm-ink-soft); }
+.section-done:focus-visible { outline: 2px solid var(--gm-accent); outline-offset: 2px; }
+.section-done[aria-disabled="true"], .section-done:disabled { cursor: default; }
+.task-heading:has(> .section-done[aria-pressed="true"]) > .section-title { color: var(--gm-ink-done); }
+@media (forced-colors: active) {
+  .section-done[aria-pressed="true"] { forced-color-adjust: none; background: Highlight; border-color: Highlight; color: HighlightText; }
 }
 /* a box with stages: a pip for each, filled as it's reached */
 .stage-box {
@@ -28,13 +49,12 @@ li.task > .choice-box, li.task > p > .choice-box {
 /* It takes a click a little above and below it, 24px tall in all. */
 .stage-box { position: relative; }
 .stage-box::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: max(100%, 24px); transform: translateY(-50%); }
-.task-heading > .stage-box { margin: 0 0.3em 0 0; }
 span.stage-box { cursor: default; }
 /* Where the page can't be worked (static/preview-api.js), as on a slide, a
    box doesn't answer the pointer as if it could be ticked. */
 .unworkable li.task > .task-box, .unworkable li.task > p > .task-box,
 .unworkable li.task > .choice-box, .unworkable li.task > p > .choice-box,
-.unworkable .task-heading > .task-box, .unworkable .stage-box { cursor: default; }
+.unworkable .section-done, .unworkable .stage-box { cursor: default; }
 /* in the margin, ending where a checkbox does, so the words line up */
 li.staged { position: relative; }
 li.staged > .stage-box, li.staged > p > .stage-box {

@@ -87,13 +87,13 @@ test('boxes on a slide know their lines in the file', () => {
 test('on a slide, every box and choice is drawn as it stands and can\'t be changed, and there\'s no reset', () => {
   const md = '---\nmultibox:\n  stages: have, prepped, used\n---\n\n## [x] Prep\nreset:[]\n\n- [x] oil\n- [ ] salt\n\n- ( ) tea\n- (x) coffee\n\n* [x][ ][ ] onion\n';
   const { body } = slides(`${md}\n---\n\n# Next\n`).slides[0];
-  const inputs = body.match(/<input [^>]*>/g);
+  const inputs = body.match(/<input [^>]*>|<button type="button" class="section-done"[^>]*>/g);
   assert.equal(inputs.length, 5);
   for (const input of inputs) assert.match(input, / disabled>$/);
-  assert.match(body, /<input type="checkbox" class="task-box" data-line="5" [^>]* checked disabled> Prep/);
+  assert.match(body, /<span class="section-title">Prep<\/span><button type="button" class="section-done" data-line="5" data-done="true" [^>]* aria-pressed="true" disabled><\/button>/);
   assert.match(body, /<input type="radio" class="choice-box" name="choice-\d+" [^>]*aria-label="coffee" checked disabled>/);
   assert.match(body, /<span class="stage-box" role="img" aria-label="onion: have \(1 of 3\)" title="have" data-done="false">/);
-  assert.doesNotMatch(body, /<button|task-reset/);
+  assert.doesNotMatch(body, /<button(?! type="button" class="section-done")|task-reset/);
   const page = render(md).body;
   assert.doesNotMatch(page, /disabled/, 'in the editor, every one can be changed');
   assert.match(page, /<button type="button" class="stage-box"/);
@@ -110,10 +110,28 @@ test('done tasks are in the done ink, at full opacity', () => {
   assert.doesNotMatch(rule, /opacity/);
 });
 
-test('a checkbox at the head of a heading marks it, and knows its line', () => {
-  const { body } = render('# [ ] Gratitude\n\n## [x] Ways\n');
-  assert.match(body, /<h1 class="task-heading"[^>]*><input type="checkbox" class="task-box" data-line="0" data-done="false" data-on="# \[x\] Gratitude" data-off="# \[ \] Gratitude" aria-label="Gratitude"> Gratitude<\/h1>/);
-  assert.match(body, /<h2 class="task-heading"[^>]*><input type="checkbox" class="task-box" data-line="2" [^>]* checked> Ways<\/h2>/);
+test('a box at the head of a heading is a Done button at the end of its line, and knows its line', () => {
+  const { body } = render('# [ ] Gratitude\n\n# [x] Ways\n');
+  assert.match(body, /<h1 class="task-heading"[^>]*><span class="section-title">Gratitude<\/span><button type="button" class="section-done" data-line="0" data-done="false" data-own="false" data-full="false" data-on="# \[x\] Gratitude" data-off="# \[ \] Gratitude" aria-label="Done: Gratitude" aria-pressed="false"><\/button><\/h1>/);
+  assert.match(body, /<h1 class="task-heading"[^>]*><span class="section-title">Ways<\/span><button [^>]*data-line="2" data-done="true" data-own="true" [^>]*aria-pressed="true"><\/button><\/h1>/);
+  assert.doesNotMatch(body, /<input/, 'no box before its title');
+});
+
+test('a section is done when everything in it to be done is, a section under it with a box counting as one', () => {
+  const doneOf = (md) => [...render(md).body.matchAll(/class="section-done" data-line="(\d+)" data-done="(\w+)" data-own="\w+" data-full="(\w+)"[^>]*>/g)]
+    .map(([, line, done, full]) => [Number(line), done === 'true', full === 'true']);
+  const day = (a, b, pick) => `# [ ] Today\n\n- ${pick} Navy Day\n- ( ) Heritage\n\n## [ ] Ways\n\n- [${a}] Read\n- [${b}] Watch\n`;
+  assert.deepEqual(doneOf(day(' ', 'x', '( )')), [[0, false, false], [5, false, false]]);
+  assert.deepEqual(doneOf(day('x', 'x', '( )')), [[0, false, false], [5, true, true]], 'its tasks done, Ways is; no celebration picked, Today isn\'t');
+  assert.deepEqual(doneOf(day('x', 'x', '(x)')), [[0, true, true], [5, true, true]]);
+  // A section under it ticked itself counts as done, whatever's in it.
+  assert.deepEqual(doneOf('# [ ] Today\n\n## [x] Ways\n\n- [ ] Read\n'), [[0, true, true], [2, true, false]]);
+  // A heading with no box is only a part of the section it's in.
+  assert.deepEqual(doneOf('# [ ] Today\n\n## Notes\n\n- [x] Read\n\n# Next\n\n- [ ] Later\n'), [[0, true, true]]);
+  // With nothing in it to be done, a section is done only by its own box.
+  assert.deepEqual(doneOf('# [ ] Empty\n\nWords.\n\n# [x] Ticked\n'), [[0, false, false], [4, true, false]]);
+  // Done by what's in it, its button says pressing it would change nothing.
+  assert.match(render(day('x', 'x', '( )')).body, /data-line="5"[^>]* aria-pressed="true" aria-disabled="true">/);
 });
 
 test('a heading has no radio button, and an escaped box stays as typed', () => {

@@ -2,8 +2,9 @@
  * `- [ ]` and `- [x]` at the head of a list item are a checkbox; `- ( )` and
  * `- (x)` a radio button, one choice to a list. They work wherever a list
  * does: in a quote, in an aside. `# [ ]` at the head of a heading is a
- * checkbox too, for the section under it, or the page of a workbook, being
- * done; there's no radio button there.
+ * Done button at the end of its line, for the section under it, or the page
+ * of a workbook, being done: by the button, or by everything in the section
+ * being done (sectionsDone, below); there's no radio button there.
  *
  * Boxes in a row, `- [x][ ][ ]`, are one box with stages: each click fills
  * the next, and once they're all filled the item is done. The front matter
@@ -106,7 +107,7 @@ export function tasks(md) {
         if (box.staged && !heading) addClass(t, box.checked ? 'staged task-done' : 'staged');
         first.content = first.content.slice(m[0].length);
         const input = new state.Token('task_box', 'input', 0);
-        input.meta = { ...box, group: lists.at(-1), name: nameOf(inline.children) };
+        input.meta = { ...box, group: lists.at(-1), name: nameOf(inline.children), heading };
         // A box is a thing to be done; a choice isn't (see source.js's tags).
         if (!box.radio) input.meta.done = box.checked;
         else if (opens.length) questions.set(opens.at(-1), Boolean(questions.get(opens.at(-1)) || box.checked));
@@ -175,6 +176,7 @@ export function tasks(md) {
   };
 
   md.renderer.rules.task_box = (tokens, i, options, env) => {
+    if (tokens[i].meta.heading) return doneButton(tokens[i].meta, env);
     if (tokens[i].meta.staged) return stageBox({ ...tokens[i].meta, stages: stagesOf(env), pictured: !workable(env) });
     const { line, radio, checked, on, off, group, name, notExported } = tokens[i].meta;
     // A box another feature shows in its own way (see source.js's tags).
@@ -184,6 +186,69 @@ export function tasks(md) {
       ? `<input type="radio" class="choice-box" name="choice-${group}" data-line="${line}"${lines}> `
       : `<input type="checkbox" class="task-box" data-line="${line}" data-done="${checked}"${lines}> `;
   };
+}
+
+/**
+ * A heading's box, drawn as a Done button at the end of its line: pressed
+ * when its section is done (`data-done`), by its own `[x]` (`data-own`) or
+ * by its parts all being done (`data-full`). Done by its parts, pressing it
+ * changes nothing, so it says so (`aria-disabled`); to undo that, a part is
+ * undone. Its words are its style's, so the heading's own text is its title
+ * alone, for whatever reads it (the outline, a page's name in Work).
+ */
+function doneButton({ line, on, off, checked, done = checked, full = false, name }, env) {
+  const label = name ? `Done: ${name}` : 'Done';
+  return `<button type="button" class="section-done" data-line="${line}" data-done="${done}" data-own="${checked}" data-full="${full}"`
+    + ` data-on="${escapeAttr(on)}" data-off="${escapeAttr(off)}" aria-label="${escapeAttr(label)}" aria-pressed="${done}"`
+    + `${full ? ' aria-disabled="true"' : ''}${shut(env)}></button>`;
+}
+
+/**
+ * Once every feature has said what's to be done on the page (see
+ * source.js's tags), each section with a box says whether it's done: by its
+ * own `[x]`, or by everything in it that can be done being done, the things
+ * to be done and the questions, and the sections with boxes under it, which
+ * count as one part each. A section with nothing in it to be done is done
+ * only by its own box. Its title is set apart from the button, which goes
+ * at the end of its line.
+ */
+function sectionsDone(md) {
+  md.core.ruler.push('task_sections', (state) => {
+    if (state.inlineMode || state.env.nested || !state.env.tasks) return;
+    const { of } = sections(state);
+    // Each section with a box, by its box's token, and the parts it holds.
+    const boxes = new Map();
+    const parts = [];
+    state.tokens.forEach((block, i) => {
+      const heading = state.tokens[i - 1]?.type === 'heading_open';
+      for (const t of [block, ...(block.children ?? [])]) {
+        if (heading && t.type === 'task_box' && t.meta.heading) boxes.set(of[i], { box: t, inline: block, parts: [] });
+        else if (typeof t.meta?.done === 'boolean') parts.push({ section: of[i], done: () => t.meta.done });
+        else if (typeof t.meta?.answered === 'boolean') parts.push({ section: of[i], done: () => t.meta.answered });
+      }
+    });
+    if (!boxes.size) return;
+    // The nearest section with a box that `s` is in, itself first.
+    const holder = (s) => {
+      for (; s; s = s.parent) if (boxes.has(s)) return boxes.get(s);
+      return null;
+    };
+    for (const p of parts) holder(p.section)?.parts.push(p);
+    for (const [section, own] of boxes) holder(section.parent)?.parts.push({ done: () => isDone(own) });
+    const isDone = (own) => {
+      if (own.full === undefined) own.full = own.parts.length > 0 && own.parts.every((p) => p.done());
+      return own.box.meta.checked || own.full;
+    };
+    for (const own of boxes.values()) {
+      const { box, inline } = own;
+      box.meta.done = isDone(own);
+      box.meta.full = own.full;
+      const title = inline.children.filter((t) => t !== box);
+      const open = new state.Token('task_title_open', 'span', 1);
+      open.attrSet('class', 'section-title');
+      inline.children = [open, ...title, new state.Token('task_title_close', 'span', -1), box];
+    }
+  });
 }
 
 const LOG = /^log$/i;
@@ -253,4 +318,6 @@ export default {
   preview: fileURLToPath(new URL('./preview.js', import.meta.url)),
   // Reads the file as written, before the features that don't.
   raw: true,
+  // Says which sections are done once the rest have said what's done in them.
+  late: sectionsDone,
 };

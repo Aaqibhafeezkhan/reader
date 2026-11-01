@@ -11,20 +11,32 @@ import { progressBar, progressWords } from '../progress.js';
 const HEADINGS = 'h1, h2, h3, h4, h5, h6';
 
 /**
- * A page's name, from its first heading, and whether it's done: by its
- * opening heading's own box if it has one; otherwise when everything on it
- * to be done is, and every question is answered. With none of those there's
+ * A page's name, from its first heading, and whether it's done: as its
+ * opening heading says, if it says whether its section is done; otherwise
+ * when everything on it to be done is, and every question is answered, a
+ * heading under it that says whether its section is done counting as one
+ * of them, for all that's in its section. With none of those there's
  * nothing to do on it, and `done` is null.
  */
 export function mark(body, i) {
   const doc = new DOMParser().parseFromString(`<body>${body}</body>`, 'text/html');
   const heading = doc.querySelector(HEADINGS);
   const title = heading?.textContent.trim() || `Page ${i + 1}`;
-  const own = heading?.querySelector(':scope > [data-done]');
-  if (own) return { title, done: own.dataset.done === 'true' };
-  const things = [...doc.querySelectorAll('[data-done]')].map((t) => t.dataset.done);
-  const questions = [...doc.querySelectorAll('[data-answered]')].map((q) => q.dataset.answered);
-  const all = [...things, ...questions];
+  const says = (h) => h.querySelector(':scope > [data-done]');
+  if (heading && says(heading)) return { title, done: says(heading).dataset.done === 'true' };
+  const all = [];
+  // The level of the section being passed over, its heading counted; 0 for none.
+  let inside = 0;
+  for (const n of doc.querySelectorAll(`${HEADINGS}, [data-done], [data-answered]`)) {
+    if (n.matches(HEADINGS)) {
+      const level = Number(n.tagName[1]);
+      if (inside && level <= inside) inside = 0;
+      if (!inside && says(n)) {
+        all.push(says(n).dataset.done);
+        inside = level;
+      }
+    } else if (!inside && !n.closest(HEADINGS)) all.push(n.dataset.done ?? n.dataset.answered);
+  }
   if (!all.length) return { title, done: null };
   return { title, done: all.every((v) => v === 'true') };
 }

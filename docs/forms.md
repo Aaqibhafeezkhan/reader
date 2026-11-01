@@ -33,11 +33,45 @@ be chosen, and choosing one clears the others' `(x)`.
 - (x) coffee
 :::
 
-A heading takes a checkbox too, `## [ ] Stretch`, to mark what's under it
-done; `## \[ ] Stretch` keeps the brackets as typed. Boxes in a row,
-`- [ ][ ][ ]`, are one box with stages (see [Recipes](recipes.md)).
+Boxes in a row, `- [ ][ ][ ]`, are one box with stages (see [Recipes](recipes.md)).
 A list in `::: cards` draws each choice as a card, to tap anywhere (see
 [Cards](layout.md#cards)).
+
+## Sections to finish
+
+A heading written with a box, `## [ ] Stretch`, is a section to finish.
+Its line ends in a **Done** button; pressed, it reads **✓ Done**, the title goes into the done ink, and the heading in the file becomes `## [x] Stretch`.
+Pressing it again takes that back.
+
+A section is done, too, once everything in it that can be done is: its boxes ticked, its choices made, and each section with a box under it done.
+It shows **✓ Done** on its own then, and stays done until one of them is undone.
+A section with nothing in it to tick or pick is done only by its button.
+`## \[ ] Stretch` keeps the brackets as typed.
+
+::: tabs
++++ Source
+```markdown
+### [ ] Ways to embrace today
+
+- [ ] Read the "man in the arena" speech
+- [ ] Watch an old family video
+
+### [ ] Stretch
+
+- [x] Reach for the ceiling
+- [x] Touch your toes
+```
++++ Rendered
+### [ ] Ways to embrace today
+
+- [ ] Read the "man in the arena" speech
+- [ ] Watch an old family video
+
+### [ ] Stretch
+
+- [x] Reach for the ceiling
+- [x] Touch your toes
+:::
 
 ## Fields
 
@@ -227,7 +261,7 @@ progress:[326/1007] pages
 :::
 
 Empty brackets count the boxes in its section (the heading it's under, to the next at that level or above, or the slide it's on), and how many are ticked.
-A staged box counts once it's full; a choice isn't a box, and neither is the heading's own box, which says the whole section is done.
+A staged box counts once it's full; a choice isn't a box, and neither is the heading's own Done button, which says the whole section is done.
 
 ::: tabs
 +++ Source

@@ -140,3 +140,20 @@ test('a background is kept readable, its ground told to a card as --item-bg, and
   assert.match(css, /li\.bg \{ --card-bg: var\(--item-bg\); \}/);
   assert.match(css, /@media \(forced-colors: active\) \{\n {2}\.bg \{ border: 1px solid CanvasText; \}/);
 });
+
+test('uppercase sets a span, a ::: block, a list item and a heading in capitals, keeping the words as written', () => {
+  const src = "[Today's prompt]{uppercase}: why?\n\n::: uppercase red\nlabel\n:::\n\n- [ ] {uppercase} Walk\n\n## {uppercase} Ways to embrace today\n\n## [ ] {Uppercase navy} Done\n";
+  const { body } = render(src);
+  assert.match(body, /<span class="uppercase">Today’s prompt<\/span>: why\?/);
+  assert.match(body, /<p class="uppercase" style="color: red">label<\/p>/);
+  assert.match(body, /<li class="uppercase task"><input type="checkbox"[^>]* data-on="- \[x\] \{uppercase\} Walk"[^>]*> Walk<\/li>/);
+  assert.match(body, /<h2 class="uppercase">Ways to embrace today<\/h2>/);
+  assert.match(body, /<h2 class="uppercase task-heading" style="color: navy"><input type="checkbox"[^>]* aria-label="Done"> Done<\/h2>/);
+  assert.doesNotMatch(body, /\{uppercase\}<|>\{|--font: 'uppercase'/i);
+});
+
+test('braces after a heading\'s #s that aren\'t all style names stay as typed', () => {
+  const { body } = render('## {foo} bar\n\n## a {uppercase} b\n');
+  assert.match(body, /<h2>\{foo\} bar<\/h2>/);
+  assert.match(body, /<h2>a \{uppercase\} b<\/h2>/);
+});

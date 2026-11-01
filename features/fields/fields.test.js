@@ -173,3 +173,46 @@ test('a label that ends in its own stop, as a question does, is marked so it tak
   assert.match(body, /<span class="field-label field-label-stop">Anything else you learned today\?<\/span>/);
   assert.match(body, /<span class="field-label">Name<\/span>/);
 });
+
+test('a field whose value is a date is the date, drawn by the date feature, the field round it', () => {
+  const { body } = render('@ When: date:[]\n@ Due {a Friday}: date:2026-11-10[]\n');
+  assert.match(body, /<span class="field" data-line="0" data-text="@ When: date:\[\]" data-head="@ When:" data-kind="date"><span class="field-label">When<\/span><span class="field-held"><span class="date date-blank" data-line="0" data-col="8" data-text="@ When: date:\[\]" tabindex="0" role="button" aria-haspopup="dialog">pick a date<\/span><\/span><\/span>/);
+  assert.match(body, /data-kind="date"><span class="field-label">Due<\/span><span class="field-held"><time class="date" datetime="2026-11-10" data-line="1" data-col="18" [^>]*>November 10, 2026<\/time><\/span><\/span>/);
+  assert.doesNotMatch(body, /class="field-value"|[\uE000-\uF8FF]/);
+});
+
+test('a field whose value is a date that is not one keeps it as typed', () => {
+  const { body } = render('@ When: date:2026-02-30[]\n');
+  assert.match(body, /<span class="field-held">date:2026-02-30\[\]<\/span>/);
+});
+
+test('a date field on a slide reads as its date, or as a blank', () => {
+  const { body } = slides('# One\n\n@ When: date:[]\n@ Due: date:2026-11-10[]\n\n---\n\n# Two\n').slides[0];
+  assert.match(body, /data-head="@ When:"><span class="field-label">When<\/span><span class="field-value" data-value=""><\/span><span class="field-blank vh">blank<\/span><\/span>/);
+  assert.match(body, /<span class="field-held"><time class="date" datetime="2026-11-10"[^>]*>November 10, 2026<\/time><\/span>/);
+  assert.doesNotMatch(body, /pick a date|tabindex/);
+});
+
+test('a date field in an indented code block is shown as written', () => {
+  const { body } = render('- item\n\n        @ When: date:[]\n');
+  assert.doesNotMatch(body, /[\uE000-\uF8FF]/);
+});
+
+test('a field whose value is number: holds a number, shown without its kind', () => {
+  const { body } = render('@ Age {e.g. 12}: number:[]\n@ Age: number:12[]\n@ Score: number:-2.5[two and a half below]\n');
+  assert.match(body, /data-head="@ Age \{e.g. 12\}:" data-kind="number"><span class="field-label">Age<\/span><span class="field-value" data-value="" [^>]*data-hint="e.g. 12"[^>]*><\/span>/);
+  assert.match(body, /data-text="@ Age: number:12\[\]" data-head="@ Age:" data-kind="number"><span class="field-label">Age<\/span><span class="field-value" data-value="12"[^>]*>12<\/span>/);
+  assert.match(body, /data-kind="number"><span class="field-label">Score<\/span><span class="field-value" data-value="-2.5"[^>]*>two and a half below<\/span>/);
+});
+
+test('a field whose number: is not a number keeps it as typed', () => {
+  const { body } = render('@ Age: number:twelve[]\n');
+  assert.doesNotMatch(body, /data-kind/);
+  assert.match(body, /<span class="field-value" data-value="number:twelve\[\]"[^>]*>number:twelve\[\]<\/span>/);
+});
+
+test('a number field on a slide reads as its number, or as a blank', () => {
+  const { body } = slides('# One\n\n@ Age {e.g. 12}: number:[]\n@ Age: number:12[]\n\n---\n\n# Two\n').slides[0];
+  assert.match(body, /<span class="field-value" data-value="" data-hint="e.g. 12"><\/span><span class="field-blank vh">blank, e.g. 12<\/span>/);
+  assert.match(body, /<span class="field-value" data-value="12">12<\/span>/);
+});

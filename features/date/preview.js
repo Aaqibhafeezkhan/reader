@@ -163,6 +163,9 @@
     }
     el.setAttribute('datetime', picked);
     Preview.edit([{ from: line, to: line + 1, before: [text], after: [now] }], { undo: true });
+    // A day picked answers what it's in, as a blank typed into does: a
+    // choice it's part of is picked with it (preview-api.js).
+    el.dispatchEvent(new Event('preview:answered', { bubbles: true }));
   }
 
   // Hovering shows the calendar, after a moment; leaving the date and the

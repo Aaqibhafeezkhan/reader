@@ -350,6 +350,11 @@ test('on a slide, an empty field says its hint after it\'s blank', () => {
     ['One', 'Hours: blank, e.g. 7.5', 'Name: Josh']);
 });
 
+test('on a slide, a field of a kind says its value: a date, a number, or that it is blank', () => {
+  assert.deepEqual(saying('# One\n\n@ Due: date:2026-11-10[]\n\n@ When: date:[]\n\n@ Age: number:12[]\n', 1, 2, 3),
+    ['One', 'Due: November 10, 2026', 'When: blank', 'Age: 12']);
+});
+
 test('the overview names a slide by its title as the stage says it, an image in it by its alt', () => {
   const markdown = '# Why ![a rocket](r.png) *really* wins\n\nbody\n';
   assert.deepEqual(saying(markdown), ['Why a rocket really wins']);

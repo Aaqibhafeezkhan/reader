@@ -32,7 +32,8 @@
   /** A field as its label and what's in it: `Name: Josh`, `Thoughts: blank`, `Hours: blank, e.g. 7.5`. */
   function field(node, k) {
     const label = node.querySelector(':scope > .field-label');
-    const value = node.querySelector(':scope > .field-value');
+    // Its blank, or what another feature drew in it, a date.
+    const value = node.querySelector(':scope > :is(.field-value, .field-held)');
     // An empty one says what the page says of it, unseen, as a feature wrote
     // it: a field that it's blank, and what goes there if that's hinted
     // (`unfilled` in features/blank.js); a definition, through the

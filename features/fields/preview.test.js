@@ -168,3 +168,50 @@ test('a field\'s choice picks, writing its line; on a slide, none does, by a cli
   assert.deepEqual(p.posted.filter((m) => m.type === 'edit'), []);
   assert.deepEqual(picks().map((x) => x.checked), [false, true]);
 });
+
+test('a number field takes only a number, and writes it back as number:', async () => {
+  const { fields, edits, open, fill } = page('@ Age {e.g. 12}: number:[]\n@ Score: number:12[a dozen]\n');
+  const input = open(0);
+  assert.equal(input.inputMode, 'decimal');
+  for (const typed of ['1', '12', '12a', '12.']) {
+    input.value = typed;
+    input.dispatchEvent(new input.ownerDocument.defaultView.Event('input'));
+  }
+  assert.equal(input.value, '12.');
+  input.blur();
+  await settle();
+  await fill(1, '');
+  assert.deepEqual(edits.map((e) => [e.before[0], e.after[0]]), [
+    ['@ Age {e.g. 12}: number:[]', '@ Age {e.g. 12}: number:12[]'],
+    ['@ Score: number:12[a dozen]', '@ Score: number:[]'],
+  ]);
+  assert.equal(fields[0].querySelector('.field-value').textContent, '12');
+});
+
+test('a number field opens on its number, not what is shown for it, and what is not one is put back', async () => {
+  const { edits, open, fill } = page('@ Score: number:12[a dozen]\n');
+  assert.equal(open(0).value, '12');
+  open(0).blur();
+  await settle();
+  await fill(0, '-');
+  assert.deepEqual(edits, []);
+});
+
+test('a date field picks a day into its place on the line, and Tab goes past it', async () => {
+  const p = preview();
+  p.show(render('@ Name: Josh\n@ When {a Friday}: date:[]\n@ Age: number:[]\n').body);
+  const date = p.document.querySelector('.field[data-kind="date"] .date');
+  let answered = null;
+  p.document.addEventListener('preview:answered', (e) => { answered = e.target; });
+  date.click();
+  p.document.querySelector('.date-cal-grid button[data-date$="-10"]').click();
+  await settle();
+  assert.equal(answered, date, 'a day picked says it answered what it is in');
+  const [edit] = p.posted.filter((m) => m.type === 'edit').flatMap((m) => m.edits);
+  assert.equal(edit.before[0], '@ When {a Friday}: date:[]');
+  assert.match(edit.after[0], /^@ When \{a Friday\}: date:\d{4}-\d{2}-10\[\]$/);
+  p.document.querySelector('.field').click();
+  const input = p.document.querySelector('.field textarea');
+  input.dispatchEvent(new p.window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+  assert.ok(p.document.querySelector('.field[data-kind="number"] textarea'), 'Tab goes on to the next blank');
+});

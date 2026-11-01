@@ -8,7 +8,8 @@
  * next field or the one before. A field of choices writes its line as it
  * reads with the one picked. A field in a sentence (`[@ what goes here:
  * answer]`) writes its answer into its place on the line, moving along the
- * others after it. A field given an answer, a value or a choice, says so
+ * others after it. A field that holds a number (`number:`) takes only a
+ * number, and writes it back as `number:12[]`. A field given an answer, a value or a choice, says so
  * (`preview:answered`) to what it's in. Where the page can't be worked
  * (`Preview.workable`), as on a slide, no blank opens and no choice is
  * picked; and when it stops being workable while it's showing, as a page
@@ -28,8 +29,14 @@
   /** Where `field` is, to find it again after a re-render. */
   const placeOf = (field) => ({ line: field.dataset.line, label: fieldLabel(field), at: field.dataset.start });
 
+  // What can be typed on the way to a number, and what's one.
+  const NUMBERING = /^-?\d*\.?\d*$/;
+  const NUMBER = /^-?(?:\d+(?:\.\d+)?|\.\d+)$/;
+  const numeric = (field) => field.dataset.kind === 'number';
+
   /** `field`'s line as written with `value` in it, the fields beside it told where they are now. */
   function written(field, value) {
+    if (numeric(field)) return `${field.dataset.head} number:${value}[]`;
     if (field.dataset.start === undefined) return value ? `${field.dataset.head} ${value}` : field.dataset.head;
     const was = field.dataset.text;
     const start = Number(field.dataset.start);
@@ -60,6 +67,16 @@
     input.setAttribute('aria-label', slot.getAttribute('aria-label') ?? fieldLabel(field));
     if (slot.dataset.hint) input.placeholder = slot.dataset.hint;
     input.spellcheck = false;
+    // Only a number, as it's typed: what else is typed or pasted is undone.
+    if (numeric(field)) {
+      input.inputMode = 'decimal';
+      let kept = NUMBERING.test(input.value) ? input.value : '';
+      input.addEventListener('input', () => {
+        const v = input.value.trim();
+        if (NUMBERING.test(v)) kept = v;
+        else input.value = kept;
+      });
+    }
     slot.replaceChildren(input);
     const fit = () => {
       input.style.height = 'auto';
@@ -78,6 +95,8 @@
       let after = commit ? input.value.replace(/\s+/g, ' ').trim() : before;
       // In a sentence, a `]` would end the field early: brackets go round.
       if (field.dataset.start !== undefined) after = after.replace(/\[/g, '(').replace(/\]/g, ')');
+      // Not yet a number (`-`, `1.`): as it was, or the number it's on the way to.
+      if (numeric(field) && after && !NUMBER.test(after)) after = NUMBER.test(after.replace(/\.$/, '')) ? after.replace(/\.$/, '') : before;
       slot.textContent = after;
       slot.dataset.value = after;
       if (stay && slot.tabIndex >= 0) {
@@ -107,7 +126,8 @@
       if (!['Enter', 'Escape', 'Tab'].includes(e.key) || e.isComposing) return;
       e.preventDefault();
       e.stopPropagation();
-      const all = [...document.querySelectorAll('.field:not([data-choices])')];
+      // A field drawn by another feature, a date, has no blank to move to.
+      const all = [...document.querySelectorAll('.field:not([data-choices])')].filter((f) => f.querySelector('.field-value'));
       const next = e.key === 'Tab' && all[all.indexOf(field) + (e.shiftKey ? -1 : 1)];
       close(e.key !== 'Escape', { stay: !next });
       if (next) openField(next);

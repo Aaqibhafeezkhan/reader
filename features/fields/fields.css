@@ -27,8 +27,9 @@
 .field-label::after { content: ":"; }
 .field-label-stop::after { content: none; }
 /* A rule under each line of the blank, on the page itself, with room round
-   what's written on it. */
-.field-value {
+   what's written on it; and under what another feature draws in a field,
+   a date. */
+.field-value, .field-held {
   --gm-field-rule: color-mix(in srgb, var(--gm-ink) 55%, transparent);
   flex: 1;
   align-self: stretch;
@@ -41,13 +42,14 @@
   background: linear-gradient(to top, var(--gm-field-rule) 2px, transparent 2px)
     0 0 / 100% var(--field-line) repeat-y content-box;
 }
-.field:hover .field-value { --gm-field-rule: var(--gm-ink); }
+.field:hover :is(.field-value, .field-held) { --gm-field-rule: var(--gm-ink); }
+.field[data-kind="date"] { cursor: default; }
 /* Where the page can't be worked (static/preview-api.js), as on a slide, a
    blank is only read: it doesn't answer the pointer as if it could be typed
    in, nor do its choices as if they could be picked. */
 .unworkable .field:not([data-choices]) { cursor: inherit; }
 .unworkable .field-choice, .unworkable .field-choice > .choice-box { cursor: inherit; }
-.unworkable .field:not([data-choices]):hover .field-value { --gm-field-rule: color-mix(in srgb, var(--gm-ink) 55%, transparent); }
+.unworkable .field:not([data-choices]):hover :is(.field-value, .field-held) { --gm-field-rule: color-mix(in srgb, var(--gm-ink) 55%, transparent); }
 .field-value:has(> textarea) { --gm-field-rule: var(--gm-accent); }
 /* An empty blank's hint, faint in it. Unspoken here: a screen reader hears
    it as the blank's placeholder (aria-placeholder), or, where the blank

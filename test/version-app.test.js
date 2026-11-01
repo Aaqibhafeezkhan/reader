@@ -11,7 +11,7 @@ globals(app());
 const RELEASE = 'https://github.com/jzheaux/reader/releases/tag/v0.0.2';
 globalThis.fetch = async (url) => {
   const ask = String(url);
-  const out = ask.startsWith('/api/info') ? { name: 'notes', root: '/notes', version: { label: 'v0.0.2', url: RELEASE } }
+  const out = ask.startsWith('/api/info') ? { name: 'notes', root: '/notes', version: { label: 'v0.0.2', url: RELEASE, release: true } }
     : ask.startsWith('/api/tree') ? { files: [{ path: 'a.md', type: 'md', mtime: 1 }] }
     : ask.startsWith('/api/render') ? { css: '', body: '<div class="gm-doc"><p>A</p></div>', title: 'A', deck: false }
     : { text: '# A\n', mtime: 1 };

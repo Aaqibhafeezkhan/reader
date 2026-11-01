@@ -58,9 +58,9 @@ async function init() {
  * the list is out of sight: linked to its release notes, or to the commit a
  * checkout is at.
  */
-function showVersion({ label, url } = {}) {
+function showVersion({ label, url, release } = {}) {
   if (!label) return;
-  const says = `reader ${label}, ${url.includes('/releases/') ? 'its release notes' : 'its commit'}`;
+  const says = `reader ${label}, ${release ? 'its release notes' : 'its commit'}`;
   for (const a of [el.version, el.helpVersion.querySelector('a')]) {
     a.textContent = label;
     a.href = url;

@@ -28,6 +28,18 @@ test('a page is done by what\'s tagged on it: its heading\'s box, or every box t
   assert.deepEqual(tally(marks), { done: 3, of: 5 }, 'a page with nothing to do counts neither way');
 });
 
+test('a page is done when its first heading\'s section is, by its own box or by everything in it; a section under its heading counts as one', () => {
+  const SECTIONS = [
+    '# [ ] Today\n\n- (x) Navy Day\n- ( ) Heritage\n\n## [ ] Ways\n\n- [x] Read\n- [x] Watch',
+    '# [ ] Today\n\n- ( ) Navy Day\n\n## [ ] Ways\n\n- [x] Read',
+    '# Plain\n\n## [x] Ways\n\n- [ ] Read, though the section says it\'s done\n\n## More\n\n- [x] Watch',
+    '# Plain\n\n## [ ] Ways\n\n- [ ] Read',
+  ].join('\n\n---\n\n');
+  const marks = drawn(SECTIONS).map((p, i) => mark(p.body, i));
+  assert.deepEqual(marks.map((m) => m.done), [true, false, true, false]);
+  assert.deepEqual(marks.map((m) => m.title), ['Today', 'Today', 'Plain', 'Plain'], 'a Done button is no part of the title');
+});
+
 test('a slide counts alike, though nothing on it can be ticked', () => {
   const marks = slides(DECK, { file: 'a.md' }).slides.map((s, i) => mark(s.body, i));
   assert.deepEqual(marks.map((m) => m.done), [true, false, true, true, false, null]);

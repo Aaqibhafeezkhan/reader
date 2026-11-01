@@ -13,6 +13,11 @@
  * choices says whether one's picked (`data-answered`). A choice is picked,
  * too, when something inside it is answered (`preview:answered`), as a
  * blank in its line filled in, or a field under it.
+ * A heading's box is a Done button (`.section-done`): pressed, it writes
+ * the heading's `[x]` (`data-own`), and it's pressed while its section is
+ * done, by that or by everything to be done in it being done
+ * (`data-full`), counted again here as they're done and undone, a section
+ * with a box under it as one of them. It sends `preview:done` too.
  * Where the page can't be worked (`Preview.workable`), as on a slide, none
  * of them takes a click or a key; when it stops being workable while it's
  * showing, as a page past its time does, they're shut as the server would
@@ -44,6 +49,57 @@
     markDone(b, to === n);
   };
 
+  const HEADINGS = 'h1, h2, h3, h4, h5, h6';
+  const levelOf = (h) => Number(h.tagName[1]);
+  /**
+   * Whether each section with a Done button is done, said again from what's
+   * on the page now, innermost first, as the server says it
+   * (tasks/index.js): what's to be done in it and the questions in it,
+   * each a part, and a section with a button under it one part, what's in
+   * it being its. Not what's in the margin, nor the masthead.
+   */
+  const settleSections = () => {
+    const order = [...document.querySelectorAll(`${HEADINGS}, [data-done], [data-answered]`)]
+      .filter((n) => !n.closest('.gm-asides, .gm-masthead') && (n.matches(HEADINGS) || !n.closest(HEADINGS)));
+    for (let i = order.length - 1; i >= 0; i--) {
+      const button = order[i].matches(HEADINGS) && order[i].querySelector(':scope > .section-done');
+      if (!button) continue;
+      const level = levelOf(order[i]);
+      const parts = [];
+      for (let j = i + 1, inside = 0; j < order.length; j++) {
+        const n = order[j];
+        if (n.matches(HEADINGS)) {
+          const at = levelOf(n);
+          if (at <= level) break;
+          if (inside && at <= inside) inside = 0;
+          const sub = !inside && n.querySelector(':scope > .section-done');
+          if (sub) {
+            parts.push(sub.dataset.done);
+            inside = at;
+          }
+        } else if (!inside) parts.push(n.dataset.done ?? n.dataset.answered);
+      }
+      const full = parts.length > 0 && parts.every((v) => v === 'true');
+      button.dataset.full = String(full);
+      if (full) button.setAttribute('aria-disabled', 'true');
+      else button.removeAttribute('aria-disabled');
+      const done = full || button.dataset.own === 'true';
+      button.setAttribute('aria-pressed', String(done));
+      markDone(button, done);
+    }
+  };
+  // Once a turn, after whatever changed on the page has said so.
+  let settling = false;
+  const settle = () => {
+    if (settling || !document.querySelector('.section-done')) return;
+    settling = true;
+    queueMicrotask(() => {
+      settleSections();
+      settling = false;
+    });
+  };
+  for (const type of ['change', 'preview:done', 'preview:answered']) document.addEventListener(type, settle);
+
   // A box or a choice where the page can't be worked: a click on it, which
   // Space is too, is called off before it ticks, and so are the keys that
   // move a choice. A field's choices are the field's (fields/preview.js).
@@ -58,6 +114,7 @@
   window.addEventListener('preview:workable', () => {
     if (Preview.workable) return;
     for (const b of document.querySelectorAll('input.task-box, input.choice-box, button.stage-box')) if (!b.closest('.field')) Preview.shut(b, { disabled: '' });
+    for (const b of document.querySelectorAll('.section-done')) Preview.shut(b, { disabled: '' });
     for (const b of document.querySelectorAll('.task-reset, .task-log')) Preview.shut(b, { hidden: '' });
   });
 
@@ -123,6 +180,18 @@
 
   document.addEventListener('click', (e) => {
     if (!Preview.workable) return;
+    const section = e.target.closest?.('.section-done');
+    if (section) {
+      // Done by what's in it, it's undone by undoing one of them.
+      if (section.getAttribute('aria-disabled') === 'true') return;
+      const line = Number(section.dataset.line);
+      const own = section.dataset.own === 'true';
+      const as = (on) => (on ? section.dataset.on : section.dataset.off);
+      Preview.edit([{ from: line, to: line + 1, before: [as(own)], after: [as(!own)] }], { undo: true });
+      section.dataset.own = String(!own);
+      settle();
+      return;
+    }
     const box = e.target.closest?.('.stage-box');
     if (box) {
       const stage = Number(box.dataset.stage);
@@ -164,6 +233,14 @@
         setStage(b, 0);
       }
     }
+    for (const b of document.querySelectorAll('.section-done')) {
+      if (within(b) && b.dataset.own === 'true') {
+        const line = Number(b.dataset.line);
+        edits.push({ from: line, to: line + 1, before: [b.dataset.on], after: [b.dataset.off] });
+        b.dataset.own = 'false';
+      }
+    }
     if (edits.length) Preview.edit(edits, { undo: true });
+    settle();
   });
 })();

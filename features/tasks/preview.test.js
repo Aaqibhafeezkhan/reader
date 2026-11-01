@@ -198,7 +198,7 @@ const BOXES = [
 
 /** Clicks each box, choice and staged box on the page, and presses Space and ↓ on each, as far as it can be reached. */
 function tryAll({ window, document, $, $$, click }) {
-  for (const box of [$('.task-heading > .task-box'), ...$$('li.task .task-box'), ...$$('.choice-box')]) {
+  for (const box of [$('.section-done'), ...$$('li.task .task-box'), ...$$('.choice-box')]) {
     box.focus();
     const reached = document.activeElement === box;
     for (const key of [' ', 'ArrowDown']) {
@@ -224,7 +224,7 @@ test('on a slide, no box, choice, heading box or staged box is changed by a clic
   assert.deepEqual(await p.edits(), []);
   assert.deepEqual(p.$$('input').map((b) => b.checked), before);
   assert.equal(p.$('.stage-box').tagName, 'SPAN', 'a staged box is only a picture of how far it\'s got');
-  assert.ok(p.$$('input').every((b) => b.disabled), 'each is read with its state, but out of the keyboard\'s way');
+  assert.ok(p.$$('input, .section-done').every((b) => b.disabled), 'each is read with its state, but out of the keyboard\'s way');
 });
 
 test('a page shut while it\'s showing takes no click or key on a box, and opened again takes them', async () => {
@@ -232,13 +232,65 @@ test('a page shut while it\'s showing takes no click or key on a box, and opened
   p.window.Preview.workable = false;
   tryAll(p);
   assert.deepEqual(await p.edits(), []);
-  assert.deepEqual(p.$$('input').map((b) => b.checked), [false, false, false, false]);
+  assert.deepEqual(p.$$('input').map((b) => b.checked), [false, false, false]);
+  assert.equal(p.$('.section-done').getAttribute('aria-pressed'), 'false');
   assert.equal(p.$('.stage-box').dataset.stage, '1');
   p.window.Preview.workable = true;
   p.click(p.$('li.task .task-box'));
   p.click(p.$$('.choice-box')[1]);
-  p.click(p.$('.task-heading > .task-box'));
+  p.click(p.$('.section-done'));
   p.click(p.$('.stage-box'));
   const lines = (await p.edits()).flat().map(([at, , after]) => [at, after]);
   assert.deepEqual(lines, [[8, '- [x] oil'], [11, '- (x) coffee'], [5, '## [x] Prep'], [13, '* [x][x][ ] onion']]);
+});
+
+const DAY = [
+  '# [ ] Today', '', '- ( ) Navy Day', '- ( ) Heritage', '', '## [ ] Ways', '', '- [ ] Read', '- [ ] Watch', '', 'reset:[]',
+].join('\n');
+
+test('a Done button writes its heading\'s [x], and pressed again takes it back', async () => {
+  const { $$, click, edits } = await page(DAY);
+  const [today, ways] = $$('.section-done');
+  click(ways);
+  assert.deepEqual(await edits(), [[[5, '## [ ] Ways', '## [x] Ways']]]);
+  assert.equal(ways.getAttribute('aria-pressed'), 'true');
+  assert.equal(today.getAttribute('aria-pressed'), 'false', 'a choice still to pick');
+  click(ways);
+  assert.deepEqual(await edits(), [[[5, '## [x] Ways', '## [ ] Ways']]]);
+  assert.equal(ways.getAttribute('aria-pressed'), 'false');
+});
+
+test('a section shows it\'s done once everything in it is, and undone once one isn\'t', async () => {
+  const { $$, click, edits } = await page(DAY);
+  const [today, ways] = $$('.section-done');
+  const said = [];
+  ways.addEventListener('preview:done', () => said.push(ways.dataset.done));
+  const [read, watch] = $$('.task-box');
+  click(read);
+  click(watch);
+  await edits();
+  assert.equal(ways.getAttribute('aria-pressed'), 'true');
+  assert.equal(ways.getAttribute('aria-disabled'), 'true', 'pressing it would change nothing');
+  assert.deepEqual(said, ['true']);
+  click(ways);
+  assert.deepEqual(await edits(), [], 'it\'s undone by undoing what\'s in it');
+  assert.equal(today.getAttribute('aria-pressed'), 'false');
+  click($$('.choice-box')[0]);
+  await edits();
+  assert.equal(today.getAttribute('aria-pressed'), 'true', 'its choice picked, and the section under it done');
+  click(read);
+  await edits();
+  assert.equal(ways.getAttribute('aria-pressed'), 'false');
+  assert.equal(ways.hasAttribute('aria-disabled'), false);
+  assert.equal(today.getAttribute('aria-pressed'), 'false');
+  assert.deepEqual(said, ['true', 'false']);
+});
+
+test('Start over clears a section\'s own [x] too', async () => {
+  const { $, $$, click, edits } = await page(DAY.replace('## [ ] Ways', '## [x] Ways').replace('- [ ] Read', '- [x] Read'));
+  const ways = $$('.section-done')[1];
+  assert.equal(ways.getAttribute('aria-pressed'), 'true');
+  click($('.task-reset'));
+  assert.deepEqual(await edits(), [[[7, '- [x] Read', '- [ ] Read'], [5, '## [x] Ways', '## [ ] Ways']]]);
+  assert.equal(ways.getAttribute('aria-pressed'), 'false');
 });

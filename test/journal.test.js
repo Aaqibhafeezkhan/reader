@@ -116,9 +116,9 @@ test('from 4:00 the next morning it\'s a record: each page says so, every box an
     assert.match(body, /<p class="open-until open-until-closed" role="note" tabindex="0" aria-label="No Longer Editable. Closed at 4:00 on 28 October 2026"[^>]*>No Longer Editable<\/p>/);
   }
   const all = out.join('\n');
-  const inputs = all.match(/<input[^>]*>/g);
+  const inputs = all.match(/<input[^>]*>|<button type="button" class="section-done"[^>]*>/g);
   assert.equal(inputs.length, 64);
-  assert.ok(inputs.every((i) => / disabled/.test(i)), 'every box and choice is shut');
+  assert.ok(inputs.every((i) => / disabled/.test(i)), 'every box, choice and Done button is shut');
   assert.doesNotMatch(all, /role="textbox"|data-hint|aria-placeholder|tabindex="0" role="button"|task-reset/, 'nothing to type in, pick or press');
   assert.equal(all.match(/<span class="field-blank vh">blank<\/span>/g).length, 13, 'its blanks left empty are said to be blank, with no hint');
 });

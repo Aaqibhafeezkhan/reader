@@ -39,9 +39,11 @@ be, with nothing of its notes. It opens on the page the cursor was on.
 
 - Under the page are **Back** and **Next**, and a dot for each page: click
   one to go to that page. `⌥←` and `⌥→` turn the page too, as does a swipe.
-- A page is done, and its dot filled, when its opening heading's checkbox is
-  checked (`# [x] Warm-up`). A page whose heading has no checkbox is done
-  when every task on it is ticked and every radio list, or field of choices, has a choice. A page
+- A page is done, and its dot filled, when its opening heading's section is
+  done: its **Done** button pressed (`# [x] Warm-up`), or everything in it done (see
+  [Sections to finish](forms.md#sections-to-finish)). A page whose heading has no button is done
+  when every task on it is ticked and every radio list, or field of choices, has a choice,
+  a section with a button counting as one of them. A page
   with nothing to tick doesn't count either way.
 - Beside the dots, a bar and a count say how many pages are done, "7 of 12 done", of those with something to do; it fills as boxes are ticked.
   Beside it is the page showing, "Page 3 of 12".

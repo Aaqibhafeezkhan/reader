@@ -148,7 +148,7 @@ test('uppercase sets a span, a ::: block, a list item and a heading in capitals,
   assert.match(body, /<p class="uppercase" style="color: red">label<\/p>/);
   assert.match(body, /<li class="uppercase task"><input type="checkbox"[^>]* data-on="- \[x\] \{uppercase\} Walk"[^>]*> Walk<\/li>/);
   assert.match(body, /<h2 class="uppercase">Ways to embrace today<\/h2>/);
-  assert.match(body, /<h2 class="uppercase task-heading" style="color: navy"><input type="checkbox"[^>]* aria-label="Done"> Done<\/h2>/);
+  assert.match(body, /<h2 class="uppercase task-heading" style="color: navy"><span class="section-title">Done<\/span><button type="button" class="section-done"[^>]* aria-label="Done: Done"[^>]*><\/button><\/h2>/);
   assert.doesNotMatch(body, /\{uppercase\}<|>\{|--font: 'uppercase'/i);
 });
 

@@ -140,6 +140,24 @@
     }
   });
 
+  // A choice let go of (tasks/preview.js): the choices picked in it are
+  // let go too, so only the choice picked has an answer. What's typed in
+  // a blank in it stays: it's more to lose, and costs nothing to keep.
+  document.addEventListener('preview:unpicked', (e) => {
+    for (const field of e.target.querySelectorAll('.field[data-choices]')) {
+      const picked = [...field.querySelectorAll('.field-choice > input')].filter((i) => i.checked);
+      if (!picked.length) continue;
+      for (const i of picked) i.checked = false;
+      const line = Number(field.dataset.line);
+      const was = field.dataset.text;
+      const head = field.dataset.head;
+      const now = head + was.slice(head.length).replace(/\([xX]\)/g, '( )');
+      field.dataset.text = now;
+      field.dataset.answered = 'false';
+      if (now !== was) Preview.edit([{ from: line, to: line + 1, before: [was], after: [now] }], { undo: true });
+    }
+  }, true);
+
   document.addEventListener('focusin', (e) => {
     const slot = e.target.matches?.('.field-value') && e.target;
     if (!slot || slot === resting) return;

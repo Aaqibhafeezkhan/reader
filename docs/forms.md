@@ -121,8 +121,10 @@ about that item:
 
 Under a choice, answering the field picks the choice too: picking "Calm"
 writes `(x)` in front of "Low energy · Pleasant" as well, and clears the
-other choice's, as one edit. Picking another choice after leaves the
-field's answer as it is, to come back to.
+other choice's, as one edit. Picking another choice after lets go of
+the answer too, so only the choice picked has one: "Calm" is cleared
+with "Low energy · Pleasant". What's typed in a blank stays, since it's
+more to lose.
 
 ## Blanks in a sentence
 

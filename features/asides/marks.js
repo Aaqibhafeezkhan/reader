@@ -29,7 +29,7 @@
 
 import { lastBlockBefore } from '../rows.js';
 import { markSpan } from '../mark.js';
-import { ownColor } from '../color.js';
+import { ownClass } from './key.js';
 import { escapeHtml, textToken } from '../source.js';
 
 export function marks(md) {
@@ -175,8 +175,7 @@ function closeOf(children, i) {
 /** The words an aside chose, to set at its start: its link to the mark when the line can't be seen. */
 export function about(mark) {
   if (!mark) return '';
-  // in a colour an author wrote, not the family's, the page keeps it readable
-  const own = ownColor(mark.color) ? ' gm-own' : '';
+  const own = ownClass(mark.color);
   return mark.lost
     ? `<q class="mk-about${own} mk-lost" title="Not found in the line above">${escapeHtml(mark.text)}?</q>`
     : `<q class="mk-about${own}">${escapeHtml(mark.text)}</q>`;

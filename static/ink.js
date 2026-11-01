@@ -15,7 +15,8 @@
  */
 
 window.Ink = (() => {
-  // --gm-ink, light and dark (src/columns.css)
+  // --gm-ink, light and dark (src/columns.css; test/contrast.test.js keeps
+  // them the same)
   const DARK_INK = [0x1a, 0x1a, 0x1a];
   const LIGHT_INK = [0xf5, 0xf3, 0xee];
 

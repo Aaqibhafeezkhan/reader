@@ -31,10 +31,9 @@
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { preprocess } from './preprocess.js';
-import { readEntry, makeKey } from './key.js';
+import { readEntry, makeKey, ownClass } from './key.js';
 import { marks, about } from './marks.js';
 import { escapeHtml } from '../source.js';
-import { ownColor } from '../color.js';
 
 export function asides(md) {
   const rule = (state) => {
@@ -103,9 +102,8 @@ export function asideTokens(md, aside, env) {
   return md.parse(aside.text, { ...env, asides: null, nested: true });
 }
 
-// A chip's or a pill's class, `gm-own` for a colour an author wrote that
-// isn't the family's, for the page to keep readable (asides.css).
-const chipClass = (kind, color) => `${kind}${ownColor(color) ? ' gm-own' : ''}`;
+// A chip's or a pill's class, and whether it's in an author's own colour.
+const chipClass = (kind, color) => `${kind}${ownClass(color)}`;
 
 /**
  * Who an aside is from and what it's about, as chips: the reviewer's name,

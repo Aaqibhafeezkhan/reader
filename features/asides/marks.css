@@ -51,9 +51,7 @@
 /* and a colour an author wrote that isn't the family's first kept as
  * light or as dark as the family (src/columns.css): a pure gold is 3.8:1
  * mixed as it's written */
-@supports (color: oklch(from red clamp(0, l, 1) min(c, 1) h)) {
-  .mk-about.gm-own { color: color-mix(in srgb, oklch(from var(--mk) clamp(var(--gm-key-l-min), l, var(--gm-key-l-max)) min(c, var(--gm-key-c-max)) h) 55%, var(--gm-ink)); }
-}
+.mk-about.gm-own { --own: var(--mk); color: color-mix(in srgb, var(--gm-own) 55%, var(--gm-ink)); }
 .mk-lost {
   color: var(--gm-ink-soft);
   font-weight: 400;

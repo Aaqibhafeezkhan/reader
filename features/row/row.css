@@ -4,7 +4,10 @@
   display: flex; flex-wrap: wrap; align-items: flex-start;
   gap: 0.6em 1em; margin: 1rem 0;
 }
-.row-reverse { flex-direction: row-reverse; }
+/* reversed, the first block on the right while the rest is beside it; once
+   the rest goes under, the first block, alone on its line, is packed to the
+   line's end, the start edge, where a row's first block is */
+.row-reverse { flex-direction: row-reverse; justify-content: flex-end; }
 .row-lead { flex: 0 1 auto; max-width: 50%; min-width: 0; }
 .row-rest { flex: 1 1 10em; min-width: 0; }
 .row-lead > :first-child, .row-rest > :first-child { margin-top: 0; }

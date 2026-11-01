@@ -75,4 +75,6 @@ test('its stylesheet lets the rest go under when it has no room, and a bar besid
   assert.match(css, /\.row \{[^}]*flex-wrap: wrap/);
   assert.match(css, /\.row-rest \{ flex: 1 1 10em/);
   assert.match(css, /\.row-rest > p > \.progress:first-child progress \{ flex: 1/);
+  // reversed, once the rest goes under, the first block keeps to the start edge
+  assert.match(css, /\.row-reverse \{ flex-direction: row-reverse; justify-content: flex-end; \}/);
 });

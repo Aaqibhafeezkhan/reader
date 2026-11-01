@@ -8,13 +8,17 @@
  * next field or the one before. A field of choices writes its line as it
  * reads with the one picked. A field in a sentence (`[@ what goes here:
  * answer]`) writes its answer into its place on the line, moving along the
- * others after it. Where the page can't be worked (`Preview.workable`), as
- * on a slide, no blank opens and no choice is picked; and when it stops
- * being workable while it's showing, as a page past its time does, a blank
- * being typed in is written and closed, and the blanks and choices are
- * taken out of the keyboard's way. Runs in the preview frame.
+ * others after it. A field given an answer, a value or a choice, says so
+ * (`preview:answered`) to what it's in. Where the page can't be worked
+ * (`Preview.workable`), as on a slide, no blank opens and no choice is
+ * picked; and when it stops being workable while it's showing, as a page
+ * past its time does, a blank being typed in is written and closed, and
+ * the blanks and choices are taken out of the keyboard's way. Runs in the preview frame.
  */
 (() => {
+  /** Says `field` has been answered, for what it's in to count it (a choice it's part of is picked). */
+  const answered = (field) => field.dispatchEvent(new Event('preview:answered', { bubbles: true }));
+
   let editing = null;
   let resting = null;   // a blank the keyboard is put back on, not to open again
 
@@ -87,6 +91,7 @@
         const now = written(field, after);
         field.dataset.text = now;
         Preview.edit([{ from: line, to: line + 1, before: [was], after: [now] }]);
+        if (after) answered(field);
       }
     };
     // A re-render is about to replace the field: let it go quietly and say
@@ -129,7 +134,10 @@
     const now = e.target.dataset.on;
     field.dataset.text = now;
     field.dataset.answered = 'true';
-    if (now !== was) Preview.edit([{ from: line, to: line + 1, before: [was], after: [now] }], { undo: true });
+    if (now !== was) {
+      Preview.edit([{ from: line, to: line + 1, before: [was], after: [now] }], { undo: true });
+      answered(field);
+    }
   });
 
   document.addEventListener('focusin', (e) => {

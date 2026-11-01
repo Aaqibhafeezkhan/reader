@@ -119,6 +119,11 @@ about that item:
   @ Closest word: ( ) Calm ( ) Content ( ) Serene
 :::
 
+Under a choice, answering the field picks the choice too: picking "Calm"
+writes `(x)` in front of "Low energy · Pleasant" as well, and clears the
+other choice's, as one edit. Picking another choice after leaves the
+field's answer as it is, to come back to.
+
 ## Blanks in a sentence
 
 A blank can also sit inside a sentence, filled in the way a madlib is:
@@ -138,6 +143,10 @@ The [@ an animal: walrus] jumped over the [@ a piece of furniture].
 Square brackets typed into it are written as round ones, so they don't end
 it early. One followed by `(` is a link, as `[text](url)` is, and a
 backslash (`\[@ `) keeps it as typed.
+
+A blank in a choice's line, `- ( ) **Other** · [@ what else]`, picks the
+choice once it's filled in, so the answer and the `(x)` go into the file
+together.
 
 ## Dates
 

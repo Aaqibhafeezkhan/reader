@@ -99,6 +99,65 @@ test('a box, or the list item it begins, sent preview:complete is ticked, or fil
   assert.deepEqual(await edits(), []);
 });
 
+const FEELINGS = [
+  '- (x) **A**', '- ( ) **C** · [@ Something else]',
+  '- ( ) **Low energy · Pleasant** {bg-honeydew}', '  @ Closest word: ( ) Calm ( ) Content ( ) Peaceful',
+].join('\n');
+
+/** What `p` sent up by the end of the turn, each edit's options with its lines. */
+async function sent(p) {
+  await settle();
+  return p.posted.splice(0).filter((m) => m.type === 'edit')
+    .map(({ edits, undo = false }) => [undo, edits.map((e) => [e.from, e.before.join('\n'), e.after.join('\n')])]);
+}
+
+test('a blank filled in a choice\'s line picks the choice, its line written once with both, and unpicks the one picked', async () => {
+  const p = await page(FEELINGS);
+  const field = p.$('.field-inline');
+  p.click(field);
+  const input = field.querySelector('textarea');
+  input.value = 'running';
+  input.blur();
+  // Written as a blank is, by a click away, not one for the editor to undo.
+  assert.deepEqual(await sent(p), [[false, [
+    [1, '- ( ) **C** · [@ Something else]', '- (x) **C** · [@ Something else: running]'],
+    [0, '- (x) **A**', '- ( ) **A**'],
+  ]]]);
+  assert.deepEqual(p.$$('input[name="choice-1"]').map((b) => b.checked), [false, true, false]);
+  // Emptied again, it's no answer, and the choice stays as it is.
+  p.click(field);
+  field.querySelector('textarea').value = '';
+  field.querySelector('textarea').blur();
+  assert.deepEqual((await sent(p)).map(([, e]) => e.map(([line]) => line)), [[1]]);
+});
+
+test('a choice picked in a field under a choice picks it, as one undo, and picking another leaves the answer be', async () => {
+  const p = await page(FEELINGS);
+  const peaceful = p.$$('.field-choice > input')[2];
+  peaceful.checked = true;
+  peaceful.dispatchEvent(new p.window.Event('change', { bubbles: true }));
+  assert.deepEqual(await sent(p), [[true, [
+    [3, '  @ Closest word: ( ) Calm ( ) Content ( ) Peaceful', '  @ Closest word: ( ) Calm ( ) Content (x) Peaceful'],
+    [0, '- (x) **A**', '- ( ) **A**'],
+    [2, '- ( ) **Low energy · Pleasant** {bg-honeydew}', '- (x) **Low energy · Pleasant** {bg-honeydew}'],
+  ]]]);
+  // Picked already, it's left; and another picked unpicks it, not its answer.
+  const calm = p.$$('.field-choice > input')[0];
+  calm.checked = true;
+  calm.dispatchEvent(new p.window.Event('change', { bubbles: true }));
+  assert.deepEqual((await sent(p)).map(([, e]) => e.map(([line]) => line)), [[3]]);
+  p.click(p.$('input[name="choice-1"]'));
+  assert.deepEqual((await sent(p)).map(([, e]) => e.map(([line]) => line)), [[0, 2]]);
+  assert.equal(calm.checked, true);
+});
+
+test('where the page can\'t be worked, nothing answered picks a choice', async () => {
+  const p = await page(FEELINGS);
+  p.window.Preview.workable = false;
+  p.$('.field').dispatchEvent(new p.window.Event('preview:answered', { bubbles: true }));
+  assert.deepEqual(await sent(p), []);
+});
+
 const LOGGED = [
   '## Akara', 'Serves count:4', 'multiplier:[]', 'reset:[]', '',
   '### Log', '#### date:2026-10-18[]', 'Good (Ana): fine', '',

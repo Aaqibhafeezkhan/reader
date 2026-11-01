@@ -1,7 +1,8 @@
 /**
  * The names CSS knows, for whatever reads a name an author writes as a
  * colour or a font: the `{red georgia}` of a style (features/styles), the
- * front matter's `background:` and `font:` (src/background.js, src/fonts.js).
+ * front matter's `background:`, `accent:` and `font:` (src/background.js,
+ * src/accent.js, src/fonts.js).
  */
 
 // Generic families are written as CSS spells them; any other name is a font,

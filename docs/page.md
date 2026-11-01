@@ -5,7 +5,7 @@ title: The page
 ← [Contents](index.md)
 
 What's in a document's front matter sets up its page: its masthead, the
-fonts it's set in and what's behind it. These work in any document, and in
+fonts it's set in, its accent and what's behind it. These work in any document, and in
 a deck they set every slide.
 
 ## The masthead
@@ -14,7 +14,7 @@ Front matter (`Title`, `Author`, `Date`, `Tags`, `Speaker`, `Listener`)
 becomes the masthead; without a `Title` the file name is used. `Speaker`
 and `Listener` head the two columns, the text's and the asides'. Any other
 key shows in the byline as `key: value`, but for those reader reads itself
-(`font:`, `background:` and the rest below, `type:` (see
+(`font:`, `accent:`, `background:` and the rest below, `type:` (see
 [Work and present](presenting.md)), `open-until:` (see
 [Forms](forms.md)), and a deck's `time:`, `paging:` and
 `transition:`) and one holding keys of its own (`multibox:`).
@@ -47,6 +47,36 @@ title-font: playfair-display georgia
   page's title, a slide's, and the ones under them.
 - Asides, captions and code keep their own faces, and text styled with
   `{…}` or a `:::` block keeps the font it names.
+
+## Accent
+
+`accent:` in the front matter is the color of what reader draws in its accent.
+It's the document's own instead of reader's: links' underlines, checkboxes and radios, progress bars, a timer, a picked card, a field's outline when it has the keyboard, and the rest.
+
+::: tabs
++++ Source
+```markdown
+---
+accent: "#4a7c59"
+---
+
+- [x] Walk
+- ( ) Calm
+- (x) Excited
+
+progress:[3/7] of the week, and [a link](https://jzheaux.github.io/reader/).
+```
++++ Rendered
+![The box, the radio, the bar and the link's line, in the document's green](images/accent.png =330x)
+:::
+
+- The accent is a CSS color name or a `#hex`.
+- It's one color for every theme.
+  reader keeps its hue, but darkens it in the light and brightens it in Dark as far as it takes to read as text on the page, as it does a color an author gives an aside.
+  With more contrast asked for, it goes further.
+- In a deck it's every slide's, and an exported page keeps it.
+- Callouts keep their own colors, a note's blue and a tip's green, and so do Good, Bad and Try.
+- With the system's own colors on (Windows' contrast themes), the accent is the system's.
 
 ## Backgrounds
 

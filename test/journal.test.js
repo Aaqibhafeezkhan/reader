@@ -38,6 +38,12 @@ test('it says it\'s a workbook: worked a page at a time, its pages the outline\'
   assert.equal(entries.length, 12);
 });
 
+test("it's in the dashboard's green: its own accent, on every page, and not in its byline", () => {
+  const out = pages(JOURNAL, { file: 'journal.md' });
+  assert.match(out.css, /:root \{ --own-accent: #4a7c59; \}/);
+  assert.doesNotMatch(render(JOURNAL, { file: 'journal.md' }).body, /4a7c59/);
+});
+
 test('its fields say what goes in them: a hint, faint in the blank, not part of its label', () => {
   const all = drawn(EVENING).join('\n');
   const hinted = [...all.matchAll(/<span class="field-label[^"]*">([^<]*)<\/span><span class="field-value"[^>]* data-hint="([^"]*)"/g)]

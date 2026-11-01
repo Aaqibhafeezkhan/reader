@@ -31,7 +31,7 @@ const CSS = fs.readFileSync(new URL('./columns.css', import.meta.url), 'utf8');
 // Front matter that's said elsewhere on the page, or is a setting, not
 // something to read: how a deck is timed, moved through, paged and printed
 // (src/slides.js, export.js), and what kind of document it is.
-const UNSHOWN = new Set(['title', 'author', 'date', 'tags', 'speaker', 'listener', 'background', 'font', 'title-font', 'time', 'transition', 'paging', 'print', 'type']);
+const UNSHOWN = new Set(['title', 'author', 'date', 'tags', 'speaker', 'listener', 'background', 'accent', 'font', 'title-font', 'time', 'transition', 'paging', 'print', 'type']);
 
 // A key with an alias after it, `reviewer #` or `topic c`, and a reviewer's.
 const ALIASED = /[ \t]\S$/;

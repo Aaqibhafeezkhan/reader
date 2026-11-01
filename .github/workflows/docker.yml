@@ -51,16 +51,20 @@ jobs:
       - id: tag
         run: echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
+      # The check is the workflow's own, not the release's, which may be
+      # older than it: an older tag has no .github/scripts/ to run. The
+      # image's build leaves this directory out (.dockerignore).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: workflow
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
       # The checkout has only this tag, so ask the remote for the rest; it
       # also has the tag the release workflow has only just made.
       - name: Check whether it's the newest release
         id: newest
-        run: |
-          newest=$(git ls-remote --tags --refs origin 'v*' | sed 's|.*refs/tags/||' \
-            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
-          if [ "v$VERSION" = "$newest" ]; then latest=true; else latest=false; fi
-          echo "v$VERSION is the newest release: $latest (newest is $newest)"
-          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+        run: workflow/.github/scripts/newest-release.sh "$VERSION"
 
       - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1

@@ -11,11 +11,14 @@ import { fileURLToPath } from 'node:url';
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const REPO = 'https://github.com/jzheaux/reader';
 
-/** `{ label, url }`: `v0.0.2` and its release, or `v0.0.2+abc1234` and its commit. */
+/**
+ * `{ label, url, release }`: `v0.0.2` and its release notes, a release; or
+ * `v0.0.2+abc1234` and its commit, not one.
+ */
 export function describe(version, head) {
   const tag = `v${version}`;
-  if (!head || head.tags.includes(tag)) return { label: tag, url: `${REPO}/releases/tag/${tag}` };
-  return { label: `${tag}+${head.commit.slice(0, 7)}`, url: `${REPO}/commit/${head.commit}` };
+  if (!head || head.tags.includes(tag)) return { label: tag, url: `${REPO}/releases/tag/${tag}`, release: true };
+  return { label: `${tag}+${head.commit.slice(0, 7)}`, url: `${REPO}/commit/${head.commit}`, release: false };
 }
 
 /** The commit a checkout is at and its tags, from `git log`'s `%H%n%D`; null for anything else. */
@@ -42,7 +45,7 @@ function head() {
 }
 
 let known;
-/** This reader's `{ label, url }`, to wait for: worked out once, from the first ask, which is the server's start. */
+/** This reader's `{ label, url, release }`, to wait for: worked out once, from the first ask, which is the server's start. */
 export function version() {
   if (!known) {
     const { version } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));

@@ -38,6 +38,7 @@ test("info says which reader this is, and where its notes are", async () => {
   const { version } = await (await fetch(base + '/api/info')).json();
   assert.match(version.label, /^v\d+\.\d+\.\d+(\+[0-9a-f]{7})?$/);
   assert.match(version.url, /^https:\/\/github\.com\/jzheaux\/reader\/(releases\/tag|commit)\//);
+  assert.equal(version.release, !version.label.includes('+'));
 });
 
 test('render puts asides in the gutter column', async () => {

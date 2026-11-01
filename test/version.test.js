@@ -7,14 +7,14 @@ const SHA = 'c53a7184fca327599fa5a3eac129ade1f18b13b9';
 
 test('a release is its tag, linked to its notes', () => {
   assert.deepEqual(describe('0.0.2', null), {
-    label: 'v0.0.2', url: 'https://github.com/jzheaux/reader/releases/tag/v0.0.2',
+    label: 'v0.0.2', url: 'https://github.com/jzheaux/reader/releases/tag/v0.0.2', release: true,
   });
   assert.deepEqual(describe('0.0.2', { commit: SHA, tags: ['v0.0.1', 'v0.0.2'] }), describe('0.0.2', null));
 });
 
 test('a checkout past its release says which commit, and links to it', () => {
   assert.deepEqual(describe('0.0.2', { commit: SHA, tags: ['v0.0.1'] }), {
-    label: 'v0.0.2+c53a718', url: `https://github.com/jzheaux/reader/commit/${SHA}`,
+    label: 'v0.0.2+c53a718', url: `https://github.com/jzheaux/reader/commit/${SHA}`, release: false,
   });
 });
 

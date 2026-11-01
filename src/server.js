@@ -1,7 +1,7 @@
 /**
  * HTTP API and static files.
  *
- *   GET  /api/info             content root and name, and reader's version: { label, url }
+ *   GET  /api/info             content root and name, and reader's version: { label, url, release }
  *   GET  /api/tree             listable files, newest first
  *   GET  /api/file?path=       { text, mtime }
  *   PUT  /api/file             { path, text, baseMtime, force?, explicit?, worked? }

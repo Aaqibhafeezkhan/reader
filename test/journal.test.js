@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { pages, isDeck } from '../src/slides.js';
 import { outline } from '../static/app/sections.js';
-import { app, globals } from './dom.js';
+import { render } from '../src/render.js';
+import { app, globals, page } from './dom.js';
 
 // What Work counts done is read in the app, from the pages it's sent.
 globals(app());
@@ -194,5 +195,21 @@ test('each feeling is a card tinted its own background, its choice and closest w
       ['Low energy · Pleasant', 'honeydew'],
     ]);
     assert.doesNotMatch(feeling.replace(/<[^>]*>/g, ''), /\{|bg-/, 'no braces are left as typed');
+  }
+});
+
+test('a mood\'s card keeps its own box, whichever of cards and styles is read first', () => {
+  const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
+  const styles = read('../features/styles/styles.css');
+  const cards = read('../features/cards/cards.css');
+  // a mood to pick, and a card with nothing to pick
+  const html = render('::: grid 2 cards\n- ( ) **Low energy · Pleasant** {bg-honeydew}\n- Breathe {bg-lavender}\n:::\n').body;
+  for (const css of [styles + cards, cards + styles]) {
+    const window = page(`<style>${css}</style>${html}`);
+    for (const item of window.document.querySelectorAll('.cards li.bg')) {
+      const box = window.getComputedStyle(item);
+      assert.deepEqual([box.padding, box.margin, box.borderRadius], ['11.2px 14.4px', '0px', '8px']);
+    }
+    window.close();
   }
 });

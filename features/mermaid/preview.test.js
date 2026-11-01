@@ -61,3 +61,14 @@ test('what a frame not told the theme drew, for an export, is the light drawing'
   await p.settled();
   assert.match(p.window.Preview.drawn().mermaid['flowchart LR\n  a --> b'], /data-theme="neutral"/);
 });
+
+test('a drawn diagram is an image named by its accTitle, or as a diagram, as an export names it', async () => {
+  const p = frame();
+  p.show(render('```mermaid\nflowchart LR\n  accTitle: How a "post" & <draft> is published\n  a --> b\n```\n\n```mermaid\ngraph TD\n```\n').body);
+  await p.settled();
+  const figures = [...p.document.querySelectorAll('.mermaid-figure')];
+  assert.deepEqual(figures.map((f) => [f.getAttribute('role'), f.getAttribute('aria-label')]), [
+    ['img', 'How a "post" & <draft> is published'],
+    ['img', 'Diagram'],
+  ]);
+});

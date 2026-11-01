@@ -10,10 +10,12 @@
  * The server only wraps the fence, its text still inside as a code block,
  * so the page reads as the source anywhere nothing draws it:
  *
- *   <div class="mermaid" data-line="n">…the code block…</div>
+ *   <div class="mermaid" data-line="n" data-name="…">…the code block…</div>
  *
  * The block's attributes (its line, a `:::` block's style) go on the
- * wrapper, which is what stays on the page once the code is hidden.
+ * wrapper, which is what stays on the page once the code is hidden. So
+ * does what the diagram is called (`diagramName()`), read here only, for
+ * the frame to name what it draws.
  *
  * The preview frame draws it (preview.js), with Mermaid kept in vendor/,
  * loaded the first time a page has a diagram.
@@ -51,12 +53,16 @@ export function mermaids(md) {
     token.attrs = attrs;
     const wrapper = Object.assign(new Token('div', 'div', 1), { attrs: attrs?.map((a) => [...a]) ?? null });
     addClass(wrapper, 'mermaid');
-    // The text the frame reads back from the code block (preview.js).
+    // The text the frame reads back from the code block (preview.js), and
+    // what it's called, which the frame reads from here so that it names a
+    // diagram as an export does.
     const source = token.content.replace(/\n$/, '');
+    const name = diagramName(source);
+    wrapper.attrSet('data-name', name);
     const all = env.drawn?.mermaid;
     const svg = all && Object.hasOwn(all, source) && typeof all[source] === 'string' ? all[source] : null;
     if (svg) addClass(wrapper, 'drawn');
-    const figure = svg ? `<div class="mermaid-figure" role="img" aria-label="${escapeAttr(diagramName(source))}">${svg}</div>` : '';
+    const figure = svg ? `<div class="mermaid-figure" role="img" aria-label="${escapeAttr(name)}">${svg}</div>` : '';
     return `<div${self.renderAttrs(wrapper)}>${html.replace(/\n$/, '')}${figure}</div>\n`;
   };
 }

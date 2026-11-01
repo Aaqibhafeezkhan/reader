@@ -184,7 +184,7 @@ test('exports a document as one HTML file, its images inside it', async () => {
   const drawn = await json('POST', '/api/export', { path: 'chart.md', drawn: { mermaid: { 'graph TD': '<svg id="m1"></svg>' } } });
   assert.equal(drawn.status, 200);
   assert.match(drawn.headers.get('content-disposition'), /filename="chart\.html"/);
-  assert.match(await drawn.text(), /<div class="mermaid drawn"><pre>[\s\S]*<\/pre><div class="mermaid-figure" role="img" aria-label="Diagram"><svg id="m1"><\/svg><\/div><\/div>/);
+  assert.match(await drawn.text(), /<div class="mermaid drawn" data-name="Diagram"><pre>[\s\S]*<\/pre><div class="mermaid-figure" role="img" aria-label="Diagram"><svg id="m1"><\/svg><\/div><\/div>/);
   assert.doesNotMatch(await (await fetch(`${base}/api/export?path=chart.md`)).text(), /mermaid-figure"/);
   assert.equal((await json('POST', '/api/export', { path: 'doc.pdf' })).status, 400);
 

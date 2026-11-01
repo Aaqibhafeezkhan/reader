@@ -11,11 +11,3 @@ a.social::before {
   -webkit-mask: var(--mark) center / contain no-repeat;
   mask: var(--mark) center / contain no-repeat;
 }
-/* the site, for whoever can't see its mark: read, not shown */
-a.social .social-site {
-  position: absolute;
-  width: 1px; height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}

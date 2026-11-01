@@ -26,14 +26,14 @@ test('a GitHub issue or commit is written as GitHub writes it', () => {
   assert.equal(socialLink('gh', 'jzheaux/reader#x', ''), null);
   assert.equal(socialLink('gh', 'jzheaux/reader@nothex', ''), null);
   const { body } = render('- [ ] gh:jzheaux/reader#25[] and gh:jzheaux/reader@f61f000[]\n');
-  assert.match(body, /<a class="social social-gh" href="https:\/\/github\.com\/jzheaux\/reader\/issues\/25">jzheaux\/reader#25<span class="social-site"> on GitHub<\/span><\/a>/);
-  assert.match(body, /<a class="social social-gh" href="https:\/\/github\.com\/jzheaux\/reader\/commit\/f61f000">jzheaux\/reader@f61f000<span class="social-site"> on GitHub<\/span><\/a>/);
+  assert.match(body, /<a class="social social-gh" href="https:\/\/github\.com\/jzheaux\/reader\/issues\/25">jzheaux\/reader#25<span class="social-site vh"> on GitHub<\/span><\/a>/);
+  assert.match(body, /<a class="social social-gh" href="https:\/\/github\.com\/jzheaux\/reader\/commit\/f61f000">jzheaux\/reader@f61f000<span class="social-site vh"> on GitHub<\/span><\/a>/);
 });
 
 test('a profile is a link marked with its site', () => {
   const { body } = render('Find me: linkedin:jzheaux[] and gh:jzheaux[*here*], not `yt:x[]`, sigh:x[] or gh:[]\n');
   assert.match(body, /<a class="social social-linkedin" href="https:\/\/www\.linkedin\.com\/in\/jzheaux">linkedin\.com\/in\/jzheaux<\/a>/);
-  assert.match(body, /<a class="social social-gh" href="https:\/\/github\.com\/jzheaux"><em>here<\/em><span class="social-site"> on GitHub<\/span><\/a>/);
+  assert.match(body, /<a class="social social-gh" href="https:\/\/github\.com\/jzheaux"><em>here<\/em><span class="social-site vh"> on GitHub<\/span><\/a>/);
   assert.match(body, /<code>yt:x\[\]<\/code>, sigh:x\[\] or gh:\[\]/);
 });
 
@@ -49,7 +49,8 @@ test('a link says its site, for whoever can\'t see the mark', () => {
     'my GitHub',
   ]);
   assert.equal(new Set(names).size, names.length, 'no two read the same');
-  assert.match(css, /a\.social \.social-site \{[^}]*clip-path: inset\(50%\)/, 'and the site is read, not shown');
+  assert.match(body, /<span class="social-site vh"> on Instagram<\/span>/, 'and the site is read, not shown');
+  assert.match(css, /\.vh \{[^}]*clip-path: inset\(50%\)/);
 });
 
 test('every site\'s mark is in the stylesheet', () => {

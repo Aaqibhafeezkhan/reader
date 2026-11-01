@@ -48,7 +48,7 @@ dl.defs {
   margin: 0;
 }
 .def-blank > .field-value { min-height: 0; padding: 0; line-height: inherit; background: none; }
-.def-blank > .field-value:empty::before { content: "not yet defined"; font-style: italic; color: var(--gm-ink-soft); }
+.def-blank > .field-value:empty::before { content: attr(data-empty); font-style: italic; color: var(--gm-ink-soft); }
 
 /* The term where it's used: set as in its entry, its meaning on hover. */
 .def-use { position: relative; padding: 0 0.3em; }

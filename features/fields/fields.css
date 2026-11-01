@@ -49,14 +49,6 @@
 .unworkable .field-choice, .unworkable .field-choice > .choice-box { cursor: inherit; }
 .unworkable .field:not([data-choices]):hover .field-value { --gm-field-rule: color-mix(in srgb, var(--gm-ink) 55%, transparent); }
 .field-value:has(> textarea) { --gm-field-rule: var(--gm-accent); }
-/* Said, not seen: that a field which can't be filled in is empty. */
-.field-blank {
-  position: absolute;
-  width: 1px; height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
 /* An empty blank's hint, faint in it. Unspoken here: a screen reader hears
    it as the blank's placeholder (aria-placeholder), or, where the blank
    can't be typed in, from `.field-blank`. */

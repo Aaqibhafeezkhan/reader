@@ -34,8 +34,8 @@ test('a record\'s boxes are shut, exported or not', () => {
 
 test('an empty blank says it\'s blank only where it can\'t be filled in', () => {
   assert.equal(unfilled('', {}), '');
-  assert.equal(unfilled('', { exported: true }), '<span class="field-blank">blank</span>');
-  assert.equal(unfilled('', { deck: true }), '<span class="field-blank">blank</span>');
+  assert.equal(unfilled('', { exported: true }), '<span class="field-blank vh">blank</span>');
+  assert.equal(unfilled('', { deck: true }), '<span class="field-blank vh">blank</span>');
   assert.equal(unfilled('Josh', { exported: true }), '');
 });
 
@@ -47,7 +47,7 @@ test('a hint is a box\'s placeholder where it can be typed in, and only shown wh
 });
 
 test('an empty blank that can\'t be filled in says its hint after it\'s blank', () => {
-  assert.equal(unfilled('', { deck: true }, 'e.g. <7>'), '<span class="field-blank">blank, e.g. &lt;7&gt;</span>');
+  assert.equal(unfilled('', { deck: true }, 'e.g. <7>'), '<span class="field-blank vh">blank, e.g. &lt;7&gt;</span>');
   assert.equal(unfilled('', {}, 'e.g. 7'), '');
   assert.equal(unfilled('8', { deck: true }, 'e.g. 7'), '');
 });
@@ -55,6 +55,6 @@ test('an empty blank that can\'t be filled in says its hint after it\'s blank', 
 test('a record\'s empty blank has no hint, and is only said to be blank', () => {
   assert.equal(hinted('e.g. 7.5', { closed: true }), '');
   assert.equal(hinted('e.g. 7.5', { closed: true, exported: true }), '');
-  assert.equal(unfilled('', { closed: true }, 'e.g. 7.5'), '<span class="field-blank">blank</span>');
+  assert.equal(unfilled('', { closed: true }, 'e.g. 7.5'), '<span class="field-blank vh">blank</span>');
   assert.equal(unfilled('8', { closed: true }, 'e.g. 7.5'), '');
 });

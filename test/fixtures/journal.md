@@ -3,14 +3,13 @@ title: Daily Dashboard
 date: 2026-10-27
 type: workbook
 open-until: 2026-10-28 04:00
-style: journal.css
 ---
 
 <!--
 The daily self-care dashboard of 2026-10-27, as a workbook, the way the 0.0.4
 milestone means to write it: the acceptance test for "can a daily journal be
-built on reader-markdown" (test/journal.test.js). Some of it is syntax 0.0.4
-promises and reader doesn't read yet: a stylesheet (#48).
+built on reader-markdown" (test/journal.test.js). It uses only syntax
+reader reads.
 Personal to-dos are made generic; the rest is that day's.
 -->
 

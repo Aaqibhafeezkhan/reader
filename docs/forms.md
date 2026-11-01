@@ -101,6 +101,30 @@ of it, and `( )` in front of the rest.
 @ Session: ( ) Sat AM (x) Sat PM ( ) Sun AM ( ) Sun PM
 :::
 
+A field's value can say what kind of value it holds.
+A value that's a [date](#dates), `date:[]`, makes the field a date: it shows the calendar `date:` shows anywhere else, and picking a day writes it into the file in the value's place.
+A value of `number:[]` makes it a field that holds a number: it's filled in as any field is, but only a number can be typed, and it's written back as `number:12[]`.
+As with `date:`, the value goes after the colon and the brackets hold what to show instead, empty for a blank.
+The hint still goes in braces before the colon.
+
+::: tabs
++++ Source
+```markdown
+@ When: date:[]
+@ Due: date:2026-11-10[]
+@ Age {e.g. 12}: number:[]
+@ Guests: number:12[]
+```
++++ Rendered
+@ When: date:[]
+@ Due: date:2026-11-10[]
+@ Age {e.g. 12}: number:[]
+@ Guests: number:12[]
+:::
+
+A value that isn't a number (`number:twelve[]`) stays as typed, as a date that isn't one (`date:2026-02-30[]`) does.
+On a slide or an exported page, a date or number field reads as its value, or as blank.
+
 A field can go under a list item, indented to the item's text, to ask more
 about that item:
 

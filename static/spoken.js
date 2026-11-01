@@ -32,7 +32,8 @@
   /** A field as its label and what's in it: `Name: Josh`, `Thoughts: blank`, `Hours: blank, e.g. 7.5`. */
   function field(node, k) {
     const label = node.querySelector(':scope > .field-label');
-    const value = node.querySelector(':scope > .field-value');
+    // Its blank, or what another feature drew in it, a date.
+    const value = node.querySelector(':scope > :is(.field-value, .field-held)');
     let said = value ? spoken(value, k).trim() : '';
     // An empty definition says so only through the stylesheet.
     // An empty field says what goes there, if it's hinted (features/blank.js).

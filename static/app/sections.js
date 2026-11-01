@@ -25,6 +25,9 @@ import { frontMatter, fenced, typeOf } from '../markdown.js';
 const SEPARATOR = /^---[ \t]*$/;
 const HEADING = /^ {0,3}(#{1,6})[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*$/;
 const DEEPEST = 3;
+// What comes before a heading's or an item's words: a box, then braces of
+// style names.
+const OWN = /^(?:\[[ xX]\][ \t]+)?(?:\{[\w-]+(?:[ \t]+[\w-]+)*\}[ \t]+(?=\S))?/;
 
 /**
  * `{ matter, talk, parts, entries }`: the front matter's lines, whether the
@@ -47,7 +50,8 @@ export function outline(src) {
   const headings = [];
   seen.forEach((l, i) => {
     const m = l && HEADING.exec(l);
-    if (m) headings.push({ level: m[1].length, title: plain(m[2].replace(/^\[[ xX]\][ \t]+/, '')), line: i });
+    // Its box and its own styles (`## [ ] {uppercase} Today`) aren't its title.
+    if (m) headings.push({ level: m[1].length, title: plain(m[2].replace(OWN, '')), line: i });
   });
 
   const talk = parts.length > 1 && typeOf(matter?.meta) === 'slides';
@@ -203,7 +207,7 @@ function firstLine(p, seen) {
   for (let i = p.line; i < p.end; i++) {
     const l = seen[i]?.trim();
     if (!l) continue;
-    const t = plain(l.replace(/^(?:[-*+]|\d+[.)]|>|~|:::)\s*/, '').replace(/^\[[ xX]\][ \t]+/, ''));
+    const t = plain(l.replace(/^(?:[-*+]|\d+[.)]|>|~|:::)\s*/, '').replace(OWN, ''));
     if (t) return t.length > 60 ? `${t.slice(0, 59).trimEnd()}…` : t;
   }
   return 'Notes';

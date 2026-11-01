@@ -138,3 +138,8 @@ test('extract escapes a title\'s brackets and backslashes in its link', () => {
   const { text } = extract(src, ideas.children, ['draft.md']);
   assert.equal(text, '# Ideas\n\n→ [\\[draft\\] C:\\\\](draft.md)\n');
 });
+
+test('a heading\'s own styles are not part of its title in the outline', () => {
+  const { entries } = outline('## {uppercase} Ways to embrace today\n\n## [ ] {uppercase red} Today\n');
+  assert.deepEqual(shape(entries), ['Ways to embrace today', 'Today']);
+});

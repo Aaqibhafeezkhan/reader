@@ -56,3 +56,8 @@ li.bg:where(:is(ul, ol) > :not(.task)) { list-style-position: inside; padding-le
 @media (forced-colors: active) {
   .bg { border: 1px solid CanvasText; }
 }
+
+/* Words set in capitals (`uppercase`, index.js), spaced a little so they
+ * don't crowd. The text stays as it's written, for a screen reader to read
+ * as words, and for copying. */
+.uppercase { text-transform: uppercase; letter-spacing: 0.06em; }

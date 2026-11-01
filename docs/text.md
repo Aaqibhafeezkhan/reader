@@ -60,8 +60,9 @@ until the closing line.
 A list item takes styles of its own from braces where it's declared:
 after its bullet, and its box if it has one, before its text. They style
 the whole item, its bullet or box included, and its cell in a grid.
-Braces naming anything but colors, backgrounds and the generic fonts
-(`serif`, `monospace`, ...) stay as typed:
+A heading takes them the same way, after its `#`s and any box: `## {navy} Today`.
+Braces naming anything but colors, backgrounds, the generic fonts
+(`serif`, `monospace`, ...) and `uppercase` stay as typed:
 
 ::: tabs
 +++ Source
@@ -111,6 +112,41 @@ A whole passage on a pale blue,
   [Cards](layout.md#cards)).
 - In the system's high-contrast colors, a background gives way to the
   system's, and a line round it still sets it apart.
+
+### Capitals
+
+`uppercase` sets the words in capitals, a little spaced so they don't crowd, wherever a style can go: a span, a `:::` block, a list item or a heading.
+The source keeps the words as they're typed, so they read normally as plain text, and a screen reader reads them as words, not letter by letter.
+The outline lists a heading by its words, without its braces.
+
+::: tabs
++++ Source
+```markdown
+## {uppercase} Ways to embrace today
+
+- [ ] {uppercase} Walk
+- [ ] Call a friend
+
+> [!TIP]
+> [Today's prompt]{uppercase}: What would you tell someone to make them pick it up?
+
+::: uppercase slategray
+A label for a whole passage
+:::
+```
++++ Rendered
+## {uppercase} Ways to embrace today
+
+- [ ] {uppercase} Walk
+- [ ] Call a friend
+
+> [!TIP]
+> [Today's prompt]{uppercase}: What would you tell someone to make them pick it up?
+
+::: uppercase slategray
+A label for a whole passage
+:::
+:::
 
 A `:::` block can also lay out what's in it; see [Layout](layout.md).
 

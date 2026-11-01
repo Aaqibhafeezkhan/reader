@@ -4,7 +4,9 @@
  * sets the color (the first one given wins); any other name is a font, with
  * hyphens for spaces, tried in order before the page's own. A topic's alias
  * or `circle`, `underline`, `dotted`, `wavy` or `highlight` marks the text
- * instead, and a color then is the mark's (features/mark.js). For whole
+ * instead, and a color then is the mark's (features/mark.js). `uppercase`
+ * sets the words in capitals, a little spaced, though they're kept, and
+ * read aloud, as they're written. For whole
  * paragraphs, lists or tables, fence them with `:::`:
  *
  *   ::: slategray georgia
@@ -43,10 +45,14 @@ const [BOX_OPEN, BOX_CLOSE] = MARKS.box;
 const [TASK_OPEN, TASK_CLOSE] = MARKS.tasks;
 // A list item's first line with braces where it's declared, after its
 // bullet and any box (as typed, or as tasks has placed it), and before its
-// text: `- ( ) {bg-honeydew} **A**`.
-const ITEM = new RegExp('^([ \\t]*(?:>[ \\t]*)*(?:[-*+]|\\d{1,9}[.)])[ \\t]+'
-  + `(?:(?:${TASK_OPEN}\\d+${TASK_CLOSE}|(?:\\[[ xX]\\])+|\\([ xX]\\))[ \\t]+)?)`
+// text: `- ( ) {bg-honeydew} **A**`. A heading's are the same, after its
+// `#`s and any box: `## [ ] {uppercase} Today`.
+const ITEM = new RegExp('^([ \\t]*(?:>[ \\t]*)*(?:(?:[-*+]|\\d{1,9}[.)])[ \\t]+'
+  + `(?:(?:${TASK_OPEN}\\d+${TASK_CLOSE}|(?:\\[[ xX]\\])+|\\([ xX]\\))[ \\t]+)?`
+  + `|#{1,6}[ \\t]+(?:(?:${TASK_OPEN}\\d+${TASK_CLOSE}|\\[[ xX]\\])[ \\t]+)?))`
   + '(\\{([\\w-]+(?:[ \\t]+[\\w-]+)*)\\}[ \\t]+)(?=\\S)');
+// Words that set how text is cased rather than its color or font.
+const CASES = new Set(['uppercase']);
 // What opens a line's block, for the marker to go after.
 // An aside's `~` can carry aliases and the words it's about: `~c[the lazy dog] `.
 const PREFIX = /^[ \t]*(?:~[^\s~[]*(?:\[(?:[^\]\\\n]|\\.)+\](?:\{[a-z]+\})?)?[ \t]+|[>~][ \t]*)*(?:(?:[-*+]|\d{1,9}[.)])[ \t]+)?(?:#{1,6}[ \t]+)?/;
@@ -112,11 +118,15 @@ function lines(state) {
 /** Whether `name` is a background: `bg-` and a CSS color name. */
 const background = (name) => /^bg-/i.test(name) && COLORS.has(name.slice(3).toLowerCase());
 
-/** Whether `name` is one a list item's braces can hold: a color, a background, a generic font. */
-const known = (name) => COLORS.has(name.toLowerCase()) || background(name) || GENERIC.has(name.toLowerCase());
+/**
+ * Whether `name` is one a list item's or a heading's braces can hold: a
+ * color, a background, a generic font, a case.
+ */
+const known = (name) => COLORS.has(name.toLowerCase()) || background(name) || GENERIC.has(name.toLowerCase()) || CASES.has(name.toLowerCase());
 
 /**
- * A list item's line with braces of style names after its bullet and box,
+ * A list item's or a heading's line with braces of style names after its
+ * bullet or `#`s and box,
  * with the braces, and the space after them, a marker that keeps them as
  * written, for the item to take once the blocks are parsed. Braces naming
  * anything else -- a word -- are left as they are.
@@ -127,7 +137,7 @@ function item(line) {
   return m[1] + ITEM_OPEN + m[2] + ITEM_CLOSE + line.slice(m[0].length);
 }
 
-/** Puts back an item's braces where they turned out not to head a list item. */
+/** Puts back an item's braces where they turned out not to head a list item or a heading. */
 const written = (s) => s.replace(ITEM_MARK, '$1');
 
 /**
@@ -168,12 +178,14 @@ function unmark(state) {
 }
 
 /**
- * An item's braces, on the first line of the list item the inline token at
- * `i` opens, are that item's styles; anywhere else they stay as written.
+ * An item's braces, on the first line of the list item or the heading the
+ * inline token at `i` opens, are that item's styles; anywhere else they
+ * stay as written.
  */
 function own(tokens, i) {
   const t = tokens[i];
-  const li = tokens[i - 1]?.type === 'paragraph_open' && tokens[i - 2]?.type === 'list_item_open' ? tokens[i - 2] : null;
+  const li = tokens[i - 1]?.type === 'heading_open' ? tokens[i - 1]
+    : tokens[i - 1]?.type === 'paragraph_open' && tokens[i - 2]?.type === 'list_item_open' ? tokens[i - 2] : null;
   const firstLine = t.content.indexOf('\n') < 0 ? t.content.length : t.content.indexOf('\n');
   t.content = t.content.replace(ITEM_MARK, (m, braces, at) => {
     if (!li || li.meta?.own || at > firstLine) return braces;
@@ -212,7 +224,7 @@ function blocks(state) {
     }
   }
   for (const t of tokens) {
-    if (t.type !== 'list_item_open' || !t.meta?.own || t.meta.styled) continue;
+    if (!['list_item_open', 'heading_open'].includes(t.type) || !t.meta?.own || t.meta.styled) continue;
     t.meta = { ...t.meta, styled: true };
     apply(t, t.meta.own);
   }
@@ -299,27 +311,31 @@ function span(state, silent) {
 /**
  * Adds `names` to a token's attributes: a CSS color name sets the color (the
  * first one given wins), and `bg-` and one its background, `--bg` for the
- * stylesheet to keep readable, marking the element `bg`; every other name
- * is a font, tried in order before falling back to the page's own, and
- * marks the element `font` for the stylesheet.
+ * stylesheet to keep readable, marking the element `bg`; `uppercase` marks
+ * it for the stylesheet to set in capitals; every other name is a font,
+ * tried in order before falling back to the page's own, and marks the
+ * element `font` for the stylesheet.
  */
 function apply(token, names) {
   let color = null;
   let bg = null;
+  let upper = false;
   const fonts = [];
   for (const name of names.trim().split(/\s+/)) {
     const key = name.toLowerCase();
     if (COLORS.has(key)) color ??= key;
     else if (background(key)) bg ??= key.slice(3);
+    else if (CASES.has(key)) upper = true;
     else fonts.push(GENERIC.has(key) ? key : `'${name.replace(/-/g, ' ')}'`);
   }
   const css = [color && `color: ${color}`, bg && `--bg: ${bg}`, fonts.length && `--font: ${fonts.join(', ')}`].filter(Boolean).join('; ');
-  for (const [cls, on] of [['bg', bg], ['font', fonts.length]]) {
+  for (const [cls, on] of [['bg', bg], ['font', fonts.length], ['uppercase', upper]]) {
     if (!on) continue;
     const had = token.attrGet('class');
     if (had) token.attrSet('class', `${cls} ${had}`);
     else token.attrs = [['class', cls], ...(token.attrs || [])];
   }
+  if (!css) return;
   const style = token.attrGet('style');
   token.attrSet('style', style ? `${style.replace(/;?\s*$/, '; ')}${css}` : css);
 }

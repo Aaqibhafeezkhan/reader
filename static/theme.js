@@ -2,15 +2,21 @@
  * Light, dark, or the system's (`prefers-color-scheme`), as the reader
  * chooses in the help, kept in the browser; the system's until they do.
  * Loaded in the <head>, before the stylesheet, so the page is drawn in the
- * right one from the first: `<html data-theme>` is the look it came to,
- * `light` or `dark`, and `data-chosen` what was chosen, for the speaker
- * view, which is dark unless light is asked for.
+ * right one from the first: `<html data-theme>` is the look this page came
+ * to, `light` or `dark`, the one set of colours static/palette.css keys on.
+ * A page that says `<html data-default="dark">`, the speaker view, for a
+ * darkened room, counts the system's as dark: it's dark unless Light is
+ * chosen.
  *
- * The app sends the preview frames whether to draw the document dark with
- * each render (app/render.js); an export, printed or saved, stays light.
+ * The document is drawn as the app's look is, on every page, the speaker
+ * view's slides too, as the room sees them: `data-paper` says which, and
+ * Theme.dark() whether it's dark. The app sends the preview frames that
+ * with each render (app/render.js); an export, printed or saved, stays
+ * light.
  *
  *   Theme.chosen()        'light', 'dark' or 'system'
- *   Theme.dark()          whether the look came to dark
+ *   Theme.dark()          whether the app's look came to dark, and the
+ *                         document's with it
  *   Theme.choose(c)       chooses, keeps it, and applies it
  *   Theme.onChange(fn)    fn(dark, chosen), when either changes: chosen here
  *                         or in another window, or the system's changing
@@ -37,8 +43,9 @@ window.Theme = (() => {
   let was = null;
   function apply() {
     const root = document.documentElement;
-    root.dataset.theme = dark() ? 'dark' : 'light';
-    root.dataset.chosen = chosen;
+    const page = dark() || (chosen === 'system' && root.dataset.default === 'dark');
+    root.dataset.theme = page ? 'dark' : 'light';
+    root.dataset.paper = dark() ? 'dark' : 'light';
     const now = `${dark()} ${chosen}`;
     if (was !== null && was !== now) heard.forEach((fn) => fn(dark(), chosen));
     was = now;

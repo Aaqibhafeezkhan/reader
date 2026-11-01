@@ -6,10 +6,12 @@ import { exportHtml } from '../src/export.js';
 /**
  * A page with theme.js run in it, as the app's <head> runs it, on a system
  * whose dark mode is `system`: `turn(dark)` changes the system's, and
- * `heard` is what Theme.onChange was told.
+ * `heard` is what Theme.onChange was told. `byDefault` is the page's own
+ * `<html data-default>`, as the speaker view's says `dark`.
  */
-function themed({ stored, system = false, storage = true } = {}) {
+function themed({ stored, system = false, storage = true, byDefault } = {}) {
   const window = page();
+  if (byDefault) window.document.documentElement.dataset.default = byDefault;
   const listeners = [];
   const query = { matches: system, addEventListener: (type, fn) => listeners.push(fn) };
   Object.defineProperty(window, 'matchMedia', {
@@ -33,9 +35,10 @@ test('the system\'s is the theme until another is chosen, and follows it', () =>
   const { Theme, root, turn, heard } = themed();
   assert.equal(Theme.chosen(), 'system');
   assert.equal(root.dataset.theme, 'light');
-  assert.equal(root.dataset.chosen, 'system');
+  assert.equal(root.dataset.paper, 'light');
   turn(true);
   assert.equal(root.dataset.theme, 'dark');
+  assert.equal(root.dataset.paper, 'dark');
   assert.equal(Theme.dark(), true);
   assert.deepEqual(heard, [[true, 'system']]);
   turn(false);
@@ -47,7 +50,7 @@ test('a theme chosen is kept, applied, and holds whatever the system does', () =
   assert.equal(root.dataset.theme, 'dark');
   Theme.choose('light');
   assert.equal(root.dataset.theme, 'light');
-  assert.equal(root.dataset.chosen, 'light');
+  assert.equal(root.dataset.paper, 'light');
   assert.equal(window.localStorage.getItem('reader:theme'), 'light');
   turn(false);
   turn(true);
@@ -55,6 +58,25 @@ test('a theme chosen is kept, applied, and holds whatever the system does', () =
   assert.deepEqual(heard, [[false, 'light']]);
   Theme.choose('purple');
   assert.equal(Theme.chosen(), 'light');
+});
+
+test('a page dark by default is dark under the system\'s, light only when chosen, and its document drawn as the app\'s is', () => {
+  const { Theme, root, turn, heard } = themed({ byDefault: 'dark' });
+  assert.equal(root.dataset.theme, 'dark');
+  // the slides on it are the room's: the system's, light here
+  assert.equal(root.dataset.paper, 'light');
+  assert.equal(Theme.dark(), false);
+  turn(true);
+  assert.equal(root.dataset.theme, 'dark');
+  assert.equal(root.dataset.paper, 'dark');
+  assert.deepEqual(heard, [[true, 'system']]);
+  Theme.choose('light');
+  assert.equal(root.dataset.theme, 'light');
+  assert.equal(root.dataset.paper, 'light');
+  Theme.choose('dark');
+  turn(false);
+  assert.equal(root.dataset.theme, 'dark');
+  assert.equal(root.dataset.paper, 'dark');
 });
 
 test('the theme kept is the one the page is drawn in from the first', () => {

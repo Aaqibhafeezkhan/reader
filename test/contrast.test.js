@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
+const palette = read('static/palette.css');
 const style = read('static/style.css');
 const speaker = read('static/speaker.css');
 const columns = read('src/columns.css');
@@ -70,30 +71,52 @@ function resolve(props) {
   return out;
 }
 
-// the app's colours, and the speaker view's, dark unless light is chosen
-const appLight = declared(block(style, ':root {'));
+// the app's colours (palette.css), and the speaker view's, as the cascade
+// makes them: the palette's, then speaker.css's over it, in each theme
+// (static/theme.js sets data-theme dark there unless light is chosen)
+const appLight = declared(block(palette, ':root {'));
+// the app's dark is the paper's too, which on the speaker view is the app's
+// look, not its own (data-paper)
+const appDark = { ...declared(block(palette, ':root[data-theme="dark"] {')), ...declared(block(palette, ':root[data-paper="dark"] {')) };
 const light = resolve(appLight);
-const dark = resolve({ ...appLight, ...declared(block(style, ':root[data-theme="dark"] {')) });
-const speakerDark = declared(block(speaker, ':root {'));
-const speakerLight = declared(block(speaker, ':root[data-chosen="light"] {'));
+const dark = resolve({ ...appLight, ...appDark });
+const speakerLight = declared(block(speaker, ':root {'));
+const speakerDark = declared(block(speaker, ':root[data-theme="dark"] {'));
 const speakers = {
-  dark: resolve(speakerDark),
-  light: resolve({ ...speakerDark, ...speakerLight }),
+  dark: resolve({ ...appLight, ...speakerLight, ...appDark, ...speakerDark }),
+  light: resolve({ ...appLight, ...speakerLight }),
 };
 
 // and with more contrast asked for: the light block's over the light, and
 // the dark's over the dark, which the light's doesn't reach (`:root` is
 // outweighed by `:root[data-theme]`)
 const MORE = '@media (prefers-contrast: more)';
-const appDark = declared(block(style, ':root[data-theme="dark"] {'));
+const appMoreLight = declared(block(after(palette, MORE), ':root {'));
+const appMoreDark = declared(block(after(palette, MORE), ':root[data-theme="dark"] {'));
 const appMore = {
-  light: resolve({ ...appLight, ...declared(block(after(style, MORE), ':root {')) }),
-  dark: resolve({ ...appLight, ...declared(block(after(style, MORE), ':root {')), ...appDark, ...declared(block(after(style, MORE), ':root[data-theme="dark"] {')) }),
+  light: resolve({ ...appLight, ...appMoreLight }),
+  dark: resolve({ ...appLight, ...appMoreLight, ...appDark, ...appMoreDark }),
 };
+const speakerMoreLight = declared(block(after(speaker, MORE), ':root {'));
+const speakerMoreDark = declared(block(after(speaker, MORE), ':root[data-theme="dark"] {'));
 const speakerMore = {
-  dark: resolve({ ...speakerDark, ...declared(block(after(speaker, MORE), ':root {')) }),
-  light: resolve({ ...speakerDark, ...declared(block(after(speaker, MORE), ':root {')), ...speakerLight, ...declared(block(after(speaker, MORE), ':root[data-chosen="light"] {')) }),
+  light: resolve({ ...appLight, ...speakerLight, ...appMoreLight, ...speakerMoreLight }),
+  dark: resolve({
+    ...appLight, ...speakerLight, ...appMoreLight, ...speakerMoreLight,
+    ...appDark, ...speakerDark, ...appMoreDark, ...speakerMoreDark,
+  }),
 };
+
+// The speaker view names only the colours the app doesn't have, and
+// overrides only the one it tunes for its grounds: the rest come through.
+test("the speaker view's own colours are only those the app lacks, and the soft ink it tunes", () => {
+  const app = new Set(Object.keys({ ...appLight, ...appDark, ...appMoreLight, ...appMoreDark }));
+  const own = { ...speakerLight, ...speakerDark, ...speakerMoreLight, ...speakerMoreDark };
+  const overridden = Object.keys(own).filter((name) => app.has(name));
+  assert.deepEqual(overridden, ['ink-soft']);
+  assert.deepEqual(Object.keys(speakerMoreDark), ['ink-soft']);
+  assert.ok(contrast(speakerMore.dark['ink-soft'], speakerMore.dark.panel) < contrast(appMore.dark['ink-soft'], appMore.dark.panel));
+});
 
 // the document's: the light set, the dark over it, and what each is for,
 // an asides key's colours among them
@@ -364,7 +387,7 @@ test('a colour an author names reads as text, in light and dark, and at 7:1 with
 
 test('no colour is written outside the blocks that name them', () => {
   const blocks = [
-    [style, /^ *:root[^{]*\{[^}]*\}/gm],
+    [palette, /^ *:root[^{]*\{[^}]*\}/gm],
     [speaker, /^ *:root[^{]*\{[^}]*\}/gm],
     [columns, /^\/\* colours, [^*]+\*\/\n(?::root[^{]*\{[^}]*\}|@media[^{]*\{(?:\s*:root[^{]*\{[^}]*\})+\s*\})/gm],
   ];

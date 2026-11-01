@@ -1,0 +1,82 @@
+/* Text is never fainter than --ink-soft, 4.5:1 or better on every panel and
+ * row it sits on, picked ones too, and 7:1 when the system asks for more
+ * contrast; --ink-faint and --line are for rules and borders, and --row is
+ * the ground of the row that's open or picked out.
+ *
+ * Every colour the app draws with is named here, light and dark, and
+ * nowhere else; the speaker view takes them too, and static/speaker.css
+ * adds its own and overrides the few it tunes. Only colours are here: the
+ * app's layout, sizes and fonts are static/style.css's. --ok and --warn are the document's green and red
+ * (src/columns.css), deeper here to read on the app's warmer panels; they
+ * stay apart for the colour-blind, green going grey and red going ochre.
+ * The paper is the document's, under the preview and the deck: its light
+ * paper, or its dark when the document is drawn dark (src/columns.css),
+ * which is the app's look, even where the speaker view's isn't. */
+:root {
+  --bg: #efeae1;
+  --panel: #fffdf9;
+  --ink: #26221e;
+  --ink-soft: #645b52;
+  --ink-faint: #a2988a;
+  --line: #e3dccf;
+  --line-soft: #efe9dd;
+  --row: #e3dccf;
+  --accent: #7a5c3e;
+  --accent-ink: #fffdf9;
+  --ok: #006b5f;
+  --warn: #9d3106;
+  --on-warn: #fff;
+  color-scheme: light;
+  --paper: #fff;
+  --paper-ink-soft: #645b52;
+}
+
+/* Dark, as chosen in the help or as the system is, or on a page dark by
+ * default unless Light is chosen (static/theme.js, which sets data-theme
+ * before the page is drawn). */
+:root[data-theme="dark"] {
+  --bg: #14130f;
+  --panel: #201e1b;
+  --ink: #ece6dc;
+  --ink-soft: #aba295;
+  --ink-faint: #756c60;
+  --line: #34302b;
+  --line-soft: #2a2723;
+  --row: #34302b;
+  --accent: #c9a476;
+  --accent-ink: #1d1b18;
+  --ok: #81cfc2;
+  --warn: #f8926a;
+  --on-warn: #1d1b18;
+  color-scheme: dark;
+}
+:root[data-paper="dark"] {
+  --paper: #22252b;
+  --paper-ink-soft: #cfcbc3;
+}
+
+/* More contrast, as the system asks (prefers-contrast: more): text 7:1 or
+ * better on every panel and row, picked ones too; rules and borders 3:1 on
+ * the panels, and what a faint tint said said by an outline too (at the
+ * end). The same hues, deeper in the light and brighter in the dark. */
+@media (prefers-contrast: more) {
+  :root {
+    --ink: #000;
+    --ink-soft: #49423c;
+    --ink-faint: #6e675e;
+    --line: #848078;
+    --line-soft: #e3dccf;
+    --accent: #4f3c28;
+    --ok: #004840;
+    --warn: #712304;
+    --paper-ink-soft: #49423c;
+  }
+  :root[data-theme="dark"] {
+    --ink: #fff;
+    --ink-soft: #d3cec7;
+    --ink-faint: #8e867d;
+    --line: #716e6b;
+    --accent: #d0b088;
+    --warn: #f99f7c;
+  }
+}

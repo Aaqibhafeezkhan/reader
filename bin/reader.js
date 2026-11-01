@@ -45,8 +45,8 @@ function parseArgs(argv) {
       process.stdout.write(USAGE);
       process.exit(0);
     } else if (a === '--version') {
-      process.stdout.write(`${version().label}\n`);
-      process.exit(0);
+      // Said at once, as --help is, whatever else is asked for.
+      return { ...opts, version: true };
     } else if (a === '--port' || a === '-p') {
       opts.port = portNumber(argv[++i]);
     } else if (a.startsWith('--port=')) {
@@ -113,6 +113,10 @@ const LOCAL = new Set(['127.0.0.1', 'localhost', '::1']);
 const EVERYWHERE = new Set(['0.0.0.0', '::']);
 
 const opts = parseArgs(process.argv.slice(2));
+if (opts.version) {
+  process.stdout.write(`${(await version()).label}\n`);
+  process.exit(0);
+}
 const dir = path.resolve(opts.dir || '.');
 if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) fail(`not a directory: ${dir}`);
 

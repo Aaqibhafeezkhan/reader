@@ -229,6 +229,8 @@ const CONTENT_SANDBOX = { 'Content-Security-Policy': 'sandbox' };
  */
 export function createServer({ root, allowHosts = [], now = Date.now }) {
   const content = createContent(root);
+  // Which reader this is, worked out now, while nothing's waiting on it.
+  const known = version();
   const hosts = new Set([...LOOPBACK, ...allowHosts.map((h) => h.toLowerCase())]);
 
   const listener = (handler) => http.createServer(async (req, res) => {
@@ -310,7 +312,7 @@ export function createServer({ root, allowHosts = [], now = Date.now }) {
 
     if (req.method === 'GET' || req.method === 'HEAD') {
       if (route === '/api/info') {
-        return sendJson(res, { root: content.root, name: path.basename(content.root), version: version() });
+        return sendJson(res, { root: content.root, name: path.basename(content.root), version: await known });
       }
       if (route === '/api/tree') return sendJson(res, { files: content.list() });
       if (route === '/api/file') return sendJson(res, content.read(url.searchParams.get('path')));

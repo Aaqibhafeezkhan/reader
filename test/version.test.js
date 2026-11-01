@@ -25,9 +25,9 @@ test("the head is read for its commit and tags, and anything else for nothing", 
   assert.equal(parseHead('fatal: not a repository'), null);
 });
 
-test("the version is package.json's", () => {
+test("the version is package.json's", async () => {
   const { version: v } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-  const { label } = version();
+  const { label } = await version();
   assert.match(label, /^v[^+]+(\+[0-9a-f]{7})?$/);
   assert.equal(label.split('+')[0], `v${v}`);
 });

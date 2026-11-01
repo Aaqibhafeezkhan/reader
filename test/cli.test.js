@@ -18,7 +18,12 @@ function dir() {
 
 /** Start reader, and give back the address it printed, to be stopped with `stop`, which waits till it has. */
 function start(...args) {
-  const child = spawn(process.execPath, [READER, dir(), '--no-browser', ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
+  return startWith(process.env, ...args);
+}
+
+/** The same, with `env` for its environment. */
+function startWith(env, ...args) {
+  const child = spawn(process.execPath, [READER, dir(), '--no-browser', ...args], { stdio: ['ignore', 'pipe', 'pipe'], env });
   return new Promise((resolve, reject) => {
     let out = '';
     child.stdout.on('data', (c) => {
@@ -84,7 +89,25 @@ test('--version says the version the app shows', async () => {
   const out = run('--version');
   assert.equal(out.status, 0);
   const { version } = await import('../src/version.js');
-  assert.equal(out.stdout, `${version().label}\n`);
+  assert.equal(out.stdout, `${(await version()).label}\n`);
+});
+
+test('a slow git holds up only the version, not the files', { skip: process.platform === 'win32' && 'the slow git is a shell script' }, async () => {
+  // A git that takes its time, as on a cold disk, ahead of the real one.
+  const bin = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-git-'));
+  const git = `#!/bin/sh\nsleep 1\nPATH=${JSON.stringify(process.env.PATH)} exec git "$@"\n`;
+  fs.writeFileSync(path.join(bin, 'git'), git, { mode: 0o755 });
+  const { url, stop } = await startWith({ ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH}` }, '--port', '0');
+  try {
+    const info = fetch(url + 'api/info').then((r) => r.json());
+    const asked = Date.now();
+    const { files } = await (await fetch(url + 'api/tree')).json();
+    assert.deepEqual(files.map((f) => f.path), ['a.md']);
+    assert.ok(Date.now() - asked < 500, 'the files list waited on git');
+    assert.match((await info).version.label, /^v\d+\.\d+\.\d+(\+[0-9a-f]{7})?$/);
+  } finally {
+    await stop();
+  }
 });
 
 test('an argument it doesn\'t know is refused, saying which', () => {

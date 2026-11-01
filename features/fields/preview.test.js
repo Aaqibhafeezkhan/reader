@@ -201,9 +201,12 @@ test('a date field picks a day into its place on the line, and Tab goes past it'
   const p = preview();
   p.show(render('@ Name: Josh\n@ When {a Friday}: date:[]\n@ Age: number:[]\n').body);
   const date = p.document.querySelector('.field[data-kind="date"] .date');
+  let answered = null;
+  p.document.addEventListener('preview:answered', (e) => { answered = e.target; });
   date.click();
   p.document.querySelector('.date-cal-grid button[data-date$="-10"]').click();
   await settle();
+  assert.equal(answered, date, 'a day picked says it answered what it is in');
   const [edit] = p.posted.filter((m) => m.type === 'edit').flatMap((m) => m.edits);
   assert.equal(edit.before[0], '@ When {a Friday}: date:[]');
   assert.match(edit.after[0], /^@ When \{a Friday\}: date:\d{4}-\d{2}-10\[\]$/);

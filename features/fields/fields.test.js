@@ -146,6 +146,13 @@ test('the stylesheet shows a hint only in an empty blank, and keeps it from bein
   assert.match(css, /\.field-value\[data-hint\]:empty::before \{[^}]*content: attr\(data-hint\) \/ "";/);
 });
 
+test("in the system's own colours, a block field keeps its lines, in the text's colour", () => {
+  const { css } = render('@ A:::\n');
+  const forced = css.slice(css.indexOf('@media (forced-colors: active)'));
+  assert.match(forced, /\.field:not\(\.field-inline\) > \.field-value \{ forced-color-adjust: none; --gm-field-rule: CanvasText; \}/);
+  assert.match(forced, /\.field:not\(\.field-inline\) > \.field-value:has\(> textarea\) \{ --gm-field-rule: Highlight; \}/);
+});
+
 test('a field indented under a list item is a field in that item, and keeps its indent when written', () => {
   const { body } = render('- ( ) **High energy**\n  @ Closest word: ( ) Angry ( ) Anxious\n- [ ] Read\n\n  @ What did you read?:\n');
   const items = body.split('<li').slice(1);

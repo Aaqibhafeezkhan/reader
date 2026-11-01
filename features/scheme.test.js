@@ -18,13 +18,13 @@ test('it is the same link as the short one, with what the scheme adds', () => {
   const body = speaker('[Body scan](yt:v/FcWl8WgKP8E) is yt:v/FcWl8WgKP8E[Body scan], and [*look*](search:my+term)\n');
   const links = [...body.matchAll(/<a [^>]*>.*?<\/a>/g)].map(([a]) => a);
   assert.equal(links[0], links[1]);
-  assert.equal(links[0], '<a class="social social-yt" href="https://www.youtube.com/watch?v=FcWl8WgKP8E">Body scan<span class="social-site"> on YouTube</span></a>');
+  assert.equal(links[0], '<a class="social social-yt" href="https://www.youtube.com/watch?v=FcWl8WgKP8E">Body scan<span class="social-site vh"> on YouTube</span></a>');
   assert.equal(links[2], '<a class="search" href="https://www.google.com/search?q=my+term"><em>look</em></a>');
 });
 
 test('![]() with a scheme that has nothing to show is the link', () => {
   const body = speaker('![my channel](yt:jzheaux)\n\n![](rfc:9110)\n');
-  assert.match(body, /<p><a class="social social-yt" href="https:\/\/www\.youtube\.com\/@jzheaux">my channel<span class="social-site"> on YouTube<\/span><\/a><\/p>/);
+  assert.match(body, /<p><a class="social social-yt" href="https:\/\/www\.youtube\.com\/@jzheaux">my channel<span class="social-site vh"> on YouTube<\/span><\/a><\/p>/);
   assert.match(body, /<p><a href="https:\/\/www\.rfc-editor\.org\/rfc\/rfc9110\.html">RFC 9110<\/a><\/p>/);
   assert.doesNotMatch(body, /<img|<figure/);
 });

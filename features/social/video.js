@@ -26,7 +26,7 @@ export function videoCard(found, alt, env) {
   const caption = words ? `<span class="video-caption">${escapeHtml(words)}</span>` : '';
   if (env.exported) {
     return `<a class="video" href="${escapeAttr(found.href)}"><span class="video-screen">${thumb}</span>${caption}`
-      + `<span class="video-site">${words ? ' on YouTube' : 'A video on YouTube'}</span></a>`;
+      + `<span class="video-site vh">${words ? ' on YouTube' : 'A video on YouTube'}</span></a>`;
   }
   const title = words || 'video';
   return `<span class="video" data-video="${id}" data-title="${escapeAttr(title)}">`

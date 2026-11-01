@@ -44,7 +44,7 @@ test('from then it\'s a record: as it was left, nothing to type, tick or play, n
   assert.equal(body.match(/<input[^>]*>/g).length, 3);
   assert.ok(body.match(/<input[^>]*>/g).every((i) => / disabled/.test(i)));
   assert.doesNotMatch(body, /role="textbox"|data-hint|task-reset/);
-  assert.match(body, /<span class="field-value" data-value=""><\/span><span class="field-blank">blank<\/span>/);
+  assert.match(body, /<span class="field-value" data-value=""><\/span><span class="field-blank vh">blank<\/span>/);
   assert.doesNotMatch(body, /class="date"[^>]* tabindex/);
   assert.doesNotMatch(body, /class="puzzle"[^>]* data-from=/);
 });

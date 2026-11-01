@@ -114,7 +114,7 @@ test('from 4:00 the next morning it\'s a record: each page says so, every box an
   assert.equal(inputs.length, 64);
   assert.ok(inputs.every((i) => / disabled/.test(i)), 'every box and choice is shut');
   assert.doesNotMatch(all, /role="textbox"|data-hint|aria-placeholder|tabindex="0" role="button"|task-reset/, 'nothing to type in, pick or press');
-  assert.equal(all.match(/<span class="field-blank">blank<\/span>/g).length, 13, 'its blanks left empty are said to be blank, with no hint');
+  assert.equal(all.match(/<span class="field-blank vh">blank<\/span>/g).length, 13, 'its blanks left empty are said to be blank, with no hint');
 });
 
 test('Work counts its pages done, by a heading\'s box or a choice made, and still does once it\'s a record', () => {

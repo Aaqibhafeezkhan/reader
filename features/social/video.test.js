@@ -38,7 +38,7 @@ test('without alt text it\'s still a video to play, with no caption', () => {
 test('a channel, and a link to a video, are links as they were', () => {
   const { body } = render('![me](yt:jzheaux) [Body scan](yt:v/FcWl8WgKP8E) yt:v/FcWl8WgKP8E[]\n');
   assert.doesNotMatch(body, /class="video"/);
-  assert.match(body, /<a class="social social-yt" href="https:\/\/www\.youtube\.com\/@jzheaux">me<span class="social-site"> on YouTube<\/span><\/a>/);
+  assert.match(body, /<a class="social social-yt" href="https:\/\/www\.youtube\.com\/@jzheaux">me<span class="social-site vh"> on YouTube<\/span><\/a>/);
   assert.equal(body.match(/href="https:\/\/www\.youtube\.com\/watch\?v=FcWl8WgKP8E"/g).length, 2);
 });
 
@@ -59,8 +59,8 @@ test('it plays on a slide and in a record, which can\'t be worked', () => {
 
 test('exported, it\'s the thumbnail as a link to the video, which plays it on YouTube', () => {
   const { body } = render('- ( ) ![Body scan](yt:v/FcWl8WgKP8E)\n\n![](yt:v/w6iG0mNHK28)\n', { exported: true });
-  assert.match(body, /<a class="video" href="https:\/\/www\.youtube\.com\/watch\?v=FcWl8WgKP8E"><span class="video-screen"><img class="video-thumb" src="https:\/\/img\.youtube\.com\/vi\/FcWl8WgKP8E\/hqdefault\.jpg" alt=""><\/span><span class="video-caption">Body scan<\/span><span class="video-site"> on YouTube<\/span><\/a>/);
-  assert.match(body, /<span class="video-site">A video on YouTube<\/span>/);
+  assert.match(body, /<a class="video" href="https:\/\/www\.youtube\.com\/watch\?v=FcWl8WgKP8E"><span class="video-screen"><img class="video-thumb" src="https:\/\/img\.youtube\.com\/vi\/FcWl8WgKP8E\/hqdefault\.jpg" alt=""><\/span><span class="video-caption">Body scan<\/span><span class="video-site vh"> on YouTube<\/span><\/a>/);
+  assert.match(body, /<span class="video-site vh">A video on YouTube<\/span>/);
   assert.doesNotMatch(body, /<button[^>]*video|youtube-nocookie/);
 });
 

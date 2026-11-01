@@ -60,14 +60,6 @@
   margin-top: 0.35rem;
 }
 a.video:hover .video-caption { text-decoration: underline; }
-/* where it goes, for whoever can't see the page: read, not shown */
-.video-site {
-  position: absolute;
-  width: 1px; height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
 @media (forced-colors: active) {
   .video-screen { border-color: ButtonText; }
   .video-screen::before { background: ButtonText; }

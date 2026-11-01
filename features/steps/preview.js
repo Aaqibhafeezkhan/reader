@@ -18,25 +18,16 @@
   const lit = new Map();
   let awake = false;
 
-  // What a key did, for a screen reader, said outside <body>: marking a
-  // step done brings a render, which replaces the page.
-  const said = document.createElement('div');
-  said.className = 'steps-said';
-  said.setAttribute('aria-live', 'polite');
-  const say = (text) => {
-    if (!said.isConnected) document.documentElement.append(said);
-    // The same again is still heard.
-    said.textContent = said.textContent === text ? `${text}\u00a0` : text;
-  };
   const words = (li) => {
     const copy = li.cloneNode(true);
     copy.querySelectorAll('ol, ul, input, button').forEach((n) => n.remove());
     return copy.textContent.replace(/\s+/g, ' ').trim();
   };
+  // Where a key left the steps, said to a screen reader (static/preview-api.js).
   const tell = (g, k) => {
     const steps = groups().get(g);
     const li = steps?.[k];
-    if (li) say(`Step ${k + 1} of ${steps.length}${done(li) ? ', done' : ''}: ${words(li)}`);
+    if (li) Preview.say(`Step ${k + 1} of ${steps.length}${done(li) ? ', done' : ''}: ${words(li)}`);
   };
 
   const groups = (root = document) => {
@@ -152,7 +143,7 @@
       box?.click();
       // The step done, and the one lit after it.
       const next = keyed();
-      if (box) say(`Step ${k + 1} ${box.checked ? 'done' : 'not done'}.${next && next.k >= 0 && next.k !== k ? ` Step ${next.k + 1} of ${steps.length}: ${words(steps[next.k])}` : ''}`);
+      if (box) Preview.say(`Step ${k + 1} ${box.checked ? 'done' : 'not done'}.${next && next.k >= 0 && next.k !== k ? ` Step ${next.k + 1} of ${steps.length}: ${words(steps[next.k])}` : ''}`);
       return;
     }
     const to = e.key === 'j' ? Math.min(steps.length - 1, k + 1) : Math.max(0, k - 1);

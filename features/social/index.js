@@ -121,7 +121,7 @@ export function social(md) {
         return {
           ...link,
           attrs: [['class', `social social-${scheme}`]],
-          after: site && `<span class="social-site"> on ${site}</span>`,
+          after: site && `<span class="social-site vh"> on ${site}</span>`,
         };
       },
       ...(scheme === 'yt' ? { show: videoCard } : {}),

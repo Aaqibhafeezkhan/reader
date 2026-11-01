@@ -78,6 +78,6 @@ export function hinted(hint, env) {
  */
 export function unfilled(value, env, hint = '') {
   if (value || workable(env)) return '';
-  if (closed(env)) return '<span class="field-blank">blank</span>';
-  return `<span class="field-blank">blank${hint ? `, ${escapeHtml(hint)}` : ''}</span>`;
+  if (closed(env)) return '<span class="field-blank vh">blank</span>';
+  return `<span class="field-blank vh">blank${hint ? `, ${escapeHtml(hint)}` : ''}</span>`;
 }

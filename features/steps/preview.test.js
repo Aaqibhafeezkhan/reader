@@ -90,7 +90,7 @@ test('x marks the lit step done with the keyboard on a step\'s own box, as Tab l
 
 test('the lit step is the current one, and j, k and x say where they left the steps', () => {
   const { press, steps, document } = page();
-  const said = () => document.querySelector('.steps-said')?.textContent.trim();
+  const said = () => document.querySelector('html > .vh')?.textContent.trim();
   press('j');
   assert.equal(steps()[0].getAttribute('aria-current'), 'step');
   assert.equal(said(), 'Step 1 of 3: Chop.');

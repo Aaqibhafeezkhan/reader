@@ -36,6 +36,9 @@ const [OPEN, CLOSE] = MARKS.definitions;
 const STYLED = `${MARKS.styles[0]}[^${MARKS.styles[1]}]*${MARKS.styles[1]}`;
 const PLACED = new RegExp(`^(${STYLED})?${OPEN}(\\d+)${CLOSE}`);
 
+// What an empty meaning says, in the entry and where the term is used.
+const UNDEFINED = 'not yet defined';
+
 // Words an acronym skips, unless it needs their letter.
 const SMALL = new Set(['a', 'an', 'and', 'as', 'at', 'by', 'for', 'from', 'in', 'into', 'of', 'on', 'or', 'the', 'to', 'with']);
 const WORD = /[\p{L}\p{N}][\p{L}\p{N}'’]*/gu;
@@ -63,10 +66,10 @@ export function definitions(md) {
   };
   md.renderer.rules.def_blank = (tokens, i, opts, env) => {
     const { line, text, head, term } = tokens[i].meta;
-    // No unseen "blank" where it can't be filled in: the stylesheet's "not
-    // yet defined" already says it's empty, and is read out.
+    // No unseen "blank" where it can't be filled in: the stylesheet shows
+    // what `data-empty` says, and that's read out.
     return `<span class="field def-blank" data-line="${line}" data-text="${escapeAttr(text)}" data-head="${escapeAttr(head)}">`
-      + `<span class="field-value" data-value=""${typable(term, env)}></span></span>`;
+      + `<span class="field-value" data-value="" data-empty="${UNDEFINED}"${typable(term, env)}></span></span>`;
   };
   md.renderer.rules.def_initial = (tokens, i) => `<b class="def-initial">${escapeHtml(tokens[i].content)}</b>`;
   md.renderer.rules.def_use = (tokens, i, options, env) => {
@@ -75,7 +78,7 @@ export function definitions(md) {
     // Senses in a run, as in the entry: a list can't sit in a paragraph.
     const meaning = said.length > 1
       ? said.map((s, k) => `<b class="def-pop-sense">${k + 1}.</b> ${md.renderInline(s.meaning)}`).join(' ')
-      : said.length ? md.renderInline(said[0].meaning) : '<i>not yet defined</i>';
+      : said.length ? md.renderInline(said[0].meaning) : `<i>${UNDEFINED}</i>`;
     // The meaning is the term's description, read once on focus, rather than
     // a second time as part of its text. Counted across a deck's slides, which
     // an export puts on one page.

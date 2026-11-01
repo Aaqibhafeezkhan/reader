@@ -33,11 +33,14 @@
   function field(node, k) {
     const label = node.querySelector(':scope > .field-label');
     const value = node.querySelector(':scope > .field-value');
-    let said = value ? spoken(value, k).trim() : '';
-    // An empty definition says so only through the stylesheet.
-    // An empty field says what goes there, if it's hinted (features/blank.js).
-    if (!said) said = node.matches('.def-blank') ? 'not yet defined' : ['blank', value?.dataset.hint].filter(Boolean).join(', ');
-    return label ? ` ${spoken(label, k).trim()}: ${said} ` : ` ${said} `;
+    // An empty one says what the page says of it, unseen, as a feature wrote
+    // it: a field that it's blank, and what goes there if that's hinted
+    // (`unfilled` in features/blank.js); a definition, through the
+    // stylesheet, the words in its `data-empty`.
+    const said = (value ? spoken(value, k).trim() : '')
+      || (node.querySelector(':scope > .field-blank')?.textContent ?? value?.dataset.empty ?? '').trim();
+    if (!label) return ` ${said} `;
+    return said ? ` ${spoken(label, k).trim()}: ${said} ` : ` ${spoken(label, k).trim()} `;
   }
 
   /** `text` in one line, cut to a sentence or two if it's long. */

@@ -17,16 +17,6 @@
   const timers = new Map();
   let ticking = 0;
 
-  // A timer run out, for a screen reader, said outside <body>, which a
-  // render replaces; there before it has anything to say, to be heard.
-  const said = document.createElement('div');
-  said.className = 'timer-said';
-  said.setAttribute('aria-live', 'polite');
-  const say = (text) => {
-    // The same again is still heard.
-    said.textContent = said.textContent === text ? `${text}\u00a0` : text;
-  };
-
   const two = (n) => String(n).padStart(2, '0');
   const clock = (seconds) => {
     const h = Math.floor(seconds / 3600);
@@ -81,7 +71,8 @@
     if (timers.get(key) !== t) return;
     timers.set(key, { up: true, name: t.name });
     tick();
-    say(`${t.name}: time\u2019s up`);
+    // Said to a screen reader too (static/preview-api.js).
+    Preview.say(`${t.name}: time\u2019s up`);
     for (const ms of [0, 450, 900]) setTimeout(() => Tone.play(880, { seconds: 0.4 }), ms);
   }
 
@@ -103,7 +94,6 @@
       el.querySelector('.timer-go').focus();
       return;
     }
-    if (!said.isConnected) document.documentElement.append(said);
     // Sound can only start on a click or a key, so it's woken now, for zero.
     Tone.wake();
     if (t && t.ends != null) {

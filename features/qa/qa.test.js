@@ -121,6 +121,14 @@ test('a card\'s label is a toggle named for its card, pressed once discussed; in
   assert.match(exported, /<li class="qa qa-card qa-good qa-done">\n<p><span class="qa-label">G<\/span>/);
 });
 
+test('a tried Try shows a check in place of its T, however it is set', () => {
+  const { body } = render('Try [x] (Josh): one\nA: done\n\nTry [x]: two\n\nTry: three\n');
+  assert.match(body, /aria-label="Try, tried" aria-checked="true"[^>]*>✓<\/span><span class="qa-name">Josh<\/span>one/);
+  assert.match(body, /aria-checked="true"[^>]*>✓<\/span>two/);
+  assert.match(body, /aria-checked="false"[^>]*>T<\/span>three/);
+  assert.match(render('Try [x]: one\n', { exported: true }).body, /<span class="qa-label">✓<\/span>one/);
+});
+
 test('on a slide, a card\'s label says whether it\'s done, but can\'t be reached or pressed', () => {
   const src = '# One\n\nGood [x] (Josh): one\n\nTry: two\n\n---\n\n# Next\n';
   const { body } = slides(src).slides[0];

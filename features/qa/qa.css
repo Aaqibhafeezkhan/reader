@@ -72,16 +72,9 @@ li.qa-vote > .qa-label, li.qa-vote > p:first-child > .qa-label {
 li.qa-bare { display: inline-block; margin-right: 0.9rem; }
 li.qa-bare > p { margin: 0; }
 li.qa-vote + li.qa-bare, li.qa-bare + li.qa-vote { margin-top: 0; }
-/* a Try's label is a box: its T, ticked once it's been tried, and the card
- * stays bright */
+/* a Try's label is a box: its T, a check once it's been tried (index.js),
+ * and the card stays bright */
 li.qa-try.qa-done { color: inherit; }
-li.qa-try.qa-done .qa-tried { color: transparent; }
-li.qa-try.qa-done .qa-tried::after {
-  content: "✓";
-  position: absolute;
-  inset: 0;
-  color: var(--gm-paper);
-}
 /* In the system's colours, a filled label (an answer's, a card that's done)
  * is still filled, the system's text colour behind its own ground. */
 @media (forced-colors: active) {

@@ -4,7 +4,7 @@
  * at. Installed any other way (npm, an image), it's taken to be the release.
  */
 
-import { execFileSync } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -27,27 +27,26 @@ export function parseHead(out) {
 }
 
 // Only reader's own checkout, not a repository it's installed inside of; and
-// quietly nothing if git isn't there or takes too long.
+// quietly nothing if git isn't there or takes too long. Asked without waiting
+// for it, so that the server answers everything else while git works.
 function head() {
-  if (!fs.existsSync(new URL('../.git', import.meta.url))) return null;
+  if (!fs.existsSync(new URL('../.git', import.meta.url))) return Promise.resolve(null);
   const env = { ...process.env };
   delete env.GIT_DIR;
   delete env.GIT_WORK_TREE;
-  try {
-    return parseHead(execFileSync('git', ['-C', ROOT, 'log', '-1', '--no-show-signature', '--format=%H%n%D'], {
-      cwd: ROOT,encoding: 'utf8', timeout: 2000, stdio: ['ignore', 'pipe', 'ignore'], env,
-    }).trim());
-  } catch {
-    return null;
-  }
+  return new Promise((resolve) => {
+    execFile('git', ['-C', ROOT, 'log', '-1', '--no-show-signature', '--format=%H%n%D'], {
+      cwd: ROOT, encoding: 'utf8', timeout: 2000, env,
+    }, (err, out) => resolve(err ? null : parseHead(out.trim())));
+  });
 }
 
 let known;
-/** This reader's `{ label, url }`, worked out once. */
+/** This reader's `{ label, url }`, to wait for: worked out once, from the first ask, which is the server's start. */
 export function version() {
   if (!known) {
     const { version } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-    known = describe(version, head());
+    known = head().then((h) => describe(version, h));
   }
   return known;
 }

@@ -36,9 +36,10 @@ const [OPEN, CLOSE] = MARKS.definitions;
 const STYLED = `${MARKS.styles[0]}[^${MARKS.styles[1]}]*${MARKS.styles[1]}`;
 const PLACED = new RegExp(`^(${STYLED})?${OPEN}(\\d+)${CLOSE}`);
 
-// Words an acronym skips, unless it needs their letter.
 // What an empty meaning says, in the entry and where the term is used.
 const UNDEFINED = 'not yet defined';
+
+// Words an acronym skips, unless it needs their letter.
 const SMALL = new Set(['a', 'an', 'and', 'as', 'at', 'by', 'for', 'from', 'in', 'into', 'of', 'on', 'or', 'the', 'to', 'with']);
 const WORD = /[\p{L}\p{N}][\p{L}\p{N}'’]*/gu;
 

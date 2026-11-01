@@ -119,6 +119,20 @@ test('in Work too, and the same player through the renders after, but in Edit th
   assert.equal(players(p).length, 1);
 });
 
+test('in Work, a card narrower than YouTube\'s smallest player stays the card until pressed, which then starts it', () => {
+  for (const [width, expected] of [[130, 0], [216, 1]]) {
+    const p = preview();
+    Object.defineProperty(p.window.HTMLElement.prototype, 'offsetWidth', { get: () => width, configurable: true });
+    const body = render('::: grid 3\n- ![Body scan](yt:v/FcWl8WgKP8E)\n- ![Stretch](yt:v/st6YgM4pgrM)\n:::\n').body;
+    p.show(body, { working: true });
+    assert.equal(players(p).length, expected * 2, `${width}px wide`);
+    if (expected) continue;
+    p.document.querySelector('.video-play').click();
+    const [player] = players(p);
+    assert.equal(player.getAttribute('src'), 'https://www.youtube-nocookie.com/embed/FcWl8WgKP8E?autoplay=1', 'pressed, it starts');
+  }
+});
+
 test('in a frame with no origin of its own (the overview, the speaker view, measuring), the card, asking nothing of YouTube', () => {
   const p = preview();
   Object.defineProperty(p.window, 'origin', { value: 'null', configurable: true });

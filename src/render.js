@@ -13,6 +13,7 @@ import MarkdownIt from 'markdown-it';
 import { columns } from './columns.js';
 import { readBackground, backdrop, CSS as BACKGROUND_CSS } from './background.js';
 import { fontCss } from './fonts.js';
+import { accentCss } from './accent.js';
 import { FEATURES, checkRequires } from '../features/index.js';
 import { page as pageRule } from './page.js';
 
@@ -55,8 +56,8 @@ export function titleOf(meta, file) {
  * it was drawn from, `data-line`, for scrolling in step with the editor.
  * `background` is what's behind the page (see background.js) when it isn't
  * the front matter's to say: a slide's own, or its deck's, or null for none.
- * `fonts` is likewise the front matter that names the fonts (see fonts.js):
- * a slide's deck's. `matter` is the front matter of the document `src` is
+ * `fonts` is likewise the front matter that names the fonts (see fonts.js)
+ * and the accent (see accent.js): a slide's deck's. `matter` is the front matter of the document `src` is
  * a part of, for the settings a slide takes from its deck (the names of a
  * staged box's stages, features/tasks). `drawn` is what the preview frame
  * drew of the page, by feature (`{ mermaid: { text: svg } }`), to set into
@@ -99,8 +100,9 @@ function renderWith(md, features, src, { file, read, line = 0, shared = {}, entr
   const body = features.reduce((html, f) => (f.html ? f.html(html) : html), figures(page.body.trim()));
   const behind = backdrop(background === undefined ? readBackground(meta.background) : background);
   return {
-    // The document's fonts last, over the theme's and under a `:::` block's own.
-    css: [page.css.trim(), CSS, BACKGROUND_CSS, ...features.map((f) => f.css).filter(Boolean), fontCss(fonts ?? meta)].filter(Boolean).join('\n'),
+    // The document's fonts last, over the theme's and under a `:::` block's
+    // own, and its accent, which the theme makes its accent from.
+    css: [page.css.trim(), CSS, BACKGROUND_CSS, ...features.map((f) => f.css).filter(Boolean), fontCss(fonts ?? meta), accentCss(fonts ?? meta)].filter(Boolean).join('\n'),
     body: behind + body,
     // How many notes are in the margin, asides or any other feature's.
     notes: notes.length,

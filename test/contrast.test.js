@@ -55,6 +55,9 @@ function resolve(props) {
     if (/^#[0-9a-f]{6}$/i.test(v)) return v.toLowerCase();
     let m = /^var\(--([\w-]+)\)$/.exec(v);
     if (m) return get(m[1]);
+    // with a fallback, for when it isn't set: the accent, without the document's own
+    m = /^var\(--([\w-]+), (.+)\)$/.exec(v);
+    if (m) return get(m[1]) ?? value(m[2]);
     m = /^color-mix\(in srgb, (.+) (\d+)%, (.+)\)$/.exec(v);
     if (m) {
       const [a, b] = [value(m[1]), value(m[3])];
@@ -312,8 +315,14 @@ test('a colour an author names reads as text, in light and dark, and at 7:1 with
     ['dark, more contrast', merge(base, more, darker, moreDark), docMore.dark, 7],
   ];
   const cap = 'oklch(from var(--own) clamp(var(--gm-own-l-min), l, var(--gm-own-l-max)) min(c, var(--gm-own-c-max)) h)';
-  assert.ok(columns.includes(`  .gm-own { --gm-own: ${cap}; }`), 'the clamp');
-  assert.ok(columns.includes('\n.gm-own { --gm-own: var(--own); }'), 'as written, without relative colours');
+  assert.ok(columns.includes(`  :root, .gm-own { --gm-own: ${cap}; }`), 'the clamp');
+  assert.ok(columns.includes('\n:root, .gm-own { --gm-own: var(--own); }'), 'as written, without relative colours');
+  // the page is one, in the accent its front matter gives (src/accent.js),
+  // and the accent is that, or the family's slate without it
+  assert.ok(columns.includes('\n:root { --own: var(--own-accent); }'), "the document's accent");
+  assert.match(block(columns, ':root {\n  --gm-accent'), /\n {2}--gm-accent: var\(--gm-own, var\(--gm-slate\)\);/);
+  // the browser's own boxes and radios take it, and are the browser's without it
+  assert.ok(columns.includes('\n:root { accent-color: var(--gm-own, auto); }'), "the boxes' accent");
   const marksCss = read('features/asides/marks.css');
   assert.ok(asides.includes('.gm-who.gm-own { --own: var(--by); background: var(--gm-own); }'), 'a chip');
   assert.ok(asides.includes('.gm-topic.gm-own { --own: var(--topic); color: var(--gm-own); }'), 'a pill');
@@ -342,6 +351,13 @@ test('a colour an author names reads as text, in light and dark, and at 7:1 with
       readable(ink, t['gm-paper'], `${theme}: ${c} as ${ink}, a pill on the paper`, least);
       readable(t['gm-paper'], ink, `${theme}: the paper on ${c} as ${ink}, a chip`, least);
       readable(mix(ink, 0.55, t['gm-ink']), t['gm-paper'], `${theme}: ${c} as the words an aside chose`, least);
+    }
+    // and as the accent, a document's own: drawn as text, and lettered in
+    // the paper (a reviewer's chip in the byline)
+    for (const c of ['#4a7c59', ...colours]) {
+      const accent = capped(c, bounds);
+      readable(accent, t['gm-paper'], `${theme}: the accent ${c} as ${accent}, on the paper`, least);
+      readable(t['gm-paper'], accent, `${theme}: the paper on the accent ${c} as ${accent}`, least);
     }
   }
 });

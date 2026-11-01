@@ -3,6 +3,7 @@ title: Daily Dashboard
 date: 2026-10-27
 type: workbook
 open-until: 2026-10-28 04:00
+accent: "#4a7c59"
 ---
 
 <!--

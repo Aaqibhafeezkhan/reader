@@ -192,8 +192,11 @@
 
 /* What each colour is for: the same in either set, as they're named from
  * the family. Good, Bad and Try are its green, red and blue. */
+/* The accent is the document's own (`accent:`, src/accent.js) when it gives
+ * one, kept readable as any colour an author gives is (below), and the
+ * family's slate when it doesn't. */
 :root {
-  --gm-accent: var(--gm-slate);
+  --gm-accent: var(--gm-own, var(--gm-slate));
   --gm-good: var(--gm-green);
   --gm-bad: var(--gm-red);
   --gm-try: var(--gm-blue);
@@ -235,11 +238,19 @@
 /* An element in a colour an author gave (`.gm-own`) sets it as `--own`,
  * and draws in `--gm-own`: that colour kept as light or as dark as the
  * family, by the bounds above. A browser without relative colours draws it
- * as it's written. */
-.gm-own { --gm-own: var(--own); }
+ * as it's written. The page is one too, in its accent, if the document
+ * gives one (`--own-accent`); if it doesn't, `--gm-own` isn't set on the
+ * page, and the accent is the family's. */
+:root { --own: var(--own-accent); }
+:root, .gm-own { --gm-own: var(--own); }
 @supports (color: oklch(from red clamp(0, l, 1) min(c, 1) h)) {
-  .gm-own { --gm-own: oklch(from var(--own) clamp(var(--gm-own-l-min), l, var(--gm-own-l-max)) min(c, var(--gm-own-c-max)) h); }
+  :root, .gm-own { --gm-own: oklch(from var(--own) clamp(var(--gm-own-l-min), l, var(--gm-own-l-max)) min(c, var(--gm-own-c-max)) h); }
 }
+
+/* The browser's own boxes, radios and bars (a task's, a choice's) take the
+ * document's accent when it gives one, and are the browser's own when it
+ * doesn't. The system's colours put them back to the browser's own. */
+:root { accent-color: var(--gm-own, auto); }
 
 /* The system's own colours (forced-colors: active, as Windows' contrast
  * themes are): the browser draws text, grounds and borders in them anyway,

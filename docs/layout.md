@@ -114,7 +114,8 @@ progress:[326/432] pages
 - `::: row reverse` puts the first block on the right. The other names on
   the line are styles, as on any `:::` block.
 - In a narrow window, it stays a row while the rest has room for a few
-  words beside the first block, and then the rest goes under it.
+  words beside the first block, and then the rest goes under it, the first
+  block at the left edge, reversed or not.
 - An aside written in a row, or right after it, sits beside all of it.
 
 ## Grid

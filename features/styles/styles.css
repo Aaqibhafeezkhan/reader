@@ -29,8 +29,10 @@ li.bg { --card-bg: var(--item-bg); }
 /* On a span, a highlighter; on a block or a list item, a box, with room
  * round what's in it and its corners rounded. An item's box takes in its
  * bullet or checkbox: it's drawn out into the list's margin, where they
- * sit, and has room to the left of them as round the rest. (A card draws
- * its own box, features/cards, after this.) */
+ * sit, and has room to the left of them as round the rest. Each of these
+ * weighs no more than `li.bg`, the list it's in taken in :where(), so a look
+ * that draws its own box for an item (a card, features/cards) has its way
+ * whichever stylesheet comes first. */
 span.bg { padding: 0 0.15em; border-radius: 0.2em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 div.bg, p.bg, h1.bg, h2.bg, h3.bg, h4.bg, h5.bg, h6.bg, li.bg, td.bg, th.bg {
   --bg-pad: 0.6em;
@@ -40,14 +42,14 @@ div.bg, p.bg, h1.bg, h2.bg, h3.bg, h4.bg, h5.bg, h6.bg, li.bg, td.bg, th.bg {
 div.bg { margin: 1rem 0; }
 div.bg > :first-child { margin-top: 0; }
 div.bg > :last-child { margin-bottom: 0; }
-:is(ul, ol) > li.bg {
+li.bg:where(:is(ul, ol) > *) {
   --bg-mark: 1.35rem;
   padding-left: calc(var(--bg-mark) + var(--bg-pad));
   margin-left: calc(-1 * var(--bg-mark));
 }
-:is(ul, ol) > li.bg + li.bg { margin-top: 0.3em; }
+li.bg:where(.bg + *) { margin-top: 0.3em; }
 /* A bullet or a number, drawn outside an item, is set inside its box instead. */
-:is(ul, ol) > li.bg:not(.task) { list-style-position: inside; padding-left: var(--bg-pad); }
+li.bg:where(:is(ul, ol) > :not(.task)) { list-style-position: inside; padding-left: var(--bg-pad); }
 
 /* In the system's colours, a background gives way to the system's; a line
  * round it still sets what it holds apart. */

@@ -79,6 +79,7 @@
       root.hidden = false;
       mark(current);
       observer?.disconnect();
+      waiting.clear();
       // Drawn as they come into view, or all at once where that can't be told.
       if ('IntersectionObserver' in window) {
         observer = new IntersectionObserver((seen) => {
@@ -92,6 +93,11 @@
       // The slide with the highlight says itself, as it gets the keyboard;
       // what it doesn't say is that the overview is out.
       say('Overview');
+    }
+
+    function refresh(all, current = at) {
+      if (root.hidden || !all.length) return;
+      open(all, Math.min(current, all.length - 1));
     }
 
     function close({ picked = false } = {}) {
@@ -206,7 +212,7 @@
     }
 
     return {
-      open, close, key, mark, redraw,
+      open, refresh, close, key, mark, redraw,
       get isOpen() { return !root.hidden; },
     };
   }

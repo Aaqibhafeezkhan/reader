@@ -482,6 +482,43 @@ test('the edits asked for in one turn go up at its end, as one for the same opti
   assert.deepEqual(sent(), [[[4], { type: 'edit', undo: true }], [[5], { type: 'edit', undo: true }]]);
 });
 
+test('edits of the same line in a turn become one, with both changes where they change different parts, and the first ask\'s options', async () => {
+  const { window, posted } = frame('');
+  run(window, 'static/preview-api.js');
+  const line = '- ( ) C · [@ Else]';
+  const sent = () => posted.splice(0).filter((m) => m.type === 'edit').map(({ edits, ...m }) => [edits, m]);
+  window.Preview.edit([{ from: 2, to: 3, before: [line], after: ['- ( ) C · [@ Else: run]'] }]);
+  window.Preview.edit([{ from: 2, to: 3, before: [line], after: ['- (x) C · [@ Else]'] }, { from: 0, to: 1, before: ['a'], after: ['b'] }], { undo: true });
+  await settle();
+  assert.deepEqual(sent(), [[[
+    { from: 2, to: 3, before: [line], after: ['- (x) C · [@ Else: run]'] },
+    { from: 0, to: 1, before: ['a'], after: ['b'] },
+  ], { type: 'edit' }]]);
+  // Changing the same part, the later one is written.
+  window.Preview.replace(window.document.body, () => {});
+  window.Preview.edit([{ from: 0, to: 1, before: ['abc'], after: ['aXc'] }]);
+  window.Preview.edit([{ from: 0, to: 1, before: ['abc'], after: ['aYc'] }]);
+  await settle();
+  assert.deepEqual(sent(), [[[{ from: 0, to: 1, before: ['abc'], after: ['aYc'] }], { type: 'edit' }]]);
+});
+
+test('an edit of a line an earlier turn wrote, made from the line as its feature knew it, is made on what was written, until the page is drawn again', async () => {
+  const { window, posted } = frame('');
+  run(window, 'static/preview-api.js');
+  const sent = async (e) => {
+    window.Preview.edit([{ from: 1, to: 2, before: [e[0]], after: [e[1]] }]);
+    await settle();
+    return posted.splice(0).flatMap((m) => m.edits).map((x) => [x.before[0], x.after[0]]);
+  };
+  // A choice picked as its blank is filled, then another picked.
+  await sent(['- ( ) C [@ x]', '- (x) C [@ x: run]']);
+  assert.deepEqual(await sent(['- (x) C [@ x]', '- ( ) C [@ x]']), [['- (x) C [@ x: run]', '- ( ) C [@ x: run]']]);
+  // What's written as the line now reads is left as it is.
+  assert.deepEqual(await sent(['- ( ) C [@ x: run]', '- ( ) C [@ x: ran]']), [['- ( ) C [@ x: run]', '- ( ) C [@ x: ran]']]);
+  window.Preview.replace(window.document.body, () => {});
+  assert.deepEqual(await sent(['- (x) C [@ x]', '- ( ) C [@ x]']), [['- (x) C [@ x]', '- ( ) C [@ x]']]);
+});
+
 test('Preview.flush sends the edits held so far, and the end of the turn sends nothing again', async () => {
   const { window, posted } = frame('');
   run(window, 'static/preview-api.js');

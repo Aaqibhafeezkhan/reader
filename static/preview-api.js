@@ -12,7 +12,14 @@
  *     while one click or key is handled are held to the end of the turn (a
  *     microtask) and go up together, those with the same options as one
  *     edit and one undo. So features that answer the same click (a step
- *     done, the ingredient it uses up) needn't know of each other.
+ *     done, the ingredient it uses up) needn't know of each other. Nor
+ *     when they write the same line, each from the line as it was drawn
+ *     (a blank in a choice's line filled, and the choice picked by it):
+ *     the edits become one, both changes made where they change different
+ *     parts of it, the later one's where they don't, and go up with the
+ *     options of the first asked. Likewise an edit of a line that an
+ *     earlier turn has written since the page was drawn, made from the line
+ *     as its feature last knew it, is made on what that turn wrote.
  *
  *   Preview.flush()
  *     Sends the edits held so far now, not at the end of the turn.
@@ -78,8 +85,70 @@
   const flush = () => {
     const sending = held;
     held = null;
-    for (const { edits, opts } of sending?.values() ?? []) window.parent.postMessage({ type: 'edit', edits, ...opts }, '*');
+    for (const { edits, opts } of joined([...sending?.values() ?? []])) {
+      window.parent.postMessage({ type: 'edit', edits: edits.map(rebase), ...opts }, '*');
+    }
   };
+  // The lines written since the page was drawn, as each was last written.
+  const written = new Map();
+  /**
+   * Edit `e`, if it's of a line written since the page was drawn and reads
+   * it otherwise, made on what was written: the change it makes made there
+   * too, where that's another part of the line than what was written.
+   */
+  function rebase(e) {
+    if (e.to !== e.from + 1 || e.before.length !== 1 || e.after.length !== 1) {
+      if (e.before.length !== e.after.length) written.clear();
+      return e;
+    }
+    const now = written.get(e.from);
+    const both = now !== undefined && now !== e.before[0] && merge(e.before[0], now, e.after[0]);
+    const out = both ? { ...e, before: [now], after: [both] } : e;
+    written.set(e.from, out.after[0]);
+    return out;
+  }
+  const overlap = (a, b) => a.from < b.to && b.from < a.to;
+  /** The turn's edits under their options, those touching the lines of an earlier ask's going up with it. */
+  function joined(asks) {
+    const out = [];
+    for (const ask of asks) {
+      const into = out.find((o) => o.edits.some((a) => ask.edits.some((b) => overlap(a, b))));
+      if (into) into.edits.push(...ask.edits);
+      else out.push({ edits: [...ask.edits], opts: ask.opts });
+    }
+    for (const o of out) o.edits = o.edits.reduce(combine, []);
+    return out;
+  }
+  /** `edits` and `e`, an edit of the same lines from what they read made one with it. */
+  function combine(edits, e) {
+    const same = (a) => a.from === e.from && a.to === e.to && a.before.join('\n') === e.before.join('\n');
+    const i = edits.findIndex(same);
+    if (i < 0) return [...edits, e];
+    const was = edits[i];
+    const both = was.before.length === 1 && was.after.length === 1 && e.after.length === 1
+      && merge(e.before[0], was.after[0], e.after[0]);
+    return edits.with(i, { ...e, after: both === false ? e.after : [both] });
+  }
+  /** Where `after` differs from `base`: the stretch of `base` replaced, and with what. */
+  function changed(base, after) {
+    let start = 0;
+    while (start < base.length && start < after.length && base[start] === after[start]) start++;
+    let end = base.length;
+    let to = after.length;
+    while (end > start && to > start && base[end - 1] === after[to - 1]) {
+      end--;
+      to--;
+    }
+    return { start, end, text: after.slice(start, to) };
+  }
+  /** `base` with the changes of both `x` and `y` made, or false where they change the same part. */
+  function merge(base, x, y) {
+    if (x === y) return x;
+    let [a, b] = [changed(base, x), changed(base, y)];
+    if (a.start > b.start) [a, b] = [b, a];
+    if (a.end > b.start) return false;
+    return base.slice(0, a.start) + a.text + base.slice(a.end, b.start) + b.text + base.slice(b.end);
+  }
   let workable = true;
   let closed = false;
   // What each element shut had, to put back.
@@ -153,6 +222,7 @@
     /** For preview.js: runs `render` between the hooks' keep and restore. */
     replace(root, render) {
       const kept = hooks.map((h) => h.keep?.());
+      written.clear();
       render();
       hooks.forEach((h, i) => h.restore?.(root, kept[i]));
     },

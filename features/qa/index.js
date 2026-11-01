@@ -69,8 +69,10 @@ export function qa(md) {
     const label = toggle && !env.exported
       ? `<span class="qa-label qa-toggle${tried ? ' qa-tried' : ''}" ${state} data-line="${toggle.line}" data-on="${escapeAttr(toggle.on)}" data-off="${escapeAttr(toggle.off)}">`
       : '<span class="qa-label">';
+    // A Try that's been tried shows a check in place of its T.
+    const mark = tried && toggle?.done ? '✓' : LABELS[who] ?? who;
     // A name is markdown like the rest of the line: *emphasis*, quotes.
-    return `${label}${LABELS[who] ?? who}</span>${tally}${name ? `<span class="qa-name">${md.renderInline(name)}</span>` : ''}`;
+    return `${label}${mark}</span>${tally}${name ? `<span class="qa-name">${md.renderInline(name)}</span>` : ''}`;
   };
   md.renderer.rules.qa_para = () => '<span class="qa-para"></span>';
 }

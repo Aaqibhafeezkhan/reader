@@ -40,8 +40,13 @@ const MARK = new RegExp(`${OPEN}([^${CLOSE}]*)${CLOSE}`, 'g');
 const [ITEM_OPEN, ITEM_CLOSE] = MARKS.items;
 const ITEM_MARK = new RegExp(`${ITEM_OPEN}([^${ITEM_CLOSE}]*)${ITEM_CLOSE}`, 'g');
 const [BOX_OPEN, BOX_CLOSE] = MARKS.box;
-// A list item's first line, ending in braces after a space: `- ( ) **A** {bg-honeydew}`.
-const ITEM = /^[ \t]*(?:>[ \t]*)*(?:[-*+]|\d{1,9}[.)])[ \t].*?\S([ \t]+\{([\w-]+(?:[ \t]+[\w-]+)*)\}[ \t]*)$/;
+const [TASK_OPEN, TASK_CLOSE] = MARKS.tasks;
+// A list item's first line with braces where it's declared, after its
+// bullet and any box (as typed, or as tasks has placed it), and before its
+// text: `- ( ) {bg-honeydew} **A**`.
+const ITEM = new RegExp('^([ \\t]*(?:>[ \\t]*)*(?:[-*+]|\\d{1,9}[.)])[ \\t]+'
+  + `(?:(?:${TASK_OPEN}\\d+${TASK_CLOSE}|(?:\\[[ xX]\\])+|\\([ xX]\\))[ \\t]+)?)`
+  + '(\\{([\\w-]+(?:[ \\t]+[\\w-]+)*)\\}[ \\t]+)(?=\\S)');
 // What opens a line's block, for the marker to go after.
 // An aside's `~` can carry aliases and the words it's about: `~c[the lazy dog] `.
 const PREFIX = /^[ \t]*(?:~[^\s~[]*(?:\[(?:[^\]\\\n]|\\.)+\](?:\{[a-z]+\})?)?[ \t]+|[>~][ \t]*)*(?:(?:[-*+]|\d{1,9}[.)])[ \t]+)?(?:#{1,6}[ \t]+)?/;
@@ -111,18 +116,18 @@ const background = (name) => /^bg-/i.test(name) && COLORS.has(name.slice(3).toLo
 const known = (name) => COLORS.has(name.toLowerCase()) || background(name) || GENERIC.has(name.toLowerCase());
 
 /**
- * A list item's line ending in braces of style names, after a space, with
- * the braces a marker that keeps them as written, for the item to take
- * once the blocks are parsed. Braces naming anything else -- a field's
- * hint, a word -- are left as they are.
+ * A list item's line with braces of style names after its bullet and box,
+ * with the braces, and the space after them, a marker that keeps them as
+ * written, for the item to take once the blocks are parsed. Braces naming
+ * anything else -- a word -- are left as they are.
  */
 function item(line) {
   const m = ITEM.exec(line);
-  if (!m || !m[2].split(/\s+/).every(known)) return line;
-  return line.slice(0, -m[1].length) + ITEM_OPEN + m[1] + ITEM_CLOSE;
+  if (!m || !m[3].split(/\s+/).every(known)) return line;
+  return m[1] + ITEM_OPEN + m[2] + ITEM_CLOSE + line.slice(m[0].length);
 }
 
-/** Puts back an item's braces where they turned out not to be its first line's. */
+/** Puts back an item's braces where they turned out not to head a list item. */
 const written = (s) => s.replace(ITEM_MARK, '$1');
 
 /**
@@ -172,7 +177,7 @@ function own(tokens, i) {
   const firstLine = t.content.indexOf('\n') < 0 ? t.content.length : t.content.indexOf('\n');
   t.content = t.content.replace(ITEM_MARK, (m, braces, at) => {
     if (!li || li.meta?.own || at > firstLine) return braces;
-    li.meta = { ...li.meta, own: braces.trim().slice(1, -1) };
+    li.meta = { ...li.meta, own: braces.trim().slice(1, -1).trim() };
     return '';
   });
 }

@@ -290,12 +290,12 @@ The ceiling rises when you stop pushing at it.
 # How are you feeling?
 
 ::: grid 2 cards
-- ( ) **High energy · Unpleasant** {bg-mistyrose}
+- ( ) {bg-mistyrose} **High energy · Unpleasant**
   @ Closest word: ( ) Angry ( ) Anxious ( ) Stressed ( ) Frustrated ( ) Overwhelmed ( ) Alarmed
-- ( ) **High energy · Pleasant** {bg-lemonchiffon}
+- ( ) {bg-lemonchiffon} **High energy · Pleasant**
   @ Closest word: ( ) Excited ( ) Happy ( ) Enthusiastic ( ) Energized ( ) Joyful ( ) Inspired
-- ( ) **Low energy · Unpleasant** {bg-lavender}
+- ( ) {bg-lavender} **Low energy · Unpleasant**
   @ Closest word: ( ) Sad ( ) Tired ( ) Depressed ( ) Hopeless ( ) Lonely ( ) Disconnected
-- ( ) **Low energy · Pleasant** {bg-honeydew}
+- ( ) {bg-honeydew} **Low energy · Pleasant**
   @ Closest word: ( ) Calm ( ) Content ( ) Peaceful ( ) Relaxed ( ) Grateful ( ) Serene
 :::

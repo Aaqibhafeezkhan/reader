@@ -84,38 +84,42 @@ test('inside a ::: block, a glossary, displayed math and callouts are still them
   assert.match(body, /<ol class="callout-notes">\n<li data-callout="1"[^>]*><span class="callout" data-n="1"><\/span><span>the first<\/span><\/li>/);
 });
 
-test('braces at the end of a list item\'s first line style the whole item, its box included', () => {
-  const { body } = render('- ( ) **High** · excited {bg-lemonchiffon}\n  @ Closest word: ( ) Happy ( ) Joyful\n- [ ] task {red  monospace}\n- plain {Navy}\n');
-  assert.match(body, /<li class="bg task" style="--bg: lemonchiffon"><input type="radio" class="choice-box"[^>]* data-on="- \(x\) \*\*High\*\* · excited \{bg-lemonchiffon\}"[^>]*> <strong>High<\/strong> · excited\n<span class="field"/);
-  assert.match(body, /<li class="font task" style="color: red; --font: monospace"><input type="checkbox"[^>]*> task<\/li>/);
+test('braces after a list item\'s bullet and box style the whole item, its box included', () => {
+  const { body } = render('- ( ) {bg-lemonchiffon} **High** · excited\n  @ Closest word: ( ) Happy ( ) Joyful\n- [ ] {red  monospace} task\n- {Navy} plain\n- [x][ ][ ] {gray} onion\n\n1) [ ] {bg-lavender} a step\n');
+  assert.match(body, /<li class="bg task" style="--bg: lemonchiffon"><input type="radio" class="choice-box"[^>]* data-on="- \(x\) \{bg-lemonchiffon\} \*\*High\*\* · excited" data-off="- \( \) \{bg-lemonchiffon\} \*\*High\*\* · excited" aria-label="High · excited"> <strong>High<\/strong> · excited\n<span class="field"/);
+  assert.match(body, /<li class="font task" style="color: red; --font: monospace"><input type="checkbox"[^>]* data-on="- \[x\] \{red {2}monospace\} task"[^>]* aria-label="task"> task<\/li>/);
   assert.match(body, /<li style="color: navy">plain<\/li>/);
+  assert.match(body, /<li class="task staged" style="color: gray">.*data-lines="\[&quot;- \[ \]\[ \]\[ \] \{gray\} onion&quot;.*aria-label="onion: 1 of 3"|<li class="task staged" style="color: gray"><button[^>]*aria-label="onion: 1 of 3"[^>]*data-lines="\[&quot;- \[ \]\[ \]\[ \] \{gray\} onion&quot;/);
+  assert.match(body, /<li class="bg task step" style="--bg: lavender" data-n="1"[^>]*><input type="checkbox"[^>]* data-on="1\) \[x\] \{bg-lavender\} a step"[^>]*> a step<\/li>/);
   assert.doesNotMatch(body.replace(/data-[a-z]+="[^"]*"/g, ''), /\{|[\uE000-\uE009]/);
 });
 
-test('braces that aren\'t all style names, or aren\'t at the end of an item\'s first line after a space, stay as typed', () => {
-  const src = '- a {placeholder}\n- b {red georgia}\n- c [d]{red}\n- e{red}\n- f {red} g\n- h\n  i {red}\n\nj {red}\n\n    - k {red}\n\n- `l {red}`\n- m\n  @ Name {red}: x\n';
+test('braces that aren\'t all style names, or aren\'t right after an item\'s bullet and box, stay as typed', () => {
+  const src = '- {placeholder} a\n- {red georgia} b\n- [c]{red} d\n- {red}e\n- f {red}\n- [ ] g {red}\n- h\n  {red} i\n- {red}\n\n{red} j\n\n    - {red} k\n\n- `{red} l`\n- [@ m] {red} n\n';
   const { body } = render(src);
-  assert.match(body, /<li>a \{placeholder\}<\/li>/);
-  assert.match(body, /<li>b \{red georgia\}<\/li>/);
-  assert.match(body, /<li>c <span style="color: red">d<\/span><\/li>/);
-  assert.match(body, /<li>e\{red\}<\/li>/);
-  assert.match(body, /<li>f \{red\} g<\/li>/);
-  assert.match(body, /<li>h\ni \{red\}<\/li>/);
-  assert.match(body, /<p>j \{red\}<\/p>/);
-  assert.match(body, /<pre><code>- k \{red\}\n<\/code><\/pre>/);
-  assert.match(body, /<li><code>l \{red\}<\/code><\/li>/);
-  assert.match(body, /data-hint="red"/);
+  assert.match(body, /<li>\{placeholder\} a<\/li>/);
+  assert.match(body, /<li>\{red georgia\} b<\/li>/);
+  assert.match(body, /<li><span style="color: red">c<\/span> d<\/li>/);
+  assert.match(body, /<li>\{red\}e<\/li>/);
+  assert.match(body, /<li>f \{red\}<\/li>/);
+  assert.match(body, /aria-label="g \{red\}"> g \{red\}<\/li>/);
+  assert.match(body, /<li>h\n\{red\} i<\/li>/);
+  assert.match(body, /<li>\{red\}<\/li>/);
+  assert.match(body, /<p>\{red\} j<\/p>/);
+  assert.match(body, /<pre><code>- \{red\} k\n<\/code><\/pre>/);
+  assert.match(body, /<li><code>\{red\} l<\/code><\/li>/);
+  assert.match(body, /<\/span> \{red\} n<\/li>/);
   assert.doesNotMatch(body, /<li [^>]*style=|[\uE000-\uE009]/);
 });
 
 test('an item\'s own color wins over its ::: block\'s, whose font still comes after', () => {
-  const { body } = render('::: gray georgia\n- mine {blue}\n- theirs\n:::\n');
+  const { body } = render('::: gray georgia\n- {blue} mine\n- theirs\n:::\n');
   assert.match(body, /<li class="font" style="color: blue; --font: 'georgia'">mine<\/li>/);
   assert.match(body, /<li class="font" style="color: gray; --font: 'georgia'">theirs<\/li>/);
 });
 
 test('bg- and a color name is a background: a span\'s, a ::: block\'s round all of it, an item\'s', () => {
-  const { body } = render('[marked]{bg-Yellow darkred} [x]{bg-nothing}\n\n::: bg-aliceblue slategray\none\n\n::: bg-honeydew\ntwo\n:::\n:::\n\n- item {bg-mistyrose}\n');
+  const { body } = render('[marked]{bg-Yellow darkred} [x]{bg-nothing}\n\n::: bg-aliceblue slategray\none\n\n::: bg-honeydew\ntwo\n:::\n:::\n\n- {bg-mistyrose} item\n');
   assert.match(body, /<span class="bg" style="color: darkred; --bg: yellow">marked<\/span>/);
   assert.match(body, /<span class="font" style="--font: 'bg nothing'">x<\/span>/);
   assert.match(body, /<div class="bg" style="--bg: aliceblue">\n<p style="color: slategray">one<\/p>\n<div class="bg" style="--bg: honeydew">\n<p style="color: slategray">two<\/p>\n<\/div>\n<\/div>/);

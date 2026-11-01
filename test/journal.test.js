@@ -194,5 +194,7 @@ test('each feeling is a card tinted its own background, its choice and closest w
       ['Low energy · Pleasant', 'honeydew'],
     ]);
     assert.doesNotMatch(feeling.replace(/<[^>]*>/g, ''), /\{|bg-/, 'no braces are left as typed');
+    // Its braces, where it's declared, are written back with its box, and aren't in its name.
+    assert.match(feeling, /aria-label="High energy · Unpleasant" data-on="- \(x\) \{bg-mistyrose\} \*\*High energy · Unpleasant\*\*"|data-on="- \(x\) \{bg-mistyrose\} \*\*High energy · Unpleasant\*\*"[^>]*aria-label="High energy · Unpleasant"/);
   }
 });

@@ -36,6 +36,13 @@
  *     diagram): a slide is fitted again then, and a measurement of it
  *     waits for it.
  *
+ *   Preview.say(text)
+ *     Says `text` to a screen reader, as what a click or a key did (the
+ *     step lit, where a puzzle's cursor went, a timer run out). It's said
+ *     in the frame's one live region, kept outside <body>, which each render
+ *     replaces, and there from the start, so the first thing said is heard
+ *     too. The same text said again is still heard.
+ *
  *   Preview.fromApp(e)
  *     Whether a message is the app's: from the page around the frame, at
  *     one of the app's origins, which the server names in the frame's
@@ -162,7 +169,18 @@
     }
     stowed.clear();
   };
+  // What's said, for a screen reader: in a live region outside <body>, the
+  // last child of <html>, out of sight (`.vh`, in the document's CSS).
+  const heard = document.createElement('div');
+  heard.className = 'vh';
+  heard.setAttribute('aria-live', 'polite');
+  document.documentElement.append(heard);
   window.Preview = {
+    say(text) {
+      if (!heard.isConnected) document.documentElement.append(heard);
+      // The same again is still heard.
+      heard.textContent = heard.textContent === text ? `${text}\u00a0` : text;
+    },
     fromApp: (e) => e.source === window.parent && APP.includes(e.origin),
     deck: false,
     get workable() {

@@ -45,17 +45,8 @@
   const memory = new Map();
   // Each board drawn, by its kind and text, and the styles they take.
   const keys = new WeakMap();
-  // What each board says after a key, for a screen reader, said in one place
-  // outside <body>: a move can bring a render, which replaces the page.
+  // What each board says after a key, for a screen reader (Preview.say).
   const tells = new WeakMap();
-  const said = document.createElement('div');
-  said.className = 'puzzle-said';
-  said.setAttribute('aria-live', 'polite');
-  const say = (text) => {
-    if (!said.isConnected) document.documentElement.append(said);
-    // The same again is still heard.
-    said.textContent = said.textContent === text ? `${text}\u00a0` : text;
-  };
   let styles = '';
 
   function register(kind, impl, css = '') {
@@ -189,9 +180,9 @@
     // Read after each key: where it left the puzzle, and how it stands.
     tells.set(host, () => {
       if (!host.contains(document.activeElement)) return;
-      if (host.classList.contains('puzzle-resting')) return say('Keys handed back. Enter to play');
+      if (host.classList.contains('puzzle-resting')) return Preview.say('Keys handed back. Enter to play');
       const status = bar.textContent.replace(/(^| · )\? for keys$/, '');
-      say([where(), status].filter(Boolean).join('. '));
+      Preview.say([where(), status].filter(Boolean).join('. '));
     });
     return { bar, help };
   }
@@ -207,7 +198,6 @@
 .puzzle { margin: 1rem 0; outline: none; break-inside: avoid; }
 .puzzle:focus-visible { outline: 2px solid var(--gm-accent); outline-offset: 4px; }
 .puzzle.puzzle-resting:focus { outline: 2px dashed var(--gm-ink-soft); outline-offset: 4px; }
-.puzzle-said { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .puzzle-bar {
   font-family: var(--gm-sans); font-size: 0.8rem; color: var(--gm-ink-soft);
   margin-top: 0.4rem; min-height: 1.2em; visibility: hidden;

@@ -35,4 +35,3 @@ ol.badges > li.step-current::before { box-shadow: 0 0 0 2px var(--gm-paper), 0 0
 @media print { ol.badges > li.step-current { background: none; box-shadow: none; } }
 /* In the system's colours, tint and ring both gone, it's outlined. */
 @media (forced-colors: active) { ol.badges > li.step-current { outline: 2px solid Highlight; outline-offset: 0.15em; } }
-.steps-said { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

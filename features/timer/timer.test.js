@@ -117,8 +117,7 @@ test('at zero it stops, says so on the page and once aloud, and sounds; Reset se
   const [short, long] = p.document.querySelectorAll('.timer');
   short.querySelector('.timer-go').click();
   long.querySelector('.timer-go').click();
-  const said = p.document.querySelector('.timer-said');
-  assert.equal(said.getAttribute('aria-live'), 'polite');
+  const said = p.document.querySelector('html > .vh');
   assert.equal(said.parentNode, p.document.documentElement, 'outside the page a render replaces');
   t.pass(89_000);
   assert.equal(said.textContent, '', 'nothing is said as it counts');

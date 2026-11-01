@@ -26,7 +26,7 @@ function playing(markdown) {
     (p.document.activeElement ?? host).dispatchEvent(e);
     return e;
   };
-  const said = () => p.document.querySelector('.puzzle-said')?.textContent.trim() ?? '';
+  const said = () => p.document.querySelector('html > .vh')?.textContent.trim() ?? '';
   return { ...p, host, press, said };
 }
 

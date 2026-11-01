@@ -147,6 +147,10 @@ export function figures(html) {
 }
 
 const CSS = `
+/* Heard, not seen: what's said to a screen reader and not shown, as any
+ * feature writes it (a link's site, a blank's emptiness), and what the
+ * preview frame says aloud (Preview.say). One rule, which an export carries. */
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 figure { margin: 0.8rem 0; }
 figure img { display: block; max-width: 100%; height: auto; }
 figcaption {

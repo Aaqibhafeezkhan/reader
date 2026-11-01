@@ -461,6 +461,25 @@ test('a slide grows to fill the window, up to twice its size, sized at 100% for 
   near(zoom(1.25, 0.8) * 0.8, 0.64);
 });
 
+test('what the frame says is said in its one live region, outside the page a render replaces, out of sight, and the same again is heard again', () => {
+  const p = preview();
+  p.show(render('1) [ ] Chop.\n\ntimer:[1m]\n\n```maze\n+--+--+\n|S  E|\n+--+--+\n```\n').body);
+  const regions = () => [...p.document.querySelectorAll('[aria-live]')];
+  assert.equal(regions().length, 1, 'one for every feature that speaks');
+  const [heard] = regions();
+  assert.equal(heard.parentNode, p.document.documentElement);
+  assert.equal(heard.className, 'vh');
+  assert.equal(heard.getAttribute('aria-live'), 'polite');
+  assert.equal(heard.textContent, '', 'there before anything is said, so the first is heard');
+  p.window.Preview.say('Step 1 of 1: Chop.');
+  p.show(render('1) [x] Chop.\n').body);
+  assert.equal(regions()[0], heard, 'a render leaves it be');
+  assert.equal(heard.textContent, 'Step 1 of 1: Chop.');
+  p.window.Preview.say('Step 1 of 1: Chop.');
+  assert.equal(heard.textContent, 'Step 1 of 1: Chop.\u00a0');
+  assert.match(render('x\n').css, /\.vh \{[^}]*clip-path: inset\(50%\)/, 'the document hides it, as it does what any feature says unseen');
+});
+
 test('the edits asked for in one turn go up at its end, as one for the same options, and a turn\'s apart from the next', async () => {
   const { window, posted } = frame('');
   run(window, 'static/preview-api.js');

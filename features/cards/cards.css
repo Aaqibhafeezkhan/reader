@@ -17,6 +17,9 @@
   list-style: none;
 }
 .cards > .card + .card { margin-top: var(--card-gap); }
+/* a row in a card (features/row) and what follows it, a book and its
+   question, read as one: the row's own room under it given up */
+.cards > :is(.card, .grid-cell, :is(ul, ol) > li) > .row:not(:last-child) { margin-bottom: 0.35rem; }
 .cards > :is(.card, .grid-cell) > :first-child { margin-top: 0; }
 .cards > :is(.card, .grid-cell) > :last-child { margin-bottom: 0; }
 

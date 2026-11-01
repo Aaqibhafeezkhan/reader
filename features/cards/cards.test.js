@@ -51,3 +51,7 @@ test('in the system\'s colours, its border is the text\'s, and the chosen one th
   assert.match(forced, /\{ border-color: CanvasText; \}/);
   assert.match(forced, /li:has\(> \.choice-box:checked\) \{ border-color: Highlight; outline: 2px solid Highlight;/);
 });
+
+test('a row in a card keeps close to what follows it, a book to its question', () => {
+  assert.match(css, /\.cards > :is\(\.card, \.grid-cell, :is\(ul, ol\) > li\) > \.row:not\(:last-child\) \{ margin-bottom: 0\.35rem; \}/);
+});

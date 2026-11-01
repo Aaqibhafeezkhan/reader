@@ -57,23 +57,23 @@ until the closing line.
 :::
 :::
 
-A list item takes styles of its own from braces at the end of its first
-line, after a space. They style the whole item, its bullet or box
-included, and its cell in a grid. Braces naming anything but colors,
-backgrounds and the generic fonts (`serif`, `monospace`, ...) stay as
-typed:
+A list item takes styles of its own from braces where it's declared:
+after its bullet, and its box if it has one, before its text. They style
+the whole item, its bullet or box included, and its cell in a grid.
+Braces naming anything but colors, backgrounds and the generic fonts
+(`serif`, `monospace`, ...) stay as typed:
 
 ::: tabs
 +++ Source
 ```markdown
-- ( ) **High energy · Pleasant**: excited, happy {bg-lemonchiffon}
-- ( ) **Low energy · Pleasant**: calm, content {bg-honeydew}
-- ( ) Not sure yet {gray}
+- ( ) {bg-lemonchiffon} **High energy · Pleasant**: excited, happy
+- ( ) {bg-honeydew} **Low energy · Pleasant**: calm, content
+- ( ) {gray} Not sure yet
 ```
 +++ Rendered
-- ( ) **High energy · Pleasant**: excited, happy {bg-lemonchiffon}
-- ( ) **Low energy · Pleasant**: calm, content {bg-honeydew}
-- ( ) Not sure yet {gray}
+- ( ) {bg-lemonchiffon} **High energy · Pleasant**: excited, happy
+- ( ) {bg-honeydew} **Low energy · Pleasant**: calm, content
+- ( ) {gray} Not sure yet
 :::
 
 ### Backgrounds

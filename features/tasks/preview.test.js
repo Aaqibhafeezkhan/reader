@@ -131,7 +131,7 @@ test('a blank filled in a choice\'s line picks the choice, its line written once
   assert.deepEqual((await sent(p)).map(([, e]) => e.map(([line]) => line)), [[1]]);
 });
 
-test('a choice picked in a field under a choice picks it, as one undo, and picking another leaves the answer be', async () => {
+test('a choice picked in a field under a choice picks it, as one undo, and picking another lets go of that answer too', async () => {
   const p = await page(FEELINGS);
   const peaceful = p.$$('.field-choice > input')[2];
   peaceful.checked = true;
@@ -141,14 +141,26 @@ test('a choice picked in a field under a choice picks it, as one undo, and picki
     [0, '- (x) **A**', '- ( ) **A**'],
     [2, '- ( ) **Low energy · Pleasant** {bg-honeydew}', '- (x) **Low energy · Pleasant** {bg-honeydew}'],
   ]]]);
-  // Picked already, it's left; and another picked unpicks it, not its answer.
+  // Picked already, it's left; and another picked unpicks it, and the choice picked in it, as one undo.
   const calm = p.$$('.field-choice > input')[0];
   calm.checked = true;
   calm.dispatchEvent(new p.window.Event('change', { bubbles: true }));
   assert.deepEqual((await sent(p)).map(([, e]) => e.map(([line]) => line)), [[3]]);
   p.click(p.$('input[name="choice-1"]'));
-  assert.deepEqual((await sent(p)).map(([, e]) => e.map(([line]) => line)), [[0, 2]]);
-  assert.equal(calm.checked, true);
+  assert.deepEqual(await sent(p), [[true, [
+    [0, '- ( ) **A**', '- (x) **A**'],
+    [2, '- (x) **Low energy · Pleasant** {bg-honeydew}', '- ( ) **Low energy · Pleasant** {bg-honeydew}'],
+    [3, '  @ Closest word: (x) Calm ( ) Content ( ) Peaceful', '  @ Closest word: ( ) Calm ( ) Content ( ) Peaceful'],
+  ]]]);
+  assert.equal(calm.checked, false);
+});
+
+test('a choice let go of keeps what was typed in its blank', async () => {
+  const p = await page(FEELINGS.replace('- ( ) **C** · [@ Something else]', '- ( ) **C** · [@ Something else: running]'));
+  p.click(p.$$('input[name="choice-1"]')[1]);
+  await sent(p);
+  p.click(p.$('input[name="choice-1"]'));
+  assert.deepEqual((await sent(p)).map(([, e]) => e.map(([line, , after]) => [line, after])), [[[0, '- (x) **A**'], [1, '- ( ) **C** · [@ Something else: running]']]]);
 });
 
 test('where the page can\'t be worked, nothing answered picks a choice', async () => {

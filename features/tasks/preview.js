@@ -68,10 +68,14 @@
       : [box];
     const edits = group.map((b) => boxLine(b, b === box ? box.checked : false))
       .filter((x) => x.before[0] !== x.after[0]);
+    // The choices no longer picked, to tell what's in them (preview:unpicked).
+    const unpicked = group.filter((b) => b !== box && b.defaultChecked);
     for (const b of group) b.defaultChecked = b.checked;
     if (box.type === 'checkbox') markDone(box, box.checked);
     else box.closest('[data-answered]')?.setAttribute('data-answered', 'true');
     if (edits.length) Preview.edit(edits, { undo: true });
+    // What was answered inside a choice no longer picked is let go of, in the same turn's edit.
+    for (const b of unpicked) b.closest('li')?.dispatchEvent(new Event('preview:unpicked'));
   };
 
   document.addEventListener('change', (e) => {
@@ -83,7 +87,8 @@
 
   // Something answered inside a choice, a blank in its line or a field
   // under it, picks the choice; its line goes up with the answer's, as one
-  // edit (preview-api.js). Picking another later leaves the answer be.
+  // edit (preview-api.js). Picking another later tells the one let go
+  // (preview:unpicked), for what's answered in it to be let go too.
   document.addEventListener('preview:answered', (e) => {
     if (!Preview.workable) return;
     for (let item = e.target.closest?.('li'); item; item = item.parentElement?.closest('li')) {

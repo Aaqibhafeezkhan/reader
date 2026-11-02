@@ -415,8 +415,10 @@ button, .ghost { font: inherit; font-size: 13px; border-radius: 7px; cursor: poi
     border-right: 1px solid var(--line); box-shadow: 0 6px 24px rgba(0,0,0,.22);
   }
   .view-pane { border-right: 0; border-bottom: 1px solid var(--line); }
-  .split.work-mode { grid-template-rows: minmax(0, 1fr) 0; }
-  .split.work-mode .view-pane { border-bottom: 0; }
+  /* The page alone, as wide as the screen: with the list out of the grid,
+     the three columns these have when wide would put it in the empty first. */
+  .split.work-mode, .split.pdf-mode, .split.pdf-mode.no-sidebar { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) 0; }
+  .split.work-mode .view-pane, .split.pdf-mode .view-pane { border-bottom: 0; }
 }
 /* A phone, or 400% zoom: the bar takes a second row rather than lose its buttons. */
 @media (max-width: 480px) {

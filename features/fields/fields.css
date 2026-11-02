@@ -64,13 +64,13 @@
 /* Not in a record (static/preview-api.js), where a blank left empty was
    left empty: one drawn before the page closed loses its hint as it does. */
 .closed .field-value[data-hint]:empty::before { content: none; }
-/* The system's own colours drop a ground, and with it a block field's lines,
-   so they keep theirs, drawn in its text colour, as solid as the hover's;
+/* The system's own colours drop a ground, and with it a block field's lines
+   (and the line under a date drawn in one), so they keep theirs, drawn in its text colour, as solid as the hover's;
    while it's typed in, in its Highlight, as the accent is. Its text and
    hint are in the system's colours already (src/columns.css). */
 @media (forced-colors: active) {
   .field-value[data-hint]:empty::before, .field-value > textarea::placeholder { color: GrayText; }
-  .field:not(.field-inline) > .field-value { forced-color-adjust: none; --gm-field-rule: CanvasText; }
+  .field:not(.field-inline) > :is(.field-value, .field-held) { forced-color-adjust: none; --gm-field-rule: CanvasText; }
   .field:not(.field-inline) > .field-value:has(> textarea) { --gm-field-rule: Highlight; }
 }
 .field-value:focus-visible { outline: 2px solid var(--gm-accent); outline-offset: 2px; }

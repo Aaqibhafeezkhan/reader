@@ -146,10 +146,10 @@ test('the stylesheet shows a hint only in an empty blank, and keeps it from bein
   assert.match(css, /\.field-value\[data-hint\]:empty::before \{[^}]*content: attr\(data-hint\) \/ "";/);
 });
 
-test("in the system's own colours, a block field keeps its lines, in the text's colour", () => {
+test("in the system's own colours, a block field keeps its lines, and a date in one its line, in the text's colour", () => {
   const { css } = render('@ A:::\n');
   const forced = css.slice(css.indexOf('@media (forced-colors: active)'));
-  assert.match(forced, /\.field:not\(\.field-inline\) > \.field-value \{ forced-color-adjust: none; --gm-field-rule: CanvasText; \}/);
+  assert.match(forced, /\.field:not\(\.field-inline\) > :is\(\.field-value, \.field-held\) \{ forced-color-adjust: none; --gm-field-rule: CanvasText; \}/);
   assert.match(forced, /\.field:not\(\.field-inline\) > \.field-value:has\(> textarea\) \{ --gm-field-rule: Highlight; \}/);
 });
 

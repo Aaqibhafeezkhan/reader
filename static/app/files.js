@@ -26,6 +26,7 @@ const ICONS = {
   export: '<path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10"/>',
   trash: '<path d="M2.5 4.5h11M6 4.5V2.8h4v1.7M4 4.5l.8 9h6.4l.8-9M6.8 7v4.5M9.2 7v4.5"/>',
   extract: '<path d="M9.5 2.5h4v4M13.5 2.5 8 8M11.5 9.5v3.2a.8.8 0 0 1-.8.8H3.3a.8.8 0 0 1-.8-.8V5.3a.8.8 0 0 1 .8-.8h3.2"/>',
+  'start-today': '<rect x="2.5" y="3.5" width="11" height="10" rx="1.3"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3M8 8.2v3.6M6.2 10h3.6"/>',
   promote: '<path d="M8 2.2l1.8 3.7 4 .6-2.9 2.8.7 4L8 11.4l-3.6 1.9.7-4L2.2 6.5l4-.6z"/>',
 };
 export const icon = (name) => `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
@@ -208,32 +209,48 @@ function folderItem(name) {
   b.dataset.dir = dir;
   b.addEventListener('click', () => go(dir, null));
   li.append(b);
-  if (state.starts.has(dir)) li.append(startButton(dir, `Start today's file in ${name}`));
+  if (state.starts.has(dir)) li.append(startIcon(dir));
   return li;
 }
 
 /**
- * The offer to start today's file in `dir`. Always showing, not only when
- * its row is hovered as a row's actions are: it's there to be seen in the
- * morning, and there's no hovering on a phone.
+ * The offer to start today's file in `dir`, on its row. Always showing, not
+ * only when the row is hovered as its actions are: it's there to be seen in
+ * the morning, and there's no hovering on a phone.
  */
-function startButton(dir, label) {
-  const b = document.createElement('button');
-  b.className = 'start-today';
-  b.textContent = "Start today's";
-  b.title = label;
-  b.setAttribute('aria-label', label);
-  b.addEventListener('click', () => startToday(dir, b));
-  return b;
+function startIcon(dir) {
+  const b = action('start-today', "Start today's", () => startToday(dir, b));
+  return lastDay(b, state.starts.get(dir));
 }
 
-/** The offer as a row of its own, at the top of the folder it's for, where the arrows reach it. */
+/** The offer as a row of its own, in words, at the top of the folder it's for, where the arrows reach it. */
 function startHere(dir) {
   const li = document.createElement('li');
-  const b = startButton(dir, "Start today's file in this folder");
-  b.classList.add('here');
-  li.append(b);
+  const b = document.createElement('button');
+  b.className = 'start-here';
+  b.textContent = "Start today's";
+  b.title = "Start today's file in this folder";
+  b.addEventListener('click', () => startToday(dir, b));
+  li.append(lastDay(b, state.starts.get(dir)));
   return li;
+}
+
+/**
+ * On the last day it's offered, `b` says why it won't be there tomorrow: to
+ * the pointer and to a screen reader, and by a small triangle, a shape as
+ * well as yellow, so it's there in the system's colours too.
+ */
+function lastDay(b, { on, last }) {
+  if (!last) return b;
+  const why = `Start today's from ${on}. A folder offers this for three days after its latest file, so tomorrow it won't.`;
+  b.title = why;
+  b.setAttribute('aria-description', why);
+  const mark = document.createElement('span');
+  mark.className = 'start-warn';
+  mark.setAttribute('aria-hidden', 'true');
+  mark.innerHTML = '<svg viewBox="0 0 16 16" width="11" height="11"><path class="start-warn-sign" d="M8 1.5 15 14H1z"/><path class="start-warn-bang" d="M8 6v4M8 11.6v.4"/></svg>';
+  b.append(mark);
+  return b;
 }
 
 function fileButton(b, p) {
@@ -353,7 +370,7 @@ export function follow(href) {
   open(p);
 }
 
-const rowsIn = (list) => [...list.querySelectorAll('.file, .folder, .entry, .start-today.here')];
+const rowsIn = (list) => [...list.querySelectorAll('.file, .folder, .entry, .start-here')];
 const rows = () => rowsIn(el.files);
 
 /** Arrows move down the list; → goes into a folder, a file's versions or the open file's outline, ← back out. */

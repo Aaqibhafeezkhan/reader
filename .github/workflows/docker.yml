@@ -3,9 +3,11 @@ name: Docker
 # Builds the image at a release's tag, for amd64 and arm64 (NAS boxes are
 # often ARM), and pushes it to Docker Hub as jzheaux/reader:X.Y.Z. Only the
 # newest vX.Y.Z tag also moves :latest and writes docs/docker.md as the
-# overview, so pushing an older release again leaves both alone. Called by
-# the release workflow once it has tagged, since a tag it pushes starts no
-# workflow of its own; or run by hand to push a release again.
+# overview, so pushing an older release leaves both alone. Called by the
+# release workflow once it has tagged, since a tag it pushes starts no
+# workflow of its own; or run by hand for a release that never reached
+# Docker Hub. A version already there fails and is left as it is, so that
+# an image people have pulled can't change under them.
 on:
   workflow_call:
     inputs:
@@ -20,7 +22,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Released version to push, as tagged without its v (e.g. 0.0.1)
+        description: Released version not yet on Docker Hub, as tagged without its v (e.g. 0.0.1)
         required: true
 
 permissions:
@@ -72,6 +74,9 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Check it isn't already pushed
+        run: workflow/.github/scripts/unpushed-release.sh "$IMAGE" "$VERSION"
 
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:

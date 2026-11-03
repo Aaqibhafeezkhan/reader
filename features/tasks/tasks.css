@@ -22,6 +22,11 @@ li.task > .choice-box, li.task > p > .choice-box {
   color: var(--gm-ink-soft);
   cursor: pointer;
 }
+/* The pill is drawn 21px tall; it takes a click a little above and below it,
+   24px tall in all, and no more, so a task in the row under it keeps its own.
+   Its ::after is its label, so this is its ::before. */
+.section-done { position: relative; }
+.section-done::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: max(100%, 24px); transform: translateY(-50%); }
 .section-done::after { content: "Done"; }
 .section-done[aria-pressed="true"] { background: var(--gm-accent); border-color: var(--gm-accent); color: var(--gm-paper); }
 .section-done[aria-pressed="true"]::after { content: "\2713  Done"; }

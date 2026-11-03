@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dayStart, dateOf, today, startable, withDate } from '../src/dates.js';
+import { dayStart, dateOf, today, startable, withDate, daysBetween } from '../src/dates.js';
 
 test('a file is dated by its `date:` front matter', () => {
   assert.equal(dateOf('list.md', '---\ndate: 2026-10-31\n---\n\n# A\n'), '2026-10-31');
@@ -80,9 +80,9 @@ const md = (path, date) => ({ path, type: 'md', date });
 
 test('a folder of files dated by their names, with none for today, can start it from its latest', () => {
   const files = [md('journal/2026-10-29.md', '2026-10-29'), md('journal/2026-10-30.md', '2026-10-30'), md('journal/2026-10-28.md', '2026-10-28')];
-  assert.deepEqual(startable(files, '2026-11-03'), [{ dir: 'journal', from: 'journal/2026-10-30.md', to: 'journal/2026-11-03.md' }]);
+  assert.deepEqual(startable(files, '2026-11-03'), [{ dir: 'journal', from: 'journal/2026-10-30.md', date: '2026-10-30', to: 'journal/2026-11-03.md' }]);
   // One file is a journal just begun; and the top of the folder is a folder.
-  assert.deepEqual(startable([md('2026-10-30.md', '2026-10-30')], '2026-11-03'), [{ dir: '', from: '2026-10-30.md', to: '2026-11-03.md' }]);
+  assert.deepEqual(startable([md('2026-10-30.md', '2026-10-30')], '2026-11-03'), [{ dir: '', from: '2026-10-30.md', date: '2026-10-30', to: '2026-11-03.md' }]);
 });
 
 test('the latest goes by date, not by when it was changed, and a date to come is skipped', () => {
@@ -121,4 +121,18 @@ test('`date:` is set if there is one, and nothing else changes', () => {
     assert.equal(withDate(same, '2026-11-03'), same);
   }
   assert.equal(withDate('---\nfoo:\n  date: 2026-10-30\ndate: 2026-10-30\n---\n', '2026-11-03'), '---\nfoo:\n  date: 2026-10-30\ndate: 2026-11-03\n---\n');
+});
+
+test('days between go by the calendar, across months, years and clock changes', () => {
+  assert.equal(daysBetween('2026-10-27', '2026-11-03'), 7);
+  assert.equal(daysBetween('2026-11-03', '2026-11-03'), 0);
+  assert.equal(daysBetween('2025-12-31', '2026-01-01'), 1);
+  assert.equal(daysBetween('2024-02-28', '2024-03-01'), 2);
+});
+
+test('other front matter lines are what `moved` makes of them, not an indented one or the file\'s text', () => {
+  const up = (line) => line.toUpperCase();
+  assert.equal(withDate('---\r\ndate: 2026-10-30\r\nfoo: a\r\nbar:\r\n  baz: b\r\n---\r\n\r\nfoo: a\r\n', '2026-11-03', up),
+    '---\r\ndate: 2026-11-03\r\nFOO: A\r\nBAR:\r\n  baz: b\r\n---\r\n\r\nfoo: a\r\n');
+  assert.equal(withDate('---\nfoo: a\n---\n', '2026-11-03', up), '---\nFOO: A\n---\n', 'with no `date:` too');
 });

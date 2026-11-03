@@ -561,7 +561,7 @@ test('today\'s file starts from a folder\'s latest: drawn open, written once, an
     const made = await post({ dir: 'journal', from: plan.from, mtime: plan.mtime, edits });
     assert.equal(made.status, 200);
     assert.equal((await made.json()).path, 'journal/2026-11-03.md');
-    assert.match(fs.readFileSync(path.join(dir, 'journal/2026-11-03.md'), 'utf8'), /^---\ndate: 2026-11-03\nopen-until: 2026-10-30\n---\n\n- \[x\]\[ \] Staged\n@ A:\n$/);
+    assert.match(fs.readFileSync(path.join(dir, 'journal/2026-11-03.md'), 'utf8'), /^---\ndate: 2026-11-03\nopen-until: 2026-11-03\n---\n\n- \[x\]\[ \] Staged\n@ A:\n$/);
     assert.deepEqual((await tree()).starts, []);
     assert.equal((await post({ dir: 'journal', from: plan.from, mtime: plan.mtime, edits })).status, 409);
     assert.equal((await fetch(`${url}/api/start-day?dir=journal`)).status, 409);

@@ -46,6 +46,15 @@ export function dateOf(rel, text = '') {
   return dateInMatter(text) ?? dateInName(rel);
 }
 
+/** How many days `to` is after `from`, by the calendar, each `YYYY-MM-DD`. */
+export function daysBetween(from, to) {
+  const at = (date) => {
+    const [y, m, n] = date.split('-').map(Number);
+    return new Date(0).setUTCFullYear(y, m - 1, n);
+  };
+  return Math.round((at(to) - at(from)) / (24 * 60 * 60 * 1000));
+}
+
 /** The minutes into a day that `04:00` says, or null if it doesn't say a time. */
 export function dayStart(time) {
   const m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(time ?? '');
@@ -73,8 +82,8 @@ const dayInName = (name) => (DAY_NAME.test(name) ? dateInName(name) : null);
 
 /**
  * The folders of `files` (each with its `date`) that `day`'s file could be
- * started in, each as { dir, from, to }: what it's copied from, the latest
- * of the days before, and what it's called, that one's name with `day` in
+ * started in, each as { dir, from, date, to }: what it's copied from, the
+ * latest of the days before, and that one's date, and what it's called, that one's name with `day` in
  * it. A folder of dated files, at least half its documents dated by their
  * own names, so a single file with a date in its name among a folder of
  * notes offers nothing, where a journal just begun does. Not one with a
@@ -96,7 +105,7 @@ export function startable(files, day) {
     const name = baseName(latest.path);
     const at = name.lastIndexOf(dayInName(name));
     const to = (dir ? `${dir}/` : '') + name.slice(0, at) + day + name.slice(at + day.length);
-    if (!here.some((f) => f.path === to)) starts.push({ dir, from: latest.path, to });
+    if (!here.some((f) => f.path === to)) starts.push({ dir, from: latest.path, date: latest.date, to });
   }
   return starts;
 }
@@ -105,26 +114,28 @@ const DATE_LINE = /^([ \t]*date[ \t]*:[ \t]*)(["']?)(.*?)\2([ \t]*)$/i;
 
 /**
  * `text`, its `date:` in the front matter set to `day`, if it has one: a
- * time after the date stays. Every other line is left just as it's written,
- * line endings and all.
+ * time after the date stays. Any other line of the front matter is what
+ * `moved(line)` makes of it, as it's written if nothing; so is the rest of
+ * the file, line endings and all.
  */
-export function withDate(text, day) {
+export function withDate(text, day, moved = (line) => line) {
   // A line and its ending by turns.
   const parts = text.split(/(\r\n?|\n)/);
   const lines = parts.filter((_, i) => i % 2 === 0);
   const matter = frontMatter(lines);
-  if (typeof matter?.meta.date !== 'string') return text;
-  // A `date:` indented under a key of its own isn't the page's (frontMatter).
+  if (!matter) return text;
+  const dated = typeof matter.meta.date === 'string';
+  // A line indented under a key of its own isn't the page's (frontMatter).
   let under = false;
   for (let n = 1; n < matter.end - 1; n++) {
     if (!lines[n].trim()) continue;
     const indented = /^[ \t]/.test(lines[n]);
     if (!(under && indented)) {
       const m = DATE_LINE.exec(lines[n]);
-      if (m) {
+      if (m && dated) {
         const value = IN_MATTER.test(m[3]) ? day + m[3].slice(day.length) : day;
         parts[n * 2] = m[1] + m[2] + value + m[2] + m[4];
-      }
+      } else if (!m) parts[n * 2] = moved(lines[n]);
       under = !indented && /:[ \t]*$/.test(lines[n]);
     }
   }

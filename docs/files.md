@@ -61,7 +61,8 @@ journal/2026-11-03.md     started from it
 - The latest goes by date, not by when it was last changed, and a date still to come is skipped.
 - The new name is the latest's with today's date in it, so `log-2026-10-30.md` starts `log-2026-11-03.md`.
 - A `date:` in the front matter is set to today, if there is one, and a time after it stays.
-  Nothing else in the front matter changes, so an `open-until:` still says the day it said, and a file past it is a record from the start.
+- An `open-until:` keeps its distance from the file's date: a file dated 27 October, open until 28 October at 04:00, started on 3 November is open until 4 November at 04:00.
+  Nothing else in the front matter changes.
 - A file already there is never replaced.
   If its answers can't be cleared, nothing is written, and a message says so.
 

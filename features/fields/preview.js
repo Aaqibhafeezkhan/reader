@@ -10,7 +10,9 @@
  * answer]`) writes its answer into its place on the line, moving along the
  * others after it. A field that holds a number (`number:`) takes only a
  * number, and writes it back as `number:12[]`. A field given an answer, a value or a choice, says so
- * (`preview:answered`) to what it's in. Where the page can't be worked
+ * (`preview:answered`) to what it's in. Starting over (`preview:start-over`)
+ * empties the fields on its lines: a blank, a choice picked, and a date or
+ * a number, which stays the kind it is. Where the page can't be worked
  * (`Preview.workable`), as on a slide, no blank opens and no choice is
  * picked; and when it stops being workable while it's showing, as a page
  * past its time does, a blank being typed in is written and closed, and
@@ -53,6 +55,37 @@
       }
       f.dataset.text = now;
     }
+    return now;
+  }
+
+  /** `field`'s line with none of its choices picked, the page told so. */
+  function unpicked(field) {
+    for (const i of field.querySelectorAll('.field-choice > input')) i.checked = false;
+    const head = field.dataset.head;
+    const now = head + field.dataset.text.slice(head.length).replace(/\([xX]\)/g, '( )');
+    field.dataset.text = now;
+    field.dataset.answered = 'false';
+    return now;
+  }
+
+  // A field's date is drawn by the date feature, and its calendar's: the
+  // field knows it only as written. One with no day in it is empty already.
+  const DATED = /^date:\d/;
+
+  /** `field`'s line with nothing in it, the page told so. */
+  function emptied(field) {
+    const { kind, text, head } = field.dataset;
+    if (field.dataset.choices !== undefined) return unpicked(field);
+    if (kind === 'date') {
+      if (DATED.test(text.slice(head.length).trim())) field.dataset.text = `${head} date:[]`;
+      return field.dataset.text;
+    }
+    const slot = field.querySelector('.field-value');
+    if (!slot?.dataset.value) return text;
+    const now = written(field, '');
+    field.dataset.text = now;
+    slot.textContent = '';
+    slot.dataset.value = '';
     return now;
   }
 
@@ -120,7 +153,7 @@
       editing = null;
       return { ...placeOf(field), value: input.value, start: input.selectionStart, end: input.selectionEnd };
     };
-    editing = { input, close, keep };
+    editing = { field, input, close, keep };
 
     input.addEventListener('keydown', (e) => {
       if (!['Enter', 'Escape', 'Tab'].includes(e.key) || e.isComposing) return;
@@ -165,18 +198,29 @@
   // a blank in it stays: it's more to lose, and costs nothing to keep.
   document.addEventListener('preview:unpicked', (e) => {
     for (const field of e.target.querySelectorAll('.field[data-choices]')) {
-      const picked = [...field.querySelectorAll('.field-choice > input')].filter((i) => i.checked);
-      if (!picked.length) continue;
-      for (const i of picked) i.checked = false;
+      if (![...field.querySelectorAll('.field-choice > input')].some((i) => i.checked)) continue;
       const line = Number(field.dataset.line);
       const was = field.dataset.text;
-      const head = field.dataset.head;
-      const now = head + was.slice(head.length).replace(/\([xX]\)/g, '( )');
-      field.dataset.text = now;
-      field.dataset.answered = 'false';
+      const now = unpicked(field);
       if (now !== was) Preview.edit([{ from: line, to: line + 1, before: [was], after: [now] }], { undo: true });
     }
   }, true);
+
+  // Starting over: every field on the lines is emptied, those of a line in
+  // one edit, since each is made from what the last one wrote. What's being
+  // typed in one is let go of with the rest.
+  document.addEventListener('preview:start-over', ({ detail: { within, edits } }) => {
+    if (editing && within(Number(editing.field.dataset.line))) editing.close(false);
+    const lines = new Map();
+    for (const field of document.querySelectorAll('.field')) {
+      const line = Number(field.dataset.line);
+      if (!within(line)) continue;
+      const was = field.dataset.text;
+      const now = emptied(field);
+      if (now !== was) lines.set(line, { was: lines.get(line)?.was ?? was, now });
+    }
+    for (const [line, { was, now }] of lines) edits.push({ from: line, to: line + 1, before: [was], after: [now] });
+  });
 
   document.addEventListener('focusin', (e) => {
     const slot = e.target.matches?.('.field-value') && e.target;

@@ -74,8 +74,8 @@ multibox:
 :::
 
 `reset:[]` is a **Start over** button: it clears every box in its section,
-plain, staged or a choice, as one edit you can undo. `reset:[Clear]` names
-it. It's as much for a todo list or a game as for a recipe.
+plain, staged or a choice, and its [fields](forms.md#starting-over), as one
+edit you can undo. `reset:[Clear]` names it. It's as much for a todo list or a game as for a recipe.
 
 ## Steps to follow
 

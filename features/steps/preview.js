@@ -98,18 +98,15 @@
     }
   });
 
+  // Starting a section over starts its steps over. What's lit is the page's,
+  // so there's nothing to write (their boxes are tasks').
+  document.addEventListener('preview:start-over', ({ detail: { within } }) => {
+    for (const g of [...lit.keys()]) if (within(Number(g))) lit.delete(g);
+    for (const li of document.querySelectorAll('li.step-done')) if (within(Number(li.dataset.steps))) li.classList.remove('step-done');
+    show();
+  });
+
   document.addEventListener('click', (e) => {
-    // Starting a section over starts its steps over (tasks/preview.js).
-    const reset = e.target.closest?.('.task-reset');
-    if (reset) {
-      const from = Number(reset.dataset.from);
-      const to = reset.dataset.to ? Number(reset.dataset.to) : Infinity;
-      const within = (g) => Number(g) >= from && Number(g) < to;
-      for (const g of [...lit.keys()]) if (within(g)) lit.delete(g);
-      for (const li of document.querySelectorAll('li.step-done')) if (within(li.dataset.steps)) li.classList.remove('step-done');
-      show();
-      return;
-    }
     const li = e.target.closest?.('li.step');
     if (!li || !Preview.workable || e.target.closest('a[href], input, button, .field, .def-use')) return;
     // Text being selected isn't a click on the step.

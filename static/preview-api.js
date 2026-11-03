@@ -24,6 +24,18 @@
  *   Preview.flush()
  *     Sends the edits held so far now, not at the end of the turn.
  *
+ *   Preview.startOver({ from, to })
+ *     Clears every answer on the lines `from` up to (not including) `to`,
+ *     all that's drawn if not told which, and returns the edits that write
+ *     it, as one list, sending nothing: whoever asked says what becomes of
+ *     them, as a reset button sends them up as one undo. It's the one
+ *     definition of clearing, and needs no click, nor a page that can be
+ *     worked. `preview:start-over` is sent to the document with `detail`
+ *     `{ within(line), edits }`, and each feature with answers on the page
+ *     clears those on lines `within` says, on the page too, and adds the
+ *     edits to `edits`, rather than asking for them itself. Features that
+ *     write the same line needn't know of each other, as with `edit`.
+ *
  *   Preview.register({ keep, restore, drawn })
  *     Each render replaces the page. `keep()` is called just before, to say
  *     what to carry over (a field being typed in, a puzzle being played);
@@ -103,15 +115,18 @@
    * it otherwise, made on what was written: the change it makes made there
    * too, where that's another part of the line than what was written.
    */
-  function rebase(e) {
-    if (e.to !== e.from + 1 || e.before.length !== 1 || e.after.length !== 1) {
-      if (e.before.length !== e.after.length) written.clear();
-      return e;
-    }
+  function onWritten(e) {
+    if (!oneLine(e)) return e;
     const now = written.get(e.from);
     const both = now !== undefined && now !== e.before[0] && merge(e.before[0], now, e.after[0]);
-    const out = both ? { ...e, before: [now], after: [both] } : e;
-    written.set(e.from, out.after[0]);
+    return both ? { ...e, before: [now], after: [both] } : e;
+  }
+  const oneLine = (e) => e.to === e.from + 1 && e.before.length === 1 && e.after.length === 1;
+  /** Edit `e` made on what's been written, as it's going up: what's written from now on. */
+  function rebase(e) {
+    const out = onWritten(e);
+    if (oneLine(out)) written.set(out.from, out.after[0]);
+    else if (out.before.length !== out.after.length) written.clear();
     return out;
   }
   const overlap = (a, b) => a.from < b.to && b.from < a.to;
@@ -223,6 +238,13 @@
       else held.set(key, { edits: [...edits], opts });
     },
     flush,
+    startOver({ from = 0, to = Infinity } = {}) {
+      const within = (line) => line >= from && line < to;
+      const edits = [];
+      document.dispatchEvent(new CustomEvent('preview:start-over', { detail: { within, edits } }));
+      // Each from the line as its feature knew it, so those of a line become one.
+      return edits.map(onWritten).reduce(combine, []);
+    },
     register(hook) {
       hooks.push(hook);
     },

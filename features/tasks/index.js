@@ -15,7 +15,7 @@
  *
  *   - [x][x][ ] 1 small yellow onion, diced
  *
- * `reset:[]` is a button that clears every box in its section -- the
+ * `reset:[]` is a button that clears every box and field in its section -- the
  * heading it's under, to the next at that level or above -- as one edit:
  * `reset:[Start over]` names it. When the section has a heading `Log` in
  * it, a second button adds a heading for today to the end of the log,
@@ -144,7 +144,7 @@ export function tasks(md) {
       return true;
     },
   });
-  // A reset clears the boxes of its section, by their lines in the file;
+  // A reset clears the answers of its section, by their lines in the file;
   // with a log in the section, it can add to it, and say the multiple.
   keepWritten(md);
   md.core.ruler.push('task_reset_sections', (state) => {

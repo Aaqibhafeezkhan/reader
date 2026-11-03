@@ -18,6 +18,7 @@ import { openIn } from './modes.js';
 import { folderView, filtered, datedRows, findGroup, groupOf, hasFolder, dirOf, splitPath } from './versions.js';
 import { branch, rename, trash, promote } from './manage.js';
 import { drawOutline, entryKey, pickKey } from './outline.js';
+import { startToday } from './starting.js';
 
 // Drawn with the text's own colour; the trash's is set red in the stylesheet.
 const ICONS = {
@@ -30,9 +31,10 @@ const ICONS = {
 export const icon = (name) => `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
 
 export async function loadTree() {
-  const { files, today: day } = await api('GET', '/api/tree');
+  const { files, today: day, starts } = await api('GET', '/api/tree');
   state.files = files;
   state.today = day;
+  state.starts = new Set(starts);
   drawTree();
 }
 
@@ -80,6 +82,7 @@ function drawRows() {
     return;
   }
   const { rows, folders } = folderView(state.files, state.dir);
+  if (state.starts.has(state.dir)) el.files.append(startHere(state.dir));
   for (const row of rows) el.files.append(rowItem(row));
   for (const name of folders) el.files.append(folderItem(name));
 }
@@ -203,6 +206,31 @@ function folderItem(name) {
   b.dataset.dir = dir;
   b.addEventListener('click', () => go(dir, null));
   li.append(b);
+  if (state.starts.has(dir)) li.append(startButton(dir, `Start today's file in ${name}`));
+  return li;
+}
+
+/**
+ * The offer to start today's file in `dir`. Always showing, not only when
+ * its row is hovered as a row's actions are: it's there to be seen in the
+ * morning, and there's no hovering on a phone.
+ */
+function startButton(dir, label) {
+  const b = document.createElement('button');
+  b.className = 'start-today';
+  b.textContent = "Start today's";
+  b.title = label;
+  b.setAttribute('aria-label', label);
+  b.addEventListener('click', () => startToday(dir, b));
+  return b;
+}
+
+/** The offer as a row of its own, at the top of the folder it's for, where the arrows reach it. */
+function startHere(dir) {
+  const li = document.createElement('li');
+  const b = startButton(dir, "Start today's file in this folder");
+  b.classList.add('here');
+  li.append(b);
   return li;
 }
 
@@ -299,7 +327,7 @@ export function follow(href) {
   open(p);
 }
 
-const rowsIn = (list) => [...list.querySelectorAll('.file, .folder, .entry')];
+const rowsIn = (list) => [...list.querySelectorAll('.file, .folder, .entry, .start-today.here')];
 const rows = () => [...rowsIn(el.todayFiles), ...rowsIn(el.files)];
 
 /** Arrows move down the list; → goes into a folder, a file's versions or the open file's outline, ← back out. */

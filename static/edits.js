@@ -29,6 +29,27 @@ export function applyEdits(text, edits) {
   return change(text, lines.join('\n'));
 }
 
+/**
+ * All of `text` with `edits` made, each as applyEdits checks it, or null. For
+ * a file taken as it is rather than as an editor holds it: an edit's lines
+ * have no endings, and each of the file's keeps the one it has (`\r\n`). A
+ * line added takes the file's first.
+ */
+export function withEdits(text, edits) {
+  const parts = text.split(/(\r\n?|\n)/);
+  if (!Array.isArray(edits)) return null;
+  if (!edits.length) return text;
+  if (!applyEdits(parts.filter((_, i) => i % 2 === 0).join('\n'), edits)) return null;
+  const end = parts[1] ?? '\n';
+  for (const { from, to, after } of [...edits].sort((a, b) => b.from - a.from)) {
+    const at = from * 2;
+    if (from === to) parts.splice(at, 0, after.join(end), end);
+    else if (!after.length) parts.splice(at, (to - from) * 2);
+    else parts.splice(at, (to - from) * 2 - 1, after.join(end));
+  }
+  return parts.join('');
+}
+
 function valid(e, count) {
   const lines = (a) => Array.isArray(a) && a.every((l) => typeof l === 'string' && !l.includes('\n'));
   return e && Number.isInteger(e.from) && Number.isInteger(e.to)

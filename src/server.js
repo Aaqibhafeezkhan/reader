@@ -2,7 +2,9 @@
  * HTTP API and static files.
  *
  *   GET  /api/info             content root and name, and reader's version: { label, url, release }
- *   GET  /api/tree             listable files, newest first, each with its date; and today's
+ *   GET  /api/tree             listable files, newest first, each with its date; today's date; and the folders today's file could be started in
+ *   GET  /api/start-day?dir=   { from, to, mtime, css, body }: the folder's latest file, drawn whole and open, to clear its answers
+ *   POST /api/start-day        { dir, from, mtime, edits } -> { path, from, mtime }: today's file, made from it with `edits` made
  *   GET  /api/file?path=       { text, mtime }
  *   PUT  /api/file             { path, text, baseMtime, force?, explicit?, worked? }
  *   POST /api/new              { name? }
@@ -116,7 +118,7 @@ const FRAME_FILES = new Set([...fs.readFileSync(PREVIEW_HTML, 'utf8').matchAll(/
 
 // What each field of a request's body must be, when it's there at all.
 const FIELDS = {
-  text: 'string', path: 'string', name: 'string', from: 'string', to: 'string', base: 'string', trash: 'string',
+  text: 'string', path: 'string', dir: 'string', name: 'string', from: 'string', to: 'string', base: 'string', trash: 'string',
   baseMtime: 'number', mtime: 'number', worked: 'boolean',
 };
 
@@ -315,7 +317,17 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
       if (route === '/api/info') {
         return sendJson(res, { root: content.root, name: path.basename(content.root), version: await known });
       }
-      if (route === '/api/tree') return sendJson(res, { files: content.dated(), today: today(now, dayStarts) });
+      if (route === '/api/tree') {
+        const day = today(now, dayStarts);
+        return sendJson(res, { files: content.dated(), today: day, starts: content.startable(day).map((s) => s.dir) });
+      }
+      if (route === '/api/start-day') {
+        const { text, ...start } = content.startFrom(url.searchParams.get('dir') ?? '', today(now, dayStarts));
+        // Drawn from the start of time, so never as a record, past the time
+        // it was open until, which shows answers but has nothing to clear them.
+        const { css, body } = render(text, { file: start.from, read, lines: true, now: 0 });
+        return sendJson(res, { ...start, css, body });
+      }
       if (route === '/api/file') return sendJson(res, content.read(url.searchParams.get('path')));
       if (route === '/api/export') return sendExport(res, url.searchParams.get('path') || '');
       if (route.startsWith('/content/')) {
@@ -368,6 +380,9 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
       return sendJson(res, content.create(body.name));
     }
     if (route === '/api/branch' && req.method === 'POST') return sendJson(res, content.branch(body.from, body.to));
+    if (route === '/api/start-day' && req.method === 'POST') {
+      return sendJson(res, content.startDay(body.dir ?? '', today(now, dayStarts), body));
+    }
     if (route === '/api/promote' && req.method === 'POST') return sendJson(res, content.promote(body.path, body.base));
     if (route === '/api/rename' && req.method === 'POST') return sendJson(res, content.rename(body.moves));
     if (route === '/api/trash' && req.method === 'POST') return sendJson(res, content.trash(body.path));

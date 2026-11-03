@@ -393,3 +393,34 @@ test('on a slide there\'s no Start over, and its fields are left', async () => {
   p.show(slides(md).slides[0].body, { deck: true });
   assert.equal(p.document.querySelector('.task-reset'), null);
 });
+
+test('asked by the app, the frame starts the page over and says the edits, on a page past its time too', async () => {
+  const md = '---\nopen-until: 2020-01-01\n---\n\n@ A: a\n- [x][x] b\n- [x] c\n';
+  const p = preview();
+  p.show(render(md, { lines: true, now: 0 }).body);
+  p.posted.length = 0;
+  p.send({ type: 'start-over' });
+  const [told] = p.posted.filter((m) => m.type === 'started-over');
+  assert.equal(p.window.Preview.closed, true);
+  assert.equal(told.failed, null);
+  const c = applyEdits(md, told.edits);
+  assert.equal(md.slice(0, c.start) + c.text + md.slice(c.end), '---\nopen-until: 2020-01-01\n---\n\n@ A:\n- [ ][ ] b\n- [ ] c\n');
+  assert.deepEqual(p.posted.filter((m) => m.type === 'edit'), [], 'nothing goes up as an edit of the page');
+});
+
+test('a feature that fails starting over is said, not passed off as cleared', () => {
+  const p = preview();
+  p.show(render('@ A: a\n', { lines: true }).body);
+  p.document.addEventListener('preview:start-over', () => { throw new Error('no such luck'); });
+  p.posted.length = 0;
+  p.send({ type: 'start-over' });
+  assert.match(p.posted.find((m) => m.type === 'started-over').failed ?? '', /no such luck/);
+});
+
+test('someone else\'s message starts nothing over', () => {
+  const p = preview();
+  p.show(render('@ A: a\n', { lines: true }).body);
+  p.posted.length = 0;
+  p.send({ type: 'start-over' }, { origin: 'http://elsewhere.example' });
+  assert.deepEqual(p.posted, []);
+});

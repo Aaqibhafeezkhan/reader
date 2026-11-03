@@ -8,6 +8,9 @@
  *   write(rel, text, opts)     atomic, with a conflict check and backups
  *   create(name?)              a new file, today's date by default
  *   branch(from, to)           a copy of a document, as another version of it
+ *   startable(day)             the folders `day`'s file could be started in
+ *   startFrom(dir, day)        what it would be made from: { from, to, text, mtime }
+ *   startDay(dir, day, opts)   and made, from that with its answers cleared, if it isn't there
  *   promote(rel, base)         make a version the main one, `base.ext`
  *   rename(moves)              [{ from, to }], all or none, backups and all
  *   trash(rel) / restore(id)   into `.reader/trash/`, and back out
@@ -20,7 +23,8 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { dateOf, today } from './dates.js';
+import { dateOf, today, startable, withDate } from './dates.js';
+import { withEdits } from '../static/edits.js';
 
 export const DOC_EXTS = new Set(['.md', '.markdown']);
 export const LISTED_EXTS = new Set([...DOC_EXTS, '.pdf']);
@@ -294,6 +298,37 @@ export function createContent(rootDir) {
     return { path: toRel(toAbs), mtime: fs.statSync(toAbs).mtimeMs };
   }
 
+  /** What `day`'s file in the folder `dir` (`''` being the top) would be made from, and called. */
+  function startFrom(dir, day) {
+    const start = startable(dated(), day).find((s) => s.dir === dir);
+    if (!start) throw new ConflictError(`${dir || 'this folder'} has nothing to start ${day} from, or has it already`);
+    const { text, mtime } = read(start.from);
+    return { ...start, text, mtime };
+  }
+
+  /**
+   * Make `day`'s file in the folder `dir`, in one step: the folder's latest
+   * file, picked again here, with `edits` made to it (static/edits.js), which
+   * clear its answers, and its `date:` set. All the edits can do is say what's
+   * in the new file. What they were worked out from is `from`, as it was at
+   * `mtime`, so if that's no longer the latest, or has changed, they're
+   * refused and nothing is written. Nor is a file that's there replaced.
+   */
+  function startDay(dir, day, { from, mtime, edits }) {
+    const start = startFrom(dir, day);
+    if (start.from !== from || start.mtime !== mtime) throw new ConflictError(`${from} has changed since its answers were cleared`, start.mtime);
+    const cleared = withEdits(start.text, edits);
+    if (cleared == null) throw new ConflictError(`what was cleared doesn't fit ${from}`, start.mtime);
+    const abs = resolve(start.to);
+    try {
+      fs.writeFileSync(abs, withDate(cleared, day), { flag: 'wx', mode: statFile(from).stat.mode & 0o777 });
+    } catch (err) {
+      if (err.code === 'EEXIST') throw new ConflictError(`${start.to} already exists`);
+      throw err;
+    }
+    return { path: start.to, from, mtime: fs.statSync(abs).mtimeMs };
+  }
+
   /**
    * Make `rel` (`slides.arc1.md`) the main version of `base` (`slides`): it
    * takes the name `slides.md`, and the file that had it becomes a version
@@ -481,7 +516,10 @@ export function createContent(rootDir) {
     return { from, to };
   }
 
-  return { root, resolve, list, dated, read, write, create, branch, promote, rename, trash, restore, extract, unextract, statFile, backupRoot, trashRoot };
+  return { root, resolve, list, dated, read, write, create, branch,
+    startable: (day) => startable(dated(), day),
+    startFrom,
+    startDay, promote, rename, trash, restore, extract, unextract, statFile, backupRoot, trashRoot };
 }
 
 function pad(n, w = 2) {

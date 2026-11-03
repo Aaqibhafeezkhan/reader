@@ -315,3 +315,64 @@ test('dated reads only the start of a file', () => {
   assert.equal(dates['long.md'], null);
   assert.equal(dates['book.md'], '2026-10-31');
 });
+
+function journal(text = '---\ndate: 2026-10-30\n---\n\n@ A: a\n') {
+  const f = fixture();
+  fs.mkdirSync(path.join(f.root, 'journal'));
+  fs.writeFileSync(path.join(f.root, 'journal', '2026-10-30.md'), text);
+  const day = '2026-11-03';
+  const edit = { from: 4, to: 5, before: ['@ A: a'], after: ['@ A:'] };
+  const asked = (over = {}) => ({ from: 'journal/2026-10-30.md', mtime: f.content.startFrom('journal', day).mtime, edits: [edit], ...over });
+  return { ...f, day, edit, asked, today: path.join(f.root, 'journal', `${day}.md`) };
+}
+
+test('startDay writes today\'s file from the latest, cleared and dated, and leaves the latest be', () => {
+  const { content, day, asked, today, root } = journal();
+  const was = fs.readFileSync(path.join(root, 'journal/2026-10-30.md'), 'utf8');
+  assert.equal(content.startDay('journal', day, asked()).path, `journal/${day}.md`);
+  assert.equal(fs.readFileSync(today, 'utf8'), `---\ndate: ${day}\n---\n\n@ A:\n`);
+  assert.equal(fs.readFileSync(path.join(root, 'journal/2026-10-30.md'), 'utf8'), was);
+});
+
+test('startDay keeps a file\'s CRLF line endings', () => {
+  const { content, day, asked, today } = journal('---\r\ntitle: A\r\ndate: 2026-10-30\r\n---\r\n\r\n@ A: a\r\n');
+  const edits = [{ from: 5, to: 6, before: ['@ A: a'], after: ['@ A:'] }];
+  content.startDay('journal', day, asked({ edits }));
+  assert.equal(fs.readFileSync(today, 'utf8'), `---\r\ntitle: A\r\ndate: ${day}\r\n---\r\n\r\n@ A:\r\n`);
+});
+
+test('startDay never replaces a file that\'s there', () => {
+  const { content, day, asked, today } = journal();
+  const ask = asked();
+  // Written after the folder was looked at: still refused by the write.
+  fs.writeFileSync(today, 'mine\n');
+  assert.throws(() => content.startDay('journal', day, ask), ConflictError);
+  assert.equal(fs.readFileSync(today, 'utf8'), 'mine\n');
+});
+
+test('startDay writes nothing if the edits don\'t fit, or the latest has moved on or changed', () => {
+  const { content, day, asked, today, edit, root } = journal();
+  for (const bad of [
+    { edits: [{ ...edit, before: ['@ A: other'] }] },
+    { edits: 'all of it' },
+    { edits: undefined },
+    { from: 'journal/2020-01-01.md' },
+    { mtime: 1 },
+  ]) {
+    assert.throws(() => content.startDay('journal', day, asked(bad)), ConflictError);
+    assert.equal(fs.existsSync(today), false);
+  }
+  const ask = asked();
+  fs.writeFileSync(path.join(root, 'journal/2026-11-01.md'), '# later\n');
+  assert.throws(() => content.startDay('journal', day, ask), ConflictError);
+  assert.equal(fs.existsSync(today), false);
+});
+
+test('startDay takes only a folder that\'s listed, whatever it\'s told', () => {
+  const { content, day, asked, base } = journal();
+  for (const dir of ['../..', '..', 'dir-out', '/etc', '.hidden', 'journal/', 'journal/../journal', 'nowhere']) {
+    assert.throws(() => content.startFrom(dir, day), ConflictError, dir);
+    assert.throws(() => content.startDay(dir, day, asked()), ConflictError, dir);
+  }
+  assert.equal(fs.readdirSync(base).filter((n) => n.endsWith(`${day}.md`)).length, 0);
+});

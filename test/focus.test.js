@@ -137,6 +137,20 @@ test('Tab in a deck takes the keyboard into the slide, and the slide gives it ba
   deck.open = false;
 });
 
+test('the ‹ and › at a slide\'s foot step back and on, by name', () => {
+  Object.assign(deck, { open: true, index: 0, reveal: 0, stageReady: null, meta: {}, slides: [{ body: '<h1>One</h1>', steps: 0, notesHtml: '' }, { body: '<h1>Two</h1>', steps: 0, notesHtml: '' }] });
+  state.current = { path: 'a.md', type: 'md' };
+  el.deck.hidden = false;
+  assert.equal(el.deckBack.getAttribute('aria-label'), 'Back');
+  assert.equal(el.deckNext.getAttribute('aria-label'), 'Next');
+  el.deckNext.click();
+  assert.equal(deck.index, 1);
+  el.deckBack.click();
+  assert.equal(deck.index, 0);
+  deck.open = false;
+  el.deck.hidden = true;
+});
+
 test('the ✕ at a slide\'s foot leaves the deck, by a name, and the foot doesn\'t move it', () => {
   Object.assign(deck, { open: true, index: 1, reveal: 0, stageReady: null, meta: {}, slides: [{ body: '<h1>One</h1>', steps: 1, notesHtml: '' }, { body: '<h1>Two</h1>', steps: 1, notesHtml: '' }] });
   state.current = { path: 'a.md', type: 'md' };

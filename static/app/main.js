@@ -124,6 +124,8 @@ function wire() {
   el.presentBtn.addEventListener('click', present);
   // Not left on the editor, as Esc is: from a tap, that would bring up the
   // screen's keyboard, over the file just come back to.
+  el.deckBack.addEventListener('click', back);
+  el.deckNext.addEventListener('click', next);
   el.deckLeave.addEventListener('click', () => {
     closeDeck();
     el.presentBtn.focus();

@@ -21,7 +21,7 @@ export const el = {
   pages: $('pages'), pageBack: $('pageBack'), pageNext: $('pageNext'), pageDots: $('pageDots'), pageCount: $('pageCount'), pageDone: $('pageDone'),
   goto: $('goto'), gotoInput: $('gotoInput'), gotoList: $('gotoList'),
   deck: $('deck'), stage: $('stage'), deckNotes: $('deckNotes'), deckBy: $('deckBy'), deckDone: $('deckDone'), deckCount: $('deckCount'), deckSays: $('deckSays'), bar: $('bar'),
-  deckFoot: $('deckFoot'), deckLeave: $('deckLeave'), overview: $('overview'),
+  deckFoot: $('deckFoot'), deckBack: $('deckBack'), deckNext: $('deckNext'), deckLeave: $('deckLeave'), overview: $('overview'),
 };
 
 export const RENDER_DELAY = 100;

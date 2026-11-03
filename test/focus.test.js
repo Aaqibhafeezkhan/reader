@@ -136,3 +136,21 @@ test('Tab in a deck takes the keyboard into the slide, and the slide gives it ba
   assertElement(document.activeElement, el.deck, 'the deck has the keyboard back');
   deck.open = false;
 });
+
+test('the ✕ at a slide\'s foot leaves the deck, by a name, and the foot doesn\'t move it', () => {
+  Object.assign(deck, { open: true, index: 1, reveal: 0, stageReady: null, meta: {}, slides: [{ body: '<h1>One</h1>', steps: 1, notesHtml: '' }, { body: '<h1>Two</h1>', steps: 1, notesHtml: '' }] });
+  state.current = { path: 'a.md', type: 'md' };
+  el.deck.hidden = false;
+  el.bar.inert = el.split.inert = true;
+  assert.equal(el.deckLeave.getAttribute('aria-label'), 'Stop presenting');
+  // At the left of the screen, where a click on the slide would go back.
+  el.deckFoot.click();
+  assert.equal(deck.index, 1);
+  el.deckLeave.click();
+  assert.equal(deck.open, false);
+  assert.ok(el.deck.hidden);
+  assert.ok(!el.bar.inert && !el.split.inert);
+  assert.equal(deck.index, 1);
+  // The editor would bring up the screen's keyboard, over the file.
+  assertElement(document.activeElement, el.presentBtn, 'the keyboard goes back to Present');
+});

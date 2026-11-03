@@ -17,3 +17,17 @@ test('at a narrow width, every layout of the panes has one column', () => {
   const columns = new Map(selectors(narrow));
   for (const [s] of wide) assert.equal(columns.get(s), '1fr', s);
 });
+
+const TOUCH = '@media (hover: none) and (pointer: coarse) {';
+const touch = () => {
+  const at = style.indexOf(TOUCH);
+  assert.ok(at >= 0, 'a block for touch screens');
+  return style.slice(at, style.indexOf('\n}\n', at));
+};
+
+test('the way out of a deck shows only on a touch screen, big enough to tap', () => {
+  assert.match(style, /^\.deck-leave \{ display: none; \}$/m);
+  const leave = touch().match(/\.deck-leave \{[^}]*\}/)[0];
+  assert.match(leave, /display: inline-flex/);
+  for (const side of ['width', 'height']) assert.ok(Number(leave.match(new RegExp(`[\\s;]${side}: (\\d+)px`))[1]) >= 24, side);
+});

@@ -237,6 +237,7 @@ function startHere(dir) {
   if (start.last) {
     const why = document.createElement('p');
     why.className = 'start-why';
+    li.classList.add('start-last');
     why.textContent = `Last day to start from ${start.date}: a folder stops offering this three days after its latest file.`;
     li.append(why);
   }

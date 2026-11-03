@@ -32,8 +32,9 @@ date: 2026-11-03
 ---
 ```
 
-Without one, it's a `YYYY-MM-DD` in the file's name or path, as in `journal/2026-11-03.md` or `2026/11/03/notes.md`.
-If there are several, the one nearest the file counts.
+Without one, it's a `YYYY-MM-DD` in the file's own name, as in `journal/2026-11-03.md`.
+If there are several, the last counts.
+The folders it's in don't date it, so `2026/11/03/notes.md` and `2026-11-03/notes.md` have no date unless they say so.
 Something that isn't a date, like `2026-13-45` or `date: soon`, doesn't count, so a `date: soon` leaves the file dated by its name.
 The date is the server's, in its own time zone.
 
@@ -51,7 +52,7 @@ journal/2026-11-03.md     started from it
 ```
 
 - A folder of dated files is one where at least half the documents have a date in their own names, so one dated file among a folder of notes offers nothing.
-  A file dated only by the folders it's in, like `2026/11/03/notes.md`, or a version, like `2026-11-02.draft.md`, isn't one of them.
+  A version, like `2026-11-02.draft.md`, isn't one of them.
 - The latest goes by date, not by when it was last changed, and a date still to come is skipped.
 - The new name is the latest's with today's date in it, so `log-2026-10-30.md` starts `log-2026-11-03.md`.
 - A `date:` in the front matter is set to today, if there is one, and a time after it stays.

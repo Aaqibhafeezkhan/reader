@@ -8,17 +8,21 @@ test('a file is dated by its `date:` front matter', () => {
   assert.equal(dateOf('list.md', '---\ndate: 2026-10-31T09:00\n---\n'), '2026-10-31');
 });
 
-test('without one, a file is dated by its name or path', () => {
+test('without one, a file is dated by its own name', () => {
   assert.equal(dateOf('journal/2026-10-31.md'), '2026-10-31');
   assert.equal(dateOf('journal-2026-10-31-morning.md'), '2026-10-31');
-  assert.equal(dateOf('2026-10-31/notes.md'), '2026-10-31');
-  assert.equal(dateOf('2026/10/31/notes.md'), '2026-10-31');
-  assert.equal(dateOf('years/2026/10/31.md'), '2026-10-31');
   assert.equal(dateOf('journal/2026-10-31.review.md'), '2026-10-31');
   assert.equal(dateOf('2026-10-31.md', '# A\n\ndate: 2020-01-01\n'), '2026-10-31');
 });
 
-test('a `date:` wins over the name, and of several in a path the nearest the file does', () => {
+test('the folders a file is in don\'t date it', () => {
+  for (const rel of ['2026-10-31/notes.md', '2026/10/31/notes.md', 'years/2026/10/31.md', '2026-10-31/2026-13-45.md']) {
+    assert.equal(dateOf(rel), null, rel);
+  }
+  assert.equal(dateOf('2026-10-31/notes.md', '---\ndate: 2026-11-01\n---\n'), '2026-11-01');
+});
+
+test('a `date:` wins over the name, and a folder\'s date gives way to the name\'s', () => {
   assert.equal(dateOf('journal/2026-10-31.md', '---\ndate: 2020-01-01\n---\n'), '2020-01-01');
   assert.equal(dateOf('2020-01-01/2026-10-31.md'), '2026-10-31');
   assert.equal(dateOf('2020/01/01/2026-10-31.md'), '2026-10-31');
@@ -32,7 +36,7 @@ test('what isn\'t a date doesn\'t date a file', () => {
   assert.equal(dateOf('2024-02-29.md'), '2024-02-29');
   assert.equal(dateOf('2026-02-29.md'), null);
   // A bad date beside a good one leaves the good one.
-  assert.equal(dateOf('2026-10-31/2026-13-45.md'), '2026-10-31');
+  assert.equal(dateOf('2026-10-31-2026-13-45.md'), '2026-10-31');
 });
 
 test('a `date:` that isn\'t a date leaves the name to say', () => {

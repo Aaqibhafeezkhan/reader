@@ -6,9 +6,8 @@
 
 import { frontMatter } from '../static/markdown.js';
 
-// A date in a name, not part of a longer number (`journal-2026-10-31.md`);
-// or three folders, or two and a file's name (`2026/10/31/notes.md`).
-const IN_PATH = /(?<!\d)(\d{4})-(\d{2})-(\d{2})(?!\d)|(?<![^/])(\d{4})\/(\d{2})\/(\d{2})(?![^/.])/g;
+// A date in a name, not part of a longer number (`journal-2026-10-31.md`).
+const IN_NAME = /(?<!\d)(\d{4})-(\d{2})-(\d{2})(?!\d)/g;
 // `date:` may go on to say the time (`2026-10-31T09:00`).
 const IN_MATTER = /^(\d{4})-(\d{2})-(\d{2})(?!\d)/;
 const MATTER_END = /[\r\n]-{3,}[ \t]*(?=[\r\n]|$)/;
@@ -21,9 +20,9 @@ function day(year, month, date) {
     ? `${year}-${month}-${date}` : null;
 }
 
-/** The date in a root-relative path, or null. Of several, the one nearest the file. */
-export function dateInPath(rel) {
-  const found = [...rel.matchAll(IN_PATH)].map((m) => (m[1] ? day(m[1], m[2], m[3]) : day(m[4], m[5], m[6])));
+/** The date in the name of the file at a root-relative path, or null. Of several, the last. */
+export function dateInName(rel) {
+  const found = [...rel.slice(rel.lastIndexOf('/') + 1).matchAll(IN_NAME)].map((m) => day(m[1], m[2], m[3]));
   return found.findLast(Boolean) ?? null;
 }
 
@@ -39,12 +38,12 @@ function dateInMatter(text) {
 }
 
 /**
- * A file's date, or null: its `date:` front matter, or else one in its name
- * or path. A `date:` that isn't a date (`soon`) says nothing, so the name
+ * A file's date, or null: its `date:` front matter, or else one in its own
+ * name. The folders it's in don't date it. A `date:` that isn't a date (`soon`) says nothing, so the name
  * still can. `text` is as much of the file as has its front matter.
  */
 export function dateOf(rel, text = '') {
-  return dateInMatter(text) ?? dateInPath(rel);
+  return dateInMatter(text) ?? dateInName(rel);
 }
 
 /** The minutes into a day that `04:00` says, or null if it doesn't say a time. */
@@ -70,7 +69,7 @@ export function today(now = Date.now, starts = 0) {
 // is a version of a file (`2026-10-30.draft.md`), not a day of its own.
 const DAY_NAME = /^[^.]+\.(?:md|markdown)$/i;
 const baseName = (rel) => rel.slice(rel.lastIndexOf('/') + 1);
-const dayInName = (name) => (DAY_NAME.test(name) ? dateInPath(name) : null);
+const dayInName = (name) => (DAY_NAME.test(name) ? dateInName(name) : null);
 
 /**
  * The folders of `files` (each with its `date`) that `day`'s file could be

@@ -8,7 +8,9 @@ const window = globals(app());
 const read = (html) => new window.DOMParser().parseFromString(html, 'text/html').body;
 
 const { deck, el, state } = await import('../static/app/state.js');
-const { paging, steps, deckKey, go, revealed, showSlide, present, closeDeck, onSpeakerMessage } = await import('../static/app/deck.js');
+const { paging, steps, deckKey, go, revealed, showSlide, present, loadDeck, closeDeck, onSpeakerMessage } = await import('../static/app/deck.js');
+const { openGoTo } = await import('../static/app/goto.js');
+const { wireTheme } = await import('../static/app/theme.js');
 
 /** Each thing a slide's steps show, by the step it shows with: [step, its text]. */
 function stepped(body) {

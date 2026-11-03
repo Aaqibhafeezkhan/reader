@@ -154,7 +154,7 @@ Present or present the file; after that, it's measured again as you edit.
 | `F` | full screen |
 | `⌘+` / `⌘−` / `⌘0` | the slides' text a step bigger, a step smaller, or back to 100% (Ctrl on Windows and Linux); it starts at 100% each time you present, and the speaker view's slides follow |
 | `Tab` / `⇧Tab` | what can be played or opened on the slide, such as a puzzle or a block's tabs, one by one, then back to the slides; the keys that work the one Tabbed to are its own, and the rest still move the slides |
-| `?` | these keys, at the foot of the slides; they show for a moment as you start, and when you hover there; a touch screen's foot leaves them out, and says only how far through the deck you are |
+| `?` | these keys, at the foot of the slides; they show for a moment as you start, and when you hover there; a touch screen's foot leaves them out, and says how far through the deck you are, with `‹` and `›` either side to step back and on |
 | `Esc`, or the ✕ at the foot of the slides on a touch screen | stop presenting |
 
 `n` and `p` undo each other exactly, so a clicker's back button takes back

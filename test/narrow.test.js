@@ -25,9 +25,9 @@ const touch = () => {
   return style.slice(at, style.indexOf('\n}\n', at));
 };
 
-test('the way out of a deck shows only on a touch screen, big enough to tap', () => {
-  assert.match(style, /^\.deck-leave \{ display: none; \}$/m);
-  const leave = touch().match(/\.deck-leave \{[^}]*\}/)[0];
+test('the ways back, on and out of a deck show only on a touch screen, big enough to tap', () => {
+  assert.match(style, /^\.deck-turn, \.deck-leave \{ display: none; \}$/m);
+  const leave = touch().match(/\.deck-turn, \.deck-leave \{[^}]*\}/)[0];
   assert.match(leave, /display: inline-flex/);
   for (const side of ['width', 'height']) assert.ok(Number(leave.match(new RegExp(`[\\s;]${side}: (\\d+)px`))[1]) >= 24, side);
 });

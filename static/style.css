@@ -397,7 +397,7 @@ button, .ghost { font: inherit; font-size: 13px; border-radius: 7px; cursor: poi
 .deck-foot .page-done { color: inherit; }
 .deck-foot .deck-keys { opacity: 0; transition: opacity .2s; }
 .deck-foot:hover .deck-keys, .deck.keys-shown .deck-keys { opacity: 1; }
-.deck-leave { display: none; }
+.deck-turn, .deck-leave { display: none; }
 /* A touch screen has no Esc, so it has this instead. It goes by the screen
    and not the width, so a narrow window on a desktop, and a slide on a
    projector, go without it. */
@@ -405,12 +405,14 @@ button, .ghost { font: inherit; font-size: 13px; border-radius: 7px; cursor: poi
   .deck-foot { align-items: center; padding-block: 2px; white-space: nowrap; }
   /* What's true without a keyboard, on one line: how far through the deck. */
   .deck-foot .deck-keys, #deckBy { display: none; }
-  #deckCount { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .deck-leave {
+  #deckBack { margin-left: auto; }
+  #deckCount { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .deck-turn, .deck-leave {
     display: inline-flex; align-items: center; justify-content: center; flex: none;
     width: 28px; height: 28px; padding: 0; border: 0; background: none; color: inherit; font-size: 14px;
   }
-  .deck-leave:focus-visible { outline: 2px solid var(--accent); }
+  .deck-turn { font-size: 20px; line-height: 1; }
+  .deck-turn:focus-visible, .deck-leave:focus-visible { outline: 2px solid var(--accent); }
 }
 
 /* ---------------------------------------------------------------- toast -- */

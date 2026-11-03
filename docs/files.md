@@ -48,7 +48,7 @@ With `reader --day-starts 04:00`, **Today** still lists yesterday's files until 
 
 ### Starting today's
 
-A folder of dated files with none for today offers **Start today's**, on its row in the list and at the top of the folder itself.
+A folder of dated files with none for today offers **Start today's**: a calendar with a plus on its row in the list, and the words at the top of the folder itself.
 It makes today's file from the folder's latest, with the same headings and labels, every answer on every page cleared, as [Start over](forms.md#starting-over) clears them, and opens it, and **Today** lists it.
 
 ```
@@ -56,9 +56,12 @@ journal/2026-10-30.md     the latest
 journal/2026-11-03.md     started from it
 ```
 
-- A folder of dated files is one where at least half the documents have a date in their own names, so one dated file among a folder of notes offers nothing.
-  A version, like `2026-11-02.draft.md`, isn't one of them.
-- The latest goes by date, not by when it was last changed, and a date still to come is skipped.
+- A folder offers it for three days after its latest document dated by its own name, so with `2026-11-01.md` the latest, it's there on the 2nd, the 3rd and the 4th, and gone on the 5th.
+  On the last of those days, it carries a yellow warning that says so.
+  A folder left for longer stops asking.
+- The latest goes by the date in the name, not by when it was last changed, and a date still to come is skipped.
+  A version, like `2026-11-02.draft.md`, isn't counted.
+- The day goes by `--day-starts`, as **Today** does.
 - The new name is the latest's with today's date in it, so `log-2026-10-30.md` starts `log-2026-11-03.md`.
 - A `date:` in the front matter is set to today, if there is one, and a time after it stays.
 - An `open-until:` keeps its distance from the file's date: a file dated 27 October, open until 28 October at 04:00, started on 3 November is open until 4 November at 04:00.

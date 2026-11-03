@@ -9,7 +9,8 @@ mock.timers.enable({ apis: ['setTimeout'] });
 
 const window = globals(app());
 const { document } = window;
-let starts = ['journal'];
+const JOURNAL = [{ dir: 'journal', on: '2026-11-01', last: false }];
+let starts = JOURNAL;
 let files = [{ path: 'journal/2026-10-30.md', date: '2026-10-30' }, { path: 'notes.md', date: null }];
 let asked = [];
 let refuse = null;
@@ -56,7 +57,7 @@ function framed() {
 }
 
 async function fresh(dir = '') {
-  starts = ['journal'];
+  starts = JOURNAL;
   files = [{ path: 'journal/2026-10-30.md', date: '2026-10-30' }, { path: 'notes.md', date: null }];
   asked = [];
   refuse = null;

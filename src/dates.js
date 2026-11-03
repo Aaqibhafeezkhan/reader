@@ -80,32 +80,38 @@ const DAY_NAME = /^[^.]+\.(?:md|markdown)$/i;
 const baseName = (rel) => rel.slice(rel.lastIndexOf('/') + 1);
 const dayInName = (name) => (DAY_NAME.test(name) ? dateInName(name) : null);
 
+// How often a folder of dated files gets a new one, in days, and how long it
+// goes on offering the next: three times that. Daily is all there is so far.
+const CADENCE = 1;
+const OFFERED_FOR = 3 * CADENCE;
+
 /**
  * The folders of `files` (each with its `date`) that `day`'s file could be
- * started in, each as { dir, from, date, to }: what it's copied from, the
- * latest of the days before, and that one's date, and what it's called, that one's name with `day` in
- * it. A folder of dated files, at least half its documents dated by their
- * own names, so a single file with a date in its name among a folder of
- * notes offers nothing, where a journal just begun does. Not one with a
- * file dated `day` already, whatever its name, nor one where the name is
- * taken. A date to come isn't a day to copy from.
+ * started in, each as { dir, from, date, to, last }: what it's copied from,
+ * the latest document dated by its own name before `day`, then its date, what
+ * the new file's called, that one's name with `day` in it, and whether `day`
+ * is the last the folder offers it. That's as long as the latest is at most
+ * `OFFERED_FOR` days old, so a folder left behind stops asking, and a date
+ * to come isn't a day to copy from. Not a folder with a file dated `day`
+ * already, whatever its name, nor one where the name is taken.
  */
 export function startable(files, day) {
   const folders = Map.groupBy(files, (f) => f.path.slice(0, Math.max(0, f.path.lastIndexOf('/'))));
   const starts = [];
   for (const [dir, here] of folders) {
     if (here.some((f) => f.date === day)) continue;
-    const docs = here.filter((f) => f.type === 'md');
-    const days = docs.filter((f) => dayInName(baseName(f.path)));
-    if (days.length * 2 < docs.length) continue;
-    const latest = days
-      .filter((f) => f.date < day)
-      .reduce((a, b) => (!a || b.date > a.date || (b.date === a.date && b.path > a.path) ? b : a), null);
+    const named = here
+      .filter((f) => f.type === 'md')
+      .map((f) => ({ f, on: dayInName(baseName(f.path)) }))
+      .filter(({ on }) => on && on < day);
+    const latest = named.reduce((a, b) => (!a || b.on > a.on || (b.on === a.on && b.f.path > a.f.path) ? b : a), null);
     if (!latest) continue;
-    const name = baseName(latest.path);
-    const at = name.lastIndexOf(dayInName(name));
+    const old = daysBetween(latest.on, day);
+    if (old > OFFERED_FOR) continue;
+    const name = baseName(latest.f.path);
+    const at = name.lastIndexOf(latest.on);
     const to = (dir ? `${dir}/` : '') + name.slice(0, at) + day + name.slice(at + day.length);
-    if (!here.some((f) => f.path === to)) starts.push({ dir, from: latest.path, date: latest.date, to });
+    if (!here.some((f) => f.path === to)) starts.push({ dir, from: latest.f.path, date: latest.f.date, on: latest.on, to, last: old === OFFERED_FOR });
   }
   return starts;
 }

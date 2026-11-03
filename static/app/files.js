@@ -34,7 +34,7 @@ export async function loadTree() {
   const { files, today: day, starts } = await api('GET', '/api/tree');
   state.files = files;
   state.today = day;
-  state.starts = new Set(starts);
+  state.starts = new Map((starts ?? []).map((s) => [s.dir, s]));
   drawTree();
 }
 

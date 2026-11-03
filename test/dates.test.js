@@ -77,39 +77,48 @@ test('a day\'s start is a time of day', () => {
 });
 
 const md = (path, date) => ({ path, type: 'md', date });
+const on = (...names) => names.map((n) => md(`j/${n}.md`, n));
+const asked = (day, ...names) => startable(on(...names), day);
 
-test('a folder of files dated by their names, with none for today, can start it from its latest', () => {
-  const files = [md('journal/2026-10-29.md', '2026-10-29'), md('journal/2026-10-30.md', '2026-10-30'), md('journal/2026-10-28.md', '2026-10-28')];
-  assert.deepEqual(startable(files, '2026-11-03'), [{ dir: 'journal', from: 'journal/2026-10-30.md', date: '2026-10-30', to: 'journal/2026-11-03.md' }]);
-  // One file is a journal just begun; and the top of the folder is a folder.
-  assert.deepEqual(startable([md('2026-10-30.md', '2026-10-30')], '2026-11-03'), [{ dir: '', from: '2026-10-30.md', date: '2026-10-30', to: '2026-11-03.md' }]);
+test('a folder whose latest dated name is recent can start today from it', () => {
+  assert.deepEqual(asked('2026-11-03', '2026-10-30', '2026-11-01', '2026-10-31'),
+    [{ dir: 'j', from: 'j/2026-11-01.md', date: '2026-11-01', on: '2026-11-01', to: 'j/2026-11-03.md', last: false }]);
+  // The top of the folder is a folder, and other documents don't matter.
+  assert.equal(startable([md('2026-11-01.md', '2026-11-01'), md('a.md', null), md('b.md', null), md('c.md', null)], '2026-11-03')[0].dir, '');
 });
 
-test('the latest goes by date, not by when it was changed, and a date to come is skipped', () => {
+test('it\'s offered for three days after the latest, the third being its last, and then it\'s gone', () => {
+  assert.equal(asked('2026-11-02', '2026-11-01')[0].last, false);
+  assert.equal(asked('2026-11-03', '2026-11-01')[0].last, false);
+  assert.equal(asked('2026-11-04', '2026-11-01')[0].last, true);
+  assert.deepEqual(asked('2026-11-05', '2026-11-01'), []);
+  assert.equal(asked('2026-01-02', '2025-12-30')[0].last, true, 'by the calendar, across a year');
+});
+
+test('the latest goes by the name, not by when it was changed, or a date still to come', () => {
   const files = [
     { ...md('j/2026-10-29.md', '2026-10-29'), mtime: 9 },
-    { ...md('j/2026-10-30.md', '2026-10-30'), mtime: 1 },
+    { ...md('j/2026-11-02.md', '2026-11-02'), mtime: 1 },
     { ...md('j/2099-01-01.md', '2099-01-01'), mtime: 1 },
   ];
-  assert.equal(startable(files, '2026-11-03')[0].from, 'j/2026-10-30.md');
-  assert.deepEqual(startable([md('j/2099-01-01.md', '2099-01-01')], '2026-11-03'), []);
-});
-
-test('a stray dated file among notes offers nothing; half the folder does', () => {
-  const notes = [md('n/a.md', null), md('n/b.md', null)];
-  assert.deepEqual(startable([...notes, md('n/2026-10-01.md', '2026-10-01')], '2026-11-03'), []);
-  assert.equal(startable([notes[0], md('n/2026-10-01.md', '2026-10-01')], '2026-11-03').length, 1);
+  assert.equal(startable(files, '2026-11-03')[0].from, 'j/2026-11-02.md');
+  assert.deepEqual(asked('2026-11-03', '2099-01-01'), []);
+  // Old files' `date:` doesn't age a recent name, and a recent `date:` doesn't freshen an old one.
+  assert.equal(startable([md('j/2026-11-01.md', '2026-10-27')], '2026-11-03')[0].date, '2026-10-27');
+  assert.deepEqual(startable([md('j/2026-10-01.md', '2026-11-02')], '2026-11-03'), []);
+  // Only names count: a recent `date:` in a file with no date in its name isn't copied from.
+  assert.deepEqual(startable([md('j/plan.md', '2026-11-02')], '2026-11-03'), []);
 });
 
 test('nothing to start where today has a file, by its date or its name, or where only folders or versions are dated', () => {
-  assert.deepEqual(startable([md('j/2026-10-30.md', '2026-10-30'), md('j/plan.md', '2026-11-03')], '2026-11-03'), []);
-  assert.deepEqual(startable([md('j/2026-10-30.md', '2026-10-30'), md('j/2026-11-03.md', '2026-11-01')], '2026-11-03'), []);
-  assert.deepEqual(startable([md('2026/10/31/notes.md', '2026-10-31')], '2026-11-03'), []);
-  assert.deepEqual(startable([md('j/2026-10-30.draft.md', '2026-10-30')], '2026-11-03'), []);
+  assert.deepEqual(startable([md('j/2026-11-01.md', '2026-11-01'), md('j/plan.md', '2026-11-03')], '2026-11-03'), []);
+  assert.deepEqual(startable([md('j/2026-11-01.md', '2026-11-01'), md('j/2026-11-03.md', '2026-11-01')], '2026-11-03'), []);
+  assert.deepEqual(startable([md('2026-11-01/notes.md', null)], '2026-11-03'), []);
+  assert.deepEqual(startable([md('j/2026-11-01.draft.md', '2026-11-01')], '2026-11-03'), []);
 });
 
 test('today\'s name is the latest\'s with today in it', () => {
-  assert.equal(startable([md('j/log-2026-10-30-am.markdown', '2026-10-30')], '2026-11-03')[0].to, 'j/log-2026-11-03-am.markdown');
+  assert.equal(startable([md('j/log-2026-11-01-am.markdown', '2026-11-01')], '2026-11-03')[0].to, 'j/log-2026-11-03-am.markdown');
 });
 
 test('`date:` is set if there is one, and nothing else changes', () => {

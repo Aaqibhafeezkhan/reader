@@ -320,7 +320,7 @@ function journal(text = '---\ndate: 2026-10-30\n---\n\n@ A: a\n') {
   const f = fixture();
   fs.mkdirSync(path.join(f.root, 'journal'));
   fs.writeFileSync(path.join(f.root, 'journal', '2026-10-30.md'), text);
-  const day = '2026-11-03';
+  const day = '2026-11-02';
   const edit = { from: 4, to: 5, before: ['@ A: a'], after: ['@ A:'] };
   const asked = (over = {}) => ({ from: 'journal/2026-10-30.md', mtime: f.content.startFrom('journal', day).mtime, edits: [edit], ...over });
   return { ...f, day, edit, asked, today: path.join(f.root, 'journal', `${day}.md`) };
@@ -380,11 +380,11 @@ test('startDay takes only a folder that\'s listed, whatever it\'s told', () => {
 test('startDay moves `open-until:` as far as the date moved, keeping its time', () => {
   const { content, day, asked, today } = journal('---\r\ndate: 2026-10-27\r\nopen-until: 2026-10-28 04:00\r\ntitle: 2026-10-27\r\n---\r\n\r\n@ A:\r\n');
   content.startDay('journal', day, asked({ edits: [] }));
-  assert.equal(fs.readFileSync(today, 'utf8'), `---\r\ndate: ${day}\r\nopen-until: 2026-11-04 04:00\r\ntitle: 2026-10-27\r\n---\r\n\r\n@ A:\r\n`);
+  assert.equal(fs.readFileSync(today, 'utf8'), `---\r\ndate: ${day}\r\nopen-until: 2026-11-03 04:00\r\ntitle: 2026-10-27\r\n---\r\n\r\n@ A:\r\n`);
 });
 
 test('without a `date:`, `open-until:` keeps its distance from the date in the name', () => {
   const { content, day, asked, today } = journal('---\nopen-until: 2026-10-31\n---\n\n@ A:\n');
   content.startDay('journal', day, asked({ edits: [] }));
-  assert.equal(fs.readFileSync(today, 'utf8'), '---\nopen-until: 2026-11-04\n---\n\n@ A:\n');
+  assert.equal(fs.readFileSync(today, 'utf8'), '---\nopen-until: 2026-11-03\n---\n\n@ A:\n');
 });

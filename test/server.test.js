@@ -541,17 +541,26 @@ test('today\'s file starts from a folder\'s latest: drawn open, written once, an
   fs.mkdirSync(path.join(dir, 'journal'));
   // Past the time it was open until, yet drawn with a box that can be cleared.
   const text = '---\ndate: 2026-10-30\nopen-until: 2026-10-30\n---\n\n- [x][ ] Staged\n@ A: a\n';
-  fs.writeFileSync(path.join(dir, 'journal', '2026-10-30.md'), text);
-  const { server: at } = createServer({ root: dir, now: () => new Date(2026, 10, 4, 1).getTime(), dayStarts: 240 });
+  // At 1am on the 4th, by --day-starts it's still the 3rd.
+  let clock = new Date(2026, 10, 4, 1).getTime();
+  fs.writeFileSync(path.join(dir, 'journal', '2026-11-01.md'), text);
+  const { server: at } = createServer({ root: dir, now: () => clock, dayStarts: 240 });
   await new Promise((r) => at.listen(0, '127.0.0.1', r));
   try {
     const url = `http://127.0.0.1:${at.address().port}`;
     const tree = async () => (await fetch(`${url}/api/tree`)).json();
-    // By --day-starts it's still the 3rd.
-    assert.deepEqual((await tree()).starts, ['journal']);
+    assert.deepEqual((await tree()).starts.map((s) => s.dir), ['journal']);
     const plan = await (await fetch(`${url}/api/start-day?dir=journal`)).json();
-    assert.equal(plan.from, 'journal/2026-10-30.md');
+    assert.equal(plan.from, 'journal/2026-11-01.md');
     assert.equal(plan.to, 'journal/2026-11-03.md');
+    // Three days after it's the last it's offered; after that, neither route has it.
+    clock = new Date(2026, 10, 4, 5).getTime();
+    assert.equal((await tree()).starts[0].last, true);
+    clock = new Date(2026, 10, 5, 5).getTime();
+    assert.deepEqual((await tree()).starts, []);
+    assert.equal((await fetch(`${url}/api/start-day?dir=journal`)).status, 409);
+    assert.equal((await fetch(`${url}/api/start-day`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dir: 'journal', from: plan.from, mtime: plan.mtime, edits: [] }) })).status, 409);
+    clock = new Date(2026, 10, 4, 1).getTime();
     assert.match(plan.body, /stage-box/);
     assert.doesNotMatch(plan.body, /open-until-closed/);
     const post = (body) => fetch(`${url}/api/start-day`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });

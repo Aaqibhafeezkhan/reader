@@ -48,7 +48,8 @@ With `reader --day-starts 04:00`, **Today** still lists yesterday's files until 
 
 ### Starting today's
 
-A folder of dated files with none for today offers **Start today's**: a calendar with a plus on its row in the list, and the words at the top of the folder itself.
+A folder of dated files with none for today offers **Start today's**: a calendar with a plus, on its row in the list and above the folder itself.
+Its tooltip says what it's from, or a long press does on a touch screen.
 It makes today's file from the folder's latest, with the same headings and labels, every answer on every page cleared, as [Start over](forms.md#starting-over) clears them, and opens it, and **Today** lists it.
 
 ```
@@ -57,7 +58,7 @@ journal/2026-11-03.md     started from it
 ```
 
 - A folder offers it for three days after the date of its latest document with a date in its own name, so with `2026-11-01.md` the latest, it's there on the 2nd, the 3rd and the 4th, and gone on the 5th.
-  On the last of those days, it carries a yellow warning, and the top of the folder says why in words.
+  On the last of those days, it carries a yellow warning, and its tooltip or a long press says why.
   A folder left for longer stops asking.
 - The latest goes by the file's date, as above, so a `date:` wins over the name; not by when it was last changed. A date still to come is skipped.
   A version, like `2026-11-02.draft.md`, isn't counted.

@@ -52,7 +52,7 @@ A folder of dated files with none for today offers **Start today's**: a calendar
 It makes today's file from the folder's latest, with the same headings and labels, every answer on every page cleared, as [Start over](forms.md#starting-over) clears them, and opens it, and **Today** lists it.
 
 ```
-journal/2026-10-30.md     the latest
+journal/2026-11-02.md     the latest
 journal/2026-11-03.md     started from it
 ```
 
@@ -62,7 +62,7 @@ journal/2026-11-03.md     started from it
 - The latest goes by the date in the name, not by when it was last changed, and a date still to come is skipped.
   A version, like `2026-11-02.draft.md`, isn't counted.
 - The day goes by `--day-starts`, as **Today** does.
-- The new name is the latest's with today's date in it, so `log-2026-10-30.md` starts `log-2026-11-03.md`.
+- The new name is the latest's with today's date in it, so `log-2026-11-02.md` starts `log-2026-11-03.md`.
 - A `date:` in the front matter is set to today, if there is one, and a time after it stays.
 - An `open-until:` keeps its distance from the file's date: a file dated 27 October, open until 28 October at 04:00, started on 3 November is open until 4 November at 04:00.
   Nothing else in the front matter changes.

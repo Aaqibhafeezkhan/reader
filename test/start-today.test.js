@@ -9,7 +9,7 @@ mock.timers.enable({ apis: ['setTimeout'] });
 
 const window = globals(app());
 const { document } = window;
-const JOURNAL = [{ dir: 'journal', on: '2026-11-01', last: false }];
+const JOURNAL = [{ dir: 'journal', date: '2026-11-01', last: false }];
 let starts = JOURNAL;
 let files = [{ path: 'journal/2026-10-30.md', date: '2026-10-30' }, { path: 'notes.md', date: null }];
 let asked = [];
@@ -90,8 +90,9 @@ test('only on its last day does it carry a warning, by a shape, a tooltip and a 
   await fresh();
   const WHY = "Start today's from 2026-11-01. A folder offers this for three days after its latest file, so tomorrow it won't.";
   assert.equal(el.files.querySelector('.start-warn'), null);
+  assert.equal(el.files.querySelector('.start-why'), null);
   assert.equal(offer().hasAttribute('aria-description'), false);
-  starts = [{ dir: 'journal', on: '2026-11-01', last: true }];
+  starts = [{ dir: 'journal', date: '2026-11-01', last: true }];
   await loadTree();
   for (const dir of ['', 'journal']) {
     go(dir, null, { focus: false });
@@ -103,6 +104,8 @@ test('only on its last day does it carry a warning, by a shape, a tooltip and a 
     assert.ok(mark.querySelector('.start-warn-sign'));
   }
   assert.equal(offer().textContent, "Start today's");
+  // A touch screen has no tooltip, so the top of the folder says it in words.
+  assert.equal(el.files.querySelector('.start-why').textContent, 'Last day to start from 2026-11-01: a folder stops offering this three days after its latest file.');
   go('', null, { focus: false });
   assert.equal(offer().getAttribute('aria-label'), "Start today's", 'its name stays');
 });

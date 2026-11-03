@@ -378,9 +378,9 @@ test('startDay takes only a folder that\'s listed, whatever it\'s told', () => {
 });
 
 test('startDay moves `open-until:` as far as the date moved, keeping its time', () => {
-  const { content, day, asked, today } = journal('---\r\ndate: 2026-10-27\r\nopen-until: 2026-10-28 04:00\r\ntitle: 2026-10-27\r\n---\r\n\r\n@ A:\r\n');
+  const { content, day, asked, today } = journal('---\r\ndate: 2026-10-30\r\nopen-until: 2026-10-31 04:00\r\ntitle: 2026-10-30\r\n---\r\n\r\n@ A:\r\n');
   content.startDay('journal', day, asked({ edits: [] }));
-  assert.equal(fs.readFileSync(today, 'utf8'), `---\r\ndate: ${day}\r\nopen-until: 2026-11-03 04:00\r\ntitle: 2026-10-27\r\n---\r\n\r\n@ A:\r\n`);
+  assert.equal(fs.readFileSync(today, 'utf8'), `---\r\ndate: ${day}\r\nopen-until: 2026-11-03 04:00\r\ntitle: 2026-10-30\r\n---\r\n\r\n@ A:\r\n`);
 });
 
 test('without a `date:`, `open-until:` keeps its distance from the date in the name', () => {

@@ -86,7 +86,7 @@ export async function loadDeck() {
   deck.end = out.end ?? null;
   deck.index = Math.min(deck.index, deck.slides.length - 1);
   deck.reveal = Math.min(deck.reveal, deck.slides[deck.index].steps);
-  overview?.refresh(deck.slides, deck.index);
+  overview?.refresh(deck.slides);
   el.deckBy.textContent = [deck.meta.author, deck.meta.date].filter(Boolean).join(' · ');
   // Beside it, how many slides are done, as the file has them.
   drawDone(el.deckDone, deck.slides.map((s, i) => mark(s.body, i)));

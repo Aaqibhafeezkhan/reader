@@ -29,6 +29,8 @@ const ICONS = {
   'start-today': '<rect x="2.5" y="3.5" width="11" height="10" rx="1.3"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3M8 8.2v3.6M6.2 10h3.6"/>',
   promote: '<path d="M8 2.2l1.8 3.7 4 .6-2.9 2.8.7 4L8 11.4l-3.6 1.9.7-4L2.2 6.5l4-.6z"/>',
 };
+const LONG_PRESS = 500;
+
 export const icon = (name) => `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
 
 export async function loadTree() {
@@ -86,7 +88,6 @@ function drawRows() {
     return;
   }
   const { rows, folders } = folderView(state.files, state.dir);
-  if (state.starts.has(state.dir)) el.files.append(startHere(state.dir));
   for (const row of rows) el.files.append(rowItem(row));
   for (const name of folders) el.files.append(folderItem(name));
 }
@@ -108,7 +109,11 @@ function drawToday(q) {
 
 function drawCrumbs(shown) {
   const parts = state.dir ? state.dir.split('/') : [];
-  el.crumbs.hidden = !shown || (!parts.length && !state.group && !state.outline && !state.todayShown);
+  // The folder being shown can be started too, with the same icon as on its
+  // row, here where it takes no room of its own from the list.
+  const showingOutline = state.outline && state.current?.type === 'md';
+  const start = shown && !state.todayShown && !state.group && !showingOutline && state.starts.has(state.dir);
+  el.crumbs.hidden = !shown || (!parts.length && !state.group && !state.outline && !state.todayShown && !start);
   el.crumbs.replaceChildren();
   if (el.crumbs.hidden) return;
   const steps = [{ label: state.rootName, dir: '', group: null }];
@@ -124,6 +129,7 @@ function drawCrumbs(shown) {
     else b.addEventListener('click', () => go(s.dir, s.group));
     el.crumbs.append(b);
   });
+  if (start) el.crumbs.append(startIcon(state.dir));
 }
 
 function button(cls, name, sub) {
@@ -214,45 +220,23 @@ function folderItem(name) {
 }
 
 /**
- * The offer to start today's file in `dir`, on its row. Always showing, not
- * only when the row is hovered as its actions are: it's there to be seen in
- * the morning, and there's no hovering on a phone.
+ * The offer to start today's file in `dir`, on its row and above the folder
+ * itself. Always showing, not only when the row is hovered as its actions
+ * are: it's there to be seen in the morning, and there's no hovering on a
+ * phone. What it does is its tooltip, or a long press where there are none.
+ * On the last day it's offered, that says why it won't be there tomorrow, and
+ * a small triangle says to ask, a shape as well as yellow, so it's there in
+ * the system's colours too.
  */
 function startIcon(dir) {
+  const { date, last } = state.starts.get(dir);
   const b = action('start-today', "Start today's", () => startToday(dir, b));
-  return lastDay(b, state.starts.get(dir));
-}
-
-/** The offer as a row of its own, in words, at the top of the folder it's for, where the arrows reach it. */
-function startHere(dir) {
-  const li = document.createElement('li');
-  const b = document.createElement('button');
-  b.className = 'start-here';
-  b.textContent = "Start today's";
-  b.title = "Start today's file in this folder";
-  b.addEventListener('click', () => startToday(dir, b));
-  const start = state.starts.get(dir);
-  li.append(lastDay(b, start));
-  // A touch screen has no tooltip, so the reason's in words here.
-  if (start.last) {
-    const why = document.createElement('p');
-    why.className = 'start-why';
-    li.classList.add('start-last');
-    why.textContent = `Last day to start from ${start.date}: a folder stops offering this three days after its latest file.`;
-    li.append(why);
-  }
-  return li;
-}
-
-/**
- * On the last day it's offered, `b` says why it won't be there tomorrow: to
- * the pointer and to a screen reader, and by a small triangle, a shape as
- * well as yellow, so it's there in the system's colours too.
- */
-function lastDay(b, { date, last }) {
-  if (!last) return b;
-  const why = `Start today's from ${date}. A folder offers this for three days after its latest file, so tomorrow it won't.`;
+  const why = last
+    ? `Start today's from ${date}. A folder offers this for three days after its latest file, so tomorrow it won't.`
+    : `Start today's from ${date}.`;
   b.title = why;
+  onLongPress(b, () => toast(why));
+  if (!last) return b;
   b.setAttribute('aria-description', why);
   const mark = document.createElement('span');
   mark.className = 'start-warn';
@@ -260,6 +244,35 @@ function lastDay(b, { date, last }) {
   mark.innerHTML = '<svg viewBox="0 0 16 16" width="11" height="11"><path class="start-warn-sign" d="M8 1.5 15 14H1z"/><path class="start-warn-bang" d="M8 6v4M8 11.6v.4"/></svg>';
   b.append(mark);
   return b;
+}
+
+// A long press, kept apart from any one button: the list can be drawn again
+// while a finger's down, which would leave the press on a button that's gone.
+const press = { timer: null, held: false };
+
+/** A finger held on `b` says something, as a tooltip would, and doesn't press it. */
+function onLongPress(b, say) {
+  const hold = () => {
+    clearTimeout(press.timer);
+    if (!press.held) say();
+    press.held = true;
+  };
+  b.addEventListener('pointerdown', (e) => {
+    press.held = false;
+    clearTimeout(press.timer);
+    if (e.pointerType === 'touch') press.timer = setTimeout(hold, LONG_PRESS);
+  });
+  for (const type of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(type, () => clearTimeout(press.timer));
+  // A phone's own long press, which may get there first, is this one too.
+  b.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    hold();
+  });
+  b.addEventListener('click', (e) => {
+    if (!press.held) return;
+    press.held = false;
+    e.stopImmediatePropagation();
+  }, { capture: true });
 }
 
 function fileButton(b, p) {
@@ -379,7 +392,7 @@ export function follow(href) {
   open(p);
 }
 
-const rowsIn = (list) => [...list.querySelectorAll('.file, .folder, .entry, .start-here')];
+const rowsIn = (list) => [...list.querySelectorAll('.file, .folder, .entry')];
 const rows = () => rowsIn(el.files);
 
 /** Arrows move down the list; → goes into a folder, a file's versions or the open file's outline, ← back out. */

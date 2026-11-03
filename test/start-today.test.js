@@ -44,7 +44,7 @@ const settled = async () => {
 await settled();
 
 const hidden = () => [...document.querySelectorAll('iframe.measure')].find((f) => f !== el.measure);
-const offer = () => el.files.querySelector('.start-today, .start-here');
+const offer = () => el.sidebar.querySelector('.start-today');
 const posts = () => asked.filter((a) => a.method === 'POST');
 
 /** The hidden frame, once it's there: what it's sent, and how it answers. */
@@ -73,14 +73,18 @@ test('a folder that can start today has an icon on its row, and the words at the
   const row = el.files.querySelector('.folder[data-dir="journal"]').closest('li');
   const icon = row.querySelector('.start-today');
   assert.equal(icon.getAttribute('aria-label'), "Start today's");
-  assert.equal(icon.title, "Start today's");
+  assert.equal(icon.title, "Start today's from 2026-11-01.");
   assert.ok(icon.querySelector('svg'));
   assert.equal(icon.textContent, '');
   assert.equal(icon.closest('.actions'), null, 'not only on hover');
   assert.equal(el.files.querySelectorAll('.start-today').length, 1);
   go('journal', null, { focus: false });
-  assert.equal(el.files.firstElementChild.querySelector('.start-here').textContent, "Start today's");
+  // The same icon above the folder, and no row of its own.
   assert.equal(el.files.querySelector('.start-today'), null);
+  const above = el.crumbs.querySelector('.start-today');
+  assert.equal(above.getAttribute('aria-label'), "Start today's");
+  assert.ok(above.querySelector('svg'));
+  assert.equal(above.textContent, '');
   starts = [];
   await loadTree();
   assert.equal(offer(), null);
@@ -90,7 +94,6 @@ test('only on its last day does it carry a warning, by a shape, a tooltip and a 
   await fresh();
   const WHY = "Start today's from 2026-11-01. A folder offers this for three days after its latest file, so tomorrow it won't.";
   assert.equal(el.files.querySelector('.start-warn'), null);
-  assert.equal(el.files.querySelector('.start-why'), null);
   assert.equal(offer().hasAttribute('aria-description'), false);
   starts = [{ dir: 'journal', date: '2026-11-01', last: true }];
   await loadTree();
@@ -103,21 +106,47 @@ test('only on its last day does it carry a warning, by a shape, a tooltip and a 
     assert.equal(mark.getAttribute('aria-hidden'), 'true');
     assert.ok(mark.querySelector('.start-warn-sign'));
   }
-  assert.equal(offer().textContent, "Start today's");
-  // A touch screen has no tooltip, so the top of the folder says it in words.
-  assert.equal(el.files.querySelector('.start-why').textContent, 'Last day to start from 2026-11-01: a folder stops offering this three days after its latest file.');
   go('', null, { focus: false });
   assert.equal(offer().getAttribute('aria-label'), "Start today's", 'its name stays');
 });
 
-test('the arrows reach the words at the top of the folder, and pressing them starts it', async () => {
+test('the icon above the folder starts it', async () => {
   await fresh('journal');
-  const here = el.files.querySelector('.start-here');
-  const row = el.files.querySelector('.file');
-  row.focus();
-  row.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
-  assert.equal(document.activeElement, here);
-  here.click();
+  el.crumbs.querySelector('.start-today').click();
+  await settled();
+  assert.ok(hidden());
+  mock.timers.tick(15000);
+  await settled();
+});
+
+test('a finger held on the icon says what it would, and doesn\'t press it; a tap presses it', async () => {
+  await fresh();
+  const press = (type, pointerType = 'touch') => offer().dispatchEvent(Object.assign(new window.Event(type, { bubbles: true }), { pointerType }));
+  el.toast.textContent = '';
+  press('pointerdown');
+  mock.timers.tick(499);
+  assert.equal(el.toast.textContent, '');
+  mock.timers.tick(1);
+  assert.equal(el.toast.textContent, "Start today's from 2026-11-01.");
+  press('pointerup');
+  offer().click();
+  await settled();
+  assert.equal(hidden(), undefined, 'the press that said it starts nothing');
+  // Nor does it if the list is drawn again under the finger.
+  el.toast.textContent = '';
+  press('pointerdown');
+  await loadTree();
+  mock.timers.tick(500);
+  assert.equal(el.toast.textContent, "Start today's from 2026-11-01.");
+  press('pointerup');
+  offer().click();
+  await settled();
+  assert.equal(hidden(), undefined, 'not on the button drawn since either');
+  // A quick tap, then, is still a tap.
+  press('pointerdown');
+  mock.timers.tick(100);
+  press('pointerup');
+  offer().click();
   await settled();
   assert.ok(hidden());
   mock.timers.tick(15000);

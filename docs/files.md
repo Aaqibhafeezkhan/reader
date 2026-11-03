@@ -56,10 +56,10 @@ journal/2026-11-02.md     the latest
 journal/2026-11-03.md     started from it
 ```
 
-- A folder offers it for three days after its latest document dated by its own name, so with `2026-11-01.md` the latest, it's there on the 2nd, the 3rd and the 4th, and gone on the 5th.
-  On the last of those days, it carries a yellow warning that says so.
+- A folder offers it for three days after the date of its latest document with a date in its own name, so with `2026-11-01.md` the latest, it's there on the 2nd, the 3rd and the 4th, and gone on the 5th.
+  On the last of those days, it carries a yellow warning, and the top of the folder says why in words.
   A folder left for longer stops asking.
-- The latest goes by the date in the name, not by when it was last changed, and a date still to come is skipped.
+- The latest goes by the file's date, as above, so a `date:` wins over the name; not by when it was last changed. A date still to come is skipped.
   A version, like `2026-11-02.draft.md`, isn't counted.
 - The day goes by `--day-starts`, as **Today** does.
 - The new name is the latest's with today's date in it, so `log-2026-11-02.md` starts `log-2026-11-03.md`.

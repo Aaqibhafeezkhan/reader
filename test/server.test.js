@@ -540,7 +540,7 @@ test('today\'s file starts from a folder\'s latest: drawn open, written once, an
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-start-'));
   fs.mkdirSync(path.join(dir, 'journal'));
   // Past the time it was open until, yet drawn with a box that can be cleared.
-  const text = '---\ndate: 2026-10-30\nopen-until: 2026-10-30\n---\n\n- [x][ ] Staged\n@ A: a\n';
+  const text = '---\ndate: 2026-11-01\nopen-until: 2026-11-01\n---\n\n- [x][ ] Staged\n@ A: a\n';
   // At 1am on the 4th, by --day-starts it's still the 3rd.
   let clock = new Date(2026, 10, 4, 1).getTime();
   fs.writeFileSync(path.join(dir, 'journal', '2026-11-01.md'), text);

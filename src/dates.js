@@ -88,30 +88,29 @@ const OFFERED_FOR = 3 * CADENCE;
 /**
  * The folders of `files` (each with its `date`) that `day`'s file could be
  * started in, each as { dir, from, date, to, last }: what it's copied from,
- * the latest document dated by its own name before `day`, then its date, what
- * the new file's called, that one's name with `day` in it, and whether `day`
- * is the last the folder offers it. That's as long as the latest is at most
- * `OFFERED_FOR` days old, so a folder left behind stops asking, and a date
- * to come isn't a day to copy from. Not a folder with a file dated `day`
- * already, whatever its name, nor one where the name is taken.
+ * the latest document with a date in its own name before `day`, then its date,
+ * what the new file's called, that one's name with `day` in it, and whether
+ * `day` is the last the folder offers it. Its date is the one every file has
+ * (`dateOf`), and it's that which says which is latest and how old. A date in
+ * the name is also needed to make the new name. It's offered as long as the
+ * latest is at most `OFFERED_FOR` days old, so a folder left behind stops
+ * asking, and a date to come isn't a day to copy from. Not a folder with a
+ * file dated `day` already, whatever its name, nor one where the name is taken.
  */
 export function startable(files, day) {
   const folders = Map.groupBy(files, (f) => f.path.slice(0, Math.max(0, f.path.lastIndexOf('/'))));
   const starts = [];
   for (const [dir, here] of folders) {
     if (here.some((f) => f.date === day)) continue;
-    const named = here
-      .filter((f) => f.type === 'md')
-      .map((f) => ({ f, on: dayInName(baseName(f.path)) }))
-      .filter(({ on }) => on && on < day);
-    const latest = named.reduce((a, b) => (!a || b.on > a.on || (b.on === a.on && b.f.path > a.f.path) ? b : a), null);
+    const named = here.filter((f) => f.type === 'md' && dayInName(baseName(f.path)) && f.date < day);
+    const latest = named.reduce((a, b) => (!a || b.date > a.date || (b.date === a.date && b.path > a.path) ? b : a), null);
     if (!latest) continue;
-    const old = daysBetween(latest.on, day);
+    const old = daysBetween(latest.date, day);
     if (old > OFFERED_FOR) continue;
-    const name = baseName(latest.f.path);
-    const at = name.lastIndexOf(latest.on);
+    const name = baseName(latest.path);
+    const at = name.lastIndexOf(dayInName(name));
     const to = (dir ? `${dir}/` : '') + name.slice(0, at) + day + name.slice(at + day.length);
-    if (!here.some((f) => f.path === to)) starts.push({ dir, from: latest.f.path, date: latest.f.date, on: latest.on, to, last: old === OFFERED_FOR });
+    if (!here.some((f) => f.path === to)) starts.push({ dir, from: latest.path, date: latest.date, to, last: old === OFFERED_FOR });
   }
   return starts;
 }

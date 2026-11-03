@@ -231,7 +231,15 @@ function startHere(dir) {
   b.textContent = "Start today's";
   b.title = "Start today's file in this folder";
   b.addEventListener('click', () => startToday(dir, b));
-  li.append(lastDay(b, state.starts.get(dir)));
+  const start = state.starts.get(dir);
+  li.append(lastDay(b, start));
+  // A touch screen has no tooltip, so the reason's in words here.
+  if (start.last) {
+    const why = document.createElement('p');
+    why.className = 'start-why';
+    why.textContent = `Last day to start from ${start.date}: a folder stops offering this three days after its latest file.`;
+    li.append(why);
+  }
   return li;
 }
 
@@ -240,9 +248,9 @@ function startHere(dir) {
  * the pointer and to a screen reader, and by a small triangle, a shape as
  * well as yellow, so it's there in the system's colours too.
  */
-function lastDay(b, { on, last }) {
+function lastDay(b, { date, last }) {
   if (!last) return b;
-  const why = `Start today's from ${on}. A folder offers this for three days after its latest file, so tomorrow it won't.`;
+  const why = `Start today's from ${date}. A folder offers this for three days after its latest file, so tomorrow it won't.`;
   b.title = why;
   b.setAttribute('aria-description', why);
   const mark = document.createElement('span');

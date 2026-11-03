@@ -17,6 +17,26 @@ each file's folder beside it.
 (`2026-09-25.md`) unless you give it another name. If that file already exists,
 it's opened instead. PDFs open read-only in the left pane.
 
+## Today
+
+**Today**, at the top of the file list, lists the files dated today, from every folder under the one reader was opened on, so that a daily file is one click away without knowing where it lives.
+It's there whichever folder is shown, and a workbook opens from it in Work, as it does from anywhere.
+With nothing dated today, there's no **Today**; nor is there while you're filtering, or looking at a file's versions or outline.
+
+A file's date is the `date:` in its front matter:
+
+```markdown
+---
+title: To do
+date: 2026-11-03
+---
+```
+
+Without one, it's a `YYYY-MM-DD` in the file's name or path, as in `journal/2026-11-03.md` or `2026/11/03/notes.md`.
+If there are several, the one nearest the file counts.
+Something that isn't a date, like `2026-13-45` or `date: soon`, doesn't count, so a `date: soon` leaves the file dated by its name.
+The date is the server's, in its own time zone.
+
 ## The outline
 
 The `›` at the end of the open file's row (or `→` on it) goes one level

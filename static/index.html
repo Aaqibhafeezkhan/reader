@@ -45,6 +45,10 @@
       <input id="newName" autocomplete="off" spellcheck="false" aria-label="New file's name">
       <button class="primary small" type="submit">Create</button>
     </form>
+    <section class="today" id="today" aria-labelledby="todayName" hidden>
+      <h2 class="today-name" id="todayName">Today</h2>
+      <ul class="files" id="todayFiles" aria-labelledby="todayName"></ul>
+    </section>
     <div class="crumbs" id="crumbs" hidden></div>
     <ul class="files" id="files"></ul>
     <p id="filesKeys" hidden>Up and down arrows move through the list. Right arrow goes into a folder or a file's versions, or opens a file and its outline; left arrow or Backspace goes back out. F2 renames a file, and Command-Backspace moves it to the trash.</p>

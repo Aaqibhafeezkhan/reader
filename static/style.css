@@ -168,6 +168,11 @@ button, .ghost { font: inherit; font-size: 13px; border-radius: 7px; cursor: poi
 .side-head input:focus, .new-form input:focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .new-form { display: flex; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--line-soft); background: var(--bg); }
 
+/* the files dated today, above whichever folder is shown (app/files.js) */
+.today { flex: none; max-height: 33vh; overflow: auto; border-bottom: 1px solid var(--line-soft); }
+.today-name { margin: 0; padding: 8px 15px 0; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
+.today .files { overflow: visible; padding-top: 2px; }
+
 .crumbs {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 4px;
   padding: 7px 12px; border-bottom: 1px solid var(--line-soft); font-size: 12px; color: var(--ink-soft);

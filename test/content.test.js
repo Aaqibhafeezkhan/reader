@@ -292,3 +292,26 @@ test('unextract checks every file before it changes any', () => {
   assert.equal(fs.readFileSync(path.join(root, 'a.md'), 'utf8'), 'left\n');
   assert.ok(fs.existsSync(path.join(root, 'one.md')));
 });
+
+test('dated lists what list does, each file with its date', () => {
+  const { root, content } = fixture();
+  fs.writeFileSync(path.join(root, 'sub', '2026-10-31.md'), '# a\n');
+  fs.writeFileSync(path.join(root, 'sub', '2026-10-30.pdf'), '%PDF-1.4\n');
+  fs.writeFileSync(path.join(root, '.hidden', '2026-10-31.md'), '# hidden\n');
+  fs.writeFileSync(path.join(root, 'node_modules', '2026-10-31.md'), '# dep\n');
+  fs.writeFileSync(path.join(root, 'a.md'), '---\ndate: 2026-10-29\n---\n');
+  assert.deepEqual(content.dated().map((f) => f.path), content.list().map((f) => f.path));
+  const dates = Object.fromEntries(content.dated().map((f) => [f.path, f.date]));
+  assert.deepEqual(dates, {
+    'a.md': '2026-10-29', 'doc.pdf': null, 'sub/b.markdown': null, 'sub/2026-10-31.md': '2026-10-31', 'sub/2026-10-30.pdf': '2026-10-30',
+  });
+});
+
+test('dated reads only the start of a file', () => {
+  const { root, content } = fixture();
+  fs.writeFileSync(path.join(root, 'long.md'), `---\n${'key: value\n'.repeat(5000)}date: 2026-10-31\n---\n`);
+  fs.writeFileSync(path.join(root, 'book.md'), `---\ndate: 2026-10-31\n---\n\n${'A long book.\n'.repeat(100000)}`);
+  const dates = Object.fromEntries(content.dated().map((f) => [f.path, f.date]));
+  assert.equal(dates['long.md'], null);
+  assert.equal(dates['book.md'], '2026-10-31');
+});

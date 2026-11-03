@@ -246,6 +246,32 @@ in Work too, though not on a slide. A date that isn't one
 staged or a choice, as one edit you can undo. `reset:[Clear]` names it.
 It's as much for a todo list or a game as for a [recipe](recipes.md).
 
+It empties the section's fields too, in the same edit, wherever they are in it, as in tabs or columns.
+That's a field's value, a blank in a sentence, and a field's choices.
+A field that holds a date or a number stays one, ready for the next: `@ When: date:2026-11-03[]` becomes `@ When: date:[]`.
+It stops at a `---`, so it clears the same page in Edit as in Work, and under no heading, its section is that page.
+
+::: tabs
++++ Source
+```markdown
+@ Grateful for: the sun
+@ When: date:2026-11-03[]
+@ Mood: ( ) Low (x) Good
+- [x] Walk to the [@ where: river]
+
+reset:[]
+```
++++ Rendered
+@ Grateful for: the sun
+@ When: date:2026-11-03[]
+@ Mood: ( ) Low (x) Good
+- [x] Walk to the [@ where: river]
+
+reset:[]
+:::
+
+A date in a sentence stays, as `Due date:2026-11-10[]` might be the deadline and a recipe's log is headed by one; so does a [definition](notes.md).
+
 ## Progress
 
 `progress:` draws a bar, and says how far along it is.

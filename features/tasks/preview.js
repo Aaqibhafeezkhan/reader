@@ -4,8 +4,9 @@
  * stick. Each box knows its line checked and unchecked (`data-on`,
  * `data-off`), and a box with stages its line at each (`data-lines`): a
  * click fills the next stage, or empties a full box, and a shift-click
- * goes back one. A reset button clears every box on its lines, and a log
- * button beside it adds a heading for today, with the multiple picked. Another
+ * goes back one. A reset button starts its lines over (`Preview.startOver`),
+ * and every box on them is cleared, and a log button beside it adds a
+ * heading for today, with the multiple picked. Another
  * feature can have a box done by sending it, or its list item, a
  * `preview:complete`: a plain box is ticked, a staged one filled all the way.
  * A box says whether it's done (`data-done`), and when that changes on the
@@ -217,10 +218,16 @@
     if (!reset) return;
     const from = Number(reset.dataset.from);
     const to = reset.dataset.to ? Number(reset.dataset.to) : Infinity;
-    const within = (b) => Number(b.dataset.line) >= from && Number(b.dataset.line) < to && !b.closest('.field');
-    const edits = [];
+    const edits = Preview.startOver({ from, to });
+    if (edits.length) Preview.edit(edits, { undo: true });
+  });
+
+  // Starting over, its boxes are cleared: every one on the lines, not those
+  // of a field's choices, which are the field's (fields/preview.js).
+  document.addEventListener('preview:start-over', ({ detail: { within, edits } }) => {
+    const mine = (b) => within(Number(b.dataset.line)) && !b.closest('.field');
     for (const b of document.querySelectorAll('input.task-box, input.choice-box')) {
-      if (within(b) && b.defaultChecked) {
+      if (mine(b) && b.defaultChecked) {
         edits.push(boxLine(b, false));
         b.checked = b.defaultChecked = false;
         if (b.type === 'checkbox') markDone(b, false);
@@ -228,19 +235,18 @@
       }
     }
     for (const b of document.querySelectorAll('.stage-box')) {
-      if (within(b) && Number(b.dataset.stage)) {
+      if (mine(b) && Number(b.dataset.stage)) {
         edits.push(stageLine(b, 0));
         setStage(b, 0);
       }
     }
     for (const b of document.querySelectorAll('.section-done')) {
-      if (within(b) && b.dataset.own === 'true') {
+      if (mine(b) && b.dataset.own === 'true') {
         const line = Number(b.dataset.line);
         edits.push({ from: line, to: line + 1, before: [b.dataset.on], after: [b.dataset.off] });
         b.dataset.own = 'false';
       }
     }
-    if (edits.length) Preview.edit(edits, { undo: true });
     settle();
   });
 })();

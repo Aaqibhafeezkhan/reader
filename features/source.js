@@ -215,7 +215,7 @@ export function sections(state) {
     }
     of[i] = at;
   });
-  return { list, of };
+  return { list, of, lineOf };
 }
 
 /**

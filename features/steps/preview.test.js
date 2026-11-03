@@ -122,3 +122,20 @@ test('on a slide, a step\'s badge only says whether it\'s done: a click or Space
   assert.equal(p.document.querySelectorAll('li.step')[2].classList.contains('step-current'), false);
   assert.equal(p.posted.filter((m) => m.type === 'click').length, 1);
 });
+
+test('starting over starts its steps over, on the lines it\'s told, with or without a click', async () => {
+  const p = preview();
+  p.show(render('## Soup\nreset:[]\n\n1) [x] Chop.\n2) [ ] Fry.\n\n## Bread\n\n1) [x] Knead.\n2) [ ] Bake.\n').body);
+  const { document, window } = p;
+  const done = () => [...document.querySelectorAll('li.step')].map((li) => li.classList.contains('step-done'));
+  const current = () => [...document.querySelectorAll('li.step')].map((li) => li.classList.contains('step-current'));
+  assert.deepEqual(done(), [true, false, true, false]);
+  assert.deepEqual(current(), [false, true, false, true]);
+  document.querySelector('.task-reset').click();
+  assert.deepEqual(done(), [false, false, true, false]);
+  assert.deepEqual(current(), [false, false, false, true]);
+  window.Preview.startOver();
+  assert.deepEqual(done(), [false, false, false, false]);
+  assert.deepEqual(current(), [false, false, false, false]);
+  await settle();
+});

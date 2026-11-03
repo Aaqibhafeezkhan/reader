@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { render } from '../../src/render.js';
-import { slides } from '../../src/slides.js';
+import { slides, pages } from '../../src/slides.js';
+import { applyEdits } from '../../static/edits.js';
 import { frame, run, preview, settle, assertElement, assertNotElement } from '../../test/dom.js';
 
 /**
@@ -214,4 +215,181 @@ test('a date field picks a day into its place on the line, and Tab goes past it'
   const input = p.document.querySelector('.field textarea');
   input.dispatchEvent(new p.window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
   assert.ok(p.document.querySelector('.field[data-kind="number"] textarea'), 'Tab goes on to the next blank');
+});
+
+/**
+ * The preview showing `markdown`: `press()` presses its first Start over,
+ * and is what went up by the end of that turn, as `{ edits, undo, text }`
+ * for each ask, `text` being the file with its edits made, as the server
+ * would. A file with edits it would refuse has no text.
+ */
+function startOver(markdown, draw = render(markdown).body) {
+  const p = preview();
+  p.show(draw);
+  const sent = () => p.posted.splice(0).filter((m) => m.type === 'edit');
+  const made = (edits) => {
+    const c = applyEdits(markdown, edits);
+    return c && markdown.slice(0, c.start) + c.text + markdown.slice(c.end);
+  };
+  const press = async () => {
+    sent();
+    p.document.querySelector('.task-reset').click();
+    await settle();
+    return sent().map((m) => ({ edits: m.edits, undo: m.undo, text: made(m.edits) }));
+  };
+  return { ...p, press, sent, made };
+}
+
+test('Start over empties the fields of its section with its boxes, as one edit to undo, and no other section\'s', async () => {
+  const md = [
+    '## Morning', '', '@ Grateful for: the sun', '@ When: date:2026-11-03[]', '- [x] Walk', '- (x) Rested', '', 'reset:[]', '',
+    '## Evening', '', '@ Thoughts: a good day',
+  ].join('\n');
+  const [one, ...rest] = await startOver(md).press();
+  assert.deepEqual(rest, [], 'one edit');
+  assert.equal(one.undo, true);
+  assert.equal(one.text, [
+    '## Morning', '', '@ Grateful for:', '@ When: date:[]', '- [ ] Walk', '- ( ) Rested', '', 'reset:[]', '',
+    '## Evening', '', '@ Thoughts: a good day',
+  ].join('\n'));
+});
+
+test('Start over empties a field wherever it is in the section: in tabs, columns, a callout or a list item', async () => {
+  const md = [
+    '## Morning', 'reset:[]', '',
+    '::: tabs', '+++ One', '@ In a tab: a', '+++ Two', '@ In the other: b', ':::', '',
+    '::: columns', '@ Left: c', '+++', '@ Right: d', ':::', '',
+    '> [!NOTE]', '> Written [@ a word: e] here', '',
+    '- Item', '  @ Under it: f',
+  ].join('\n');
+  const [{ text }] = await startOver(md).press();
+  assert.equal(text, [
+    '## Morning', 'reset:[]', '',
+    '::: tabs', '+++ One', '@ In a tab:', '+++ Two', '@ In the other:', ':::', '',
+    '::: columns', '@ Left:', '+++', '@ Right:', ':::', '',
+    '> [!NOTE]', '> Written [@ a word] here', '',
+    '- Item', '  @ Under it:',
+  ].join('\n'));
+});
+
+test('Start over empties every blank on a line, and its box, in one edit of it', async () => {
+  const md = '## Morning\nreset:[]\n\n- [x] Walk to [@ where: the river] and [@ then: home] [@ empty]\n- (x) Other: [@ what: this]\n- ( ) No\n';
+  const [{ edits, text }] = await startOver(md).press();
+  assert.equal(edits.length, 2);
+  assert.equal(text, '## Morning\nreset:[]\n\n- [ ] Walk to [@ where] and [@ then] [@ empty]\n- ( ) Other: [@ what]\n- ( ) No\n');
+});
+
+test('Start over keeps a field the kind it is: its colons, hint and head, a date, a number, its choices', async () => {
+  const md = [
+    '## Morning', 'reset:[]', '',
+    '@ Notes ::: it went well',
+    '@ Hours {e.g. 7.5}: 8',
+    '@ When {a Friday}: date:2026-11-03[the day]',
+    '@ Age: number:12[twelve]',
+    '@ Session: ( ) Sat (x) Sun',
+    '@ Stays blank: date:[]',
+    '@ And this: number:[]',
+    '@ And these: ( ) Sat ( ) Sun',
+    '@ And me:',
+  ].join('\n');
+  const p = startOver(md);
+  const [{ edits, text }] = await p.press();
+  assert.equal(edits.length, 5, 'nothing to write of what\'s empty');
+  assert.equal(text, [
+    '## Morning', 'reset:[]', '',
+    '@ Notes :::',
+    '@ Hours {e.g. 7.5}:',
+    '@ When {a Friday}: date:[]',
+    '@ Age: number:[]',
+    '@ Session: ( ) Sat ( ) Sun',
+    '@ Stays blank: date:[]',
+    '@ And this: number:[]',
+    '@ And these: ( ) Sat ( ) Sun',
+    '@ And me:',
+  ].join('\n'));
+  // Until the next render, the page is what the file says.
+  const session = p.document.querySelector('.field[data-choices]');
+  assert.equal(session.dataset.answered, 'false');
+  assert.deepEqual([...session.querySelectorAll('input')].map((i) => i.checked), [false, false]);
+  assert.equal(p.document.querySelector('.field-value').textContent, '');
+  assert.deepEqual(await p.press(), [], 'nothing left to clear, nothing to write');
+});
+
+test('Start over leaves a date in a sentence, a log\'s heading and a definition: they aren\'t answers', async () => {
+  const md = '## Akara\nreset:[]\n\nDue date:2026-11-10[] or date:2026-11-12[the party].\n\n!Term: a meaning\n\n### Log\n#### date:2026-10-01[]\n@ Note: good\n';
+  const [{ text }] = await startOver(md).press();
+  assert.equal(text, md.replace('@ Note: good', '@ Note:'));
+});
+
+test('under no heading, Start over is for the whole page', async () => {
+  const md = '@ Before: a\n\nreset:[]\n\n@ After: b\n\n## Later\n\n@ Under: c\n';
+  const [{ text }] = await startOver(md).press();
+  assert.equal(text, '@ Before:\n\nreset:[]\n\n@ After:\n\n## Later\n\n@ Under:\n');
+});
+
+test('on a workbook\'s page, Start over is for that page, by its lines in the file', async () => {
+  const md = '---\ntype: workbook\n---\n\n@ One: a\n\n---\n\n@ Two: b\n\nreset:[]\n';
+  const page = pages(md).pages[1];
+  const [{ text }] = await startOver(md, page.body).press();
+  assert.equal(text, md.replace('@ Two: b', '@ Two:'));
+});
+
+test('Start over clears what was written since the page was drawn, made on what was written', async () => {
+  const md = '## Morning\nreset:[]\n\n- [ ] Walk to [@ where]\n';
+  const p = startOver(md);
+  const blank = p.document.querySelector('.field');
+  blank.click();
+  const input = blank.querySelector('textarea');
+  input.value = 'the river';
+  input.blur();
+  await settle();
+  const typed = p.sent().flatMap((m) => m.edits);
+  assert.deepEqual(typed.map((e) => e.after[0]), ['- [ ] Walk to [@ where: the river]']);
+  const box = p.document.querySelector('.task-box');
+  box.click();
+  await settle();
+  const ticked = p.sent().flatMap((m) => m.edits);
+  assert.deepEqual(ticked.map((e) => e.after[0]), ['- [x] Walk to [@ where: the river]']);
+  const [{ edits }, ...rest] = await p.press();
+  assert.deepEqual(rest, []);
+  assert.deepEqual(edits, [{ from: 3, to: 4, before: ['- [x] Walk to [@ where: the river]'], after: ['- [ ] Walk to [@ where]'] }]);
+});
+
+test('Start over lets go of what\'s being typed in a field it empties, and not in one it doesn\'t', async () => {
+  const md = '## Morning\nreset:[]\n\n@ Name: Josh\n\n## Evening\n@ Other: x\n';
+  const p = startOver(md);
+  const [name, other] = p.document.querySelectorAll('.field');
+  name.click();
+  name.querySelector('textarea').value = 'half typed';
+  assert.deepEqual((await p.press()).map((x) => x.text), [md.replace('@ Name: Josh', '@ Name:')]);
+  assert.equal(name.querySelector('textarea'), null);
+  other.click();
+  await p.press();
+  assert.ok(other.querySelector('textarea'), 'still open');
+});
+
+test('Preview.startOver clears the lines it\'s given, with no click, and returns the edits, sending nothing', async () => {
+  const md = '# One\n\n@ A: a\n- [x] b\n\n---\n\n# Two\n\n@ C: c\nI [@ d: e] it.\n';
+  const p = startOver(md);
+  const { Preview } = p.window;
+  p.sent();
+  assert.deepEqual(JSON.parse(JSON.stringify(Preview.startOver({ from: 2, to: 3 }))), [{ from: 2, to: 3, before: ['@ A: a'], after: ['@ A:'] }]);
+  const edits = Preview.startOver();
+  await settle();
+  assert.deepEqual(p.sent(), [], 'nothing sent, nothing to save');
+  assert.equal(p.made(edits), '# One\n\n@ A: a\n- [ ] b\n\n---\n\n# Two\n\n@ C:\nI [@ d] it.\n');
+});
+
+test('Preview.startOver works on a page that can\'t be worked', () => {
+  const md = '@ A: a\n@ When: date:2026-11-03[]\n- [x] b\n';
+  const p = startOver(md);
+  p.window.Preview.workable = false;
+  assert.equal(p.made(p.window.Preview.startOver()), '@ A:\n@ When: date:[]\n- [ ] b\n');
+});
+
+test('on a slide there\'s no Start over, and its fields are left', async () => {
+  const md = '## One\nreset:[]\n\n@ A: a\n\n---\n\n# Next\n';
+  const p = preview();
+  p.show(slides(md).slides[0].body, { deck: true });
+  assert.equal(p.document.querySelector('.task-reset'), null);
 });

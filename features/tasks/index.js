@@ -15,8 +15,9 @@
  *
  *   - [x][x][ ] 1 small yellow onion, diced
  *
- * `reset:[]` is a button that clears every box in its section -- the
- * heading it's under, to the next at that level or above -- as one edit:
+ * `reset:[]` is a button that clears every box and field in its section -- the
+ * heading it's under, to the next at that level or above, and no further than
+ * the `---` either side of it, as a page in Work shows no more -- as one edit:
  * `reset:[Start over]` names it. When the section has a heading `Log` in
  * it, a second button adds a heading for today to the end of the log,
  * with the multiple the section's multiplier is at (features/count).
@@ -144,18 +145,21 @@ export function tasks(md) {
       return true;
     },
   });
-  // A reset clears the boxes of its section, by their lines in the file;
+  // A reset clears the answers of its section, by their lines in the file;
   // with a log in the section, it can add to it, and say the multiple.
   keepWritten(md);
   md.core.ruler.push('task_reset_sections', (state) => {
     if (state.inlineMode) return;
-    const { list, of } = sections(state);
+    const { list, of, lineOf } = sections(state);
     const { bySection, nearest } = multipliers(state, of);
+    const breaks = state.tokens.filter((t) => t.type === 'hr' && t.level === 0 && t.map).map(lineOf);
     state.tokens.forEach((block, i) => {
       for (const t of block.children ?? []) {
         if (t.type !== 'task_reset') continue;
         const section = of[i];
-        t.meta.section = section;
+        const at = lineOf(block);
+        t.meta.from = Math.max(section.line, ...breaks.filter((b) => b < at));
+        t.meta.to = Math.min(section.end, ...breaks.filter((b) => b > at));
         t.meta.multiplier = bySection.get(nearest(section));
         const log = list.find((s) => LOG.test(s.title) && s !== section && under(s, section));
         if (log) t.meta.log = { at: logEnd(state, log), level: Math.min(6, log.level + 1) };
@@ -167,9 +171,9 @@ export function tasks(md) {
     // Not where the page can't be worked: an exported page has no script
     // to press it with, and a slide is only shown.
     if (!workable(env)) return '';
-    const { label, section, log, multiplier } = tokens[i].meta;
-    const to = section && section.end !== Infinity ? ` data-to="${section.end}"` : '';
-    const reset = `<button type="button" class="task-reset" data-from="${section?.line ?? 0}"${to}>${escapeHtml(label)}</button>`;
+    const { label, from, to, log, multiplier } = tokens[i].meta;
+    const until = to !== Infinity ? ` data-to="${to}"` : '';
+    const reset = `<button type="button" class="task-reset" data-from="${from}"${until}>${escapeHtml(label)}</button>`;
     if (!log) return reset;
     const by = multiplier?.id ? ` data-multiplier="${multiplier.id}"` : '';
     return `${reset} <button type="button" class="task-log" data-at="${log.at}" data-level="${log.level}"${by}>Log today</button>`;

@@ -31,3 +31,8 @@ test('the way out of a deck shows only on a touch screen, big enough to tap', ()
   assert.match(leave, /display: inline-flex/);
   for (const side of ['width', 'height']) assert.ok(Number(leave.match(new RegExp(`[\\s;]${side}: (\\d+)px`))[1]) >= 24, side);
 });
+
+test('a touch screen\'s foot of a slide is one line, without the keyboard\'s shortcuts', () => {
+  assert.match(touch(), /\.deck-foot \{[^}]*white-space: nowrap/);
+  assert.match(touch(), /\.deck-keys, #deckBy \{ display: none; \}/);
+});

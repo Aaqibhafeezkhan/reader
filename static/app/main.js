@@ -14,7 +14,7 @@ import { toast, updateCursor } from './status.js';
 import { replaceSelection, wrap, insertLink, toLineEdge, applyEdit, onEditorInput } from './editing.js';
 import { toggleSidebar, toggleDrawer, toggleHelp, wireDrawer, restoreLayout, setWorking } from './modes.js';
 import { wirePages, paged, turn } from './pages.js';
-import { present, back, next, deckKey, onSpeakerMessage, revealed } from './deck.js';
+import { present, closeDeck, back, next, deckKey, onSpeakerMessage, revealed } from './deck.js';
 import { wireFit } from './fit.js';
 import { wireSync } from './sync.js';
 import { printDocument } from './exporting.js';
@@ -122,6 +122,12 @@ function wire() {
   wirePages();
   wireFit();
   el.presentBtn.addEventListener('click', present);
+  // Not left on the editor, as Esc is: from a tap, that would bring up the
+  // screen's keyboard, over the file just come back to.
+  el.deckLeave.addEventListener('click', () => {
+    closeDeck();
+    el.presentBtn.focus();
+  });
   el.deck.addEventListener('click', (e) => {
     if (e.target.closest('.deck-notes, .deck-foot, .overview')) return;
     (e.clientX < window.innerWidth / 3 ? back : next)();

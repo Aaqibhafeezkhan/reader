@@ -33,7 +33,7 @@ in a `::: tabs` block, its `+++ Source` and `+++ Rendered` tabs.
 | `desktop/` | the desktop app: `main.js` (a window and a server for each folder opened, its frames' second port any free one, and the menus), `folders.js` (the folders opened, each on a port of its own), `electron-builder.yml` (the installers) |
 | `src/server.js` | HTTP API and static files, and the preview frames' own origin (`frames.localhost`, or a second port), which serves only what a frame loads |
 | `src/content.js` | the content directory: listing, safe paths, saves, backups, the trash, branching, renaming and promoting versions |
-| `src/dates.js` | what date a file is, by its `date:` or its name or path, and what day it is by a clock: for Today in the file list, and whatever else goes by date; and which folders today's file could be started in, and setting a file's `date:` |
+| `src/dates.js` | what date a file is, by its `date:` or its own name, and what day it is by a clock: for Today in the file list, and whatever else goes by date; and which folders today's file could be started in, and setting a file's `date:` |
 | `src/render.js` | markdown → `{css, body}` for the preview: one markdown-it, with every feature, laid out in columns; `makeRenderer(features)` for a test that leaves one out |
 | `src/page.js` | what every page has taken off before the features read it: its front matter (less the lines a feature claims, its `matter`) and its HTML comments, with each line left traced back to the file |
 | `src/columns.js` | the two-column layout: the speaker's passages beside the notes in the margin about them (`env.margin`, each `{ anchor, render(attrs) }`), under the masthead, its byline's reviewers among it, and what features add to it (`env.masthead`) |

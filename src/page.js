@@ -36,6 +36,19 @@ export function matterEntry(line, features = FEATURES) {
 }
 
 /**
+ * A front matter line, for a copy of the page dated `days` later: as the
+ * first of `features` to move it makes it (its `moved(line, days)`), so
+ * that a date it says keeps its distance from the page's. Otherwise as it is.
+ */
+export function movedLine(line, days, features = FEATURES) {
+  for (const f of features) {
+    const out = f.moved?.(line, days);
+    if (out != null) return out;
+  }
+  return line;
+}
+
+/**
  * When the page whose front matter claimed `entries` closes, in ms, by the
  * earliest that one of `features` says (its `closes(entry)`), or null if
  * none says.

@@ -117,11 +117,6 @@ export function filtered(files, q) {
   });
 }
 
-/** The rows of the files dated `day`, from every folder. */
-export function datedRows(files, day) {
-  return day ? everyFolder(files.filter((f) => f.date === day)) : [];
-}
-
 /** The group named `name` in `dir`, if it's still there. */
 export function findGroup(files, dir, name) {
   return folderView(files, dir).rows.find((r) => r.kind === 'group' && r.name === name) || null;

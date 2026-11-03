@@ -19,9 +19,14 @@ it's opened instead. PDFs open read-only in the left pane.
 
 ## Today
 
-**Today**, at the top of the file list, lists the files dated today, from every folder under the one reader was opened on, so that a daily file is one click away without knowing where it lives.
-It's there whichever folder is shown, and a workbook opens from it in Work, as it does from anywhere.
-With nothing dated today, there's no **Today**; nor is there while you're filtering, or looking at a file's versions or outline.
+The **Today** button, in the top bar, lists the files dated today in the file list, from every folder under the one reader was opened on, so that a daily file is one click away without knowing where it lives.
+They're listed as a search lists them, each with its folder, and typing in **Filter…** narrows them further.
+A workbook opens from there in Work, as it does from anywhere.
+With nothing dated today, the list says so.
+
+The button stays pressed while they're showing.
+Pressing it again, `←`, or the path above the list goes back to the folder you were in.
+If the list is closed, the button opens it; in Work, or on a narrow screen, it comes over the page, and picking a file or clicking away closes it, still in Work.
 
 A file's date is the `date:` in its front matter:
 
@@ -32,8 +37,9 @@ date: 2026-11-03
 ---
 ```
 
-Without one, it's a `YYYY-MM-DD` in the file's name or path, as in `journal/2026-11-03.md` or `2026/11/03/notes.md`.
-If there are several, the one nearest the file counts.
+Without one, it's a `YYYY-MM-DD` in the file's own name, as in `journal/2026-11-03.md`.
+If there are several, the last counts.
+The folders it's in don't date it, so `2026/11/03/notes.md` and `2026-11-03/notes.md` have no date unless they say so.
 Something that isn't a date, like `2026-13-45` or `date: soon`, doesn't count, so a `date: soon` leaves the file dated by its name.
 The date is the server's, in its own time zone.
 
@@ -42,20 +48,24 @@ With `reader --day-starts 04:00`, **Today** still lists yesterday's files until 
 
 ### Starting today's
 
-A folder of dated files with none for today offers **Start today's**, on its row in the list and at the top of the folder itself.
+A folder of dated files with none for today offers **Start today's**: a calendar with a plus on its row in the list, and the words at the top of the folder itself.
 It makes today's file from the folder's latest, with the same headings and labels, every answer on every page cleared, as [Start over](forms.md#starting-over) clears them, and opens it, and **Today** lists it.
 
 ```
-journal/2026-10-30.md     the latest
+journal/2026-11-02.md     the latest
 journal/2026-11-03.md     started from it
 ```
 
-- A folder of dated files is one where at least half the documents have a date in their own names, so one dated file among a folder of notes offers nothing.
-  A file dated only by the folders it's in, like `2026/11/03/notes.md`, or a version, like `2026-11-02.draft.md`, isn't one of them.
-- The latest goes by date, not by when it was last changed, and a date still to come is skipped.
-- The new name is the latest's with today's date in it, so `log-2026-10-30.md` starts `log-2026-11-03.md`.
+- A folder offers it for three days after its latest document dated by its own name, so with `2026-11-01.md` the latest, it's there on the 2nd, the 3rd and the 4th, and gone on the 5th.
+  On the last of those days, it carries a yellow warning that says so.
+  A folder left for longer stops asking.
+- The latest goes by the date in the name, not by when it was last changed, and a date still to come is skipped.
+  A version, like `2026-11-02.draft.md`, isn't counted.
+- The day goes by `--day-starts`, as **Today** does.
+- The new name is the latest's with today's date in it, so `log-2026-11-02.md` starts `log-2026-11-03.md`.
 - A `date:` in the front matter is set to today, if there is one, and a time after it stays.
-  Nothing else in the front matter changes, so an `open-until:` still says the day it said, and a file past it is a record from the start.
+- An `open-until:` keeps its distance from the file's date: a file dated 27 October, open until 28 October at 04:00, started on 3 November is open until 4 November at 04:00.
+  Nothing else in the front matter changes.
 - A file already there is never replaced.
   If its answers can't be cleared, nothing is written, and a message says so.
 

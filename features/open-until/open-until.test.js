@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { render } from '../../src/render.js';
 import { slides, pages } from '../../src/slides.js';
 import { preview, settle, assertNotElement } from '../../test/dom.js';
-import { readUntil, closingTime, deadline } from './index.js';
+import openUntil, { readUntil, closingTime, deadline } from './index.js';
 
 const at = (...parts) => new Date(...parts).getTime();
 const FORM = '---\ntitle: Sign-up\nopen-until: 2026-10-28 04:00\n---\n\n- [ ] Bring a dish\n\n@ Name {e.g. Ada}:\n\n@ Size: ( ) big ( ) small\n\nOn date:2026-11-10[].\n\n```sudoku\n```\n';
@@ -165,4 +165,14 @@ test('a puzzle in a record is drawn as it was left, and can\'t be played: no key
   await settle();
   assert.deepEqual(p.posted.filter((m) => m.type === 'edit'), []);
   assert.ok(host.querySelector('.sudoku-grid'), 'still drawn');
+});
+
+test('moved, a day and any time after it keep their distance, written as they were', () => {
+  const { moved } = openUntil;
+  assert.equal(moved('open-until: 2026-10-28 04:00', 7), 'open-until: 2026-11-04 04:00');
+  assert.equal(moved('open-until: "2026-10-28T04:00"', 7), 'open-until: "2026-11-04T04:00"');
+  assert.equal(moved('Open-Until:  2026-12-31', 1), 'Open-Until:  2027-01-01');
+  assert.equal(moved('open-until: 2024-02-28', 1), 'open-until: 2024-02-29');
+  assert.equal(moved('open-until: soon', 1), null);
+  assert.equal(moved('title: 2026-10-28', 1), null);
 });

@@ -6,7 +6,7 @@
  * Every colour the app draws with is named here, light and dark, and
  * nowhere else; the speaker view takes them too, and static/speaker.css
  * adds its own and overrides the few it tunes. Only colours are here: the
- * app's layout, sizes and fonts are static/style.css's. --ok and --warn are the document's green and red
+ * app's layout, sizes and fonts are static/style.css's. --caution, a warning's yellow, is a ground for --on-caution, outlined in it where it's drawn on a light panel. --ok and --warn are the document's green and red
  * (src/columns.css), deeper here to read on the app's warmer panels; they
  * stay apart for the colour-blind, green going grey and red going ochre.
  * The paper is the document's, under the preview and the deck: its light
@@ -26,6 +26,8 @@
   --ok: #006b5f;
   --warn: #9d3106;
   --on-warn: #fff;
+  --caution: #f2c200;
+  --on-caution: #26221e;
   color-scheme: light;
   --paper: #fff;
   --paper-ink-soft: #645b52;
@@ -48,6 +50,8 @@
   --ok: #81cfc2;
   --warn: #f8926a;
   --on-warn: #1d1b18;
+  --caution: #f2c94c;
+  --on-caution: #1d1b18;
   color-scheme: dark;
 }
 :root[data-paper="dark"] {

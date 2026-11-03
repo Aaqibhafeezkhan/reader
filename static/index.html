@@ -20,6 +20,7 @@
 <header class="bar" id="bar">
   <div class="bar-left">
     <button class="ghost icon" id="sidebarToggle" title="Toggle file list (⌘\)" aria-label="Toggle file list" aria-controls="sidebar" aria-expanded="true">☰</button>
+    <button class="ghost small" id="todayBtn" title="The files dated today" aria-controls="sidebar" aria-pressed="false">Today</button>
     <span class="mark" id="rootName">reader</span>
     <span class="crumb" id="crumb"></span>
     <button class="ghost icon copy-path" id="copyPath" title="Copy the file's path" aria-label="Copy the file's path" hidden>⧉</button>
@@ -45,12 +46,10 @@
       <input id="newName" autocomplete="off" spellcheck="false" aria-label="New file's name">
       <button class="primary small" type="submit">Create</button>
     </form>
-    <section class="today" id="today" aria-labelledby="todayName" hidden>
-      <h2 class="today-name" id="todayName">Today</h2>
-      <ul class="files" id="todayFiles" aria-labelledby="todayName"></ul>
-    </section>
     <div class="crumbs" id="crumbs" hidden></div>
+    <p class="files-note" id="filesNote" role="status"></p>
     <ul class="files" id="files"></ul>
+    <p id="todayName" hidden>Today</p>
     <p id="filesKeys" hidden>Up and down arrows move through the list. Right arrow goes into a folder or a file's versions, or opens a file and its outline; left arrow or Backspace goes back out. F2 renames a file, and Command-Backspace moves it to the trash.</p>
     <a class="version" id="version" target="_blank" rel="noopener" hidden></a>
   </nav>

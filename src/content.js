@@ -23,7 +23,8 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { dateOf, today, startable, withDate } from './dates.js';
+import { dateOf, today, startable, withDate, daysBetween } from './dates.js';
+import { movedLine } from './page.js';
 import { withEdits } from '../static/edits.js';
 
 export const DOC_EXTS = new Set(['.md', '.markdown']);
@@ -309,7 +310,8 @@ export function createContent(rootDir) {
   /**
    * Make `day`'s file in the folder `dir`, in one step: the folder's latest
    * file, picked again here, with `edits` made to it (static/edits.js), which
-   * clear its answers, and its `date:` set. All the edits can do is say what's
+   * clear its answers, its `date:` set, and what its front matter dates by that
+   * one (`open-until:`) moved as far. All the edits can do is say what's
    * in the new file. What they were worked out from is `from`, as it was at
    * `mtime`, so if that's no longer the latest, or has changed, they're
    * refused and nothing is written. Nor is a file that's there replaced.
@@ -321,7 +323,8 @@ export function createContent(rootDir) {
     if (cleared == null) throw new ConflictError(`what was cleared doesn't fit ${from}`, start.mtime);
     const abs = resolve(start.to);
     try {
-      fs.writeFileSync(abs, withDate(cleared, day), { flag: 'wx', mode: statFile(from).stat.mode & 0o777 });
+      const away = daysBetween(start.date, day);
+      fs.writeFileSync(abs, withDate(cleared, day, (line) => movedLine(line, away)), { flag: 'wx', mode: statFile(from).stat.mode & 0o777 });
     } catch (err) {
       if (err.code === 'EEXIST') throw new ConflictError(`${start.to} already exists`);
       throw err;

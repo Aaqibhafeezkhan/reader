@@ -114,6 +114,15 @@ export default {
     return m && readUntil(m[2]) ? { until: m[2].trim() } : null;
   },
   closes: (entry) => closingTime(readUntil(entry.until)),
+  // Its day moved, by the calendar, and any time after it left as it's written.
+  moved(line, days) {
+    const m = LINE.exec(line);
+    const u = m && readUntil(m[2]);
+    if (!u) return null;
+    const at = new Date(0);
+    at.setUTCFullYear(u.year, u.month - 1, u.day + days);
+    return line.replace(/\d{4}-\d{2}-\d{2}/, at.toISOString().slice(0, 10));
+  },
   css: fs.readFileSync(new URL('./open-until.css', import.meta.url), 'utf8'),
   preview: fileURLToPath(new URL('./preview.js', import.meta.url)),
 };

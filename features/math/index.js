@@ -9,7 +9,7 @@
 
 import fs from 'node:fs';
 import { schemeRule } from '../scheme.js';
-import { addClass } from '../source.js';
+import { addClass, escapeRegExp } from '../source.js';
 
 // Longest first, so `<->` isn't read as `<-` and `>`.
 const OPERATORS = [
@@ -18,7 +18,7 @@ const OPERATORS = [
   ['.:', '\u2234'], ['*', '\u00D7'], ['>', '>'], ['<', '<'], ['=', '='], ['+', '+'],
 ];
 const OPERATOR = new RegExp(
-  `\\s*(${OPERATORS.map(([op]) => op.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\s*`,
+  `\\s*(${OPERATORS.map(([op]) => escapeRegExp(op)).join('|')})\\s*`,
   'g',
 );
 const SYMBOL = new Map(OPERATORS);

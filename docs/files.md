@@ -40,6 +40,27 @@ The date is the server's, in its own time zone.
 A day starts at midnight, unless you start reader with `--day-starts`.
 With `reader --day-starts 04:00`, **Today** still lists yesterday's files until 04:00, so a journal written at 1am goes in the day it belongs to.
 
+### Starting today's
+
+A folder of dated files with none for today offers **Start today's**, on its row in the list and at the top of the folder itself.
+It makes today's file from the folder's latest, with the same headings and labels, every answer on every page cleared, as [Start over](forms.md#starting-over) clears them, and opens it, and **Today** lists it.
+
+```
+journal/2026-10-30.md     the latest
+journal/2026-11-03.md     started from it
+```
+
+- A folder of dated files is one where at least half the documents have a date in their own names, so one dated file among a folder of notes offers nothing.
+  A file dated only by the folders it's in, like `2026/11/03/notes.md`, or a version, like `2026-11-02.draft.md`, isn't one of them.
+- The latest goes by date, not by when it was last changed, and a date still to come is skipped.
+- The new name is the latest's with today's date in it, so `log-2026-10-30.md` starts `log-2026-11-03.md`.
+- A `date:` in the front matter is set to today, if there is one, and a time after it stays.
+  Nothing else in the front matter changes, so an `open-until:` still says the day it said, and a file past it is a record from the start.
+- A file already there is never replaced.
+  If its answers can't be cleared, nothing is written, and a message says so.
+
+Puzzles stay as they were left, since Start over doesn't clear them, and so do a date in a sentence and a definition.
+
 ## The outline
 
 The `›` at the end of the open file's row (or `→` on it) goes one level

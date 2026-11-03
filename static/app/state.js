@@ -32,6 +32,7 @@ export const state = {
   root: '',
   files: [],
   today: null,          // the date it is, by the server: which files Today lists
+  starts: new Set(),    // the folders today's file could be started in, by the server
   dir: '',              // the folder the file list shows
   group: null,          // or the versions of this file in it, by name
   outline: false,       // or, below either, the open file's outline

@@ -65,3 +65,69 @@ export function today(now = Date.now, starts = 0) {
   const two = (n) => String(n).padStart(2, '0');
   return `${String(at.getFullYear()).padStart(4, '0')}-${two(at.getMonth() + 1)}-${two(at.getDate())}`;
 }
+
+// A date in a file's own name, and nothing but a name after it: another dot
+// is a version of a file (`2026-10-30.draft.md`), not a day of its own.
+const DAY_NAME = /^[^.]+\.(?:md|markdown)$/i;
+const baseName = (rel) => rel.slice(rel.lastIndexOf('/') + 1);
+const dayInName = (name) => (DAY_NAME.test(name) ? dateInPath(name) : null);
+
+/**
+ * The folders of `files` (each with its `date`) that `day`'s file could be
+ * started in, each as { dir, from, to }: what it's copied from, the latest
+ * of the days before, and what it's called, that one's name with `day` in
+ * it. A folder of dated files, at least half its documents dated by their
+ * own names, so a single file with a date in its name among a folder of
+ * notes offers nothing, where a journal just begun does. Not one with a
+ * file dated `day` already, whatever its name, nor one where the name is
+ * taken. A date to come isn't a day to copy from.
+ */
+export function startable(files, day) {
+  const folders = Map.groupBy(files, (f) => f.path.slice(0, Math.max(0, f.path.lastIndexOf('/'))));
+  const starts = [];
+  for (const [dir, here] of folders) {
+    if (here.some((f) => f.date === day)) continue;
+    const docs = here.filter((f) => f.type === 'md');
+    const days = docs.filter((f) => dayInName(baseName(f.path)));
+    if (days.length * 2 < docs.length) continue;
+    const latest = days
+      .filter((f) => f.date < day)
+      .reduce((a, b) => (!a || b.date > a.date || (b.date === a.date && b.path > a.path) ? b : a), null);
+    if (!latest) continue;
+    const name = baseName(latest.path);
+    const at = name.lastIndexOf(dayInName(name));
+    const to = (dir ? `${dir}/` : '') + name.slice(0, at) + day + name.slice(at + day.length);
+    if (!here.some((f) => f.path === to)) starts.push({ dir, from: latest.path, to });
+  }
+  return starts;
+}
+
+const DATE_LINE = /^([ \t]*date[ \t]*:[ \t]*)(["']?)(.*?)\2([ \t]*)$/i;
+
+/**
+ * `text`, its `date:` in the front matter set to `day`, if it has one: a
+ * time after the date stays. Every other line is left just as it's written,
+ * line endings and all.
+ */
+export function withDate(text, day) {
+  // A line and its ending by turns.
+  const parts = text.split(/(\r\n?|\n)/);
+  const lines = parts.filter((_, i) => i % 2 === 0);
+  const matter = frontMatter(lines);
+  if (typeof matter?.meta.date !== 'string') return text;
+  // A `date:` indented under a key of its own isn't the page's (frontMatter).
+  let under = false;
+  for (let n = 1; n < matter.end - 1; n++) {
+    if (!lines[n].trim()) continue;
+    const indented = /^[ \t]/.test(lines[n]);
+    if (!(under && indented)) {
+      const m = DATE_LINE.exec(lines[n]);
+      if (m) {
+        const value = IN_MATTER.test(m[3]) ? day + m[3].slice(day.length) : day;
+        parts[n * 2] = m[1] + m[2] + value + m[2] + m[4];
+      }
+      under = !indented && /:[ \t]*$/.test(lines[n]);
+    }
+  }
+  return parts.join('');
+}

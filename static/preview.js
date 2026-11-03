@@ -428,6 +428,16 @@
       window.parent.postMessage({ type: 'ready' }, '*');
     } else if (m.type === 'render') {
       show(m);
+    } else if (m.type === 'start-over') {
+      // Every answer on the page cleared, and the edits said. A feature that
+      // fails doesn't stop the rest, so it's only heard of here, and an answer
+      // left in isn't passed off as cleared.
+      let failed = null;
+      const heard = (err) => { failed = err.message; };
+      window.addEventListener('error', heard);
+      const edits = Preview.startOver();
+      window.removeEventListener('error', heard);
+      window.parent.postMessage({ type: 'started-over', edits, failed }, '*');
     } else if (m.type === 'drawn') {
       // What features drew of the last render, once all of it is in place.
       (async () => {

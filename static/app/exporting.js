@@ -8,7 +8,7 @@
  */
 
 import { api, exportUrl } from './api.js';
-import { whenReady, baseFor } from './render.js';
+import { askHidden } from './render.js';
 import { asPrinted, fill, sheet } from './sheets.js';
 
 const DRAW_TIMEOUT = 30000;
@@ -85,32 +85,12 @@ export async function drawnFor(p) {
 }
 
 /** What the preview frame draws of a rendered page, by feature. */
-async function draw({ css, body }, p) {
-  const frame = document.createElement('iframe');
-  // Laid out, as the slide-measuring frame is: a diagram's text is measured as it's drawn.
-  frame.className = 'measure';
-  frame.sandbox = 'allow-scripts';
-  frame.tabIndex = -1;
-  frame.setAttribute('aria-hidden', 'true');
-  Frames.load(frame);
-  let heard;
-  const gone = new AbortController();
-  try {
-    return await new Promise((resolve, reject) => {
-      heard = (e) => {
-        if (e.source === frame.contentWindow && e.data?.type === 'drawn') resolve(e.data.drawn);
-      };
-      window.addEventListener('message', heard);
-      setTimeout(() => reject(new Error('its diagrams took too long to draw')), DRAW_TIMEOUT);
-      document.body.append(frame);
-      whenReady(frame, { signal: gone.signal }).then(() => {
-        Frames.post(frame, { type: 'render', css, body, base: baseFor(p), resetScroll: true });
-        Frames.post(frame, { type: 'drawn' });
-      });
-    });
-  } finally {
-    window.removeEventListener('message', heard);
-    gone.abort();
-    frame.remove();
-  }
+async function draw(page, p) {
+  const { drawn } = await askHidden(page, p, {
+    ask: { type: 'drawn' },
+    answer: 'drawn',
+    wait: DRAW_TIMEOUT,
+    late: 'its diagrams took too long to draw',
+  });
+  return drawn;
 }

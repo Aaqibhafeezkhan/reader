@@ -535,3 +535,38 @@ test('the tree\'s today goes by when the day was said to start', async () => {
     at.close();
   }
 });
+
+test('today\'s file starts from a folder\'s latest: drawn open, written once, and offered no more', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-start-'));
+  fs.mkdirSync(path.join(dir, 'journal'));
+  // Past the time it was open until, yet drawn with a box that can be cleared.
+  const text = '---\ndate: 2026-10-30\nopen-until: 2026-10-30\n---\n\n- [x][ ] Staged\n@ A: a\n';
+  fs.writeFileSync(path.join(dir, 'journal', '2026-10-30.md'), text);
+  const { server: at } = createServer({ root: dir, now: () => new Date(2026, 10, 4, 1).getTime(), dayStarts: 240 });
+  await new Promise((r) => at.listen(0, '127.0.0.1', r));
+  try {
+    const url = `http://127.0.0.1:${at.address().port}`;
+    const tree = async () => (await fetch(`${url}/api/tree`)).json();
+    // By --day-starts it's still the 3rd.
+    assert.deepEqual((await tree()).starts, ['journal']);
+    const plan = await (await fetch(`${url}/api/start-day?dir=journal`)).json();
+    assert.equal(plan.from, 'journal/2026-10-30.md');
+    assert.equal(plan.to, 'journal/2026-11-03.md');
+    assert.match(plan.body, /stage-box/);
+    assert.doesNotMatch(plan.body, /open-until-closed/);
+    const post = (body) => fetch(`${url}/api/start-day`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const edits = [{ from: 6, to: 7, before: ['@ A: a'], after: ['@ A:'] }];
+    assert.equal((await post({ dir: 'journal', from: plan.from, mtime: plan.mtime, edits: [{ ...edits[0], before: ['no'] }] })).status, 409);
+    assert.equal((await post({ dir: 7, from: plan.from, mtime: plan.mtime, edits })).status, 400);
+    const made = await post({ dir: 'journal', from: plan.from, mtime: plan.mtime, edits });
+    assert.equal(made.status, 200);
+    assert.equal((await made.json()).path, 'journal/2026-11-03.md');
+    assert.match(fs.readFileSync(path.join(dir, 'journal/2026-11-03.md'), 'utf8'), /^---\ndate: 2026-11-03\nopen-until: 2026-10-30\n---\n\n- \[x\]\[ \] Staged\n@ A:\n$/);
+    assert.deepEqual((await tree()).starts, []);
+    assert.equal((await post({ dir: 'journal', from: plan.from, mtime: plan.mtime, edits })).status, 409);
+    assert.equal((await fetch(`${url}/api/start-day?dir=journal`)).status, 409);
+    assert.equal((await fetch(`${url}/api/start-day?dir=${encodeURIComponent('../..')}`)).status, 409);
+  } finally {
+    at.close();
+  }
+});

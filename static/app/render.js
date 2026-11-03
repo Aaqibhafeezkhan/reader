@@ -32,6 +32,44 @@ export function whenReady(frame, { signal } = {}) {
   });
 }
 
+/**
+ * Asks something of a rendered page, in a frame of its own out of sight, for
+ * what only the preview frame can do. Draws `page` (`{ css, body }`) for the
+ * file at `p`, sends `ask`, and answers with the frame's message of type
+ * `answer`; if none comes in `wait` ms, fails with `late`. The frame's gone after.
+ */
+export async function askHidden({ css, body }, p, { ask, answer, wait, late }) {
+  const frame = document.createElement('iframe');
+  // Laid out, as the slide-measuring frame is: a diagram's text is measured as it's drawn.
+  frame.className = 'measure';
+  frame.sandbox = 'allow-scripts';
+  frame.tabIndex = -1;
+  frame.setAttribute('aria-hidden', 'true');
+  Frames.load(frame);
+  let heard;
+  let timer;
+  const gone = new AbortController();
+  try {
+    return await new Promise((resolve, reject) => {
+      heard = (e) => {
+        if (e.source === frame.contentWindow && e.data?.type === answer) resolve(e.data);
+      };
+      window.addEventListener('message', heard);
+      timer = setTimeout(() => reject(new Error(late)), wait);
+      document.body.append(frame);
+      whenReady(frame, { signal: gone.signal }).then(() => {
+        Frames.post(frame, { type: 'render', css, body, base: baseFor(p), resetScroll: true });
+        Frames.post(frame, ask);
+      });
+    });
+  } finally {
+    clearTimeout(timer);
+    window.removeEventListener('message', heard);
+    gone.abort();
+    frame.remove();
+  }
+}
+
 let renderTimer = 0;
 export function scheduleRender() {
   clearTimeout(renderTimer);

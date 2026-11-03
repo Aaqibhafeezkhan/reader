@@ -51,7 +51,7 @@ export function wireDrawer() {
     listShown();
   });
   el.sidebar.addEventListener('click', (e) => {
-    if (e.target.closest('.file')) close();
+    if (e.target.closest('.file, .start-today')) close();
   });
   el.sidebar.addEventListener('keydown', (e) => {
     // Heard before the filter clears itself on Esc: only an empty one closes the list.

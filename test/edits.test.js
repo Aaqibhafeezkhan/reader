@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyEdits, toLines } from '../static/edits.js';
+import { applyEdits, toLines, withEdits } from '../static/edits.js';
 
 const apply = (text, edits) => {
   const c = applyEdits(text, edits);
@@ -56,4 +56,21 @@ test('grows, shrinks, empties and fills a fence', () => {
 test('an empty block is no lines', () => {
   assert.deepEqual(toLines(''), []);
   assert.deepEqual(toLines('a\nb'), ['a', 'b']);
+});
+
+test('withEdits makes the edits on the whole text, each line keeping its own ending', () => {
+  const one = { from: 1, to: 2, before: ['b'], after: ['B'] };
+  assert.equal(withEdits('a\nb\nc', [one]), 'a\nB\nc');
+  assert.equal(withEdits('a\r\nb\r\nc\n', [one]), 'a\r\nB\r\nc\n');
+  assert.equal(withEdits('a\r\nb', [one]), 'a\r\nB');
+  assert.equal(withEdits('a\r\nb\r\n', [{ from: 1, to: 1, before: [], after: ['x'] }]), 'a\r\nx\r\nb\r\n');
+  assert.equal(withEdits('a\r\nb\r\nc', [{ from: 1, to: 2, before: ['b'], after: [] }]), 'a\r\nc');
+  assert.equal(withEdits('a\r\nb', []), 'a\r\nb', 'nothing to clear is the text as it is');
+});
+
+test('withEdits refuses what doesn\'t fit, or isn\'t edits', () => {
+  assert.equal(withEdits('a\nb', [{ from: 1, to: 2, before: ['z'], after: ['B'] }]), null);
+  assert.equal(withEdits('a\nb', [{ from: 0, to: 1, before: ['a'], after: ['x\ny'] }]), null);
+  assert.equal(withEdits('a\nb', 'edits'), null);
+  assert.equal(withEdits('a\nb', undefined), null);
 });

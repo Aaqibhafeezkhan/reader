@@ -96,7 +96,9 @@ test('the frame\'s edits go to the server, which is told what they\'re of, and t
   assert.equal(frame.isConnected, false);
   assert.equal(state.current.path, 'journal/2026-11-03.md');
   assert.equal(state.dir, 'journal');
-  assert.ok(el.todayFiles.querySelector('.file[data-path="journal/2026-11-03.md"]'));
+  el.todayBtn.click();
+  assert.ok(el.files.querySelector('.file[data-path="journal/2026-11-03.md"]'));
+  el.todayBtn.click();
   assert.equal(offer(), null);
 });
 

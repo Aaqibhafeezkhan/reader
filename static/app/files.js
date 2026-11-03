@@ -14,8 +14,8 @@ import { renderNow, showPreview, showEmpty } from './render.js';
 import { scheduleGutter } from './lines.js';
 import { setSaveState, updateCounts, toast } from './status.js';
 import { updatePresentable } from './deck.js';
-import { openIn } from './modes.js';
-import { folderView, filtered, datedRows, findGroup, groupOf, hasFolder, dirOf, splitPath } from './versions.js';
+import { openIn, listSeen, showList } from './modes.js';
+import { folderView, filtered, findGroup, groupOf, hasFolder, dirOf, splitPath } from './versions.js';
 import { branch, rename, trash, promote } from './manage.js';
 import { drawOutline, entryKey, pickKey } from './outline.js';
 import { startToday } from './starting.js';
@@ -49,8 +49,7 @@ export function drawTree() {
   // Redrawn under the keyboard (the list reloads when the window gets focus),
   // the row that had focus keeps it; one of a row's actions, found again by
   // its row and its kind (trash, export, ...), keeps it too.
-  const list = document.activeElement?.closest('.files');
-  const at = list ? document.activeElement : null;
+  const at = el.files.contains(document.activeElement) ? document.activeElement : null;
   const kind = at?.matches('.row-action') ? [...at.classList].find((c) => c !== 'row-action') : null;
   const had = kind ? at.closest('li').querySelector(':scope > .entry, :scope > .file, :scope > .folder') : at;
   const same = had && (had.dataset.entry ? `.entry[data-entry="${CSS.escape(had.dataset.entry)}"]`
@@ -58,7 +57,7 @@ export function drawTree() {
     : had.dataset.path ? `.file[data-path="${CSS.escape(had.dataset.path)}"]`
     : had.dataset.dir ? `.folder[data-dir="${CSS.escape(had.dataset.dir)}"]` : null);
   drawRows();
-  const row = same && list.querySelector(same);
+  const row = same && el.files.querySelector(same);
   // An action that's gone from its row leaves focus on the row.
   ((kind && row?.closest('li').querySelector(`.row-action.${CSS.escape(kind)}`)) || row)?.focus();
 }
@@ -68,9 +67,13 @@ function drawRows() {
   while (!hasFolder(state.files, state.dir)) state.dir = dirOf(state.dir);
   if (state.group && !findGroup(state.files, state.dir, state.group)) state.group = null;
   el.files.replaceChildren();
-  drawCrumbs(!q);
-  drawToday(!q && !state.group && !(state.outline && state.current?.type === 'md'));
+  el.todayBtn.setAttribute('aria-pressed', String(state.todayShown));
+  el.filesNote.textContent = '';
+  if (state.todayShown) el.files.setAttribute('aria-labelledby', 'todayName');
+  else el.files.removeAttribute('aria-labelledby');
+  drawCrumbs(!q || state.todayShown);
 
+  if (state.todayShown) return drawToday(q);
   if (q) {
     for (const row of filtered(state.files, q)) el.files.append(rowItem(row, { dir: row.dir }));
     return;
@@ -88,31 +91,30 @@ function drawRows() {
 }
 
 /**
- * The files dated today, from every folder, above the folder shown, so that
- * they're there whichever one was left open. A list that's filtered, or that's
- * gone in to a file's versions or outline, is about that instead. With nothing
- * dated today there's no entry at all: most folders never have a dated file,
- * and an empty entry would sit above their files for good.
+ * The files dated today, from every folder, as a filter's matches are listed,
+ * each with its folder, and the filter narrows them further. Nothing dated
+ * today is said, rather than left an empty list.
  */
-function drawToday(shown) {
-  const items = (shown ? datedRows(state.files, state.today) : []).map((row) => {
+function drawToday(q) {
+  const rows = filtered(state.files.filter((f) => f.date === state.today), q);
+  for (const row of rows) {
     const li = rowItem(row, { dir: row.dir });
     li.querySelector('.file').setAttribute('aria-describedby', 'todayName filesKeys');
-    return li;
-  });
-  el.todayFiles.replaceChildren(...items);
-  el.today.hidden = !items.length;
+    el.files.append(li);
+  }
+  if (!rows.length) el.filesNote.textContent = q ? `Nothing dated today matches “${q}”.` : 'Nothing is dated today.';
 }
 
 function drawCrumbs(shown) {
   const parts = state.dir ? state.dir.split('/') : [];
-  el.crumbs.hidden = !shown || (!parts.length && !state.group && !state.outline);
+  el.crumbs.hidden = !shown || (!parts.length && !state.group && !state.outline && !state.todayShown);
   el.crumbs.replaceChildren();
   if (el.crumbs.hidden) return;
   const steps = [{ label: state.rootName, dir: '', group: null }];
   parts.forEach((part, i) => steps.push({ label: part, dir: parts.slice(0, i + 1).join('/'), group: null }));
   if (state.group) steps.push({ label: state.group, dir: state.dir, group: state.group });
-  if (state.outline && state.current) steps.push({ label: splitPath(state.current.path).name.replace(/\.(md|markdown)$/i, '') });
+  if (state.outline && state.current && !state.todayShown) steps.push({ label: splitPath(state.current.path).name.replace(/\.(md|markdown)$/i, '') });
+  if (state.todayShown) steps.push({ label: 'Today' });
   steps.forEach((s, i) => {
     if (i) el.crumbs.append(Object.assign(document.createElement('span'), { className: 'sep', textContent: '›' }));
     const b = document.createElement('button');
@@ -254,7 +256,7 @@ export function onListDoubleClick(e) {
   const b = e.target.closest('.file');
   if (!b) return;
   e.preventDefault();
-  rename(b.dataset.path, { group: b.dataset.group || null, list: b.closest('.files') });
+  rename(b.dataset.path, { group: b.dataset.group || null });
 }
 
 function action(cls, title, onClick) {
@@ -273,6 +275,7 @@ export function go(dir, group = null, { focus = true, outline = false } = {}) {
   state.dir = dir;
   state.group = group;
   state.outline = outline;
+  state.todayShown = false;
   remember(`reader:dir:${state.root}`, dir);
   drawTree();
   if (!focus) return;
@@ -298,8 +301,31 @@ export function showOutline() {
   go(dirOf(state.current.path), group && group.opens.path !== state.current.path ? group.name : null, { outline: true });
 }
 
+/**
+ * The Today button: the files dated today in the list, or, with them showing
+ * already, back to the folder they were over. A list that can't be seen is
+ * opened first, so the button never seems to do nothing, and pressed again
+ * then it shows them rather than leaving them unseen.
+ */
+export function pressToday() {
+  const seen = listSeen();
+  if (state.todayShown && seen) return leaveToday();
+  if (!seen) showList();
+  el.filter.value = '';
+  state.todayShown = true;
+  drawTree();
+  (el.files.querySelector('.now') || rowsIn(el.files)[0])?.focus();
+}
+
+/** Back out of Today, to the folder, versions or outline it was over. */
+function leaveToday() {
+  el.filter.value = '';
+  go(state.dir, state.group, { outline: state.outline });
+}
+
 export function up() {
-  if (state.outline) go(state.dir, state.group);
+  if (state.todayShown) leaveToday();
+  else if (state.outline) go(state.dir, state.group);
   else if (state.group) go(state.dir, null);
   else if (state.dir) go(dirOf(state.dir), null);
 }
@@ -328,7 +354,7 @@ export function follow(href) {
 }
 
 const rowsIn = (list) => [...list.querySelectorAll('.file, .folder, .entry, .start-today.here')];
-const rows = () => [...rowsIn(el.todayFiles), ...rowsIn(el.files)];
+const rows = () => rowsIn(el.files);
 
 /** Arrows move down the list; → goes into a folder, a file's versions or the open file's outline, ← back out. */
 export function onListKey(e) {
@@ -350,11 +376,11 @@ export function onListKey(e) {
     (state.current?.path === at.dataset.path ? Promise.resolve() : open(at.dataset.path)).then(showOutline);
   } else if (e.key === 'F2' && at?.matches('.file')) {
     e.preventDefault();
-    rename(at.dataset.path, { group: at.dataset.group || null, list: at.closest('.files') });
+    rename(at.dataset.path, { group: at.dataset.group || null });
   } else if (e.key === 'Backspace' && e.metaKey && at?.matches('.file:not(.group)')) {
     e.preventDefault();
     trash(at.dataset.path);
-  } else if ((e.key === 'ArrowLeft' || e.key === 'Backspace') && !e.metaKey && !el.filter.value.trim() && list.includes(at)) {
+  } else if ((e.key === 'ArrowLeft' || e.key === 'Backspace') && !e.metaKey && (state.todayShown || !el.filter.value.trim()) && list.includes(at)) {
     e.preventDefault();
     up();
   }
@@ -384,13 +410,13 @@ function exportLink(p) {
   return a;
 }
 
-export function visiblePaths(list = el.files) {
-  return [...list.querySelectorAll('.file')].map((b) => b.dataset.path);
+export function visiblePaths() {
+  return [...el.files.querySelectorAll('.file')].map((b) => b.dataset.path);
 }
 
 /** The files in the folder or versions shown, or that the outline is shown below. */
 function listedPaths() {
-  if (!state.outline || el.filter.value.trim()) return visiblePaths();
+  if (state.todayShown || !state.outline || el.filter.value.trim()) return visiblePaths();
   if (state.group) return findGroup(state.files, state.dir, state.group)?.versions.map((v) => v.file.path) ?? [];
   return folderView(state.files, state.dir).rows.map((r) => (r.kind === 'file' ? r.file.path : r.opens.path));
 }

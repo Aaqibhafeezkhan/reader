@@ -11,7 +11,7 @@ export const el = {
   sidebarToggle: $('sidebarToggle'), helpToggle: $('helpToggle'), help: $('help'),
   version: $('version'), helpVersion: $('helpVersion'), theme: $('theme'),
   split: $('split'), sidebar: $('sidebar'), filter: $('filter'), files: $('files'),
-  today: $('today'), todayFiles: $('todayFiles'),
+  todayBtn: $('todayBtn'), filesNote: $('filesNote'),
   newBtn: $('newBtn'), crumbs: $('crumbs'), newForm: $('newForm'), newName: $('newName'),
   preview: $('preview'), pdfView: $('pdfView'), empty: $('empty'),
   editor: $('editor'), gutter: $('gutter'), gutterToggle: $('gutterToggle'),
@@ -35,6 +35,7 @@ export const state = {
   starts: new Set(),    // the folders today's file could be started in, by the server
   dir: '',              // the folder the file list shows
   group: null,          // or the versions of this file in it, by name
+  todayShown: false,    // or, over those, the files dated today, wherever they are
   outline: false,       // or, below either, the open file's outline
   current: null,        // { path, type }
   saved: '',            // text as last written to / read from disk

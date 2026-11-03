@@ -19,9 +19,14 @@ it's opened instead. PDFs open read-only in the left pane.
 
 ## Today
 
-**Today**, at the top of the file list, lists the files dated today, from every folder under the one reader was opened on, so that a daily file is one click away without knowing where it lives.
-It's there whichever folder is shown, and a workbook opens from it in Work, as it does from anywhere.
-With nothing dated today, there's no **Today**; nor is there while you're filtering, or looking at a file's versions or outline.
+The **Today** button, in the top bar, lists the files dated today in the file list, from every folder under the one reader was opened on, so that a daily file is one click away without knowing where it lives.
+They're listed as a search lists them, each with its folder, and typing in **Filter…** narrows them further.
+A workbook opens from there in Work, as it does from anywhere.
+With nothing dated today, the list says so.
+
+The button stays pressed while they're showing.
+Pressing it again, `←`, or the path above the list goes back to the folder you were in.
+If the list is closed, the button opens it; in Work, or on a narrow screen, it comes over the page, and picking a file or clicking away closes it, still in Work.
 
 A file's date is the `date:` in its front matter:
 

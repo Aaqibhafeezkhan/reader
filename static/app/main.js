@@ -7,7 +7,7 @@
 import { el, state, deck, dirty, remember } from './state.js';
 import { api } from './api.js';
 import { dirOf } from './versions.js';
-import { loadTree, drawTree, visiblePaths, step, open, follow, createFile, showNewForm, go, reveal, rememberedDir, onListKey, onListDoubleClick } from './files.js';
+import { loadTree, drawTree, visiblePaths, step, open, follow, createFile, showNewForm, go, reveal, pressToday, rememberedDir, onListKey, onListDoubleClick } from './files.js';
 import { whenReady, showEmpty } from './render.js';
 import { save, saveFirst, saveOnLeave, reloadFromDisk, checkDisk } from './saving.js';
 import { toast, updateCursor } from './status.js';
@@ -146,14 +146,13 @@ function wire() {
   wireTheme();
 
   el.filter.addEventListener('input', drawTree);
-  for (const list of [el.todayFiles, el.files]) {
-    list.addEventListener('keydown', onListKey);
-    list.addEventListener('dblclick', onListDoubleClick);
-  }
+  el.files.addEventListener('keydown', onListKey);
+  el.files.addEventListener('dblclick', onListDoubleClick);
+  el.todayBtn.addEventListener('click', pressToday);
   el.filter.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      (el.todayFiles.querySelector('.file') || el.files.querySelector('.file, .folder'))?.focus();
+      el.files.querySelector('.file, .folder')?.focus();
     } else if (e.key === 'Enter') {
       const first = visiblePaths()[0];
       if (first) {

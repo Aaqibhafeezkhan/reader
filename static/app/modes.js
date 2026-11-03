@@ -14,7 +14,7 @@ import { frontMatter, typeOf } from '../markdown.js';
 const NARROW = matchMedia('(max-width: 900px)');
 
 export function toggleSidebar(force) {
-  if (NARROW.matches && force === undefined) return toggleDrawer();
+  if ((NARROW.matches || el.split.classList.contains('list-open')) && force === undefined) return toggleDrawer();
   const hide = force ?? !el.split.classList.contains('no-sidebar');
   el.split.classList.toggle('no-sidebar', hide);
   // The keyboard isn't left in a list that's gone.
@@ -31,9 +31,27 @@ export function toggleDrawer(open = !el.split.classList.contains('list-open')) {
   else if (el.sidebar.contains(document.activeElement)) el.sidebarToggle.focus();
 }
 
+/** Whether the list can be seen: beside the panes, or over them. Work has no list beside the page. */
+export function listSeen() {
+  const { classList } = el.split;
+  if (classList.contains('list-open')) return true;
+  return !NARROW.matches && !classList.contains('no-sidebar') && !classList.contains('work-mode');
+}
+
+/**
+ * Brings the list into sight for someone who asked for what's in it: over the
+ * panes at a narrow width, and in Work, which is left as it is, since what's
+ * being filled in shouldn't go for a look at the list; otherwise beside them.
+ */
+export function showList() {
+  if (NARROW.matches || el.split.classList.contains('work-mode')) toggleDrawer(true);
+  else toggleSidebar(false);
+}
+
 /** ☰ says whether the list is showing: beside the panes, or over them at a narrow width. */
 function listShown() {
-  const shown = NARROW.matches ? el.split.classList.contains('list-open') : !el.split.classList.contains('no-sidebar');
+  const { classList } = el.split;
+  const shown = classList.contains('list-open') || (!NARROW.matches && !classList.contains('no-sidebar'));
   el.sidebarToggle.setAttribute('aria-expanded', String(shown));
 }
 
@@ -58,14 +76,14 @@ export function wireDrawer() {
     if (e.key === 'Escape' && !(e.target.matches('input') && e.target.value)) close();
   }, { capture: true });
   document.addEventListener('pointerdown', (e) => {
-    if (!el.sidebar.contains(e.target) && !el.sidebarToggle.contains(e.target)) close();
+    if (!el.sidebar.contains(e.target) && !el.sidebarToggle.contains(e.target) && !el.todayBtn.contains(e.target)) close();
   });
   // Nor does it stay over the panes once Tab has gone on to them. Where the
   // keyboard went is known once it's there: going into the preview's frame
   // says nothing of it as it leaves.
   el.sidebar.addEventListener('focusout', () => setTimeout(() => {
     const to = document.activeElement;
-    if (to && to !== document.body && !el.sidebar.contains(to) && !el.sidebarToggle.contains(to)) close();
+    if (to && to !== document.body && !el.sidebar.contains(to) && !el.sidebarToggle.contains(to) && !el.todayBtn.contains(to)) close();
   }));
   listShown();
 }
@@ -102,6 +120,8 @@ export function openIn(text) {
 export function setWorking(on, { chosen = true } = {}) {
   const changed = state.working !== on;
   state.working = on;
+  // Out of Work, a wide screen has the list beside the page again.
+  if (!on && !NARROW.matches) el.split.classList.remove('list-open');
   el.split.classList.toggle('work-mode', on);
   el.editor.readOnly = on || deck.open;
   el.workBtn.textContent = on ? 'Edit' : 'Work';

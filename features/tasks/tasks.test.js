@@ -187,7 +187,7 @@ test('reset:[] is a button for the boxes of its section', () => {
 test('reset:[] in a recipe with a log can add to it, after its last entry', () => {
   const src = '## Akara\nmultiplier:[]\nreset:[]\n\n### Steps\n1) [ ] fry\n\n### Log\n#### date:2026-10-01[]\nGood (Ana): yum\n\n---\n\n## Yam\nreset:[]\n';
   const { body } = render(src);
-  assert.match(body, /class="task-reset" data-from="0" data-to="13">Start over<\/button> <button type="button" class="task-log" data-at="10" data-level="4" data-multiplier="1">Log today<\/button>/);
+  assert.match(body, /class="task-reset" data-from="0" data-to="11">Start over<\/button> <button type="button" class="task-log" data-at="10" data-level="4" data-multiplier="1">Log today<\/button>/);
   assert.match(body, /class="task-reset" data-from="13">Start over<\/button><\/p>/);
 });
 
@@ -234,4 +234,16 @@ test('a choice or box with a blank in its line writes the line back as written, 
   const { body } = render('- ( ) **C** · [@ Something else]\n- [ ] Buy [@ what] today\n');
   assert.match(body, /data-on="- \(x\) \*\*C\*\* · \[@ Something else\]" data-off="- \( \) \*\*C\*\* · \[@ Something else\]" aria-label="C · Something else"/);
   assert.match(body, /data-on="- \[x\] Buy \[@ what\] today" data-off="- \[ \] Buy \[@ what\] today" aria-label="Buy what today"/);
+});
+
+test('a reset stops at the --- either side of it, as a page in Work shows no more', () => {
+  const button = (md) => render(md).body.match(/class="task-reset"[^>]*>/)[0];
+  // Under no heading, on the first page and on a later one, after front matter.
+  assert.match(button('---\ntitle: T\n---\n\n- [x] a\n\nreset:[]\n\n---\n\n- [x] b\n'), /data-from="\d+" data-to="8"/);
+  assert.match(button('- [x] a\n\n---\n\n- [x] b\n\nreset:[]\n\n---\n\n- [x] c\n'), /data-from="2" data-to="8"/);
+  // Under a heading whose section would otherwise go on, or that's on the page before.
+  assert.match(button('# A\n\nreset:[]\n\n---\n\n## B\n'), /data-from="0" data-to="4"/);
+  assert.match(button('# A\n\n---\n\nreset:[]\n'), /data-from="2">/);
+  // A rule inside a block isn't the page's.
+  assert.match(button('# A\n\n> ---\n\nreset:[]\n\n# B\n'), /data-from="0" data-to="6"/);
 });

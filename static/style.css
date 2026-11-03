@@ -389,7 +389,10 @@ button, .ghost { font: inherit; font-size: 13px; border-radius: 7px; cursor: poi
    and not the width, so a narrow window on a desktop, and a slide on a
    projector, go without it. */
 @media (hover: none) and (pointer: coarse) {
-  .deck-foot { align-items: center; padding-block: 2px; }
+  .deck-foot { align-items: center; padding-block: 2px; white-space: nowrap; }
+  /* What's true without a keyboard, on one line: how far through the deck. */
+  .deck-foot .deck-keys, #deckBy { display: none; }
+  #deckCount { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .deck-leave {
     display: inline-flex; align-items: center; justify-content: center; flex: none;
     width: 28px; height: 28px; padding: 0; border: 0; background: none; color: inherit; font-size: 14px;

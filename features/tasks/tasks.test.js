@@ -110,6 +110,14 @@ test('done tasks are in the done ink, at full opacity', () => {
   assert.doesNotMatch(rule, /opacity/);
 });
 
+test('a Done pill takes a click 24px tall, past what it draws', () => {
+  const { css } = render('# [ ] Gratitude\n');
+  const rule = css.match(/\.section-done::before \{[^}]+\}/)?.[0];
+  assert.match(rule, /position: absolute/);
+  assert.match(rule, /height: max\(100%, 24px\)/);
+  assert.match(css, /\.section-done \{ position: relative; \}/);
+});
+
 test('a box at the head of a heading is a Done button at the end of its line, and knows its line', () => {
   const { body } = render('# [ ] Gratitude\n\n# [x] Ways\n');
   assert.match(body, /<h1 class="task-heading"[^>]*><span class="section-title">Gratitude<\/span><button type="button" class="section-done" data-line="0" data-done="false" data-own="false" data-full="false" data-on="# \[x\] Gratitude" data-off="# \[ \] Gratitude" aria-label="Done: Gratitude" aria-pressed="false"><\/button><\/h1>/);

@@ -47,9 +47,21 @@ export function dateOf(rel, text = '') {
   return dateInMatter(text) ?? dateInPath(rel);
 }
 
-/** What day it is by the clock `now`, in the server's own time zone. */
-export function today(now = Date.now) {
+/** The minutes into a day that `04:00` says, or null if it doesn't say a time. */
+export function dayStart(time) {
+  const m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(time ?? '');
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+}
+
+/**
+ * What day it is by the clock `now`, in the server's own time zone. A day
+ * starts `starts` minutes after midnight (`dayStart`), so before then it's
+ * still the day before. That goes by the calendar, not by taking off a span
+ * of time, which a change of clocks overnight would throw out.
+ */
+export function today(now = Date.now, starts = 0) {
   const at = new Date(now());
+  if (at.getHours() * 60 + at.getMinutes() < starts) at.setDate(at.getDate() - 1);
   const two = (n) => String(n).padStart(2, '0');
   return `${String(at.getFullYear()).padStart(4, '0')}-${two(at.getMonth() + 1)}-${two(at.getDate())}`;
 }

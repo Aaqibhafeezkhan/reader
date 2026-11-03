@@ -45,7 +45,7 @@ tab. `--port` asks for one port exactly.
 ## Options
 
 ```console
-$ reader [dir] [--port 8734] [--frame-port 8735] [--no-browser] [--open <file>]
+$ reader [dir] [--port 8734] [--frame-port 8735] [--no-browser] [--open <file>] [--day-starts 04:00]
          [--host <address>] [--allow-host <name>]...
 $ reader export <file>... [--out <file>] [--no-draw]
 $ reader --version

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dateOf, today } from '../src/dates.js';
+import { dayStart, dateOf, today } from '../src/dates.js';
 
 test('a file is dated by its `date:` front matter', () => {
   assert.equal(dateOf('list.md', '---\ndate: 2026-10-31\n---\n\n# A\n'), '2026-10-31');
@@ -52,4 +52,22 @@ test('today is the local date by the clock it\'s given', () => {
   assert.equal(today(() => new Date(2026, 9, 31, 23, 59).getTime()), '2026-10-31');
   assert.equal(today(() => new Date(2026, 10, 1, 0, 0).getTime()), '2026-11-01');
   assert.equal(today(() => new Date(2026, 0, 2, 12).getTime()), '2026-01-02');
+});
+
+test('a day can start later than midnight, and before then it\'s still the day before', () => {
+  const at = (...when) => () => new Date(...when).getTime();
+  const four = dayStart('04:00');
+  assert.equal(today(at(2026, 10, 1, 1, 0), four), '2026-10-31');
+  assert.equal(today(at(2026, 10, 1, 3, 59), four), '2026-10-31');
+  assert.equal(today(at(2026, 10, 1, 4, 0), four), '2026-11-01');
+  // Across a year, and with no start given.
+  assert.equal(today(at(2027, 0, 1, 1, 0), four), '2026-12-31');
+  assert.equal(today(at(2026, 10, 1, 0, 0)), '2026-11-01');
+});
+
+test('a day\'s start is a time of day', () => {
+  assert.equal(dayStart('04:00'), 240);
+  assert.equal(dayStart('4:30'), 270);
+  assert.equal(dayStart('00:00'), 0);
+  for (const not of ['24:00', '04:60', '4', 'soon', '', undefined]) assert.equal(dayStart(not), null, not);
 });

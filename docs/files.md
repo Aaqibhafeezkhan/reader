@@ -37,6 +37,9 @@ If there are several, the one nearest the file counts.
 Something that isn't a date, like `2026-13-45` or `date: soon`, doesn't count, so a `date: soon` leaves the file dated by its name.
 The date is the server's, in its own time zone.
 
+A day starts at midnight, unless you start reader with `--day-starts`.
+With `reader --day-starts 04:00`, **Today** still lists yesterday's files until 04:00, so a journal written at 1am goes in the day it belongs to.
+
 ## The outline
 
 The `›` at the end of the open file's row (or `→` on it) goes one level

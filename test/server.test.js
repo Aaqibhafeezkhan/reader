@@ -519,3 +519,19 @@ test('the tree says each file\'s date, and today\'s by the clock it was given', 
   assert.equal(today, '2026-10-31');
   assert.deepEqual(files.filter((f) => f.date === today).map((f) => f.path).sort(), ['journal/2026-10-31.md', 'todo/list.md']);
 });
+
+test('the tree\'s today goes by when the day was said to start', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-today-'));
+  fs.writeFileSync(path.join(root, '2026-10-31.md'), '# Late\n');
+  let clock = new Date(2026, 10, 1, 1).getTime();
+  const { server: at } = createServer({ root, now: () => clock, dayStarts: 240 });
+  await new Promise((r) => at.listen(0, '127.0.0.1', r));
+  const tree = async () => (await fetch(`http://127.0.0.1:${at.address().port}/api/tree`)).json();
+  try {
+    assert.equal((await tree()).today, '2026-10-31');
+    clock = new Date(2026, 10, 1, 4).getTime();
+    assert.equal((await tree()).today, '2026-11-01');
+  } finally {
+    at.close();
+  }
+});

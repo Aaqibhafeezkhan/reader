@@ -228,7 +228,7 @@ const CONTENT_SANDBOX = { 'Content-Security-Policy': 'sandbox' };
  * the preview frames' second port, listens once it does (`listenFrames`), and
  * closes with it.
  */
-export function createServer({ root, allowHosts = [], now = Date.now }) {
+export function createServer({ root, allowHosts = [], now = Date.now, dayStarts = 0 }) {
   const content = createContent(root);
   // Which reader this is, worked out now, while nothing's waiting on it.
   const known = version();
@@ -315,7 +315,7 @@ export function createServer({ root, allowHosts = [], now = Date.now }) {
       if (route === '/api/info') {
         return sendJson(res, { root: content.root, name: path.basename(content.root), version: await known });
       }
-      if (route === '/api/tree') return sendJson(res, { files: content.dated(), today: today(now) });
+      if (route === '/api/tree') return sendJson(res, { files: content.dated(), today: today(now, dayStarts) });
       if (route === '/api/file') return sendJson(res, content.read(url.searchParams.get('path')));
       if (route === '/api/export') return sendExport(res, url.searchParams.get('path') || '');
       if (route.startsWith('/content/')) {

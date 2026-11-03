@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- *   reader <dir> [--port 8734] [--frame-port 8735] [--no-browser] [--open <file>] [--host <address> --allow-host <name>]
+ *   reader <dir> [--port 8734] [--frame-port 8735] [--no-browser] [--open <file>] [--day-starts 04:00] [--host <address> --allow-host <name>]
  *   reader export <file>... [--out <file>] [--no-draw]
  *   reader --version
  *
@@ -12,10 +12,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { createServer, listenFrames } from '../src/server.js';
+import { dayStart } from '../src/dates.js';
 import { version } from '../src/version.js';
 
 const USAGE = `usage: reader <dir> [--port 8734] [--frame-port 8735] [--no-browser]
-                     [--open <file>] [--host <addr> --allow-host <name>]
+                     [--open <file>] [--day-starts <time>]
+                     [--host <addr> --allow-host <name>]
        reader export <file>... [--out <file>] [--no-draw]
        reader --version
 
@@ -27,6 +29,9 @@ const USAGE = `usage: reader <dir> [--port 8734] [--frame-port 8735] [--no-brows
                  device (default: the port after --port's, or a free one)
   --no-browser   don't open a browser tab
   --open <file>  open this file first (path relative to <dir>)
+  --day-starts <time>
+                 when the day starts for what Today lists, like 04:00, so a
+                 late night still counts as the day before (default: midnight)
   --host <addr>  address to listen on (default: 127.0.0.1); 0.0.0.0 for every
                  network this machine is on. There is no sign-in: whoever can
                  reach it can read and write <dir>
@@ -38,7 +43,7 @@ const USAGE = `usage: reader <dir> [--port 8734] [--frame-port 8735] [--no-brows
 `;
 
 function parseArgs(argv) {
-  const opts = { dir: null, port: null, framePort: null, browser: true, open: null, host: '127.0.0.1', allowHosts: [] };
+  const opts = { dir: null, port: null, framePort: null, browser: true, open: null, host: '127.0.0.1', allowHosts: [], dayStarts: 0 };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '-h' || a === '--help') {
@@ -64,6 +69,9 @@ function parseArgs(argv) {
       if (!value || value.startsWith('-')) fail(`${a} needs a value`);
       if (a === '--host') opts.host = value;
       else opts.allowHosts.push(value);
+    } else if (a === '--day-starts' || a.startsWith('--day-starts=')) {
+      opts.dayStarts = dayStart(a === '--day-starts' ? argv[++i] : a.slice('--day-starts='.length));
+      if (opts.dayStarts === null) fail('--day-starts must be a time like 04:00');
     } else if (a.startsWith('-')) {
       fail(`unknown option ${a}\n\n${USAGE}`);
     } else if (!opts.dir) {
@@ -126,7 +134,7 @@ if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) fail(`not a director
 const at = EVERYWHERE.has(opts.host) ? '127.0.0.1' : opts.host.includes(':') ? `[${opts.host}]` : opts.host;
 const allowHosts = LOCAL.has(opts.host) || EVERYWHERE.has(opts.host) ? opts.allowHosts : [...opts.allowHosts, at];
 
-const made = createServer({ root: dir, allowHosts });
+const made = createServer({ root: dir, allowHosts, dayStarts: opts.dayStarts });
 const { server, content } = made;
 
 // Without --port, count up from 8734 so each directory gets its own instance

@@ -96,8 +96,8 @@ export function hasFolder(files, dir) {
   return !dir || files.some((f) => f.path.startsWith(dir + '/'));
 }
 
-/** Every folder's rows, flat, for the rows any of whose files match `q`. */
-export function filtered(files, q) {
+/** Every folder's rows, flat, each with its folder, by folder and then name. */
+function everyFolder(files) {
   const byDir = new Map();
   for (const f of files) {
     const d = dirOf(f.path);
@@ -105,13 +105,21 @@ export function filtered(files, q) {
     byDir.get(d).push(f);
   }
   const rows = [];
-  for (const [dir, list] of byDir) {
-    for (const row of groupFiles(list)) {
-      const members = row.kind === 'group' ? row.versions.map((v) => v.file) : [row.file];
-      if (members.some((f) => f.path.toLowerCase().includes(q))) rows.push({ ...row, dir });
-    }
-  }
+  for (const [dir, list] of byDir) rows.push(...groupFiles(list).map((row) => ({ ...row, dir })));
   return rows.sort((a, b) => byName(a.dir, b.dir) || byName(a.name, b.name));
+}
+
+/** The rows any of whose files match `q`, from every folder. */
+export function filtered(files, q) {
+  return everyFolder(files).filter((row) => {
+    const members = row.kind === 'group' ? row.versions.map((v) => v.file) : [row.file];
+    return members.some((f) => f.path.toLowerCase().includes(q));
+  });
+}
+
+/** The rows of the files dated `day`, from every folder. */
+export function datedRows(files, day) {
+  return day ? everyFolder(files.filter((f) => f.date === day)) : [];
 }
 
 /** The group named `name` in `dir`, if it's still there. */

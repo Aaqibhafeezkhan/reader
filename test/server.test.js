@@ -504,3 +504,18 @@ test('a save of what a record\'s inputs wrote is refused a day after it closed, 
     own.close();
   }
 });
+
+test('the tree says each file\'s date, and today\'s by the clock it was given', async () => {
+  const dated = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-today-'));
+  fs.mkdirSync(path.join(dated, 'journal'));
+  fs.mkdirSync(path.join(dated, 'todo'));
+  fs.writeFileSync(path.join(dated, 'journal', '2026-10-31.md'), '---\ntype: workbook\n---\n');
+  fs.writeFileSync(path.join(dated, 'journal', '2020-01-01.md'), '# Old\n');
+  fs.writeFileSync(path.join(dated, 'todo', 'list.md'), '---\ndate: 2026-10-31\n---\n');
+  const { server: at } = createServer({ root: dated, now: () => new Date(2026, 9, 31, 8).getTime() });
+  await new Promise((r) => at.listen(0, '127.0.0.1', r));
+  const { files, today } = await (await fetch(`http://127.0.0.1:${at.address().port}/api/tree`)).json();
+  at.close();
+  assert.equal(today, '2026-10-31');
+  assert.deepEqual(files.filter((f) => f.date === today).map((f) => f.path).sort(), ['journal/2026-10-31.md', 'todo/list.md']);
+});

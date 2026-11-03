@@ -47,10 +47,11 @@ export async function branch(p) {
 /**
  * Edit a row's name where it is. A file's row takes its name; a group's row
  * takes the name its versions share, and renames them all; a version's row,
- * in a group's list, takes the version's own name.
+ * in a group's list, takes the version's own name. `list` is the list the
+ * row is in, since Today can list a file the folder below it lists too.
  */
-export function rename(p, { group = null } = {}) {
-  const li = el.files.querySelector(group
+export function rename(p, { group = null, list = el.files } = {}) {
+  const li = list.querySelector(group
     ? `.group[data-group="${CSS.escape(group)}"]`
     : `.file[data-path="${CSS.escape(p)}"]`)?.closest('li');
   if (!li) return;
@@ -68,7 +69,7 @@ export function rename(p, { group = null } = {}) {
   input.setSelectionRange(...(plan.select || [0, plan.value.length]));
 
   // Done by the keyboard, the row has it back, under whatever it's called now.
-  const row = (path, name) => el.files.querySelector(group ? `.group[data-group="${CSS.escape(name)}"]` : `.file[data-path="${CSS.escape(path)}"]`);
+  const row = (path, name) => list.querySelector(group ? `.group[data-group="${CSS.escape(name)}"]` : `.file[data-path="${CSS.escape(path)}"]`);
   let done = false;
   const finish = async (keep, { refocus = true } = {}) => {
     if (done) return;
@@ -81,7 +82,8 @@ export function rename(p, { group = null } = {}) {
         await saveIfOpen(moves.map((m) => m.from));
         const out = await api('POST', '/api/rename', { moves });
         await moved(out.moved);
-        if (refocus) row(out.moved[0].to, name)?.focus();
+        // A new name can take it out of Today.
+        if (refocus) (row(out.moved[0].to, name) || el.filter).focus();
         return;
       } catch (err) {
         toast(err.message, true);
@@ -139,9 +141,9 @@ export async function trash(p) {
   try {
     const wasOpen = state.current?.path === p;
     await saveIfOpen([p]);
-    const paths = visiblePaths();
+    const list = document.activeElement?.closest('.files');
+    const paths = visiblePaths(list ?? el.files);
     const i = paths.indexOf(p);
-    const listed = el.files.contains(document.activeElement);
     const out = await api('POST', '/api/trash', { path: p });
     if (wasOpen) {
       state.current = null;
@@ -154,7 +156,7 @@ export async function trash(p) {
       else closeFile('Nothing open.');
     }
     // Its row is gone; the keyboard goes on to the one after it.
-    if (listed) ((next && el.files.querySelector(`.file[data-path="${CSS.escape(next)}"]`)) || el.filter).focus();
+    if (list) ((next && list.querySelector(`.file[data-path="${CSS.escape(next)}"]`)) || el.filter).focus();
     toast(`${splitPath(p).name} is in the trash`, false, { label: 'Undo', run: () => restore(out.trash) });
   } catch (err) {
     toast(err.message, true);

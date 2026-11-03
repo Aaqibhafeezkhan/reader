@@ -144,12 +144,14 @@ function wire() {
   wireTheme();
 
   el.filter.addEventListener('input', drawTree);
-  el.files.addEventListener('keydown', onListKey);
-  el.files.addEventListener('dblclick', onListDoubleClick);
+  for (const list of [el.todayFiles, el.files]) {
+    list.addEventListener('keydown', onListKey);
+    list.addEventListener('dblclick', onListDoubleClick);
+  }
   el.filter.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      el.files.querySelector('.file, .folder')?.focus();
+      (el.todayFiles.querySelector('.file') || el.files.querySelector('.file, .folder'))?.focus();
     } else if (e.key === 'Enter') {
       const first = visiblePaths()[0];
       if (first) {

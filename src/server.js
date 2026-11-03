@@ -2,7 +2,7 @@
  * HTTP API and static files.
  *
  *   GET  /api/info             content root and name, and reader's version: { label, url, release }
- *   GET  /api/tree             listable files, newest first
+ *   GET  /api/tree             listable files, newest first, each with its date; and today's
  *   GET  /api/file?path=       { text, mtime }
  *   PUT  /api/file             { path, text, baseMtime, force?, explicit?, worked? }
  *   POST /api/new              { name? }
@@ -61,6 +61,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createContent, DOC_EXTS, PathError } from './content.js';
+import { today } from './dates.js';
 import { render } from './render.js';
 import { extract, closesAt } from './page.js';
 import { slides, pages, isDeck } from './slides.js';
@@ -314,7 +315,7 @@ export function createServer({ root, allowHosts = [], now = Date.now }) {
       if (route === '/api/info') {
         return sendJson(res, { root: content.root, name: path.basename(content.root), version: await known });
       }
-      if (route === '/api/tree') return sendJson(res, { files: content.list() });
+      if (route === '/api/tree') return sendJson(res, { files: content.dated(), today: today(now) });
       if (route === '/api/file') return sendJson(res, content.read(url.searchParams.get('path')));
       if (route === '/api/export') return sendExport(res, url.searchParams.get('path') || '');
       if (route.startsWith('/content/')) {

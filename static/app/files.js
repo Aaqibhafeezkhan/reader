@@ -15,7 +15,7 @@ import { scheduleGutter } from './lines.js';
 import { setSaveState, updateCounts, toast } from './status.js';
 import { updatePresentable } from './deck.js';
 import { openIn } from './modes.js';
-import { folderView, filtered, findGroup, groupOf, hasFolder, dirOf, splitPath } from './versions.js';
+import { folderView, filtered, datedRows, findGroup, groupOf, hasFolder, dirOf, splitPath } from './versions.js';
 import { branch, rename, trash, promote } from './manage.js';
 import { drawOutline, entryKey, pickKey } from './outline.js';
 
@@ -30,8 +30,9 @@ const ICONS = {
 export const icon = (name) => `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
 
 export async function loadTree() {
-  const { files } = await api('GET', '/api/tree');
+  const { files, today: day } = await api('GET', '/api/tree');
   state.files = files;
+  state.today = day;
   drawTree();
 }
 
@@ -42,11 +43,12 @@ export async function loadTree() {
  */
 export function drawTree() {
   // A name being edited stays put; the list is drawn again when it's done.
-  if (el.files.querySelector('.renaming')) return;
+  if (el.sidebar.querySelector('.renaming')) return;
   // Redrawn under the keyboard (the list reloads when the window gets focus),
   // the row that had focus keeps it; one of a row's actions, found again by
   // its row and its kind (trash, export, ...), keeps it too.
-  const at = el.files.contains(document.activeElement) ? document.activeElement : null;
+  const list = document.activeElement?.closest('.files');
+  const at = list ? document.activeElement : null;
   const kind = at?.matches('.row-action') ? [...at.classList].find((c) => c !== 'row-action') : null;
   const had = kind ? at.closest('li').querySelector(':scope > .entry, :scope > .file, :scope > .folder') : at;
   const same = had && (had.dataset.entry ? `.entry[data-entry="${CSS.escape(had.dataset.entry)}"]`
@@ -54,7 +56,7 @@ export function drawTree() {
     : had.dataset.path ? `.file[data-path="${CSS.escape(had.dataset.path)}"]`
     : had.dataset.dir ? `.folder[data-dir="${CSS.escape(had.dataset.dir)}"]` : null);
   drawRows();
-  const row = same && el.files.querySelector(same);
+  const row = same && list.querySelector(same);
   // An action that's gone from its row leaves focus on the row.
   ((kind && row?.closest('li').querySelector(`.row-action.${CSS.escape(kind)}`)) || row)?.focus();
 }
@@ -65,6 +67,7 @@ function drawRows() {
   if (state.group && !findGroup(state.files, state.dir, state.group)) state.group = null;
   el.files.replaceChildren();
   drawCrumbs(!q);
+  drawToday(!q && !state.group && !(state.outline && state.current?.type === 'md'));
 
   if (q) {
     for (const row of filtered(state.files, q)) el.files.append(rowItem(row, { dir: row.dir }));
@@ -79,6 +82,23 @@ function drawRows() {
   const { rows, folders } = folderView(state.files, state.dir);
   for (const row of rows) el.files.append(rowItem(row));
   for (const name of folders) el.files.append(folderItem(name));
+}
+
+/**
+ * The files dated today, from every folder, above the folder shown, so that
+ * they're there whichever one was left open. A list that's filtered, or that's
+ * gone in to a file's versions or outline, is about that instead. With nothing
+ * dated today there's no entry at all: most folders never have a dated file,
+ * and an empty entry would sit above their files for good.
+ */
+function drawToday(shown) {
+  const items = (shown ? datedRows(state.files, state.today) : []).map((row) => {
+    const li = rowItem(row, { dir: row.dir });
+    li.querySelector('.file').setAttribute('aria-describedby', 'todayName filesKeys');
+    return li;
+  });
+  el.todayFiles.replaceChildren(...items);
+  el.today.hidden = !items.length;
 }
 
 function drawCrumbs(shown) {
@@ -206,7 +226,7 @@ export function onListDoubleClick(e) {
   const b = e.target.closest('.file');
   if (!b) return;
   e.preventDefault();
-  rename(b.dataset.path, { group: b.dataset.group || null });
+  rename(b.dataset.path, { group: b.dataset.group || null, list: b.closest('.files') });
 }
 
 function action(cls, title, onClick) {
@@ -233,7 +253,7 @@ export function go(dir, group = null, { focus = true, outline = false } = {}) {
   const back = from.group && !group ? `.group[data-group="${CSS.escape(from.group)}"]`
     : childOn(dir, from.dir) ? `.folder[data-dir="${CSS.escape(childOn(dir, from.dir))}"]`
     : null;
-  ((back && el.files.querySelector(back)) || el.files.querySelector('.now') || rows()[0])?.focus();
+  ((back && el.files.querySelector(back)) || el.files.querySelector('.now') || rowsIn(el.files)[0])?.focus();
 }
 
 /** The folder in `dir` that leads to `below`, if `below` is under it. */
@@ -279,7 +299,8 @@ export function follow(href) {
   open(p);
 }
 
-const rows = () => [...el.files.querySelectorAll('.file, .folder, .entry')];
+const rowsIn = (list) => [...list.querySelectorAll('.file, .folder, .entry')];
+const rows = () => [...rowsIn(el.todayFiles), ...rowsIn(el.files)];
 
 /** Arrows move down the list; → goes into a folder, a file's versions or the open file's outline, ← back out. */
 export function onListKey(e) {
@@ -301,7 +322,7 @@ export function onListKey(e) {
     (state.current?.path === at.dataset.path ? Promise.resolve() : open(at.dataset.path)).then(showOutline);
   } else if (e.key === 'F2' && at?.matches('.file')) {
     e.preventDefault();
-    rename(at.dataset.path, { group: at.dataset.group || null });
+    rename(at.dataset.path, { group: at.dataset.group || null, list: at.closest('.files') });
   } else if (e.key === 'Backspace' && e.metaKey && at?.matches('.file:not(.group)')) {
     e.preventDefault();
     trash(at.dataset.path);
@@ -335,8 +356,8 @@ function exportLink(p) {
   return a;
 }
 
-export function visiblePaths() {
-  return [...el.files.querySelectorAll('.file')].map((b) => b.dataset.path);
+export function visiblePaths(list = el.files) {
+  return [...list.querySelectorAll('.file')].map((b) => b.dataset.path);
 }
 
 /** The files in the folder or versions shown, or that the outline is shown below. */

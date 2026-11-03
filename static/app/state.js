@@ -11,6 +11,7 @@ export const el = {
   sidebarToggle: $('sidebarToggle'), helpToggle: $('helpToggle'), help: $('help'),
   version: $('version'), helpVersion: $('helpVersion'), theme: $('theme'),
   split: $('split'), sidebar: $('sidebar'), filter: $('filter'), files: $('files'),
+  today: $('today'), todayFiles: $('todayFiles'),
   newBtn: $('newBtn'), crumbs: $('crumbs'), newForm: $('newForm'), newName: $('newName'),
   preview: $('preview'), pdfView: $('pdfView'), empty: $('empty'),
   editor: $('editor'), gutter: $('gutter'), gutterToggle: $('gutterToggle'),
@@ -30,6 +31,7 @@ export const state = {
   rootName: '',
   root: '',
   files: [],
+  today: null,          // the date it is, by the server: which files Today lists
   dir: '',              // the folder the file list shows
   group: null,          // or the versions of this file in it, by name
   outline: false,       // or, below either, the open file's outline

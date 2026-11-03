@@ -3,6 +3,7 @@
  * here, so this is the one place that decides what is inside the root.
  *
  *   list()                     files the UI can open, newest first
+ *   dated()                    the same, each with its `date` (src/dates.js) or null
  *   read(rel)                  { text, mtime }
  *   write(rel, text, opts)     atomic, with a conflict check and backups
  *   create(name?)              a new file, today's date by default
@@ -19,6 +20,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { dateOf, today } from './dates.js';
 
 export const DOC_EXTS = new Set(['.md', '.markdown']);
 export const LISTED_EXTS = new Set([...DOC_EXTS, '.pdf']);
@@ -26,6 +28,10 @@ export const LISTED_EXTS = new Set([...DOC_EXTS, '.pdf']);
 const STATE_DIR = '.reader';
 const BACKUPS_KEPT = 10;
 const BACKUP_EVERY_MS = 5 * 60 * 1000;
+// How much of a file is read for its front matter. One longer than this, far
+// past any written, is read as having none; a library of whole books costs
+// no more to list than a folder of notes.
+const MATTER_BYTES = 16 * 1024;
 
 export class PathError extends Error {
   status = 400;
@@ -150,6 +156,24 @@ export function createContent(rootDir) {
     };
     walk(root);
     return out.sort((a, b) => b.mtime - a.mtime || a.path.localeCompare(b.path));
+  }
+
+  /** Every listed file with its date, each document read only as far as its front matter can be. */
+  function dated() {
+    const head = Buffer.allocUnsafe(MATTER_BYTES);
+    const start = (rel) => {
+      let fd;
+      try {
+        fd = fs.openSync(path.join(root, rel), 'r');
+        return head.toString('utf8', 0, fs.readSync(fd, head, 0, MATTER_BYTES, 0));
+      } catch {
+        // Listed but not readable, or gone since: its name can still say.
+        return '';
+      } finally {
+        if (fd !== undefined) fs.closeSync(fd);
+      }
+    };
+    return list().map((f) => ({ ...f, date: dateOf(f.path, f.type === 'md' ? start(f.path) : '') }));
   }
 
   function statFile(rel) {
@@ -457,15 +481,11 @@ export function createContent(rootDir) {
     return { from, to };
   }
 
-  return { root, resolve, list, read, write, create, branch, promote, rename, trash, restore, extract, unextract, statFile, backupRoot, trashRoot };
+  return { root, resolve, list, dated, read, write, create, branch, promote, rename, trash, restore, extract, unextract, statFile, backupRoot, trashRoot };
 }
 
 function pad(n, w = 2) {
   return String(n).padStart(w, '0');
-}
-
-function today(d = new Date()) {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];

@@ -61,6 +61,29 @@ test('out of Work with the list over the page, it\'s beside it, and says so', ()
   assert.equal(el.sidebarToggle.getAttribute('aria-expanded'), 'true');
 });
 
+test('a click on the page closes the list over it, wherever the keyboard was', async () => {
+  const settled = () => new Promise((r) => setTimeout(r, 5));
+  toggleDrawer(true);
+  document.activeElement.blur();
+  await settled();
+  assert.equal(el.split.classList.contains('list-open'), true);
+  // Only the window is told of a click in the frame.
+  el.preview.focus();
+  window.dispatchEvent(new window.Event('blur'));
+  await settled();
+  assert.equal(el.split.classList.contains('list-open'), false);
+  document.activeElement.blur();
+});
+
+test('the window losing the keyboard to another window leaves the list open', async () => {
+  const settled = () => new Promise((r) => setTimeout(r, 5));
+  toggleDrawer(true);
+  window.dispatchEvent(new window.Event('blur'));
+  await settled();
+  assert.equal(el.split.classList.contains('list-open'), true);
+  toggleDrawer(false);
+});
+
 test('what a control is called is said in words, not by a mark', () => {
   const name = (node) => node.getAttribute('aria-label') || node.textContent.trim();
   assert.equal(name(el.gutterToggle), 'Line numbers');

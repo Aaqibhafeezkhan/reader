@@ -80,10 +80,14 @@ export function wireDrawer() {
   // Nor does it stay over the panes once Tab has gone on to them. Where the
   // keyboard went is known once it's there: going into the preview's frame
   // says nothing of it as it leaves.
-  el.sidebar.addEventListener('focusout', () => setTimeout(() => {
+  const closeIfLeft = () => setTimeout(() => {
     const to = document.activeElement;
     if (to && to !== document.body && !el.sidebar.contains(to) && !el.sidebarToggle.contains(to) && !el.todayBtn.contains(to)) close();
-  }));
+  });
+  el.sidebar.addEventListener('focusout', closeIfLeft);
+  // A click on the page is the frame's, so it's heard only as this window
+  // losing the keyboard to it, which may not have been in the list at all.
+  window.addEventListener('blur', closeIfLeft);
   listShown();
 }
 

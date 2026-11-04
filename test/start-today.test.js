@@ -37,7 +37,7 @@ globalThis.fetch = async (url, { method = 'GET', body } = {}) => {
 const { el, state } = await import('../static/app/state.js');
 Object.defineProperty(el.preview, 'contentWindow', { value: { postMessage() {} } });
 await import('../static/app/main.js');
-const { go, loadTree } = await import('../static/app/files.js');
+const { go, loadTree, drawTree } = await import('../static/app/files.js');
 const settled = async () => {
   for (let i = 0; i < 5; i++) await new Promise(setImmediate);
 };
@@ -108,16 +108,36 @@ test('New is an icon that still says its name', async () => {
   assert.equal(el.newBtn.getAttribute('aria-label'), 'New file');
 });
 
-test('it\'s gray while the list is something other than the folder', async () => {
+test('it\'s gray under Today and in a file\'s versions, which list other files', async () => {
   await fresh('journal');
   el.todayBtn.click();
   assert.equal(gray(), true);
-  assert.match(el.startBtn.title, /from the folder it's for/);
+  assert.match(el.startBtn.title, /back in the folder/);
   el.startBtn.click();
   await settled();
   assert.deepEqual(asked, []);
   el.todayBtn.click();
   assert.equal(gray(), false);
+  state.group = '2026-10-30';
+  files = [...files, { path: 'journal/2026-10-30.draft.md', date: '2026-10-30' }];
+  await loadTree();
+  assert.ok(state.group, 'still in the versions');
+  assert.equal(gray(), true);
+  state.group = null;
+});
+
+test('in a file\'s outline the folder is still what it\'s of, so it starts', async () => {
+  await fresh('journal');
+  state.current = { path: 'journal/2026-10-30.md', type: 'md' };
+  state.outline = true;
+  drawTree();
+  assert.equal(gray(), false);
+  assert.equal(el.startBtn.title, "Start today's from 2026-11-01.");
+  el.startBtn.click();
+  await settled();
+  assert.ok(hidden());
+  mock.timers.tick(15000);
+  await settled();
 });
 
 test('once today\'s is there it stays, and opens that', async () => {

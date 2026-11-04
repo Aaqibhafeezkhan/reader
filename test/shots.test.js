@@ -6,6 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readArgs, shotName, shotsOf, contextOptions } from '../scripts/shots.js';
+import { tagsOf, matches, reportHtml } from '../scripts/shots-report.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SHOTS = path.join(ROOT, 'scripts/shots.js');
@@ -107,4 +108,38 @@ test('Playwright is for development only, and the shots aren\'t committed', () =
   assert.ok(pkg.devDependencies.playwright);
   assert.equal(pkg.dependencies.playwright, undefined);
   assert.match(fs.readFileSync(path.join(ROOT, '.gitignore'), 'utf8'), /^shots\/$/m);
+});
+
+test('a report reads what a picture shows from its name, as every name is written', () => {
+  for (const shot of [
+    { file: 'a.md', browser: 'webkit', size: 'phone', theme: 'dark' },
+    { file: 'release 1.2.md', browser: 'chromium', size: 'desktop', theme: 'light' },
+    { file: 'a.md', browser: 'firefox', size: 900, theme: 'forced', page: 3, part: 2 },
+  ]) {
+    const tags = tagsOf(shotName(shot));
+    assert.equal(tags.file, shot.file.replace('.md', ''));
+    assert.equal(tags.browser, shot.browser);
+    assert.equal(tags.size, String(shot.size));
+    assert.equal(tags.theme, shot.theme);
+    assert.equal(tags.page, shot.page ? `page ${shot.page}` : undefined);
+    assert.equal(tags.part, shot.part ? `part ${shot.part}` : undefined);
+  }
+  assert.deepEqual(tagsOf('holiday.png'), { file: 'holiday' });
+});
+
+test('pills in one category are or, in different categories and, and none is everything', () => {
+  const tags = { browser: 'webkit', theme: 'dark' };
+  assert.equal(matches(tags, { browser: [], theme: [] }), true);
+  assert.equal(matches(tags, { browser: ['firefox', 'webkit'], theme: [] }), true);
+  assert.equal(matches(tags, { browser: ['webkit'], theme: ['dark'] }), true);
+  assert.equal(matches(tags, { browser: ['webkit'], theme: ['light'] }), false);
+  assert.equal(matches(tags, { browser: ['firefox'], theme: ['dark'] }), false);
+});
+
+test('a report is one page, and a strange name can\'t break out of it', () => {
+  const html = reportHtml(['a.webkit.dark.png', 'a.webkit.light.png', '</script><b>.png']);
+  assert.equal(html.match(/<\/script>/g).length, 1);
+  assert.doesNotMatch(html, /https?:/);
+  assert.match(html, /"theme",\["dark","light"\]/);
+  assert.doesNotMatch(html, /"browser",\[/, 'a category with one value has nothing to choose between');
 });

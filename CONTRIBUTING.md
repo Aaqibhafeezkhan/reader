@@ -93,6 +93,10 @@ $ npm run shots -- test/fixtures/journal.md
 Each file is named for what it shows: the file, the browser, the size (a desktop goes without saying) and the theme.
 `shots/` isn't committed.
 
+Each run also writes `report.html` beside the pictures, covering all of them in that folder, earlier runs' included.
+Open it to narrow them down with pills for browser, size, theme and so on: pills in one category mean "or", and in different categories "and".
+Click a picture to see it whole, and `←` and `→` step through what's showing.
+
 Everything is 24 pictures, in a few seconds.
 A review usually wants fewer, so choose with `--browser`, `--size` and `--theme`, each taking names separated by commas.
 `--size` also takes a width in pixels, and a width under 600 is the phone at that width, with its touch.

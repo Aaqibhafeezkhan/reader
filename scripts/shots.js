@@ -16,6 +16,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
+import { writeReport } from './shots-report.js';
 
 const READER = fileURLToPath(new URL('../bin/reader.js', import.meta.url));
 
@@ -385,6 +386,7 @@ async function main(argv) {
       console.log(`\nIt shows a page at a time, and these are page 1 of ${count}: --page all for each of them.`);
     }
     console.log(`\n${sum('saved')} saved, ${sum('skipped')} skipped, ${sum('failed')} failed, in ${Math.round((Date.now() - began) / 1000)}s`);
+    if (sum('saved')) console.log(`To look through them: ${writeReport(out)}`);
     if (sum('failed')) process.exitCode = 1;
   } finally {
     reader.stop();

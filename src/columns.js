@@ -50,7 +50,7 @@ const REVIEWER_CSS = `
 .gm-byline .gm-who {
   font-weight: 600;
   line-height: 1.5;
-  padding: 0 0.45em;
+  padding: 0 var(--gm-space-3);
   border-radius: 3px;
   color: var(--gm-paper);
   background: var(--gm-accent);

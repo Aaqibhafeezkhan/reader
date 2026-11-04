@@ -11,15 +11,15 @@
   border-radius: 3px;
 }
 dl.defs {
-  margin: 0.8rem 0;
-  padding: 0.45rem 0.75rem;
+  margin: var(--gm-space-5) 0;
+  padding: var(--gm-space-4) var(--gm-space-5);
   border: 1px solid var(--gm-accent);
   border-radius: 4px;
 }
-.def { padding-left: 1.6em; text-indent: -1.6em; margin: 0.3rem 0; }
+.def { padding-left: var(--gm-space-7); text-indent: calc(-1 * var(--gm-space-7)); margin: var(--gm-space-2) 0; }
 .def > * { text-indent: 0; }
 .def-term, .def-meaning { display: inline; margin: 0; }
-.def-term { padding: 0.05em 0.4em; margin-right: 0.45em; }
+.def-term { padding: 0 var(--gm-space-3); margin-right: var(--gm-space-3); }
 /* More than one sense: each numbered, in a run after the term. */
 .def-senses { counter-reset: def-sense; }
 .def-senses > .def-meaning { counter-increment: def-sense; }
@@ -31,7 +31,7 @@ dl.defs {
 .def-initial { font-weight: 700; }
 /* Who used the term, as a dictionary cites its source. */
 .def-name {
-  margin-left: 0.5em;
+  margin-left: var(--gm-space-3);
   font-family: var(--gm-sans);
   font-variant: small-caps;
   letter-spacing: 0.04em;
@@ -51,7 +51,7 @@ dl.defs {
 .def-blank > .field-value:empty::before { content: attr(data-empty); font-style: italic; color: var(--gm-ink-soft); }
 
 /* The term where it's used: set as in its entry, its meaning on hover. */
-.def-use { position: relative; padding: 0 0.3em; }
+.def-use { position: relative; padding: 0 var(--gm-space-2); }
 .def-pop {
   display: none;
   position: absolute;
@@ -60,7 +60,7 @@ dl.defs {
   top: calc(100% + 0.3em);
   width: max-content;
   max-width: 22rem;
-  padding: 0.45em 0.7em;
+  padding: var(--gm-space-3) var(--gm-space-4);
   border: 1px solid var(--gm-rule);
   border-radius: 4px;
   background: var(--gm-paper);
@@ -77,7 +77,7 @@ dl.defs {
   letter-spacing: normal;
   white-space: normal;
 }
-.def-pop-term { font-variant: small-caps; letter-spacing: 0.04em; margin-right: 0.3em; }
+.def-pop-term { font-variant: small-caps; letter-spacing: 0.04em; margin-right: var(--gm-space-2); }
 .def-use:hover > .def-pop, .def-use:focus > .def-pop { display: block; }
 .def-use.def-hushed > .def-pop { display: none; }
 @media print { .def-pop { display: none !important; } }

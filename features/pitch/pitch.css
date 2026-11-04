@@ -7,8 +7,8 @@
   color: inherit;
 }
 button.pitch {
-  padding: 0 0.4em 0 0.3em;
-  margin: 0 0.05em;
+  padding: 0 var(--gm-space-3) 0 var(--gm-space-2);
+  margin: 0 var(--gm-space-1);
   line-height: 1.3;
   background: color-mix(in srgb, var(--gm-accent) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--gm-accent) 45%, transparent);
@@ -17,7 +17,7 @@ button.pitch {
 }
 .pitch::before {
   content: "♪" / "";
-  margin-right: 0.2em;
+  margin-right: var(--gm-space-1);
   color: var(--gm-accent);
   font-size: 0.9em;
 }

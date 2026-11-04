@@ -3,8 +3,9 @@ blockquote.quoted {
   color: var(--gm-ink);
   font-style: italic;
   border-left: 0;
+  /* the room for its big quotation mark, which is hung in it below */
   padding-left: 1.7rem;
-  margin: 1rem 0;
+  margin: var(--gm-space-5) 0;
 }
 /* Floated into the padding, not placed: Chrome prints a placed one in the
    wrong spot on a page scaled to its sheet (static/app/sheets.js). Only on
@@ -29,6 +30,6 @@ blockquote > p.quote-by {
   letter-spacing: 0.04em;
   font-size: 0.88em;
   color: var(--gm-ink-soft);
-  margin-top: 0.35rem;
+  margin-top: var(--gm-space-3);
 }
 p.quote-by::before { content: "\2014\2009"; }

@@ -1,7 +1,7 @@
 /* a number in a box: the figure big, and what it counts under it */
 .number {
   width: fit-content; min-width: 9em; max-width: 100%; box-sizing: border-box;
-  margin: 1rem 0; padding: 1.1em 1.5em 1.2em;
+  margin: var(--gm-space-5) 0; padding: var(--gm-space-6) var(--gm-space-7);
   display: flex; flex-direction: column; justify-content: center;
   text-align: center;
   border: 1.5px solid var(--gm-ink); border-radius: 0.5em;
@@ -18,5 +18,5 @@
 }
 .number-caption {
   font-family: var(--gm-sans); font-size: 0.95em; line-height: 1.3; color: var(--gm-ink-soft);
-  margin-top: 0.6em !important; text-wrap: balance;
+  margin-top: var(--gm-space-4) !important; text-wrap: balance;
 }

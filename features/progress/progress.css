@@ -1,7 +1,7 @@
 .progress {
   display: inline-flex;
   align-items: center;
-  gap: 0.4em;
+  gap: var(--gm-space-3);
   vertical-align: 0.05em;
   white-space: nowrap;
 }

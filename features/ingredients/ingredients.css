@@ -23,8 +23,8 @@ li.ingredient.lit {
 }
 li.ingredient-unused::after {
   content: "in no step";
-  margin-left: 0.5em;
-  padding: 0.1em 0.45em;
+  margin-left: var(--gm-space-3);
+  padding: var(--gm-space-1) var(--gm-space-3);
   border-radius: 1em;
   font: 600 0.62em/1 var(--gm-sans);
   letter-spacing: 0.04em;
@@ -37,7 +37,7 @@ li.ingredient-unused::after {
   position: fixed;
   z-index: 20;
   max-width: 22em;
-  padding: 0.4em 0.65em;
+  padding: var(--gm-space-3) var(--gm-space-4);
   border-radius: 6px;
   font: 0.85rem/1.35 var(--gm-sans);
   color: var(--gm-paper);

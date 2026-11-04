@@ -1,7 +1,7 @@
 /* blocks side by side, each as wide as the next, and as tall as the tallest */
 .columns {
   display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
-  gap: 1.6em; margin: 1rem 0;
+  gap: var(--gm-space-7); margin: var(--gm-space-5) 0;
 }
 /* a column is what a block in it measures itself by (a number's figure) */
 .column { display: flex; flex-direction: column; min-width: 0; container-type: inline-size; }

@@ -1,13 +1,13 @@
 li.task { list-style: none; }
 li.task > .task-box, li.task > p > .task-box,
 li.task > .choice-box, li.task > p > .choice-box {
-  margin: 0 0.4em 0 -1.35rem;
+  margin: 0 var(--gm-space-3) 0 calc(-1 * var(--gm-indent));
   vertical-align: -0.1em;
   cursor: pointer;
 }
 /* A heading's box: its title, then a Done pill at the end of its line,
    filled in the accent once its section is done, the title in done ink. */
-.task-heading { display: flex; align-items: baseline; gap: 0.75em; }
+.task-heading { display: flex; align-items: baseline; gap: var(--gm-space-5); }
 .task-heading > .section-title { flex: 1; min-width: 0; }
 .section-done {
   flex: none;
@@ -15,14 +15,14 @@ li.task > .choice-box, li.task > p > .choice-box {
   font: 600 0.8rem/1 var(--gm-sans);
   letter-spacing: normal;
   text-transform: none;
-  padding: 0.35em 0.85em;
+  padding: var(--gm-space-2) var(--gm-space-5);
   border: 1px solid var(--gm-rule);
   border-radius: 1em;
   background: none;
   color: var(--gm-ink-soft);
   cursor: pointer;
 }
-/* The pill is drawn 21px tall; it takes a click a little above and below it,
+/* The pill is drawn 20px tall; it takes a click a little above and below it,
    24px tall in all, and no more, so a task in the row under it keeps its own.
    Its ::after is its label, so this is its ::before. */
 .section-done { position: relative; }
@@ -40,6 +40,7 @@ li.task > .choice-box, li.task > p > .choice-box {
 /* a box with stages: a pip for each, filled as it's reached */
 .stage-box {
   display: inline-flex;
+  /* its pips drawn as closely as a border is: a mark, not a box of text */
   gap: 2px;
   align-items: center;
   height: 1.05em;
@@ -64,7 +65,7 @@ span.stage-box { cursor: default; }
 li.staged { position: relative; }
 li.staged > .stage-box, li.staged > p > .stage-box {
   position: absolute;
-  right: calc(100% + 0.4em);
+  right: calc(100% + var(--gm-space-3));
   top: 0.3em;
 }
 .stage-box > i {
@@ -79,13 +80,13 @@ li.staged > .stage-box, li.staged > p > .stage-box {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--gm-accent);
-  margin-right: 0.15em;
+  margin-right: var(--gm-space-1);
 }
 li.task-done { color: var(--gm-ink-done); }
 li.task-done .stage-box > i.on { background: var(--gm-ink-soft); border-color: var(--gm-ink-soft); }
 .task-reset, .task-log {
   font: 600 0.78em/1 var(--gm-sans);
-  padding: 0.3em 0.75em;
+  padding: var(--gm-space-2) var(--gm-space-5);
   border: 1px solid var(--gm-rule);
   border-radius: 1em;
   background: none;

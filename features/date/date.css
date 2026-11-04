@@ -18,7 +18,7 @@
 .date-cal {
   position: fixed;
   z-index: 10;
-  padding: 0.55rem 0.6rem 0.5rem;
+  padding: var(--gm-space-4);
   background: var(--gm-paper);
   color: var(--gm-ink);
   border: 1px solid var(--gm-rule);
@@ -41,12 +41,12 @@
 .date-cal-head {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  margin-bottom: 0.4rem;
+  gap: var(--gm-space-3);
+  margin-bottom: var(--gm-space-4);
 }
 .date-cal-month { flex: 1; text-align: center; font-weight: 600; letter-spacing: 0.01em; }
 .date-cal-head button { width: 1.9em; height: 1.9em; line-height: 1.8em; font-size: 1.1em; color: var(--gm-ink-soft); }
-.date-cal-grid { display: grid; grid-template-columns: repeat(7, 2.15em); gap: 1px; }
+.date-cal-grid { display: grid; grid-template-columns: repeat(7, 2.15em); gap: 1px; } /* a hair between days, as a calendar's rules are */
 .date-cal-grid > span {
   height: 1.7em;
   line-height: 1.7em;
@@ -62,5 +62,5 @@
   color: var(--gm-paper);
   font-weight: 600;
 }
-.date-cal-foot { display: flex; justify-content: flex-end; margin-top: 0.35rem; }
-.date-cal-foot button { padding: 0.35em 0.6em; font-size: 0.9em; color: var(--gm-ink-soft); }
+.date-cal-foot { display: flex; justify-content: flex-end; margin-top: var(--gm-space-3); }
+.date-cal-foot button { padding: var(--gm-space-2) var(--gm-space-4); font-size: 0.9em; color: var(--gm-ink-soft); }

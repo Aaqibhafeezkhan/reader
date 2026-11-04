@@ -33,21 +33,21 @@ li.bg { --card-bg: var(--item-bg); }
  * weighs no more than `li.bg`, the list it's in taken in :where(), so a look
  * that draws its own box for an item (a card, features/cards) has its way
  * whichever stylesheet comes first. */
-span.bg { padding: 0 0.15em; border-radius: 0.2em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+span.bg { padding: 0 var(--gm-space-1); border-radius: 0.2em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 div.bg, p.bg, h1.bg, h2.bg, h3.bg, h4.bg, h5.bg, h6.bg, li.bg, td.bg, th.bg {
-  --bg-pad: 0.6em;
+  --bg-pad: var(--gm-space-4);
   padding: calc(var(--bg-pad) * 0.7) var(--bg-pad);
   border-radius: 6px;
 }
-div.bg { margin: 1rem 0; }
+div.bg { margin: var(--gm-space-5) 0; }
 div.bg > :first-child { margin-top: 0; }
 div.bg > :last-child { margin-bottom: 0; }
 li.bg:where(:is(ul, ol) > *) {
-  --bg-mark: 1.35rem;
+  --bg-mark: var(--gm-indent);
   padding-left: calc(var(--bg-mark) + var(--bg-pad));
   margin-left: calc(-1 * var(--bg-mark));
 }
-li.bg:where(.bg + *) { margin-top: 0.3em; }
+li.bg:where(.bg + *) { margin-top: var(--gm-space-2); }
 /* A bullet or a number, drawn outside an item, is set inside its box instead. */
 li.bg:where(:is(ul, ol) > :not(.task)) { list-style-position: inside; padding-left: var(--bg-pad); }
 

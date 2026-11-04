@@ -232,24 +232,24 @@
   }
 
   addStyle(`
-.puzzle { margin: 1rem 0; outline: none; break-inside: avoid; }
+.puzzle { margin: var(--gm-space-5) 0; outline: none; break-inside: avoid; }
 .puzzle:focus-visible { outline: 2px solid var(--gm-accent); outline-offset: 4px; }
 .puzzle.puzzle-resting:focus { outline: 2px dashed var(--gm-ink-soft); outline-offset: 4px; }
 .puzzle-bar {
   font-family: var(--gm-sans); font-size: 0.8rem; color: var(--gm-ink-soft);
-  margin-top: 0.4rem; min-height: 1.2em; visibility: hidden;
+  margin-top: var(--gm-space-4); min-height: 1.2em; visibility: hidden;
 }
 .puzzle:focus-within .puzzle-bar, .puzzle.solved .puzzle-bar { visibility: visible; }
 .puzzle.solved .puzzle-bar { color: var(--gm-ok); font-weight: 600; font-size: 0.95rem; }
 .puzzle-help {
-  display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.8rem;
-  font-family: var(--gm-sans); font-size: 0.8rem; margin: 0.4rem 0 0;
+  display: grid; grid-template-columns: max-content 1fr; gap: var(--gm-space-1) var(--gm-space-5);
+  font-family: var(--gm-sans); font-size: 0.8rem; margin: var(--gm-space-4) 0 0;
 }
 .puzzle-help[hidden] { display: none; }
 .puzzle-help dt { font-weight: 600; }
 .puzzle-help dd { margin: 0; color: var(--gm-ink-soft); }
 .puzzle-unreadable pre { border-left: 3px solid var(--gm-error); }
-.puzzle-error { font-family: var(--gm-sans); font-size: 0.8rem; color: var(--gm-error); margin: 0 0 0.3rem; }
+.puzzle-error { font-family: var(--gm-sans); font-size: 0.8rem; color: var(--gm-error); margin: 0 0 var(--gm-space-3); }
 @media print { .puzzle-bar, .puzzle-help { display: none; } }
 `);
 

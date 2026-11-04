@@ -340,7 +340,7 @@
       return true;
     },
   }, `
-.ws { display: flex; flex-wrap: wrap; gap: 0.6rem 1.4rem; align-items: flex-start; }
+.ws { display: flex; flex-wrap: wrap; gap: var(--gm-space-4) var(--gm-space-7); align-items: flex-start; }
 .ws-grid {
   --cell: min(1.9rem, calc(92vw / var(--cols)));
   display: block; width: calc(var(--cell) * var(--cols)); height: auto;
@@ -362,12 +362,12 @@
   list-style: none; margin: 0; padding: 0;
   font-family: var(--gm-sans); font-size: 0.85rem; line-height: 1.6;
 }
-.ws-words.many { columns: 2; column-gap: 1.4rem; }
+.ws-words.many { columns: 2; column-gap: var(--gm-space-7); }
 .deck .ws-words { font-size: 0.6rem; line-height: 1.45; }
 .deck .ws-words.many { columns: 3; }
 .ws-words li { break-inside: avoid; white-space: nowrap; }
 .ws-words li::before {
-  content: ""; display: inline-block; width: 0.7em; height: 0.7em; margin-right: 0.45em;
+  content: ""; display: inline-block; width: 0.7em; height: 0.7em; margin-right: var(--gm-space-3);
   border: 1.5px solid var(--gm-ink-faint); border-radius: 2px; vertical-align: -0.05em;
 }
 .ws-words li.found { color: var(--gm-ink-soft); text-decoration: line-through; }

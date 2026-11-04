@@ -24,13 +24,13 @@
   line-height: 1.45;
   color: var(--gm-aside-ink);
   border-left: 2px solid var(--gm-aside-rule);
-  padding-left: 0.85rem;
+  padding-left: var(--gm-space-5);
   break-inside: avoid;
 }
 
-.gm-aside-cell p { margin: 0 0 0.5rem; }
+.gm-aside-cell p { margin: 0 0 var(--gm-space-4); }
 .gm-aside-cell p:last-child { margin-bottom: 0; }
-.gm-aside-cell + .gm-aside-cell { margin-top: 0.6rem; }
+.gm-aside-cell + .gm-aside-cell { margin-top: var(--gm-space-4); }
 
 /* The tilde is kept as a visible mark of authorship -- it is the notation the
  * document is written in, not just syntax to be compiled away. */
@@ -38,13 +38,13 @@
   font-style: normal;
   font-family: var(--gm-mono);
   color: var(--gm-accent);
-  margin-right: 0.3em;
+  margin-right: var(--gm-space-2);
   font-size: 0.95em;
 }
 
 .gm-aside-cell ul, .gm-aside-cell ol {
-  margin: 0.3rem 0;
-  padding-left: 1.1rem;
+  margin: var(--gm-space-2) 0;
+  padding-left: var(--gm-space-6);
 }
 
 /* An aside from a reviewer, about a topic (key.js): the
@@ -52,7 +52,7 @@
  * outlined pill. Names, not only colours, so it holds up in print. The
  * paper on a chip: a key's colours read on the paper, and so it on them. */
 .gm-attributed { border-left-color: var(--by, var(--gm-aside-rule)); }
-.gm-by { font-style: normal; margin-right: 0.35em; }
+.gm-by { font-style: normal; margin-right: var(--gm-space-2); }
 .gm-who, .gm-topic, .gm-unknown {
   display: inline-block;
   font-family: var(--gm-sans);
@@ -61,13 +61,13 @@
   font-weight: 600;
   line-height: 1.5;
   letter-spacing: 0.02em;
-  padding: 0 0.45em;
-  margin: 0 0.3em 0.1em 0;
+  padding: 0 var(--gm-space-3);
+  margin: 0 var(--gm-space-2) var(--gm-space-1) 0;
   border-radius: 3px;
   vertical-align: 0.1em;
 }
 .gm-who { color: var(--gm-paper); background: var(--by, var(--gm-accent)); }
-.gm-topic { color: var(--topic, var(--gm-accent)); border: 1px solid currentColor; border-radius: 999px; padding: 0 0.55em; }
+.gm-topic { color: var(--topic, var(--gm-accent)); border: 1px solid currentColor; border-radius: 999px; padding: 0 var(--gm-space-4); }
 .gm-unknown { color: var(--gm-ink-soft); border: 1px dashed currentColor; }
 /* A colour an author wrote that isn't the family's, kept as light or as
  * dark as the family (src/columns.css). */
@@ -80,5 +80,5 @@
 }
 
 /* the masthead's legend: who and what the asides are from and about */
-.gm-legend { margin-top: 0.45rem; font-size: 0.95rem; }
-.gm-legend b { font-weight: 400; margin-left: 0.15em; }
+.gm-legend { margin-top: var(--gm-space-3); font-size: 0.95rem; }
+.gm-legend b { font-weight: 400; margin-left: var(--gm-space-1); }

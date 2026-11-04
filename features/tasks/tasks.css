@@ -94,5 +94,9 @@ li.task-done .stage-box > i.on { background: var(--gm-ink-soft); border-color: v
   cursor: pointer;
 }
 .task-reset::before { content: "↺ "; }
+/* A finger needs more to aim at than a pointer does. */
+@media (pointer: coarse) {
+  .task-reset { font-size: 0.9em; padding: var(--gm-space-4) var(--gm-space-5); }
+}
 .task-log::before { content: "+ "; }
 .task-reset:hover, .task-log:hover, .multiply:hover { color: var(--gm-ink); }

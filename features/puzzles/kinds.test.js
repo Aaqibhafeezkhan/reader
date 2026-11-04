@@ -37,7 +37,7 @@ test('every kind in kinds/ registers its text, rules and drawing', () => {
   assert.deepEqual(KINDS, ['coord', 'maze', 'sudoku', 'tracks', 'wordsearch']);
   for (const kind of KINDS) {
     const k = load(kind);
-    for (const fn of ['parse', 'format', 'solved', 'mount']) assert.equal(typeof k[fn], 'function', `${kind}.${fn}`);
+    for (const fn of ['parse', 'format', 'solved', 'restart', 'mount']) assert.equal(typeof k[fn], 'function', `${kind}.${fn}`);
   }
 });
 
@@ -216,4 +216,69 @@ test('maze: the two-characters-to-a-cell drawing reads too', () => {
   const m = maze.parse(' _______\n|S  |  _|\n|_|___ E|');
   assert.ok(m);
   assert.deepEqual(plain(m.start), [0, 0]);
+});
+
+/** `text` restarted: that there were moves in it, and what it reads as after. */
+function restarted(kind, text) {
+  const s = kind.parse(text);
+  assert.equal(kind.restart(s), true, 'it had moves in it');
+  const after = kind.format(s);
+  assert.equal(kind.restart(kind.parse(after)), false, 'it has none now');
+  assert.equal(kind.solved(kind.parse(after)), false);
+  return after;
+}
+
+test('restart: a sudoku keeps its givens, and loses its board and pencil marks, solved or not', () => {
+  const start = sudoku.parse(SUDOKU);
+  const played = sudoku.parse(`${SUDOKU}\nnotes: r1c4=26`);
+  played.board[2] = 4;
+  const after = sudoku.parse(restarted(sudoku, sudoku.format(played)));
+  assert.deepEqual(plain(after.givens), plain(start.givens));
+  assert.deepEqual(plain(after.board), plain(start.givens));
+  assert.equal(after.notes.size, 0);
+  const solved = sudoku.parse(SUDOKU);
+  solved.board = [...SOLUTION];
+  assert.equal(sudoku.solved(sudoku.parse(sudoku.format(solved))), true);
+  assert.deepEqual(plain(sudoku.parse(restarted(sudoku, sudoku.format(solved))).board), plain(start.givens));
+});
+
+test('restart: a sudoku with no moves has none to take out', () => {
+  assert.equal(sudoku.restart(sudoku.parse(SUDOKU)), false, 'its board left out');
+  assert.equal(sudoku.restart(sudoku.parse(sudoku.format(sudoku.parse(SUDOKU)))), false, 'its board written beside it');
+});
+
+test('restart: tracks keep the pieces given, and lose what\'s laid and marked, solved or not', () => {
+  const [E, S] = [2, 4];
+  const s = tracks.parse(TRACKS);
+  for (const [i, d] of [[0, E], [1, E], [2, S], [5, S], [8, S]]) tracks.rules.layTrack(s, i, d);
+  assert.equal(tracks.solved(s), true);
+  assert.equal(restarted(tracks, tracks.format(s)), TRACKS);
+  assert.equal(restarted(tracks, TRACKS.replace('━ · ·', '━ × ╷')), TRACKS);
+  assert.equal(tracks.restart(tracks.parse(TRACKS)), false);
+});
+
+test('restart: a word search keeps its letters and list, and loses what\'s found and marked, solved or not', () => {
+  assert.equal(restarted(wordsearch, `${WORDSEARCH}\nfound: ABLE r3c1-r3c4\nmarks: XYZ r3c5-r3c7`), WORDSEARCH);
+  const one = 'A B\nC D\nwords: AB';
+  assert.equal(wordsearch.solved(wordsearch.parse(`${one}\nfound: AB r1c1-r1c2`)), true);
+  assert.equal(restarted(wordsearch, `${one}\nfound: AB r1c1-r1c2`), one);
+  assert.equal(wordsearch.restart(wordsearch.parse(WORDSEARCH)), false);
+});
+
+test('restart: a coordinate graph keeps its grid and points, and none is plotted, complete or not', () => {
+  const start = COORD.replace('plotted: 3', 'plotted: 0');
+  assert.equal(restarted(coord, COORD), start);
+  assert.equal(restarted(coord, COORD.replace('plotted: 3', 'plotted: 5')), start);
+  assert.equal(coord.restart(coord.parse(start)), false);
+  assert.equal(coord.restart(coord.parse(COORD.replace('\nplotted: 3', ''))), false, 'no line of it at all');
+});
+
+test('restart: a maze keeps its walls, and loses the way taken and pencil marks, solved or not', () => {
+  const start = `${MAZE}\npath:\nnotes:`;
+  assert.equal(restarted(maze, `${MAZE}\npath: R D\nnotes: r2c1`), start);
+  assert.equal(restarted(maze, `${MAZE}\nnotes: r2c1`), start);
+  assert.equal(restarted(maze, `${MAZE}\npath: R D L D R2 U`), start);
+  assert.equal(maze.restart(maze.parse(MAZE)), false);
+  assert.equal(maze.restart(maze.parse(start)), false);
+  assert.equal(maze.restart(maze.parse(`${MAZE}\npath: D`)), false, 'a wall that way: no way taken');
 });

@@ -126,6 +126,14 @@
     return bad;
   }
 
+  /** Only the givens on the board, and no pencil marks. */
+  function restart(s) {
+    const played = s.notes.size > 0 || s.board.some((v, i) => v !== s.givens[i]);
+    s.board = [...s.givens];
+    s.notes.clear();
+    return played;
+  }
+
   /** A full board, no number repeated in a row, column or box. */
   const isSolved = (s) => s.board.every(Boolean) && !conflicts(s.board).size;
 
@@ -142,6 +150,7 @@
     parse: parseSudoku,
     format: formatSudoku,
     solved: isSolved,
+    restart,
     rules: { conflicts },
     mount(host, text, ui, post) {
       const s = parseSudoku(text);

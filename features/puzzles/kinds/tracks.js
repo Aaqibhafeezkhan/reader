@@ -194,6 +194,14 @@
     return seen.size === counts.total;
   }
 
+  /** Only the pieces given: no track laid, and no square marked. */
+  function restart(s) {
+    const played = s.mine.some(Boolean) || s.cross.some(Boolean);
+    s.mine.fill(0);
+    s.cross.fill(false);
+    return played;
+  }
+
   const TRACKS_KEYS = [
     ['← → ↑ ↓', 'move'],
     ['⇧ + arrow', 'lay track that way (again to pick it up)'],
@@ -215,6 +223,7 @@
     parse: parseTracks,
     format: formatTracks,
     solved,
+    restart,
     rules: { layTrack, clearSquare, tally },
     mount(host, text, ui, post) {
       const s = parseTracks(text);

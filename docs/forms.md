@@ -249,6 +249,7 @@ It's as much for a todo list or a game as for a [recipe](recipes.md).
 It empties the section's fields too, in the same edit, wherever they are in it, as in tabs or columns.
 That's a field's value, a blank in a sentence, and a field's choices.
 A field that holds a date or a number stays one, ready for the next: `@ When: date:2026-11-03[]` becomes `@ When: date:[]`.
+Each [puzzle](puzzles.md#starting-over) in the section goes back to its start, in that same edit.
 It stops at a `---`, so it clears the same page in Edit as in Work, and under no heading, its section is that page.
 
 ::: tabs

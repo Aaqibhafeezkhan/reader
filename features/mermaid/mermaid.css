@@ -1,4 +1,4 @@
-.mermaid { margin: 1rem 0; break-inside: avoid; }
+.mermaid { margin: var(--gm-space-5) 0; break-inside: avoid; }
 /* Drawn, its text is still there to be read aloud, out of sight. */
 .mermaid.drawn > pre {
   position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; border: 0;
@@ -7,6 +7,6 @@
 .mermaid svg { max-width: 100%; height: auto; }
 .mermaid.drawn.stale svg { opacity: 0.5; }
 .mermaid-error {
-  margin: 0.4rem 0 0; padding: 0; border: 0; background: none;
+  margin: var(--gm-space-4) 0 0; padding: 0; border: 0; background: none;
   white-space: pre-wrap; font-size: 0.8rem; color: var(--gm-error);
 }

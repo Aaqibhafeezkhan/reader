@@ -1,6 +1,6 @@
 /* cells in rows, the same height across, at most --grid of them (or as many
    as fit), each at least --grid-least wide, so a narrow page has fewer */
-.grid { --grid-gap: 1rem; --grid-least: 10em; margin: 1rem 0; }
+.grid { --grid-gap: var(--gm-space-5); --grid-least: 10em; margin: var(--gm-space-5) 0; }
 .grid:not(.grid-items), .grid.grid-items > :is(ul, ol) {
   display: grid; gap: var(--grid-gap);
   grid-template-columns: repeat(auto-fill, minmax(min(100%, max(var(--grid-least), (100% - (var(--grid, 99) - 1) * var(--grid-gap)) / var(--grid, 99) - 1px)), 1fr));
@@ -10,7 +10,7 @@
 .grid-cell > :last-child { margin-bottom: 0; }
 /* a list's items are the cells: each holds its own bullet, number or box, in its margin */
 .grid.grid-items > :is(ul, ol) { margin: 0; padding-left: 0; }
-.grid.grid-items > :is(ul, ol) > li { margin: 0 0 0 1.35rem; min-width: 0; }
+.grid.grid-items > :is(ul, ol) > li { margin: 0 0 0 var(--gm-indent); min-width: 0; }
 /* one with a background of its own (features/styles) is a box round its mark too: it fills its cell */
 .grid.grid-items > :is(ul, ol) > li.bg { margin: 0; }
 /* on a phone, one column */

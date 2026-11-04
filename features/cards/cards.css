@@ -1,7 +1,7 @@
 /* cards: a list's items (or the blocks) in one column, each bordered, the
    chosen one in the accent (features/cards). An item's own background sets
    --card-bg, which it keeps, chosen or not. */
-.cards { --card-gap: 0.6rem; margin: 1rem 0; }
+.cards { --card-gap: var(--gm-space-4); margin: var(--gm-space-5) 0; }
 .cards > :is(ul, ol) { display: grid; gap: var(--card-gap); margin: 0; padding: 0; list-style: none; }
 /* in a grid, the grid lays them out (features/grid); a card holds its own box, so needs no margin for it */
 .grid.grid-items.cards > :is(ul, ol) > li { margin: 0; }
@@ -10,7 +10,7 @@
   isolation: isolate;
   min-width: 0;
   margin: 0;
-  padding: 0.7rem 0.9rem;
+  padding: var(--gm-space-4) var(--gm-space-5);
   border: 1px solid var(--gm-rule-strong);
   border-radius: 8px;
   background: var(--card-bg, transparent);
@@ -19,7 +19,7 @@
 .cards > .card + .card { margin-top: var(--card-gap); }
 /* a row in a card (features/row) and what follows it, a book and its
    question, read as one: the row's own room under it given up */
-.cards > :is(.card, .grid-cell, :is(ul, ol) > li) > .row:not(:last-child) { margin-bottom: 0.35rem; }
+.cards > :is(.card, .grid-cell, :is(ul, ol) > li) > .row:not(:last-child) { margin-bottom: var(--gm-space-2); }
 .cards > :is(.card, .grid-cell) > :first-child { margin-top: 0; }
 .cards > :is(.card, .grid-cell) > :last-child { margin-bottom: 0; }
 

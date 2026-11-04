@@ -72,5 +72,5 @@ test('it collapses to fewer columns, and one, when narrow, and leaves room for a
   const css = readFileSync(new URL('./grid.css', import.meta.url), 'utf8');
   assert.match(css, /\(100% - \(var\(--grid, 99\) - 1\) \* var\(--grid-gap\)\) \/ var\(--grid, 99\)/);
   assert.match(css, /@media \(max-width: 32em\) \{\n[^}]*grid-template-columns: minmax\(0, 1fr\)/, 'one on a phone');
-  assert.match(css, /> li \{[^}]*margin: 0 0 0 1\.35rem/);
+  assert.match(css, /> li \{[^}]*margin: 0 0 0 var\(--gm-indent\)/);
 });

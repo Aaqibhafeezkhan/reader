@@ -2,7 +2,7 @@
    rest goes under once it hasn't room for a few words beside it */
 .row {
   display: flex; flex-wrap: wrap; align-items: flex-start;
-  gap: 0.6em 1em; margin: 1rem 0;
+  gap: var(--gm-space-4) var(--gm-space-5); margin: var(--gm-space-5) 0;
 }
 /* reversed, the first block on the right while the rest is beside it; once
    the rest goes under, the first block, alone on its line, is packed to the
@@ -16,8 +16,8 @@
 .row-lead > img, .row-lead > a > img { display: block; max-width: 100%; height: auto; }
 .row-lead > a { display: block; }
 /* the lines beside it closer together than paragraphs apart */
-.row-rest > p { margin: 0.2em 0; }
+.row-rest > p { margin: var(--gm-space-1) 0; }
 /* a bar beside it takes the width that's left */
-.row-rest > p:has(> .progress:first-child) { display: flex; align-items: center; gap: 0.4em; }
+.row-rest > p:has(> .progress:first-child) { display: flex; align-items: center; gap: var(--gm-space-3); }
 .row-rest > p > .progress:first-child { flex: 1; }
 .row-rest > p > .progress:first-child progress { flex: 1; width: auto; min-width: 3em; }

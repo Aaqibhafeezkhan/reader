@@ -6,7 +6,7 @@
   vertical-align: top;
   width: 22rem;
   max-width: 100%;
-  margin: 0.2rem 0;
+  margin: var(--gm-space-1) 0;
   color: inherit;
   text-decoration: none;
 }
@@ -57,7 +57,7 @@
   font-family: var(--gm-sans);
   font-size: 0.82rem;
   color: var(--gm-ink-soft);
-  margin-top: 0.35rem;
+  margin-top: var(--gm-space-3);
 }
 a.video:hover .video-caption { text-decoration: underline; }
 @media (forced-colors: active) {

@@ -4,7 +4,7 @@
  * page's own serif or sans. */
 .headline {
   --gm-ink: var(--gm-clip-ink); --gm-ink-soft: var(--gm-clip-ink-soft);
-  max-width: 30em; margin: 1rem 0; padding: 1.1em 1.4em 1.2em;
+  max-width: 30em; margin: var(--gm-space-5) 0; padding: var(--gm-space-6) var(--gm-space-7);
   background: var(--gm-clip-paper); color: var(--gm-ink);
   border: 0.75px solid var(--gm-rule);
   box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 8px 24px rgba(0, 0, 0, .10);
@@ -15,14 +15,14 @@
 .headline a:hover { text-decoration: underline; text-decoration-thickness: 1px; }
 .headline-agency {
   font-family: var(--gm-serif); font-variant: small-caps; letter-spacing: 0.08em; font-size: 0.95em;
-  padding-bottom: 0.45em; margin-bottom: 0.7em !important;
+  padding-bottom: var(--gm-space-3); margin-bottom: var(--gm-space-4) !important;
   border-bottom: 3px double var(--gm-ink);
 }
 .headline-title { font-family: var(--gm-serif); font-weight: 700; font-size: 2em; line-height: 1.1; letter-spacing: -0.01em; text-wrap: balance; }
-.headline-deck { font-family: var(--gm-serif); font-size: 1.05em; line-height: 1.35; color: var(--gm-ink-soft); margin-top: 0.55em !important; }
+.headline-deck { font-family: var(--gm-serif); font-size: 1.05em; line-height: 1.35; color: var(--gm-ink-soft); margin-top: var(--gm-space-4) !important; }
 .headline-dateline {
   font-family: var(--gm-sans); font-size: 0.7em; letter-spacing: 0.06em; text-transform: uppercase;
-  color: var(--gm-ink-soft); margin-top: 0.9em !important;
+  color: var(--gm-ink-soft); margin-top: var(--gm-space-5) !important;
 }
 
 /* The New York Times: a blackletter nameplate (Chomsky, when it's
@@ -60,7 +60,8 @@
 .headline-guardian .headline-title { font-family: Georgia, "Times New Roman", var(--gm-serif); font-weight: 500; line-height: 1.15; }
 .headline-guardian .headline-dateline { text-transform: none; letter-spacing: 0; font-size: 0.75em; }
 
-/* WIRED: a boxed, spaced nameplate, and a heavy tight sans. */
+/* WIRED: a boxed, spaced nameplate, and a heavy tight sans. Its lengths, and
+ * Slashdot's below, are the look of the paper it's clipped from. */
 .headline-wired { background: var(--gm-clip-white); }
 .headline-wired .headline-agency {
   font-family: "Helvetica Neue", Helvetica, Arial, var(--gm-sans);

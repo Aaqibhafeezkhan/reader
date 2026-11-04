@@ -13,6 +13,7 @@
 .mk-circle {
   border: 0.09em solid var(--mk-ink);
   border-radius: 48% 52% 45% 55% / 58% 46% 54% 42%;
+  /* as near its word as a pen would go */
   padding: 0.02em 0.28em;
   margin: 0 -0.12em;
 }
@@ -35,7 +36,7 @@
   background: color-mix(in srgb, var(--mk-ink) 24%, transparent);
   box-shadow: inset 0 -0.1em var(--mk-ink);
   border-radius: 0.25em 0.1em 0.3em 0.15em;
-  padding: 0 0.12em;
+  padding: 0 var(--gm-space-1);
 }
 
 /* The words an aside chose, at its start, for when the line to them can't
@@ -46,7 +47,7 @@
   /* the mark's colour, deepened toward the ink to be read as text: a pure
    * red is 4:1 on the page, this 8.8:1 */
   color: color-mix(in srgb, var(--mk, var(--gm-ink-soft)) 55%, var(--gm-ink));
-  margin-right: 0.45em;
+  margin-right: var(--gm-space-3);
 }
 /* and a colour an author wrote that isn't the family's first kept as
  * light or as dark as the family (src/columns.css): a pure gold is 3.8:1

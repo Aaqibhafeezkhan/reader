@@ -53,5 +53,5 @@ test('in the system\'s colours, its border is the text\'s, and the chosen one th
 });
 
 test('a row in a card keeps close to what follows it, a book to its question', () => {
-  assert.match(css, /\.cards > :is\(\.card, \.grid-cell, :is\(ul, ol\) > li\) > \.row:not\(:last-child\) \{ margin-bottom: 0\.35rem; \}/);
+  assert.match(css, /\.cards > :is\(\.card, \.grid-cell, :is\(ul, ol\) > li\) > \.row:not\(:last-child\) \{ margin-bottom: var\(--gm-space-2\); \}/);
 });

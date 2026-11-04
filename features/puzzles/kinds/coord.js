@@ -260,7 +260,7 @@
       return true;
     },
   }, `
-.coord { display: flex; flex-wrap: wrap; gap: 0.8rem 1.4rem; align-items: flex-start; }
+.coord { display: flex; flex-wrap: wrap; gap: var(--gm-space-5) var(--gm-space-7); align-items: flex-start; }
 .coord-graph {
   --unit: min(1.25rem, calc(92vw / var(--w)));
   display: block; width: calc(var(--unit) * var(--w)); height: auto;
@@ -286,7 +286,7 @@
 .coord-graph .pencil { fill: none; stroke: transparent; stroke-width: 0.07; }
 .puzzle:focus-within .coord-graph .pencil { stroke: var(--gm-pick); }
 .coord-list {
-  flex: 1 1 14rem; columns: 5.4em auto; column-gap: 1em;
+  flex: 1 1 14rem; columns: 5.4em auto; column-gap: var(--gm-space-5);
   font-family: var(--gm-sans); font-size: 0.78rem; line-height: 1.45;
 }
 .deck .coord-list { font-size: 0.5rem; }

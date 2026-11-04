@@ -6,7 +6,7 @@ a.search {
 a.search::after {
   content: "\2315";
   display: inline-block;
-  margin-left: 0.15em;
+  margin-left: var(--gm-space-1);
   color: var(--gm-accent);
   font-size: 1.1em;
   line-height: 1;

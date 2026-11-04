@@ -3,11 +3,11 @@ blockquote.alert {
   border: 0.75px solid var(--gm-rule);
   border-left-width: 3px;
   border-radius: 4px;
-  padding: 0.55rem 0.85rem;
-  margin: 0.8rem 0;
+  padding: var(--gm-space-4) var(--gm-space-5);
+  margin: var(--gm-space-5) 0;
   break-inside: avoid;
 }
-blockquote.alert > p { margin: 0.3rem 0; }
+blockquote.alert > p { margin: var(--gm-space-2) 0; }
 .alert .alert-title {
   font-family: var(--gm-sans);
   font-size: 0.8rem;

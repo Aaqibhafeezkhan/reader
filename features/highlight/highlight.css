@@ -31,8 +31,9 @@ pre.code-lines > code { display: grid; }
 pre.code-lines .line {
   display: block;
   min-height: 1lh;
-  margin: 0 -0.85rem;
-  padding: 0 0.85rem;
+  /* out to the edges of the fence, through its padding (src/columns.css) */
+  margin: 0 calc(-1 * var(--gm-space-6));
+  padding: 0 var(--gm-space-6);
   transition: color .18s, background-color .18s;
 }
 /* the lines out of focus lose their colours, rather than fading, so
@@ -48,6 +49,7 @@ pre.code-numbers .line::before {
   content: counter(line);
   display: inline-block;
   width: calc(var(--digits, 2) * 1ch);
+  /* in code, a length goes by its characters */
   margin-right: 1.4ch;
   text-align: right;
   color: var(--gm-ink-soft);
@@ -57,14 +59,14 @@ pre.code-numbers .line::before {
 /* callouts: a numbered badge at the end of a marked line, and the same
  * badge on its note below; the numbers are drawn here, so they don't copy */
 .code-group { --callout-hover: var(--gm-lit); }
-.code-group > pre:has(+ .callout-notes) { margin-bottom: 0.5rem; }
+.code-group > pre:has(+ .callout-notes) { margin-bottom: var(--gm-space-4); }
 .callout::before {
   content: attr(data-n);
   display: inline-grid;
   place-items: center;
   min-width: 1.45em;
   height: 1.45em;
-  padding: 0 .3em;
+  padding: 0 var(--gm-space-2);
   box-sizing: border-box;
   border-radius: 1em;
   background: var(--gm-accent);
@@ -75,16 +77,16 @@ pre.code-numbers .line::before {
   user-select: none;
 }
 pre .callout { margin-left: 1.2ch; }
-.callout-notes { list-style: none; margin: 0 0 1rem; padding: 0; }
+.callout-notes { list-style: none; margin: 0 0 var(--gm-space-5); padding: 0; }
 .callout-notes > li {
   display: grid;
   grid-template-columns: 2em 1fr;
-  margin: 0 -.35rem;
-  padding: .1rem .35rem;
+  margin: 0 calc(-1 * var(--gm-space-2));
+  padding: var(--gm-space-1) var(--gm-space-2);
   border-radius: 3px;
   transition: opacity .18s, background-color .18s;
 }
-.callout-notes > li > .callout { padding-top: .15em; }
+.callout-notes > li > .callout { padding-top: var(--gm-space-1); }
 /* a note whose line stands out, while stepping through them */
 .callout-notes > li.hl { background: var(--callout-hover); }
 /* with more contrast asked for, ruled at its edge too, as a line is */
@@ -119,7 +121,7 @@ pre.output::before {
 }
 /* under versions of the code (::: tabs), every version's */
 .code-group > .tabs:has(+ pre.output, + .output-long) { margin-bottom: 0; }
-.code-group > .tabs:has(+ .callout-notes) { margin-bottom: 0.5rem; }
+.code-group > .tabs:has(+ .callout-notes) { margin-bottom: var(--gm-space-3); }
 .code-group > pre + pre.output,
 .code-group > pre + .output-long > pre,
 .code-group > .tabs + pre.output,
@@ -136,7 +138,7 @@ pre.output.code-focus .line.hl { background: var(--gm-output-lit); }
 .output-long:has(input:checked) > pre { max-height: none; mask-image: none; }
 /* the box itself is hidden but still takes focus, and the label stays when
  * it's ticked, so a keyboard can open it, and close it again, in place */
-.output-more { position: relative; display: inline-block; margin: -.4rem 0 1rem; font: .8rem var(--gm-sans); color: var(--gm-ink-soft); cursor: pointer; }
+.output-more { position: relative; display: inline-block; margin: calc(-1 * var(--gm-space-4)) 0 var(--gm-space-6); font: .8rem var(--gm-sans); color: var(--gm-ink-soft); cursor: pointer; }
 .output-more::before { content: "\25B8\00A0" / ""; }
 .output-more:has(input:checked)::before { content: "\25BE\00A0" / ""; }
 .output-more input { position: absolute; opacity: 0; pointer-events: none; margin: 0; }

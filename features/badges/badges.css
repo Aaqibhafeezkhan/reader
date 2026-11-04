@@ -12,7 +12,7 @@ ol.badges > li:not(.gm-cont)::before {
   place-items: center;
   min-width: 1.6em;
   height: 1.6em;
-  padding: 0 .35em;
+  padding: 0 var(--gm-space-2);
   box-sizing: border-box;
   border-radius: 1em;
   background: var(--badge);

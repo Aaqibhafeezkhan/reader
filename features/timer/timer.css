@@ -3,7 +3,7 @@
 .timer {
   display: inline-flex;
   align-items: center;
-  gap: 0.35em;
+  gap: var(--gm-space-3);
   vertical-align: 0.05em;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -19,6 +19,7 @@
 .timer button {
   font: 600 0.8em/1.3 var(--gm-sans);
   color: inherit;
+  /* just off its letters, so it fits inside the line it's in */
   padding: 0.05em 0.6em;
   background: color-mix(in srgb, var(--gm-accent) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--gm-accent) 45%, transparent);

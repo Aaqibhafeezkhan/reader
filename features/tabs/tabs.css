@@ -2,13 +2,14 @@
 .tabs, .compare {
   --diff-added: color-mix(in srgb, var(--gm-green) 16%, transparent);
   --diff-removed: color-mix(in srgb, var(--gm-red) 13%, transparent);
-  margin: 1rem 0;
+  margin: var(--gm-space-5) 0;
 }
 
 /* a tab: a radio button, out of sight, and its label, which is clicked */
 .tab {
   position: relative; display: inline-block;
-  padding: .2em 0 .3em; margin-bottom: -1px;
+  /* -1px: on the bar's rule, so the picked one's line takes its place */
+  padding: var(--gm-space-1) 0 var(--gm-space-2); margin-bottom: -1px;
   border-bottom: 2px solid transparent;
   font-family: var(--gm-sans); font-size: .82rem; color: var(--gm-ink-soft);
   cursor: pointer; user-select: none;
@@ -27,15 +28,15 @@
 .tabs {
   display: grid; grid-template-columns: minmax(0, 1fr);
   border: 1px solid var(--gm-rule); border-radius: 6px;
-  padding: 0 .9em .8em;
+  padding: 0 var(--gm-space-5) var(--gm-space-5);
 }
 .tab-bar {
-  display: flex; flex-wrap: wrap; gap: 0 1.2em; border-bottom: 1px solid var(--gm-rule);
-  margin: 0 -.9em; padding: .15em .9em 0;
+  display: flex; flex-wrap: wrap; gap: 0 var(--gm-space-6); border-bottom: 1px solid var(--gm-rule);
+  margin: 0 calc(-1 * var(--gm-space-5)); padding: var(--gm-space-1) var(--gm-space-5) 0;
   background: var(--gm-wash); border-radius: 5px 5px 0 0;
 }
 .tab-bar > .tab:has(> input:checked) { color: var(--gm-ink); border-bottom-color: var(--gm-accent); }
-.tab-pane { grid-area: 2 / 1; visibility: hidden; padding-top: .6em; }
+.tab-pane { grid-area: 2 / 1; visibility: hidden; padding-top: var(--gm-space-4); }
 /* Versions of a fence are framed by their code, and its output goes on under them. */
 .code-group > .tabs { border: 0; border-radius: 0; padding: 0; }
 .code-group > .tabs > .tab-bar { margin: 0; padding: 0; background: none; border-radius: 0; }
@@ -48,10 +49,10 @@
 /* compare: every version side by side, each headed by its tab */
 .compare {
   display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
-  gap: 1.6em;
+  gap: var(--gm-space-7);
 }
 .compare-pane { min-width: 0; }
-.compare-pane > .tab { margin-bottom: .5em; }
+.compare-pane > .tab { margin-bottom: var(--gm-space-4); }
 .diff { border-radius: 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
 /* A word's tint alone says it differs; with more contrast asked for, or the
  * system's own colours, it's underlined, and struck through where it's gone. */
@@ -66,7 +67,7 @@
   .tab-bar { display: none; }
   .tab-pane { visibility: visible !important; }
   .tab-pane::before {
-    content: attr(data-label); display: block; margin-bottom: .3em;
+    content: attr(data-label); display: block; margin-bottom: var(--gm-space-2);
     font-family: var(--gm-sans); font-size: .82rem; color: var(--gm-ink-soft);
   }
 }

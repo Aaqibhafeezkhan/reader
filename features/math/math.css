@@ -1,2 +1,2 @@
 .math { font-family: var(--gm-serif); font-style: normal; }
-p.math-display { text-align: center; font-size: 1.15em; margin: 0.9rem 0; }
+p.math-display { text-align: center; font-size: 1.15em; margin: var(--gm-space-5) 0; }

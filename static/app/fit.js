@@ -95,9 +95,8 @@ function measure(body, path) {
       resolve({ zoom: e.data.zoom, fits: e.data.fits });
     };
     window.addEventListener('message', done);
-    Frames.post(el.measure, {
-      type: 'render', css, body, base: baseFor(path), resetScroll: true, deck: true, reveal: Infinity, measure: id,
-    });
+    // Measured at 100%, whatever the text size is now, and seen by no one, so in no theme.
+    Frames.post(el.measure, Frames.slide({ css, base: baseFor(path) }, body, Infinity, { measure: id, dark: undefined }));
   });
 }
 

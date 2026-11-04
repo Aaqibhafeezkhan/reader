@@ -92,6 +92,18 @@ test('a message to a frame goes to its own origin, or to any where it has none (
   assert.deepEqual(sent, ['*', NAME, PORT, '/']);
 });
 
+test('a slide is drawn by the one message, with what\'s only this frame\'s added to it, or taken away (gh-166)', async () => {
+  const { window } = at();
+  await settle();
+  window.Theme = { dark: () => true };
+  const deck = { css: 'c', base: '/b/', scale: 1.25, slides: [] };
+  const whole = { type: 'render', css: 'c', body: 'x', base: '/b/', resetScroll: true, deck: true, reveal: 2, dark: true, scale: 1.25 };
+  // Spread, as it's an object of the page's own, with its own Object.prototype.
+  assert.deepEqual({ ...window.Frames.slide(deck, 'x', 2) }, whole);
+  assert.deepEqual({ ...window.Frames.slide(deck, 'x', 2, { title: 'T', dim: true }) }, { ...whole, title: 'T', dim: true });
+  assert.equal(window.Frames.slide(deck, 'x', 2, { dark: undefined }).dark, undefined);
+});
+
 test('the app\'s preview and stage have the frames\' origin, for a video, and are sent messages there; the rest stay opaque (gh-31)', async () => {
   const html = fs.readFileSync(new URL('../static/index.html', import.meta.url), 'utf8');
   const frames = html.match(/<iframe[^>]*data-preview[^>]*><\/iframe>/g).join('');

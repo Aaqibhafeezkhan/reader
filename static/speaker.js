@@ -40,10 +40,7 @@ async function show(name, i, reveal) {
   const frame = $(name);
   if (shown[name] === i && slide) return Frames.post(frame, { type: 'reveal', reveal, scale: deck.scale });
   shown[name] = i;
-  Frames.post(frame, {
-    type: 'render', css: deck.css, body: slide ? slide.body : '', title: deck.title, base: deck.base, resetScroll: true,
-    deck: true, reveal, dim: name === 'now', dark: Theme.dark(), scale: deck.scale,
-  });
+  Frames.post(frame, Frames.slide(deck, slide ? slide.body : '', reveal, { title: deck.title, dim: name === 'now' }));
 }
 
 function draw({ fresh = false } = {}) {
@@ -142,10 +139,7 @@ function cameTo(i) {
 }
 
 const overview = Overview.create($('overview'), {
-  draw: (i) => ({
-    type: 'render', css: deck.css, body: deck.slides[i].body, base: deck.base, resetScroll: true,
-    deck: true, reveal: Infinity, dark: Theme.dark(), scale: deck.scale,
-  }),
+  draw: (i) => Frames.slide(deck, deck.slides[i].body, Infinity),
   number: (i) => Overview.number(deck.meta?.paging, i, deck.slides.length),
   say: (text) => { $('overview-heard').textContent = text; },
   pick(i) {

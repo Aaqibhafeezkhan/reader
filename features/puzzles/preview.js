@@ -232,7 +232,8 @@
   }
 
   addStyle(`
-.puzzle { margin: var(--gm-space-5) 0; outline: none; break-inside: avoid; }
+/* As wide as what's in it, or its focus ring cuts through a board wider than the column. */
+.puzzle { width: fit-content; margin: var(--gm-space-5) 0; outline: none; break-inside: avoid; }
 .puzzle:focus-visible { outline: 2px solid var(--gm-accent); outline-offset: 4px; }
 .puzzle.puzzle-resting:focus { outline: 2px dashed var(--gm-ink-soft); outline-offset: 4px; }
 .puzzle-bar {

@@ -347,13 +347,30 @@
       });
 
       // Dragging lays track square by square; dragging back picks it up.
-      const square = (e) => {
+      const spot = (e) => {
         const box = svg.getBoundingClientRect();
-        const x = Math.floor(((e.clientX - box.left) / box.width) * (n + 2)) - 1;
-        const y = Math.floor(((e.clientY - box.top) / box.height) * (n + 2)) - 1;
+        return [
+          Math.floor(((e.clientX - box.left) / box.width) * (n + 2)) - 1,
+          Math.floor(((e.clientY - box.top) / box.height) * (n + 2)) - 1,
+        ];
+      };
+      const square = (e) => {
+        const [x, y] = spot(e);
         return x >= 0 && x < n && y >= 0 && y < n ? y * n + x : -1;
       };
+      /** Which way off the board the finger has gone from `i`, if it's straight off it. */
+      const offBoard = (e, i) => {
+        const [x, y] = spot(e);
+        const dx = x - (i % n);
+        const dy = y - Math.floor(i / n);
+        if (x >= 0 && x < n) return y < 0 && dy < 0 ? N : y >= n && dy > 0 ? S : null;
+        if (y >= 0 && y < n) return x < 0 && dx < 0 ? W : x >= n && dx > 0 ? E : null;
+        return null;
+      };
       let drag = null;
+      // A drag off the board at A or B lays the track that leaves there, once,
+      // however far the finger then goes.
+      let left = false;
       svg.addEventListener('pointerdown', (e) => {
         const i = square(e);
         if (i < 0) return;
@@ -361,13 +378,23 @@
         host.focus({ preventScroll: true });
         ui.cursor = i;
         drag = i;
+        left = false;
         svg.setPointerCapture(e.pointerId);
         draw();
       });
       svg.addEventListener('pointermove', (e) => {
         if (drag == null) return;
         const i = square(e);
-        if (i < 0 || i === drag) return;
+        if (i < 0) {
+          const d = offBoard(e, drag);
+          if (!left && d != null && isExit(drag, d) && layTrack(s, drag, d) !== 'blocked') {
+            left = true;
+            commit();
+          }
+          return;
+        }
+        left = false;
+        if (i === drag) return;
         let moved = false;
         // A quick drag can skip squares; walk to it along a row or column.
         while (drag !== i) {

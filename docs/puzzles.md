@@ -17,6 +17,46 @@ quote or a list too.
 There are five so far: `sudoku`, `tracks`, `wordsearch`, `coord` and
 `maze`.
 
+## Starting over
+
+A [Start over](forms.md#starting-over) button puts each puzzle in its section back to its start, in the same edit as the section's boxes and fields, so one undo brings it all back.
+The puzzle is fresh: nothing's selected, and it no longer says it's solved.
+**Start today's** does the same for a [file started from the latest](files.md).
+A puzzle with no moves in it isn't written to.
+
+Each kind keeps its progress in its own text, so each goes back its own way, and keeps what the puzzle gave:
+
+| Kind | What goes | What stays |
+| --- | --- | --- |
+| `sudoku` | the numbers filled in, so the board reads as the givens again, and `notes:` | the givens |
+| `tracks` | the light and half pieces, and every `×`, which become `·` | the heavy pieces, the counts, and A and B |
+| `wordsearch` | `found:` and `marks:` | the letters and `words:` |
+| `coord` | the points plotted, as `plotted: 0` | the grid and the points |
+| `maze` | what's in `path:` and `notes:` | the maze |
+
+A puzzle whose board is kept in a file is only written to in its fence, and its file is never touched.
+
+::: tabs
++++ Source
+````markdown
+```coord
+grid: 6 x 4
+(1, 1) (5, 1) (3, 3) (1, 1)
+plotted: 3
+```
+
+reset:[]
+````
++++ Rendered
+```coord
+grid: 6 x 4
+(1, 1) (5, 1) (3, 3) (1, 1)
+plotted: 3
+```
+
+reset:[]
+:::
+
 ## Sudoku
 
 ::: tabs

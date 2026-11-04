@@ -72,7 +72,8 @@ journal/2026-11-03.md     started from it
 - A file already there is never replaced.
   If its answers can't be cleared, nothing is written, and a message says so.
 
-Puzzles stay as they were left, since Start over doesn't clear them, and so do a date in a sentence and a definition.
+[Puzzles](puzzles.md#starting-over) go back to their start, as Start over puts them.
+A date in a sentence and a definition stay as they were left.
 
 ## The outline
 

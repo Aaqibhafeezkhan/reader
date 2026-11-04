@@ -153,19 +153,19 @@ const CSS = `
  * feature writes it (a link's site, a blank's emptiness), and what the
  * preview frame says aloud (Preview.say). One rule, which an export carries. */
 .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-figure { margin: 0.8rem 0; }
+figure { margin: var(--gm-space-5) 0; }
 figure img { display: block; max-width: 100%; height: auto; }
 figcaption {
   font-family: var(--gm-sans);
   font-size: 0.82rem;
   color: var(--gm-ink-soft);
-  margin-top: 0.35rem;
+  margin-top: var(--gm-space-3);
 }
 img { max-width: 100%; }
 
 
 
-table { margin: 0.8rem 0; }
+table { margin: var(--gm-space-5) 0; }
 th {
   font-family: var(--gm-sans);
   font-size: 0.88em;

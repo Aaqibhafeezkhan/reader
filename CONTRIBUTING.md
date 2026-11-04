@@ -28,6 +28,7 @@ in a `::: tabs` block, its `+++ Source` and `+++ Rendered` tabs.
 | `src/version.js` | which reader this is, from `package.json` (and the commit, in a checkout past its release): for `--version` and the foot of the file list |
 | `src/export-cli.js`, `src/browser.js` | `reader export`, and the headless browser it draws with |
 | `src/export.js` | a document as one HTML file, to keep, send or print: its stylesheet and images inside it, a deck as its pages |
+| `scripts/shots.js` | `npm run shots`: screenshots of a page for a review, across browsers, sizes and themes |
 | `action.yml` | the GitHub Action |
 | `Dockerfile` | the Docker image, serving `/docs`; its page on Docker Hub is `docs/docker.md` |
 | `desktop/` | the desktop app: `main.js` (a window and a server for each folder opened, its frames' second port any free one, and the menus), `folders.js` (the folders opened, each on a port of its own), `electron-builder.yml` (the installers) |
@@ -76,6 +77,57 @@ Every file in a feature's directory, at any depth, is that feature's own, as a p
 A preview frame is another origin than the app's, but its `<base>` is the app's `/content/`, so that a document's links and images find its files. A script the frame loads late (Mermaid's, say) is named from the frame's own `location`, `new URL('/features/...', location.href)`, never by a bare path, which the `<base>` would send to the app, where the frame's policy won't load it from and the app doesn't serve it. The frames' origin serves only what `preview.html` names and features' `preview` and `lazy` scripts; anything else a frame needs goes there too (`src/server.js`).
 
 PDF.js is vendored in `static/vendor/`, Mermaid in `features/mermaid/vendor/`, and the sites' marks in `features/social/icons/`; their versions and licenses are noted there.
+
+## Screenshots for a review
+
+`npm run shots` takes screenshots of a page as reader shows it, in Chromium, Firefox and WebKit, at a desktop width and a phone size with touch, in light, dark, more contrast and forced colours.
+It starts its own reader on a free port, on a scratch copy of the file's folder, so nothing it does writes to the file.
+Playwright is a dev dependency only, and `npm test` doesn't need its browsers, so they're installed once, when you first want shots:
+
+```console
+$ npx playwright install chromium firefox webkit
+$ npm run shots -- test/fixtures/journal.md
+# shots/journal.chromium.light.png, shots/journal.webkit.phone.dark.png, ...
+```
+
+Each file is named for what it shows: the file, the browser, the size (a desktop goes without saying) and the theme.
+`shots/` isn't committed.
+
+Everything is 24 pictures, in a few seconds.
+A review usually wants fewer, so choose with `--browser`, `--size` and `--theme`, each taking names separated by commas.
+`--size` also takes a width in pixels, and a width under 600 is the phone at that width, with its touch.
+`--out` keeps a before apart from an after:
+
+```console
+$ npm run shots -- test/fixtures/journal.md --size 900,360 --theme light,dark --page all --out shots/before
+# ...make the change...
+$ npm run shots -- test/fixtures/journal.md --size 900,360 --theme light,dark --page all --out shots/after
+```
+
+What's in a shot:
+
+- **The page in Work,** the app's bar included: a workbook opens there, and anything else is taken there.
+- **The whole document,** not only what fits on the screen, since the window is made as tall as the document.
+  A document past 32000 pixels, which not every browser will draw, comes in parts: `.part1`, `.part2`.
+  `--screen` shoots only what's on the screen, as someone would see it.
+- **The first page,** of a workbook or a deck, which show a page at a time.
+  `--page 3` is that page, and `--page all` is each of them, as `.page1`, `.page2`; the output says when there are more.
+
+To shoot a particular state of a page, `--state` names a module whose default export gets it there.
+It's given Playwright's `page`, the app, and `frame`, the document in its preview frame, and runs before each shot:
+
+```js
+// ticked.js: npm run shots -- notes.md --state ticked.js
+export default async ({ frame }) => {
+  await frame.locator('input[type=checkbox]').first().check();
+};
+```
+
+A combination a browser can't emulate is skipped, and the output says so.
+Forced colours are the one so far: WebKit answers the media query but draws the page in its own colours, so there's no `webkit.forced` picture.
+
+Playwright's WebKit is Safari's engine, not Safari.
+Safari-only behaviour still needs Safari itself: `safaridriver --enable` once on the machine, and then the real check is through it.
 
 ## The desktop app
 

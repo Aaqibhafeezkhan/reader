@@ -162,16 +162,6 @@ test('the soft ink reads on every panel and row, in both themes', () => {
   for (const [theme, s] of Object.entries(speakers)) for (const ground of ['bg', 'panel']) readable(s['ink-soft'], s[ground], `speaker view, ${theme}`);
 });
 
-test("a warning's yellow holds its ink, and its shape shows on every panel by its outline or its fill", () => {
-  for (const [theme, t] of [['light', light], ['dark', dark]]) {
-    readable(t['on-caution'], t.caution, `${theme} ink on caution`);
-    for (const ground of ['bg', 'panel', 'row']) {
-      const shown = Math.max(contrast(t['on-caution'], t[ground]), contrast(t.caution, t[ground]));
-      assert.ok(shown >= 3, `${theme} caution on --${ground}: ${shown.toFixed(2)}:1`);
-    }
-  }
-});
-
 test("the app's ok and warn read where they're drawn, and the toast's ink on warn", () => {
   for (const [theme, t] of [['light', light], ['dark', dark]]) {
     for (const ground of ['bg', 'panel', 'line-soft']) {

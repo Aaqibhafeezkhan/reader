@@ -40,10 +40,10 @@ export async function startToday(dir, button) {
     toast(`Started from ${made.from.slice(made.from.lastIndexOf('/') + 1)}`);
   } catch (err) {
     toast(`Today's file wasn't started: ${err.message}`, true);
-    button.disabled = false;
     // It may be that it's there already, and the offer should go.
     await loadTree().catch(() => {});
   } finally {
+    button.disabled = false;
     starting = false;
   }
 }

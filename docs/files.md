@@ -13,9 +13,11 @@ dot-directories and `node_modules`, and remembers the folder you were in.
 Typing in **Filter…** searches every folder at once, as one flat list with
 each file's folder beside it.
 
-**New** creates a file in the folder you're in, named after today's date
-(`2026-09-25.md`) unless you give it another name. If that file already exists,
-it's opened instead. PDFs open read-only in the left pane.
+**New**, the page with a plus beside **Filter…**, creates an empty file in the
+folder you're in, named `untitled.md` unless you give it another name. If you
+name a file that already exists, it's opened instead. To begin a series of dated
+files, name the first one with its date, and [Start today's](#starting-todays)
+makes the rest. PDFs open read-only in the left pane.
 
 ## Today
 
@@ -48,8 +50,9 @@ With `reader --day-starts 04:00`, **Today** still lists yesterday's files until 
 
 ### Starting today's
 
-A folder of dated files with none for today offers **Start today's**: a calendar with a plus, on its row in the list and above the folder itself.
+A folder with a dated file in it offers **Start today's**: a calendar with a plus, beside **New**, for the folder you're in.
 Its tooltip says what it's from, or a long press does on a touch screen.
+In a folder with no dated file, it's there but gray.
 It makes today's file from the folder's latest, with the same headings and labels, every answer on every page cleared, as [Start over](forms.md#starting-over) clears them, and opens it, and **Today** lists it.
 
 ```
@@ -57,9 +60,8 @@ journal/2026-11-02.md     the latest
 journal/2026-11-03.md     started from it
 ```
 
-- A folder offers it for three days after the date of its latest document with a date in its own name, so with `2026-11-01.md` the latest, it's there on the 2nd, the 3rd and the 4th, and gone on the 5th.
-  On the last of those days, it carries a yellow warning, and its tooltip or a long press says why.
-  A folder left for longer stops asking.
+- It's there however long ago the latest was, so a folder you come back to after a month still offers it.
+- Once today's file is there, the calendar has a check instead, and opens that file.
 - The latest goes by the file's date, as above, so a `date:` wins over the name; not by when it was last changed. A date still to come is skipped.
   A version, like `2026-11-02.draft.md`, isn't counted.
 - The day goes by `--day-starts`, as **Today** does.

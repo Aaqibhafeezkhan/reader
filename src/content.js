@@ -6,9 +6,9 @@
  *   dated()                    the same, each with its `date` (src/dates.js) or null
  *   read(rel)                  { text, mtime }
  *   write(rel, text, opts)     atomic, with a conflict check and backups
- *   create(name?)              a new file, today's date by default
+ *   create(name?)              a new file, `untitled.md` by default
  *   branch(from, to)           a copy of a document, as another version of it
- *   startable(day)             the folders `day`'s file could be started in
+ *   startable(day)             the folders with a series of dated files, and where `day`'s is
  *   startFrom(dir, day)        what it would be made from: { from, to, text, mtime }
  *   startDay(dir, day, opts)   and made, from that with its answers cleared, if it isn't there
  *   promote(rel, base)         make a version the main one, `base.ext`
@@ -23,7 +23,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { dateOf, today, startable, withDate, daysBetween } from './dates.js';
+import { dateOf, startable, withDate, daysBetween } from './dates.js';
 import { movedLine } from './page.js';
 import { withEdits } from '../static/edits.js';
 
@@ -262,10 +262,10 @@ export function createContent(rootDir) {
     for (const name of all.slice(0, -BACKUPS_KEPT)) fs.rmSync(path.join(dir, name));
   }
 
-  /** Create a new markdown file; defaults to today's date, like a journal. */
+  /** Create a new markdown file. Dating one is for a name to say, or Start today's. */
   function create(name) {
     if (name != null && typeof name !== 'string') throw new PathError('name must be a string');
-    let rel = (name || '').trim() || `${today()}.md`;
+    let rel = (name || '').trim() || 'untitled.md';
     // `release 1.2` is a name with a dot in it, not a `.2` file.
     if (!LISTED_EXTS.has(path.extname(rel).toLowerCase())) rel += '.md';
     const abs = resolve(rel);
@@ -301,7 +301,7 @@ export function createContent(rootDir) {
 
   /** What `day`'s file in the folder `dir` (`''` being the top) would be made from, and called. */
   function startFrom(dir, day) {
-    const start = startable(dated(), day).find((s) => s.dir === dir);
+    const start = startable(dated(), day).find((s) => s.dir === dir && s.from);
     if (!start) throw new ConflictError(`${dir || 'this folder'} has nothing to start ${day} from, or has it already`);
     const { text, mtime } = read(start.from);
     return { ...start, text, mtime };

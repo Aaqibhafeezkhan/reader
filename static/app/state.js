@@ -12,7 +12,7 @@ export const el = {
   version: $('version'), helpVersion: $('helpVersion'), theme: $('theme'),
   split: $('split'), sidebar: $('sidebar'), filter: $('filter'), files: $('files'),
   todayBtn: $('todayBtn'), filesNote: $('filesNote'),
-  newBtn: $('newBtn'), crumbs: $('crumbs'), newForm: $('newForm'), newName: $('newName'),
+  newBtn: $('newBtn'), startBtn: $('startBtn'), crumbs: $('crumbs'), newForm: $('newForm'), newName: $('newName'),
   preview: $('preview'), pdfView: $('pdfView'), empty: $('empty'),
   editor: $('editor'), gutter: $('gutter'), gutterToggle: $('gutterToggle'),
   conflict: $('conflict'), reloadBtn: $('reloadBtn'), overwriteBtn: $('overwriteBtn'),
@@ -32,7 +32,7 @@ export const state = {
   root: '',
   files: [],
   today: null,          // the date it is, by the server: which files Today lists
-  starts: new Map(),    // the folders today's file could be started in, by the server, each by its folder
+  starts: new Map(),    // the folders with a series of dated files, by the server, each by its folder: where today's is, or how to start it
   dir: '',              // the folder the file list shows
   group: null,          // or the versions of this file in it, by name
   todayShown: false,    // or, over those, the files dated today, wherever they are

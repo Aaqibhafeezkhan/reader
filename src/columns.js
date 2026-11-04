@@ -14,6 +14,13 @@
  * `env.masthead` (the asides' legend), and what goes at the end of the
  * byline itself on `env.byline` (when the page closes).
  *
+ * Not every page is a whole document (`layout`). A part of a deck has no
+ * masthead, its deck's being said elsewhere. A slide also sets its opening
+ * heading apart from the rest, as `.slide-title` above `.slide-body`, for the
+ * deck's stylesheet (src/slides.js) to keep one at the top and center the
+ * other; one with no opening heading is all body. A cover is a slide that's
+ * all headings (`.slide-cover`), to be centered whole.
+ *
  * A front matter key with an alias, `reviewer #: Josh` or `topic c:
  * Coherence`, declares something for a feature, which claims the line
  * (src/page.js). One that no feature claims isn't read as it's written: a
@@ -74,9 +81,10 @@ export const LIGHT_COLOURS = CSS.match(/\/\* colours, light \*\/\n:root \{([^}]*
  * @param {object} [opts]
  * @param {boolean} [opts.headings=true] show the column headings
  * @param {string} [opts.title]
+ * @param {'page'|'part'|'slide'|'cover'} [opts.layout='page']
  * @returns {{css: string, body: string, title: string}}
  */
-export function columns(md, tokens, env, { headings = true, title } = {}) {
+export function columns(md, tokens, env, { headings = true, title, layout = 'page' } = {}) {
   const meta = env.frontMatter || {};
   const pairs = splitPairs(tokens, env.margin || []);
   const docTitle = title || meta.title || 'Notes';
@@ -84,33 +92,48 @@ export function columns(md, tokens, env, { headings = true, title } = {}) {
   const speakerLabel = meta.speaker || 'Speaker';
   const listenerLabel = meta.listener || meta.author || 'Listener';
 
-  const body = pairs
-    .map((pair) => {
-      const speakerHtml = pair.speaker.length
-        ? md.renderer.render(pair.speaker, md.options, env)
-        : '';
-      // Each with what its block gives a note: written in a tab, it shows
-      // while that tab does (features/tabs).
-      const noteHtml = pair.notes.map((note) => note.render(noteAttrs(tokens, note.anchor))).join('\n');
-      const cells = [
-        `<div class="gm-speaker">\n${speakerHtml}</div>`,
-        noteHtml ? `<div class="gm-asides">\n${noteHtml}\n</div>` : '<div></div>',
-      ];
-      return `<section class="gm-pair">\n${cells.join('\n')}\n</section>`;
-    })
-    .join('\n');
+  const speak = (speaker) => (speaker.length ? md.renderer.render(speaker, md.options, env) : '');
+  const row = (speakerHtml, notes) => {
+    // Each with what its block gives a note: written in a tab, it shows
+    // while that tab does (features/tabs).
+    const noteHtml = notes.map((note) => note.render(noteAttrs(tokens, note.anchor))).join('\n');
+    const cells = [
+      `<div class="gm-speaker">\n${speakerHtml}</div>`,
+      noteHtml ? `<div class="gm-asides">\n${noteHtml}\n</div>` : '<div></div>',
+    ];
+    return `<section class="gm-pair">\n${cells.join('\n')}\n</section>`;
+  };
+  const rows = (some) => some.map((pair) => row(speak(pair.speaker), pair.notes));
+
+  const body = layout === 'slide' ? slideBody(pairs, speak, row, rows) : rows(pairs).join('\n');
 
   const colheads = headings
     ? `<div class="gm-colheads"><div>${escapeHtml(speakerLabel)}</div><div class="gm-h-aside">${escapeHtml(listenerLabel)}</div></div>`
     : '';
 
   const head = masthead(meta, docTitle, (env.masthead || []).join('\n  '), env.byline || []);
+  // With no masthead, the column headings or the first row come straight after the opening tag.
+  const under = `${colheads}\n${body}\n</div>`;
   return {
     title: docTitle,
     // The byline's reviewer chips, if it has any, want their look.
     css: head.includes('<span class="gm-who">') ? themeCss() + REVIEWER_CSS : themeCss(),
-    body: `<div class="gm-doc">\n${head}\n${colheads}\n${body}\n</div>`,
+    body: layout === 'page'
+      ? `<div class="gm-doc">\n${head}\n${under}`
+      : `<div class="${layout === 'cover' ? 'gm-doc slide-cover' : 'gm-doc'}">\n${under.trimStart()}`,
   };
+}
+
+/** A slide's rows, under its opening heading if the first of them opens with one. */
+function slideBody(pairs, speak, row, rows) {
+  if (!pairs.length) return '';
+  const [{ speaker, notes }, ...others] = pairs;
+  if (speaker[0]?.type !== 'heading_open') return `<div class="slide-body">\n${rows(pairs).join('\n')}\n</div>`;
+  const heading = speak(speaker.slice(0, 3)).trim();
+  const first = row(speak(speaker.slice(3)), notes);
+  // A row that held only the title is gone with it.
+  const left = [...(first === row('', []) ? [] : [first]), ...rows(others)];
+  return `<header class="slide-title">\n${heading}\n</header>\n<div class="slide-body">\n${left.map((r) => `${r}\n`).join('')}</div>`;
 }
 
 /** A reviewer's chip: their name, without the colour after it, or '' for none. */

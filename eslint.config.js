@@ -85,10 +85,10 @@ export default [
       ],
     },
   },
-  // The server, the CLI, the desktop app, the renderer's features and the
-  // tests, less what features draw into the preview frame, which has no Node.
+  // The server, the CLI, the scripts, the desktop app, the renderer's features
+  // and the tests, less what features draw into the preview frame, which has no Node.
   {
-    files: ['bin/**/*.js', 'src/**/*.js', 'desktop/*.js', 'features/**/*.js', 'test/**/*.js', '*.config.js'],
+    files: ['bin/**/*.js', 'src/**/*.js', 'scripts/**/*.js', 'desktop/*.js', 'features/**/*.js', 'test/**/*.js', '*.config.js'],
     ignores: FRAME,
     languageOptions: { sourceType: 'module', globals: globals.node },
   },

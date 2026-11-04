@@ -133,6 +133,14 @@
   /** Every listed word found. */
   const isSolved = (s) => s.found.length === s.words.length;
 
+  /** The letters and the list: nothing found, and nothing marked. */
+  function restart(s) {
+    const played = s.found.length > 0 || s.marks.length > 0;
+    s.found = [];
+    s.marks = [];
+    return played;
+  }
+
   const WORDSEARCH_KEYS = [
     ['← → ↑ ↓', 'move'],
     ['Space or Enter', 'start a word, then again at its last letter'],
@@ -153,6 +161,7 @@
     parse: parseWordsearch,
     format: formatWordsearch,
     solved: isSolved,
+    restart,
     rules: { line, circle: circleWord },
     mount(host, text, ui, post) {
       const s = parseWordsearch(text);

@@ -15,7 +15,8 @@
  *
  *   - [x][x][ ] 1 small yellow onion, diced
  *
- * `reset:[]` is a button that clears every box and field in its section -- the
+ * `reset:[]` is a button that clears every box and field in its section, and
+ * puts its puzzles back to their start (`preview:start-over`) -- the
  * heading it's under, to the next at that level or above, and no further than
  * the `---` either side of it, as a page in Work shows no more -- as one edit:
  * `reset:[Start over]` names it. When the section has a heading `Log` in

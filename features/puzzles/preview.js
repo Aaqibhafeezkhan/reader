@@ -28,14 +28,19 @@
  * export, which has nothing to draw them: by its kind and text, the board
  * as it stands, and the styles every board takes.
  *
+ * Starting over (`preview:start-over`) puts each puzzle on its lines back to
+ * its start, as a fresh one: what it gave stays, and only the fence is written
+ * to, as with a move. One with no moves in it isn't written to at all.
+ *
  * Each kind lives in kinds/<kind>.js and registers itself here with
  * `mount(host, text, ui, post)`: draw the puzzle into `host` from `text`
  * (false if the text can't be read), keep what the reader was doing in `ui`,
  * and call `post(before, after)` with the fence's text after each move. It
  * draws through `frame`, saying what it's called and where a key leaves it.
  * Alongside, without the page, it gives `parse(text)` (its state, or null),
- * `format(state)` (the text again), `solved(state)` and the `rules` a move
- * follows, which kinds.test.js checks.
+ * `format(state)` (the text again), `solved(state)`, `restart(state)` (takes
+ * every move out of the state, and says if there were any) and the `rules` a
+ * move follows, which kinds.test.js checks.
  */
 (() => {
   const KINDS = {};
@@ -47,6 +52,8 @@
   const keys = new WeakMap();
   // What each board says after a key, for a screen reader (Preview.say).
   const tells = new WeakMap();
+  // How each board goes back to its start, adding what that writes to a list.
+  const starts = new WeakMap();
   let styles = '';
 
   function register(kind, impl, css = '') {
@@ -56,55 +63,85 @@
 
   /** Draws every puzzle under `root`; puzzle `focus`, if given, takes focus. */
   function hydrate(root, focus = null) {
-    for (const host of root.querySelectorAll('.puzzle[data-kind]')) {
-      const kind = KINDS[host.dataset.kind];
-      if (!kind) continue;
-      const index = Number(host.dataset.puzzle);
-      // markdown leaves a code block ending in a newline the fence didn't have
-      const own = (host.querySelector('code')?.textContent ?? '').replace(/\n$/, '');
-      if (host.dataset.sourceError != null) {
-        unreadable(host, host.dataset.sourceError);
-        continue;
-      }
-      const source = host.dataset.source;
-      const lead = source == null ? '' : `${source}\n`;
-      const text = source == null ? own : `${lead}${own}`;
-      if (!memory.has(index)) memory.set(index, {});
-      // The fence's lines, kept up to date as moves change how many there
-      // are, since the page isn't rendered again after a move.
-      const from = Number(host.dataset.from);
-      let to = Number(host.dataset.to);
-      const prefix = host.dataset.prefix ?? '';
-      const fenced = (t) => lines(t).map((l) => prefix + l);
-      const send = (before, after) => {
-        if (Preview.closed) return;
-        const edit = { from, to, before: fenced(before), after: fenced(after) };
-        to = from + edit.after.length;
-        Preview.edit([edit], { drawn: true });
-      };
-      const post = (before, after) => {
-        if (!lead) return send(before, after);
-        const fence = (t) => (t === source ? '' : t.startsWith(lead) ? t.slice(lead.length) : null);
-        if (fence(before) !== null && fence(after) !== null) send(fence(before), fence(after));
-        else console.warn(`puzzle ${index}: a move changed the board kept in its file; not saved`);
-      };
-      if (!kind.mount(host, text, memory.get(index), post)) {
-        unreadable(host, source == null ? '' : 'its board file');
-        continue;
-      }
-      keys.set(host, `${host.dataset.kind}\n${text}`);
-      // Ahead of the kind's own, which a record's puzzle doesn't hear.
-      for (const type of ['keydown', 'pointerdown', 'pointermove', 'pointerup', 'click', 'dblclick']) {
-        host.addEventListener(type, (e) => { if (Preview.closed) e.stopImmediatePropagation(); }, true);
-      }
-      playable(host);
-      // After the kind's own keys: a key it took is heard.
-      host.addEventListener('keydown', (e) => { if (e.defaultPrevented) tells.get(host)?.(); });
-      host.addEventListener('focusout', (e) => { if (!host.contains(e.relatedTarget)) host.classList.remove('puzzle-resting'); });
-      host.addEventListener('pointerdown', () => host.classList.remove('puzzle-resting'));
-      if (index === focus) host.focus({ preventScroll: true });
-    }
+    for (const host of root.querySelectorAll('.puzzle[data-kind]')) drawPuzzle(host, focus);
   }
+
+  function drawPuzzle(host, focus) {
+    const kind = KINDS[host.dataset.kind];
+    if (!kind) return;
+    const index = Number(host.dataset.puzzle);
+    // markdown leaves a code block ending in a newline the fence didn't have
+    let own = (host.querySelector('code')?.textContent ?? '').replace(/\n$/, '');
+    if (host.dataset.sourceError != null) {
+      unreadable(host, host.dataset.sourceError);
+      return;
+    }
+    const source = host.dataset.source;
+    const lead = source == null ? '' : `${source}\n`;
+    const text = `${lead}${own}`;
+    if (!memory.has(index)) memory.set(index, {});
+    // The fence's lines and text, kept up to date as moves change them, since
+    // the page isn't rendered again after a move.
+    const from = Number(host.dataset.from);
+    let to = Number(host.dataset.to);
+    const prefix = host.dataset.prefix ?? '';
+    const fenced = (t) => lines(t).map((l) => prefix + l);
+    /** The fence's part of a puzzle's whole text; null if the board file's isn't as it is. */
+    const inFence = (t) => (!lead ? t : t === source ? '' : t.startsWith(lead) ? t.slice(lead.length) : null);
+    const send = (before, after) => {
+      if (Preview.closed) return;
+      const edit = { from, to, before: fenced(before), after: fenced(after) };
+      to = from + edit.after.length;
+      own = after;
+      Preview.edit([edit], { drawn: true });
+    };
+    const post = (before, after) => {
+      if (inFence(before) !== null && inFence(after) !== null) send(inFence(before), inFence(after));
+      else console.warn(`puzzle ${index}: a move changed the board kept in its file; not saved`);
+    };
+    if (!kind.mount(host, text, memory.get(index), post)) {
+      unreadable(host, source == null ? '' : 'its board file');
+      return;
+    }
+    keys.set(host, `${host.dataset.kind}\n${text}`);
+    starts.set(host, (edits) => {
+      const s = kind.parse(`${lead}${own}`);
+      const start = kind.restart(s) ? inFence(kind.format(s)) ?? own : own;
+      if (start !== own) edits.push({ from, to, before: fenced(own), after: fenced(start) });
+      // A new host and new memory, so nothing of how it was being played
+      // carries over: not a word half circled, a message's timer, or a drag.
+      const fresh = host.cloneNode(false);
+      fresh.className = 'puzzle';
+      fresh.dataset.to = String(from + lines(start).length);
+      const code = document.createElement('code');
+      code.textContent = start;
+      const pre = document.createElement('pre');
+      pre.append(code);
+      fresh.append(pre);
+      const playing = host.contains(document.activeElement);
+      memory.delete(index);
+      host.replaceWith(fresh);
+      drawPuzzle(fresh, playing ? index : null);
+    });
+    // Ahead of the kind's own, which a record's puzzle doesn't hear.
+    for (const type of ['keydown', 'pointerdown', 'pointermove', 'pointerup', 'click', 'dblclick']) {
+      host.addEventListener(type, (e) => { if (Preview.closed) e.stopImmediatePropagation(); }, true);
+    }
+    playable(host);
+    // After the kind's own keys: a key it took is heard.
+    host.addEventListener('keydown', (e) => { if (e.defaultPrevented) tells.get(host)?.(); });
+    host.addEventListener('focusout', (e) => { if (!host.contains(e.relatedTarget)) host.classList.remove('puzzle-resting'); });
+    host.addEventListener('pointerdown', () => host.classList.remove('puzzle-resting'));
+    if (index === focus) host.focus({ preventScroll: true });
+  }
+
+  // Starting over, each puzzle on the lines goes back to its start. One with
+  // no lines to write to (in an aside, in a record) isn't on any.
+  document.addEventListener('preview:start-over', ({ detail: { within, edits } }) => {
+    for (const host of document.querySelectorAll('.puzzle[data-kind]')) {
+      if (within(Number(host.dataset.from))) starts.get(host)?.(edits);
+    }
+  });
 
   const lines = (s) => (s === '' ? [] : s.split('\n'));
 

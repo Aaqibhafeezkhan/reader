@@ -58,6 +58,13 @@
   /** Every point plotted: the picture is complete. */
   const isComplete = (s) => s.plotted === s.total;
 
+  /** The grid and the points to plot: none plotted. */
+  function restart(s) {
+    const played = s.plotted > 0;
+    s.plotted = 0;
+    return played;
+  }
+
   const COORD_KEYS = [
     ['← → ↑ ↓', 'move the pencil (with ⇧, five at a time)'],
     ['Space or Enter', 'plot the next point here'],
@@ -78,6 +85,7 @@
     parse: parseCoord,
     format: formatCoord,
     solved: isComplete,
+    restart,
     rules: { nth },
     mount(host, text, ui, post) {
       const s = parseCoord(text);

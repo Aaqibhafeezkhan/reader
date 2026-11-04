@@ -269,6 +269,14 @@
   /** The way taken so far ends at E. */
   const isSolved = (m) => same(m.path[m.path.length - 1], m.end);
 
+  /** The walls: no way taken from S, and no pencil marks. */
+  function restart(m) {
+    const played = m.path.length > 1 || m.notes.length > 0;
+    m.path = [m.start];
+    m.notes = [];
+    return played;
+  }
+
   const MAZE_KEYS = [
     ['← → ↑ ↓', 'go that way, on to the next turn-off'],
     ['drag', 'draw your way (drag back to take it back)'],
@@ -293,6 +301,7 @@
     parse: parseMaze,
     format: formatMaze,
     solved: isSolved,
+    restart,
     rules: { walk, extend, route },
     mount(host, text, ui, post) {
       const m = parseMaze(text);

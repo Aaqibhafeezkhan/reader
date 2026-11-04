@@ -54,29 +54,19 @@ export function isDeck(src) {
 }
 
 export function slides(src, { file, read, now } = {}) {
-  const { meta, entries, slides: chunks } = split(src);
-  const title = titleOf(meta, file);
-  let css = '';
-  const out = [];
-  // Kept by features across the slides, to number things through the deck.
-  const shared = {};
-  const behind = readBackground(meta.background);
+  const worth = (lifted) => lifted.body.trim() || lifted.notes;
+  const { css, title, meta, parts } = draw(src, worth, { file, read, deck: true, now });
   const leaving = readTransition(meta.transition) ?? 'none';
-  for (const { text, line } of chunks) {
-    const lifted = lift(text);
-    if (!lifted.body.trim() && !lifted.notes) continue;
-    const own = liftBackground(lifted.notes);
-    const moved = liftTransition(own.notes);
+  const out = parts.map(({ body, source, line, notes: own }) => {
+    const moved = liftTransition(own);
     const { notes, at, budget } = readNotes(moved.notes);
-    const r = render(lifted.body, { file, read, line, shared, entries, background: own.background ?? behind, fonts: meta, matter: meta, deck: true, now });
-    css ||= `${r.css}\n${CSS}`;
-    out.push({ body: titled(unmast(r.body), lifted.body), notes, notesHtml: renderNotes(notes), line, at, budget, transition: moved.transition ?? leaving });
-  }
+    return { body: titled(unmast(body), source), notes, notesHtml: renderNotes(notes), line, at, budget, transition: moved.transition ?? leaving };
+  });
   // When each slide should start, by the notes' checkpoints and budgets.
   const total = duration(meta.time);
   const starts = plan(out, total);
   out.forEach((s, i) => { s.plan = starts[i]; });
-  return { css: css || CSS, title, meta, slides: out, end: planEnd(out, starts, total) };
+  return { css: css ? `${css}\n${CSS}` : CSS, title, meta, slides: out, end: planEnd(out, starts, total) };
 }
 
 /**
@@ -86,21 +76,30 @@ export function slides(src, { file, read, now } = {}) {
  * (`data-line`). `drawn`, `exported` and `now` are as render() takes them.
  */
 export function pages(src, { file, read, lines = true, drawn, exported, now } = {}) {
+  const { css, title, meta, parts } = draw(src, (lifted) => lifted.body.trim(), { file, read, lines, drawn, exported, now });
+  return { css, title, meta, pages: parts.map(({ body, line }) => ({ body: unmast(body), line })) };
+}
+
+/**
+ * Draws each part of a deck that's `worth` it, whichever way `options` has
+ * render() draw it, on what's behind the deck unless its notes say otherwise.
+ * Each comes back with its source, its line and the notes left to read.
+ */
+function draw(src, worth, options) {
   const { meta, entries, slides: chunks } = split(src);
-  let css = '';
-  const out = [];
   const shared = {};
-  const title = titleOf(meta, file);
   const behind = readBackground(meta.background);
+  let css = '';
+  const parts = [];
   for (const { text, line } of chunks) {
     const lifted = lift(text);
-    if (!lifted.body.trim()) continue;
+    if (!worth(lifted)) continue;
     const own = liftBackground(lifted.notes);
-    const r = render(lifted.body, { file, read, line, shared, entries, background: own.background ?? behind, fonts: meta, matter: meta, lines, drawn, exported, now });
+    const r = render(lifted.body, { ...options, line, shared, entries, background: own.background ?? behind, fonts: meta, matter: meta });
     css ||= r.css;
-    out.push({ body: unmast(r.body), line });
+    parts.push({ body: r.body, source: lifted.body, line, notes: own.notes });
   }
-  return { css, title, meta, pages: out };
+  return { css, title: titleOf(meta, options.file), meta, parts };
 }
 
 /**

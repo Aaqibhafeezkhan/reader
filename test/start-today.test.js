@@ -192,6 +192,22 @@ test('from the list over the page in Work, a gray Start today\'s leaves it open,
   setWorking(false);
 });
 
+test('Esc in the list over the page in Work closes the list, and only the next one leaves Work', async () => {
+  await fresh();
+  setWorking(true);
+  el.sidebarToggle.click();
+  const esc = (target) => target.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  el.filter.value = 'no';
+  esc(el.filter);
+  assert.equal(listOpen(), true, 'it clears the filter first');
+  assert.equal(state.working, true);
+  esc(el.filter);
+  assert.equal(listOpen(), false);
+  assert.equal(state.working, true);
+  esc(document.activeElement);
+  assert.equal(state.working, false);
+});
+
 test('a finger held on the icon says what it would, and doesn\'t press it; a tap presses it', async () => {
   await fresh('journal');
   const press = (type, pointerType = 'touch') => offer().dispatchEvent(Object.assign(new window.Event(type, { bubbles: true }), { pointerType }));

@@ -34,6 +34,7 @@ the whole window, to read and to fill in. Nothing can be typed into the file, bu
 and radio buttons still toggle, fields can be filled in, and puzzles can be played. `⌘.` or `Esc` goes back to editing. The mode is remembered.
 
 `☰` brings the [file list](files.md#the-file-list) over the page, and Work stays.
+`Esc` there closes the list, not Work.
 
 A deck (below), `type: workbook` or `type: slides`, is a workbook in Work: each slide is a page, shown one at a
 time as a document is, at the size it's written and as long as it needs to

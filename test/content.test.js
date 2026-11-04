@@ -85,15 +85,12 @@ test('backups: explicit saves always back up, autosaves are throttled, last 10 k
   assert.equal(fs.readdirSync(dir).length, before);
 });
 
-test('create defaults to today, adds .md, and does not clobber', () => {
+test('create defaults to untitled, adds .md, and does not clobber', () => {
   const { root, content } = fixture();
-  const d = new Date();
-  const p = (n) => String(n).padStart(2, '0');
-  const today = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.md`;
 
   assert.deepEqual(
     { path: content.create().path, created: true },
-    { path: today, created: true },
+    { path: 'untitled.md', created: true },
   );
   assert.equal(content.create().created, false);
   assert.equal(content.create('sub/idea').path, 'sub/idea.md');

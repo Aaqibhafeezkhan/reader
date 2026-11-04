@@ -9,7 +9,7 @@ mock.timers.enable({ apis: ['setTimeout'] });
 
 const window = globals(app());
 const { document } = window;
-const JOURNAL = [{ dir: 'journal', date: '2026-11-01', last: false }];
+const JOURNAL = [{ dir: 'journal', from: 'journal/2026-10-30.md', date: '2026-11-01', to: 'journal/2026-11-03.md' }];
 let starts = JOURNAL;
 let files = [{ path: 'journal/2026-10-30.md', date: '2026-10-30' }, { path: 'notes.md', date: null }];
 let asked = [];
@@ -22,7 +22,7 @@ globalThis.fetch = async (url, { method = 'GET', body } = {}) => {
   }
   if (ask.startsWith('/api/start-day') && method === 'POST') {
     files = [...files, { path: 'journal/2026-11-03.md', date: '2026-11-03' }];
-    starts = [];
+    starts = [{ dir: 'journal', open: 'journal/2026-11-03.md' }];
   }
   const out = ask.startsWith('/api/info') ? { name: 'notes', root: '/notes' }
     : ask.startsWith('/api/tree') ? { today: '2026-11-03', starts, files: files.map((f) => ({ type: 'md', mtime: 1, ...f })) }
@@ -44,7 +44,7 @@ const settled = async () => {
 await settled();
 
 const hidden = () => [...document.querySelectorAll('iframe.measure')].find((f) => f !== el.measure);
-const offer = () => el.sidebar.querySelector('.start-today');
+const offer = () => el.startBtn;
 const posts = () => asked.filter((a) => a.method === 'POST');
 
 /** The hidden frame, once it's there: what it's sent, and how it answers. */
@@ -68,59 +68,89 @@ async function fresh(dir = '') {
   go(dir, null, { focus: false });
 }
 
-test('a folder that can start today has an icon on its row, and the words at the top of the folder; others don\'t', async () => {
+const gray = () => el.startBtn.getAttribute('aria-disabled') === 'true';
+
+test('the icon is beside New, for the folder being shown, and not on a folder\'s row', async () => {
   await fresh();
-  const row = el.files.querySelector('.folder[data-dir="journal"]').closest('li');
-  const icon = row.querySelector('.start-today');
-  assert.equal(icon.getAttribute('aria-label'), "Start today's");
-  assert.equal(icon.title, "Start today's from 2026-11-01.");
-  assert.ok(icon.querySelector('svg'));
-  assert.equal(icon.textContent, '');
-  assert.equal(icon.closest('.actions'), null, 'not only on hover');
-  assert.equal(el.files.querySelectorAll('.start-today').length, 1);
-  go('journal', null, { focus: false });
-  // The same icon above the folder, and no row of its own.
   assert.equal(el.files.querySelector('.start-today'), null);
-  const above = el.crumbs.querySelector('.start-today');
-  assert.equal(above.getAttribute('aria-label'), "Start today's");
-  assert.ok(above.querySelector('svg'));
-  assert.equal(above.textContent, '');
+  go('journal', null, { focus: false });
+  assert.equal(gray(), false);
+  assert.equal(el.startBtn.parentElement, el.newBtn.parentElement);
+  assert.equal(el.startBtn.getAttribute('aria-label'), "Start today's");
+  assert.equal(el.startBtn.title, "Start today's from 2026-11-01.");
+  assert.ok(el.startBtn.querySelector('svg'));
+  assert.equal(el.startBtn.textContent, '');
+  assert.equal(el.files.querySelector('.start-today'), null);
+});
+
+test('in a folder with no dated file it\'s gray, not gone, says why, and starts nothing', async () => {
+  await fresh();
+  assert.equal(el.startBtn.hidden, false);
+  assert.equal(gray(), true);
+  assert.equal(el.startBtn.disabled, false, 'or it couldn\'t say why');
+  assert.match(el.startBtn.title, /once this folder has a file with a date in its name/);
+  assert.ok(el.startBtn.querySelector('svg'));
+  el.startBtn.click();
+  await settled();
+  assert.deepEqual(asked, []);
+  assert.equal(hidden(), undefined);
+  go('journal', null, { focus: false });
+  assert.equal(gray(), false);
   starts = [];
   await loadTree();
-  assert.equal(offer(), null);
+  assert.equal(gray(), true);
 });
 
-test('only on its last day does it carry a warning, by a shape, a tooltip and a description', async () => {
+test('New is an icon that still says its name', async () => {
   await fresh();
-  const WHY = "Start today's from 2026-11-01. A folder offers this for three days after its latest file, so tomorrow it won't.";
-  assert.equal(el.files.querySelector('.start-warn'), null);
-  assert.equal(offer().hasAttribute('aria-description'), false);
-  starts = [{ dir: 'journal', date: '2026-11-01', last: true }];
-  await loadTree();
-  for (const dir of ['', 'journal']) {
-    go(dir, null, { focus: false });
-    const b = offer();
-    assert.equal(b.title, WHY, dir);
-    assert.equal(b.getAttribute('aria-description'), WHY, dir);
-    const mark = b.querySelector('.start-warn');
-    assert.equal(mark.getAttribute('aria-hidden'), 'true');
-    assert.ok(mark.querySelector('.start-warn-sign'));
-  }
-  go('', null, { focus: false });
-  assert.equal(offer().getAttribute('aria-label'), "Start today's", 'its name stays');
+  assert.ok(el.newBtn.querySelector('svg'));
+  assert.equal(el.newBtn.textContent, '');
+  assert.equal(el.newBtn.getAttribute('aria-label'), 'New file');
 });
 
-test('the icon above the folder starts it', async () => {
+test('it\'s gray while the list is something other than the folder', async () => {
   await fresh('journal');
-  el.crumbs.querySelector('.start-today').click();
+  el.todayBtn.click();
+  assert.equal(gray(), true);
+  assert.match(el.startBtn.title, /from the folder it's for/);
+  el.startBtn.click();
   await settled();
-  assert.ok(hidden());
-  mock.timers.tick(15000);
+  assert.deepEqual(asked, []);
+  el.todayBtn.click();
+  assert.equal(gray(), false);
+});
+
+test('once today\'s is there it stays, and opens that', async () => {
+  await fresh('journal');
+  const before = el.startBtn.innerHTML;
+  files = [...files, { path: 'journal/2026-11-03.md', date: '2026-11-03' }];
+  starts = [{ dir: 'journal', open: 'journal/2026-11-03.md' }];
+  await loadTree();
+  assert.equal(gray(), false);
+  assert.notEqual(el.startBtn.innerHTML, before);
+  assert.equal(el.startBtn.getAttribute('aria-label'), "Open today's");
+  assert.equal(el.startBtn.title, "Open today's, 2026-11-03.md.");
+  el.startBtn.click();
   await settled();
+  assert.equal(state.current.path, 'journal/2026-11-03.md');
+  assert.deepEqual(asked, [], 'nothing is started');
+  assert.equal(hidden(), undefined);
+});
+
+test('New offers a name no file has, in the folder being shown', async () => {
+  await fresh('journal');
+  el.newBtn.click();
+  assert.equal(el.newName.value, 'journal/untitled.md');
+  el.newBtn.click();
+  files = [...files, { path: 'journal/untitled.md', date: null }, { path: 'journal/untitled-2.md', date: null }];
+  await loadTree();
+  el.newBtn.click();
+  assert.equal(el.newName.value, 'journal/untitled-3.md');
+  el.newBtn.click();
 });
 
 test('a finger held on the icon says what it would, and doesn\'t press it; a tap presses it', async () => {
-  await fresh();
+  await fresh('journal');
   const press = (type, pointerType = 'touch') => offer().dispatchEvent(Object.assign(new window.Event(type, { bubbles: true }), { pointerType }));
   el.toast.textContent = '';
   press('pointerdown');
@@ -154,7 +184,7 @@ test('a finger held on the icon says what it would, and doesn\'t press it; a tap
 });
 
 test('the frame\'s edits go to the server, which is told what they\'re of, and the new file opens and is in Today', async () => {
-  await fresh();
+  await fresh('journal');
   offer().click();
   await settled();
   assert.deepEqual(posts(), [], 'nothing written before the frame answers');
@@ -173,11 +203,12 @@ test('the frame\'s edits go to the server, which is told what they\'re of, and t
   el.todayBtn.click();
   assert.ok(el.files.querySelector('.file[data-path="journal/2026-11-03.md"]'));
   el.todayBtn.click();
-  assert.equal(offer(), null);
+  assert.equal(offer().getAttribute('aria-label'), "Open today's");
+  assert.equal(offer().disabled, false);
 });
 
 test('a frame that fails writes nothing, and says so', async () => {
-  await fresh();
+  await fresh('journal');
   offer().click();
   await settled();
   const { say } = framed();
@@ -192,7 +223,7 @@ test('a frame that fails writes nothing, and says so', async () => {
 });
 
 test('a frame that never answers writes nothing, and says so', async () => {
-  await fresh();
+  await fresh('journal');
   offer().click();
   await settled();
   assert.ok(hidden());
@@ -201,26 +232,26 @@ test('a frame that never answers writes nothing, and says so', async () => {
   assert.deepEqual(posts(), []);
   assert.match(el.toast.textContent, /wasn't started.*too long/);
   assert.equal(hidden(), undefined);
-  assert.ok(offer(), 'and it can be tried again');
+  assert.equal(offer().disabled, false, 'and it can be tried again');
 });
 
 test('refused by the server, the list is looked at again', async () => {
-  await fresh();
+  await fresh('journal');
   refuse = 'journal/2026-11-03.md already exists';
   offer().click();
   await settled();
   const { say } = framed();
   say({ type: 'ready' });
   await settled();
-  starts = [];
+  starts = [{ dir: 'journal', open: 'journal/2026-11-03.md' }];
   say({ type: 'started-over', edits: [], failed: null });
   await settled();
   assert.match(el.toast.textContent, /already exists/);
-  assert.equal(offer(), null);
+  assert.equal(offer().getAttribute('aria-label'), "Open today's");
 });
 
 test('pressed twice, it starts once', async () => {
-  await fresh();
+  await fresh('journal');
   const b = offer();
   b.click();
   b.click();

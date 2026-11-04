@@ -553,13 +553,9 @@ test('today\'s file starts from a folder\'s latest: drawn open, written once, an
     const plan = await (await fetch(`${url}/api/start-day?dir=journal`)).json();
     assert.equal(plan.from, 'journal/2026-11-01.md');
     assert.equal(plan.to, 'journal/2026-11-03.md');
-    // Three days after it's the last it's offered; after that, neither route has it.
-    clock = new Date(2026, 10, 4, 5).getTime();
-    assert.equal((await tree()).starts[0].last, true);
-    clock = new Date(2026, 10, 5, 5).getTime();
-    assert.deepEqual((await tree()).starts, []);
-    assert.equal((await fetch(`${url}/api/start-day?dir=journal`)).status, 409);
-    assert.equal((await fetch(`${url}/api/start-day`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dir: 'journal', from: plan.from, mtime: plan.mtime, edits: [] }) })).status, 409);
+    // However long it's been, it's still offered.
+    clock = new Date(2027, 10, 4, 5).getTime();
+    assert.equal((await tree()).starts[0].from, 'journal/2026-11-01.md');
     clock = new Date(2026, 10, 4, 1).getTime();
     assert.match(plan.body, /stage-box/);
     assert.doesNotMatch(plan.body, /open-until-closed/);
@@ -571,7 +567,7 @@ test('today\'s file starts from a folder\'s latest: drawn open, written once, an
     assert.equal(made.status, 200);
     assert.equal((await made.json()).path, 'journal/2026-11-03.md');
     assert.match(fs.readFileSync(path.join(dir, 'journal/2026-11-03.md'), 'utf8'), /^---\ndate: 2026-11-03\nopen-until: 2026-11-03\n---\n\n- \[x\]\[ \] Staged\n@ A:\n$/);
-    assert.deepEqual((await tree()).starts, []);
+    assert.deepEqual((await tree()).starts, [{ dir: 'journal', open: 'journal/2026-11-03.md' }]);
     assert.equal((await post({ dir: 'journal', from: plan.from, mtime: plan.mtime, edits })).status, 409);
     assert.equal((await fetch(`${url}/api/start-day?dir=journal`)).status, 409);
     assert.equal((await fetch(`${url}/api/start-day?dir=${encodeURIComponent('../..')}`)).status, 409);

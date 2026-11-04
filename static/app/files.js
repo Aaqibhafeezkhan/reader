@@ -26,7 +26,9 @@ const ICONS = {
   export: '<path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10"/>',
   trash: '<path d="M2.5 4.5h11M6 4.5V2.8h4v1.7M4 4.5l.8 9h6.4l.8-9M6.8 7v4.5M9.2 7v4.5"/>',
   extract: '<path d="M9.5 2.5h4v4M13.5 2.5 8 8M11.5 9.5v3.2a.8.8 0 0 1-.8.8H3.3a.8.8 0 0 1-.8-.8V5.3a.8.8 0 0 1 .8-.8h3.2"/>',
+  'new-file': '<path d="M9.5 2H4.3a.8.8 0 0 0-.8.8v10.4a.8.8 0 0 0 .8.8h7.4a.8.8 0 0 0 .8-.8V5zM9.5 2v3h3M8 7.5v4M6 9.5h4"/>',
   'start-today': '<rect x="2.5" y="3.5" width="11" height="10" rx="1.3"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3M8 8.2v3.6M6.2 10h3.6"/>',
+  'open-today': '<rect x="2.5" y="3.5" width="11" height="10" rx="1.3"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3M5.8 10l1.6 1.6 2.9-3.1"/>',
   promote: '<path d="M8 2.2l1.8 3.7 4 .6-2.9 2.8.7 4L8 11.4l-3.6 1.9.7-4L2.2 6.5l4-.6z"/>',
 };
 const LONG_PRESS = 500;
@@ -75,6 +77,7 @@ function drawRows() {
   if (state.todayShown) el.files.setAttribute('aria-labelledby', 'todayName');
   else el.files.removeAttribute('aria-labelledby');
   drawCrumbs(!q || state.todayShown);
+  drawStart();
 
   if (state.todayShown) return drawToday(q);
   if (q) {
@@ -109,11 +112,7 @@ function drawToday(q) {
 
 function drawCrumbs(shown) {
   const parts = state.dir ? state.dir.split('/') : [];
-  // The folder being shown can be started too, with the same icon as on its
-  // row, here where it takes no room of its own from the list.
-  const showingOutline = state.outline && state.current?.type === 'md';
-  const start = shown && !state.todayShown && !state.group && !showingOutline && state.starts.has(state.dir);
-  el.crumbs.hidden = !shown || (!parts.length && !state.group && !state.outline && !state.todayShown && !start);
+  el.crumbs.hidden = !shown || (!parts.length && !state.group && !state.outline && !state.todayShown);
   el.crumbs.replaceChildren();
   if (el.crumbs.hidden) return;
   const steps = [{ label: state.rootName, dir: '', group: null }];
@@ -129,7 +128,6 @@ function drawCrumbs(shown) {
     else b.addEventListener('click', () => go(s.dir, s.group));
     el.crumbs.append(b);
   });
-  if (start) el.crumbs.append(startIcon(state.dir));
 }
 
 function button(cls, name, sub) {
@@ -215,39 +213,52 @@ function folderItem(name) {
   b.dataset.dir = dir;
   b.addEventListener('click', () => go(dir, null));
   li.append(b);
-  if (state.starts.has(dir)) li.append(startIcon(dir));
   return li;
 }
 
 /**
- * The offer to start today's file in `dir`, on its row and above the folder
- * itself. Always showing, not only when the row is hovered as its actions
- * are: it's there to be seen in the morning, and there's no hovering on a
- * phone. What it does is its tooltip, or a long press where there are none.
- * On the last day it's offered, that says why it won't be there tomorrow, and
- * a small triangle says to ask, a shape as well as yellow, so it's there in
- * the system's colours too.
+ * Beside New, which makes a file from nothing, the button that makes today's
+ * from the latest of the folder being shown, if that's a series of dated
+ * files. Once today's is there, it opens that, as New does a file that's there.
+ * Anywhere else it's gray, and not gone, so that New and the filter stay where
+ * they are, and it can still say why: aria-disabled, as a disabled button would
+ * have no tooltip or long press. While the list is something else (Today, a
+ * file's versions or its outline), there's no folder for it to be of.
  */
-function startIcon(dir) {
-  const { date, last } = state.starts.get(dir);
-  const b = action('start-today', "Start today's", () => startToday(dir, b));
-  const why = last
-    ? `Start today's from ${date}. A folder offers this for three days after its latest file, so tomorrow it won't.`
-    : `Start today's from ${date}.`;
-  b.title = why;
-  onLongPress(b, () => toast(why));
-  if (!last) return b;
-  b.setAttribute('aria-description', why);
-  const mark = document.createElement('span');
-  mark.className = 'start-warn';
-  mark.setAttribute('aria-hidden', 'true');
-  mark.innerHTML = '<svg viewBox="0 0 16 16" width="11" height="11"><path class="start-warn-sign" d="M8 1.5 15 14H1z"/><path class="start-warn-bang" d="M8 6v4M8 11.6v.4"/></svg>';
-  b.append(mark);
-  return b;
+function startNow() {
+  const start = state.starts.get(state.dir);
+  const showingOutline = state.outline && state.current?.type === 'md';
+  return state.todayShown || state.group || showingOutline ? null : start;
 }
 
-// A long press, kept apart from any one button: the list can be drawn again
-// while a finger's down, which would leave the press on a button that's gone.
+function drawStart() {
+  const start = startNow();
+  const b = el.startBtn;
+  const kind = start?.open ? 'open-today' : 'start-today';
+  if (b.dataset.kind !== kind) b.innerHTML = icon(kind);
+  b.dataset.kind = kind;
+  b.setAttribute('aria-disabled', String(!start));
+  b.setAttribute('aria-label', start?.open ? "Open today's" : "Start today's");
+  if (start) b.title = start.open ? `Open today's, ${splitPath(start.open).name}.` : `Start today's from ${start.date}.`;
+  else if (state.starts.has(state.dir)) b.title = "Start today's, from the folder it's for.";
+  else b.title = "Start today's, once this folder has a file with a date in its name.";
+}
+
+/** Starts today's file in the folder being shown, or opens it if it's there. */
+export function pressStart() {
+  const start = startNow();
+  if (!start) return;
+  if (start.open) open(start.open);
+  else startToday(state.dir, el.startBtn);
+}
+
+/** The two buttons have only an icon to go by, so a finger held on one says what a tooltip would. */
+export function setUpSideIcons() {
+  el.newBtn.innerHTML = icon('new-file');
+  for (const b of [el.newBtn, el.startBtn]) onLongPress(b, () => toast(b.title));
+}
+
+// A long press, one at a time.
 const press = { timer: null, held: false };
 
 /** A finger held on `b` says something, as a tooltip would, and doesn't press it. */
@@ -542,17 +553,19 @@ export function closeFile(msg) {
   showEmpty(msg);
 }
 
-export function today() {
-  const d = new Date();
-  const p = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.md`;
+/** A name no file has in the folder `prefix` says: `untitled.md`, then `untitled-2.md`. */
+function untitled(prefix) {
+  const taken = new Set(state.files.map((f) => f.path));
+  let name = 'untitled.md';
+  for (let n = 2; taken.has(prefix + name); n++) name = `untitled-${n}.md`;
+  return name;
 }
 
 /** The New form, filled in for a new file in the folder being shown. */
 export function showNewForm() {
   const prefix = state.dir ? `${state.dir}/` : '';
   el.newForm.hidden = false;
-  el.newName.value = `${prefix}${today()}`;
+  el.newName.value = `${prefix}${untitled(prefix)}`;
   el.newName.focus();
   el.newName.setSelectionRange(prefix.length, el.newName.value.length - 3);
 }

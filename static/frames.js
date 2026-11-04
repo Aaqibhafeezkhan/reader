@@ -13,7 +13,9 @@
  * loads; one made later goes through `Frames.load(frame)`. Until then a
  * frame is blank, and it says it's ready only once it's the preview.
  * `Frames.post(frame, message)` sends one a message, at its own origin, and
- * `Frames.slide(...)` is the message that draws a slide in one.
+ * `Frames.slide(...)` is the message that draws a slide in one. A slide is
+ * drawn at the projector's size, the frame's in the stylesheet
+ * (static/overview.css), and scaled down to what it's in (`Frames.fit`).
  */
 window.Frames = (() => {
   const KEY = 'reader:frames';
@@ -85,9 +87,14 @@ window.Frames = (() => {
     };
   }
 
+  /** Scales a frame to the width of what it's in, so a slide wraps as it does on the big screen. */
+  function fit(frame) {
+    frame.style.transform = `scale(${frame.parentElement.clientWidth / frame.offsetWidth})`;
+  }
+
   const marked = () => document.querySelectorAll('iframe[data-preview]').forEach(load);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', marked, { once: true });
   else marked();
 
-  return { load, post, slide, src };
+  return { load, post, slide, fit, src };
 })();

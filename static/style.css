@@ -358,7 +358,7 @@ button, .ghost { font: inherit; font-size: 13px; border-radius: 7px; cursor: poi
 .foot-right .ghost { padding: 1px 6px; font-family: var(--mono); font-size: 11px; }
 .foot-right .ghost[aria-pressed="true"] { color: var(--ink); }
 /* off screen, at the speaker view's size */
-.measure { position: fixed; left: -20000px; top: 0; width: 1280px; height: 720px; border: 0; visibility: hidden; }
+.measure { position: fixed; left: -20000px; top: 0; width: var(--slide-width); height: var(--slide-height); border: 0; visibility: hidden; }
 /* off screen, a letter page wide, to print from */
 .print-frame { position: fixed; left: -20000px; top: 0; width: 816px; height: 1056px; border: 0; }
 

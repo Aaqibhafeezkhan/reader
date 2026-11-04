@@ -58,9 +58,7 @@ function draw({ fresh = false } = {}) {
 }
 
 function fit() {
-  for (const f of document.querySelectorAll('.screen iframe')) {
-    f.style.transform = `scale(${f.parentElement.clientWidth / 1280})`;
-  }
+  for (const f of document.querySelectorAll('.screen iframe')) Frames.fit(f);
 }
 
 const pad = (x) => String(x).padStart(2, '0');

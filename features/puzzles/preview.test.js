@@ -391,3 +391,53 @@ test('on a workbook\'s page, Start over is for that page\'s puzzles, by their li
   const [{ text }] = await startOver(md, page.body).press();
   assert.equal(text, `${fence('coord', COORD_START)}\n\n---\n\n${fence('coord', COORD_START)}\n\nreset:[]\n`);
 });
+
+/** Tracks with all but the way out at B laid, and a finger to drag with: squares are a fifth of the board each. */
+function dragging() {
+  const game = playing(`\`\`\`tracks
+1 1 3
+━ ─ ┐  3
+· · │  1
+· · ╵  1
+A: left 1  B: bottom 3
+\`\`\`
+`);
+  const svg = () => game.host.querySelector('.tracks-board');
+  const fire = (type, col, row) => {
+    const board = svg();
+    board.getBoundingClientRect = () => ({ left: 0, top: 0, width: 50, height: 50 });
+    board.setPointerCapture = () => {};
+    board.dispatchEvent(new game.window.MouseEvent(type, { clientX: (col + 1.5) * 10, clientY: (row + 1.5) * 10, bubbles: true, cancelable: true }));
+  };
+  return { ...game, fire, bar: () => game.host.querySelector('.puzzle-bar').textContent };
+}
+
+test('a drag off the board where the track leaves it lays that last piece, and finishes it', () => {
+  const { fire, bar } = dragging();
+  assert.doesNotMatch(bar(), /Solved/);
+  fire('pointerdown', 2, 2);
+  fire('pointermove', 2, 3);
+  assert.match(bar(), /Solved/);
+  // However far it goes on, that's the once.
+  fire('pointermove', 2, 4);
+  fire('pointermove', 2, 3);
+  assert.match(bar(), /Solved/);
+});
+
+test('a drag off the board anywhere else lays nothing', () => {
+  const { fire, bar } = dragging();
+  const before = bar();
+  fire('pointerdown', 2, 2);
+  fire('pointermove', 3, 2);
+  assert.equal(bar(), before);
+  fire('pointerup', 3, 2);
+  fire('pointerdown', 0, 1);
+  fire('pointermove', -1, 1);
+  assert.equal(bar(), before);
+});
+
+test('a puzzle is as wide as what\'s in it, so that its focus ring goes round a board wider than the column', () => {
+  const { document } = playing(SUDOKU);
+  const css = [...document.querySelectorAll('style')].map((s) => s.textContent).join('');
+  assert.match(css, /\.puzzle \{ width: fit-content;/);
+});

@@ -149,7 +149,7 @@ export async function showSlide({ render = true, transition, say } = {}) {
   if (!deck.open || deck.index !== i) return;
   if (say) say = { ...say, index: i, reveal: deck.reveal };
   Frames.post(el.stage, render
-    ? { type: 'render', css: deck.css, body: slide.body, title: deck.title, base: baseFor(state.current.path), resetScroll: true, deck: true, reveal: deck.reveal, transition, dark: Theme.dark(), scale: deck.scale, say }
+    ? drawing(slide.body, deck.reveal, { title: deck.title, transition, say })
     : { type: 'reveal', reveal: deck.reveal, scale: deck.scale, say });
   el.deckCount.textContent = paging(i);
   // Said aloud as it changes, the slide's number and how far into it; and
@@ -161,6 +161,11 @@ export async function showSlide({ render = true, transition, say } = {}) {
   el.deckNotes.innerHTML = slide.notesHtml;
   el.deckNotes.hidden = !deck.notes || !slide.notes;
   deck.channel?.postMessage({ type: 'go', index: i, reveal: deck.reveal });
+}
+
+/** The message that draws a slide of this deck (Frames.slide). */
+function drawing(body, reveal, more) {
+  return Frames.slide({ css: deck.css, base: baseFor(state.current.path), scale: deck.scale }, body, reveal, more);
 }
 
 /** Where the deck is: `Slide 2 of 5, step 1 of 4`. */
@@ -249,10 +254,7 @@ let overview = null;
 
 export function openOverview() {
   overview ??= Overview.create(el.overview, {
-    draw: (i) => ({
-      type: 'render', css: deck.css, body: deck.slides[i].body, base: baseFor(state.current.path), resetScroll: true,
-      deck: true, reveal: Infinity, dark: Theme.dark(), scale: deck.scale,
-    }),
+    draw: (i) => drawing(deck.slides[i].body, Infinity),
     number: paging,
     say: (text) => { el.deckSays.textContent = text; },
     pick(i) {

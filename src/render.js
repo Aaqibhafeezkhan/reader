@@ -66,6 +66,7 @@ export function titleOf(meta, file) {
  * being presented, where the deck keeps the page's fields shut. `now` is the
  * time, in ms, that the page is drawn as of (now, if not given): a page past
  * the time its front matter says it's open until is drawn as a record.
+ * `layout` is how much of a page this is, when it isn't all of one: see columns.js.
  */
 export function render(src, options) {
   return renderWith(md, FEATURES, src, options);
@@ -82,7 +83,7 @@ export function makeRenderer(features) {
 }
 
 /** render(), by `md`, built from `features`. */
-function renderWith(md, features, src, { file, read, line = 0, shared = {}, entries, lines = false, background, fonts, matter, drawn, exported = false, deck = false, now } = {}) {
+function renderWith(md, features, src, { file, read, line = 0, shared = {}, entries, lines = false, background, fonts, matter, drawn, exported = false, deck = false, now, layout } = {}) {
   const text = src || '';
   const env = { lineBase: line, file, read, shared, entries, lines, matter, drawn, exported, deck, now };
   const tokens = md.parse(text, env);
@@ -95,7 +96,7 @@ function renderWith(md, features, src, { file, read, line = 0, shared = {}, entr
   const headings = Boolean(notes.length && (meta.speaker || meta.listener));
   const title = titleOf(meta, file);
 
-  const page = columns(md, tokens, env, { headings, title });
+  const page = columns(md, tokens, env, { headings, title, layout });
   // Then each feature's pass over the finished page, if it has one.
   const body = features.reduce((html, f) => (f.html ? f.html(html) : html), figures(page.body.trim()));
   const behind = backdrop(background === undefined ? readBackground(meta.background) : background);

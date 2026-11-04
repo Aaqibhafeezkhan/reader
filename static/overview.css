@@ -11,14 +11,17 @@
 }
 .overview-slide { padding: 6px; border-radius: 8px; cursor: pointer; outline: none; }
 .overview-slide:focus-visible, .overview-slide[aria-selected="true"]:focus { outline: 3px solid var(--accent); outline-offset: 2px; }
-/* Rendered at projector size and scaled down, as the speaker view's are. */
 .overview-screen {
   position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; overflow: hidden;
   background: var(--paper); border-radius: 4px; box-shadow: 0 0 0 1px var(--line);
 }
-.overview-screen iframe {
+/* Rendered at projector size and scaled down (Frames.fit), so a slide wraps
+ * the same here as it does on the big screen: a thumbnail, or the speaker
+ * view's Now and Next, as this is what the two windows share. */
+:root { --slide-width: 1280px; --slide-height: 720px; }
+.overview-screen iframe, .screen iframe {
   position: absolute; top: 0; left: 0; border: 0; pointer-events: none;
-  width: 1280px; height: 720px; transform-origin: 0 0;
+  width: var(--slide-width); height: var(--slide-height); transform-origin: 0 0;
 }
 /* the slide being shown, ringed and labelled; in the speaker view, those
  * done faded and ticked */

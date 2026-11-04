@@ -54,29 +54,20 @@ export function isDeck(src) {
 }
 
 export function slides(src, { file, read, now } = {}) {
-  const { meta, entries, slides: chunks } = split(src);
-  const title = titleOf(meta, file);
-  let css = '';
-  const out = [];
-  // Kept by features across the slides, to number things through the deck.
-  const shared = {};
-  const behind = readBackground(meta.background);
+  const worth = (lifted) => lifted.body.trim() || lifted.notes;
+  const layout = (source) => (isCover(source) ? 'cover' : 'slide');
+  const { css, title, meta, parts } = draw(src, worth, layout, { file, read, deck: true, now });
   const leaving = readTransition(meta.transition) ?? 'none';
-  for (const { text, line } of chunks) {
-    const lifted = lift(text);
-    if (!lifted.body.trim() && !lifted.notes) continue;
-    const own = liftBackground(lifted.notes);
-    const moved = liftTransition(own.notes);
+  const out = parts.map(({ body, line, notes: own }) => {
+    const moved = liftTransition(own);
     const { notes, at, budget } = readNotes(moved.notes);
-    const r = render(lifted.body, { file, read, line, shared, entries, background: own.background ?? behind, fonts: meta, matter: meta, deck: true, now });
-    css ||= `${r.css}\n${CSS}`;
-    out.push({ body: titled(unmast(r.body), lifted.body), notes, notesHtml: renderNotes(notes), line, at, budget, transition: moved.transition ?? leaving });
-  }
+    return { body, notes, notesHtml: renderNotes(notes), line, at, budget, transition: moved.transition ?? leaving };
+  });
   // When each slide should start, by the notes' checkpoints and budgets.
   const total = duration(meta.time);
   const starts = plan(out, total);
   out.forEach((s, i) => { s.plan = starts[i]; });
-  return { css: css || CSS, title, meta, slides: out, end: planEnd(out, starts, total) };
+  return { css: css ? `${css}\n${CSS}` : CSS, title, meta, slides: out, end: planEnd(out, starts, total) };
 }
 
 /**
@@ -86,21 +77,31 @@ export function slides(src, { file, read, now } = {}) {
  * (`data-line`). `drawn`, `exported` and `now` are as render() takes them.
  */
 export function pages(src, { file, read, lines = true, drawn, exported, now } = {}) {
+  const { css, title, meta, parts } = draw(src, (lifted) => lifted.body.trim(), () => 'part', { file, read, lines, drawn, exported, now });
+  return { css, title, meta, pages: parts.map(({ body, line }) => ({ body, line })) };
+}
+
+/**
+ * Draws each part of a deck that's `worth` it, in the `layout` its source
+ * calls for (columns.js) and whichever way `options` has render() draw it, on
+ * what's behind the deck unless its notes say otherwise. Each comes back with
+ * its line and the notes left to read.
+ */
+function draw(src, worth, layout, options) {
   const { meta, entries, slides: chunks } = split(src);
-  let css = '';
-  const out = [];
   const shared = {};
-  const title = titleOf(meta, file);
   const behind = readBackground(meta.background);
+  let css = '';
+  const parts = [];
   for (const { text, line } of chunks) {
     const lifted = lift(text);
-    if (!lifted.body.trim()) continue;
+    if (!worth(lifted)) continue;
     const own = liftBackground(lifted.notes);
-    const r = render(lifted.body, { file, read, line, shared, entries, background: own.background ?? behind, fonts: meta, matter: meta, lines, drawn, exported, now });
+    const r = render(lifted.body, { ...options, line, shared, entries, background: own.background ?? behind, fonts: meta, matter: meta, layout: layout(lifted.body) });
     css ||= r.css;
-    out.push({ body: unmast(r.body), line });
+    parts.push({ body: r.body, line, notes: own.notes });
   }
-  return { css, title, meta, pages: out };
+  return { css, title: titleOf(meta, options.file), meta, parts };
 }
 
 /**
@@ -152,36 +153,11 @@ function dedent(s) {
   return lines.map((l) => l.slice(Number.isFinite(pad) ? pad : 0)).join('\n').trim();
 }
 
-/** A slide is not a document: drop the title masthead the layout puts on top. */
-function unmast(body) {
-  return body.replace(/<header class="gm-masthead">[\s\S]*?<\/header>\s*/, '');
-}
-
-const PAIR = '<section class="gm-pair">\n<div class="gm-speaker">\n';
-const OPENING = /<(h[1-6])\b[^>]*>[\s\S]*?<\/\1>\n?/y;
-// What's left of a row that held only the title.
-const EMPTY = `${PAIR}</div>\n<div></div>\n</section>\n`;
 const HEADING_LINE = /^[ \t]*(?:#{1,6}[ \t]|:::)/;
-const DOC = '<div class="gm-doc">';
 
-/**
- * Sets a slide's opening heading apart from the rest of it, as
- * `.slide-title` above `.slide-body`, for the stylesheet to keep one at the
- * top and center the other; a slide with no opening heading is all body.
- * `src` is the slide as written: one that's all headings is a cover
- * (`.slide-cover`), to be centered whole.
- */
-function titled(body, src) {
-  if (src.split('\n').every((l) => !l.trim() || HEADING_LINE.test(l))) return body.replace(DOC, '<div class="gm-doc slide-cover">');
-  const at = body.indexOf(PAIR);
-  if (at < 0) return body;
-  const end = body.lastIndexOf('</div>');
-  OPENING.lastIndex = at + PAIR.length;
-  const heading = OPENING.exec(body);
-  if (!heading) return `${body.slice(0, at)}<div class="slide-body">\n${body.slice(at, end)}</div>\n</div>`;
-  let rest = PAIR + body.slice(OPENING.lastIndex, end);
-  if (rest.startsWith(EMPTY)) rest = rest.slice(EMPTY.length);
-  return `${body.slice(0, at)}<header class="slide-title">\n${heading[0].trim()}\n</header>\n<div class="slide-body">\n${rest}</div>\n</div>`;
+/** Is a slide, as written, all headings? */
+function isCover(src) {
+  return src.split('\n').every((l) => !l.trim() || HEADING_LINE.test(l));
 }
 
 // Scaled to the window, and centered on it, like a projected slide. The

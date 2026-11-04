@@ -14,8 +14,6 @@
  * slide; Esc puts the overview away.
  */
 (() => {
-  const WIDTH = 1280;
-
   /** `paging: Slide %d / %d` from the front matter, as `slides` reads it: slide `i` of `n`. */
   function number(paging, i, n) {
     const fmt = paging && paging.includes('%d') ? paging : '%d / %d';
@@ -147,7 +145,7 @@
       frame.setAttribute('sandbox', 'allow-scripts');
       Frames.load(frame);
       screen.append(frame);
-      fit(frame);
+      Frames.fit(frame);
       waiting.set(frame, Number(li.dataset.index));
     }
 
@@ -156,10 +154,6 @@
       for (const frame of root.querySelectorAll('iframe')) {
         if (!waiting.has(frame)) Frames.post(frame, draw(Number(frame.closest('li').dataset.index)));
       }
-    }
-
-    function fit(frame) {
-      frame.style.transform = `scale(${frame.parentElement.clientWidth / WIDTH})`;
     }
 
     // A frame says it's ready as it loads; then it's drawn.
@@ -172,7 +166,7 @@
       }
     });
     window.addEventListener('resize', () => {
-      for (const frame of root.querySelectorAll('iframe')) fit(frame);
+      for (const frame of root.querySelectorAll('iframe')) Frames.fit(frame);
     });
 
     function choose(i) {

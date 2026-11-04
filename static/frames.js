@@ -12,7 +12,10 @@
  * A frame in the page marked `data-preview` is pointed there as the page
  * loads; one made later goes through `Frames.load(frame)`. Until then a
  * frame is blank, and it says it's ready only once it's the preview.
- * `Frames.post(frame, message)` sends one a message, at its own origin.
+ * `Frames.post(frame, message)` sends one a message, at its own origin, and
+ * `Frames.slide(...)` is the message that draws a slide in one. A slide is
+ * drawn at the projector's size, the frame's in the stylesheet
+ * (static/overview.css), and scaled down to what it's in (`Frames.fit`).
  */
 window.Frames = (() => {
   const KEY = 'reader:frames';
@@ -72,9 +75,26 @@ window.Frames = (() => {
     frame.contentWindow?.postMessage(message, opaque ? '*' : src ? new URL(src, location.href).origin : '/');
   }
 
+  /**
+   * The message that draws a slide in a frame, wherever it's drawn: `body`,
+   * with `reveal` of its steps showing, as `deck` (its `css`, `base` and
+   * `scale`) has it, in the theme. `more` is what's only this frame's.
+   */
+  function slide(deck, body, reveal, more) {
+    return {
+      type: 'render', css: deck.css, body, base: deck.base, resetScroll: true,
+      deck: true, reveal, dark: Theme.dark(), scale: deck.scale, ...more,
+    };
+  }
+
+  /** Scales a frame to the width of what it's in, so a slide wraps as it does on the big screen. */
+  function fit(frame) {
+    frame.style.transform = `scale(${frame.parentElement.clientWidth / frame.offsetWidth})`;
+  }
+
   const marked = () => document.querySelectorAll('iframe[data-preview]').forEach(load);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', marked, { once: true });
   else marked();
 
-  return { load, post, src };
+  return { load, post, slide, fit, src };
 })();

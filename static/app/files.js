@@ -14,7 +14,7 @@ import { renderNow, showPreview, showEmpty } from './render.js';
 import { scheduleGutter } from './lines.js';
 import { setSaveState, updateCounts, toast } from './status.js';
 import { updatePresentable } from './deck.js';
-import { openIn, listSeen, showList } from './modes.js';
+import { openIn, listSeen, showList, toggleDrawer } from './modes.js';
 import { folderView, filtered, findGroup, groupOf, hasFolder, dirOf, splitPath } from './versions.js';
 import { branch, rename, trash, promote } from './manage.js';
 import { drawOutline, entryKey, pickKey } from './outline.js';
@@ -576,6 +576,7 @@ export async function createFile(name) {
     await loadTree();
     reveal(out.path);
     await open(out.path);
+    toggleDrawer(false);
     if (!out.created) toast(`${out.path} already exists — opened it`);
     el.editor.focus();
   } catch (err) {

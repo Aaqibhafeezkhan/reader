@@ -240,7 +240,8 @@ function onKey(e) {
     else setWorking(!state.working);
     return;
   }
-  if (state.working && e.key === 'Escape') { setWorking(false); return; }
+  // Esc in the list over the page is the list's: Work stays.
+  if (state.working && e.key === 'Escape' && !el.sidebar.contains(e.target)) { setWorking(false); return; }
   if (paged() && e.altKey && !meta && ['ArrowLeft', 'ArrowRight'].includes(e.key)) {
     e.preventDefault();
     turn(e.key === 'ArrowLeft' ? -1 : 1);

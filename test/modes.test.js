@@ -2,9 +2,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { app, globals, assertElement } from './dom.js';
 
-const { document } = globals(app());
+const window = globals(app());
+const { document } = window;
 const { el, remembered, remember } = await import('../static/app/state.js');
-const { toggleSidebar, toggleDrawer, toggleHelp, wireDrawer, restoreLayout } = await import('../static/app/modes.js');
+const { toggleSidebar, toggleDrawer, toggleHelp, wireDrawer, restoreLayout, setWorking } = await import('../static/app/modes.js');
 wireDrawer();
 
 test('☰ says whether the file list is showing', () => {
@@ -31,6 +32,56 @@ test('the list over the panes closes once Tab leaves it, not as it moves within 
   el.helpToggle.focus();
   await settled();
   assert.equal(el.split.classList.contains('list-open'), false);
+});
+
+test('in Work, ☰ opens the list over the page, and Work stays, and says whether it\'s showing', () => {
+  const expanded = () => el.sidebarToggle.getAttribute('aria-expanded');
+  setWorking(true);
+  assert.equal(expanded(), 'false', 'Work has no list beside the page');
+  toggleSidebar();
+  assert.equal(el.split.classList.contains('list-open'), true);
+  assert.equal(el.split.classList.contains('no-sidebar'), false);
+  assert.equal(expanded(), 'true');
+  assertElement(document.activeElement, el.filter);
+  toggleSidebar();
+  assert.equal(el.split.classList.contains('list-open'), false);
+  assert.equal(el.split.classList.contains('work-mode'), true);
+  assert.equal(expanded(), 'false');
+  assertElement(document.activeElement, el.sidebarToggle);
+  assert.equal(remembered('reader:sidebar'), 'shown', 'beside the panes, it\'s still as it was');
+  setWorking(false);
+  assert.equal(expanded(), 'true', 'back in Edit, the list is beside the page');
+});
+
+test('out of Work with the list over the page, it\'s beside it, and says so', () => {
+  setWorking(true);
+  toggleSidebar();
+  setWorking(false);
+  assert.equal(el.split.classList.contains('list-open'), false);
+  assert.equal(el.sidebarToggle.getAttribute('aria-expanded'), 'true');
+});
+
+test('a click on the page closes the list over it, wherever the keyboard was', async () => {
+  const settled = () => new Promise((r) => setTimeout(r, 5));
+  toggleDrawer(true);
+  document.activeElement.blur();
+  await settled();
+  assert.equal(el.split.classList.contains('list-open'), true);
+  // Only the window is told of a click in the frame.
+  el.preview.focus();
+  window.dispatchEvent(new window.Event('blur'));
+  await settled();
+  assert.equal(el.split.classList.contains('list-open'), false);
+  document.activeElement.blur();
+});
+
+test('the window losing the keyboard to another window leaves the list open', async () => {
+  const settled = () => new Promise((r) => setTimeout(r, 5));
+  toggleDrawer(true);
+  window.dispatchEvent(new window.Event('blur'));
+  await settled();
+  assert.equal(el.split.classList.contains('list-open'), true);
+  toggleDrawer(false);
 });
 
 test('what a control is called is said in words, not by a mark', () => {

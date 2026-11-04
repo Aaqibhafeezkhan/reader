@@ -24,7 +24,9 @@ globalThis.fetch = async (url, { method = 'GET', body } = {}) => {
     files = [...files, { path: 'journal/2026-11-03.md', date: '2026-11-03' }];
     starts = [{ dir: 'journal', open: 'journal/2026-11-03.md' }];
   }
+  if (ask.startsWith('/api/new')) files = [...files, { path: JSON.parse(body).name, date: null }];
   const out = ask.startsWith('/api/info') ? { name: 'notes', root: '/notes' }
+    : ask.startsWith('/api/new') ? { path: JSON.parse(body).name, created: true }
     : ask.startsWith('/api/tree') ? { today: '2026-11-03', starts, files: files.map((f) => ({ type: 'md', mtime: 1, ...f })) }
     : ask.startsWith('/api/start-day') ? (method === 'POST'
       ? { path: 'journal/2026-11-03.md', from: 'journal/2026-10-30.md', mtime: 2 }
@@ -38,6 +40,7 @@ const { el, state } = await import('../static/app/state.js');
 Object.defineProperty(el.preview, 'contentWindow', { value: { postMessage() {} } });
 await import('../static/app/main.js');
 const { go, loadTree, drawTree } = await import('../static/app/files.js');
+const { setWorking } = await import('../static/app/modes.js');
 const settled = async () => {
   for (let i = 0; i < 5; i++) await new Promise(setImmediate);
 };
@@ -46,6 +49,7 @@ await settled();
 const hidden = () => [...document.querySelectorAll('iframe.measure')].find((f) => f !== el.measure);
 const offer = () => el.startBtn;
 const posts = () => asked.filter((a) => a.method === 'POST');
+const listOpen = () => el.split.classList.contains('list-open');
 
 /** The hidden frame, once it's there: what it's sent, and how it answers. */
 function framed() {
@@ -167,6 +171,58 @@ test('New offers a name no file has, in the folder being shown', async () => {
   el.newBtn.click();
   assert.equal(el.newName.value, 'journal/untitled-3.md');
   el.newBtn.click();
+});
+
+test('from the list over the page in Work, a gray Start today\'s leaves it open, and a live one closes it', async () => {
+  await fresh();
+  setWorking(true);
+  el.sidebarToggle.click();
+  assert.equal(listOpen(), true);
+  offer().click();
+  assert.equal(listOpen(), true, 'gray');
+  go('journal', null, { focus: false });
+  offer().click();
+  assert.equal(listOpen(), false);
+  await settled();
+  const { say } = framed();
+  say({ type: 'ready' });
+  await settled();
+  say({ type: 'started-over', edits: [], failed: null });
+  await settled();
+  assert.equal(state.current.path, 'journal/2026-11-03.md');
+  assert.equal(state.working, true);
+  setWorking(false);
+});
+
+test('from the list over the page in Work, New leaves it open until the file is made', async () => {
+  await fresh();
+  setWorking(true);
+  el.sidebarToggle.click();
+  el.newBtn.click();
+  assert.equal(listOpen(), true);
+  el.newName.value = 'made.md';
+  el.newForm.dispatchEvent(new window.Event('submit', { cancelable: true }));
+  await settled();
+  assert.equal(listOpen(), false);
+  assert.equal(state.current.path, 'made.md');
+  assert.equal(state.working, true);
+  setWorking(false);
+});
+
+test('Esc in the list over the page in Work closes the list, and only the next one leaves Work', async () => {
+  await fresh();
+  setWorking(true);
+  el.sidebarToggle.click();
+  const esc = (target) => target.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  el.filter.value = 'no';
+  esc(el.filter);
+  assert.equal(listOpen(), true, 'it clears the filter first');
+  assert.equal(state.working, true);
+  esc(el.filter);
+  assert.equal(listOpen(), false);
+  assert.equal(state.working, true);
+  esc(document.activeElement);
+  assert.equal(state.working, false);
 });
 
 test('a finger held on the icon says what it would, and doesn\'t press it; a tap presses it', async () => {

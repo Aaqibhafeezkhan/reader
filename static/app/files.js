@@ -222,13 +222,12 @@ function folderItem(name) {
  * files. Once today's is there, it opens that, as New does a file that's there.
  * Anywhere else it's gray, and not gone, so that New and the filter stay where
  * they are, and it can still say why: aria-disabled, as a disabled button would
- * have no tooltip or long press. While the list is something else (Today, a
- * file's versions or its outline), there's no folder for it to be of.
+ * have no tooltip or long press. In a file's outline the folder is still what
+ * it's of, but Today and a file's versions list files that aren't what it'd
+ * start from, so there it waits.
  */
 function startNow() {
-  const start = state.starts.get(state.dir);
-  const showingOutline = state.outline && state.current?.type === 'md';
-  return state.todayShown || state.group || showingOutline ? null : start;
+  return state.todayShown || state.group ? null : state.starts.get(state.dir);
 }
 
 function drawStart() {
@@ -240,7 +239,7 @@ function drawStart() {
   b.setAttribute('aria-disabled', String(!start));
   b.setAttribute('aria-label', start?.open ? "Open today's" : "Start today's");
   if (start) b.title = start.open ? `Open today's, ${splitPath(start.open).name}.` : `Start today's from ${start.date}.`;
-  else if (state.starts.has(state.dir)) b.title = "Start today's, from the folder it's for.";
+  else if (state.starts.has(state.dir)) b.title = "Start today's, back in the folder.";
   else b.title = "Start today's, once this folder has a file with a date in its name.";
 }
 

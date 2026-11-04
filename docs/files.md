@@ -52,7 +52,7 @@ With `reader --day-starts 04:00`, **Today** still lists yesterday's files until 
 
 A folder with a dated file in it offers **Start today's**: a calendar with a plus, beside **New**, for the folder you're in.
 Its tooltip says what it's from, or a long press does on a touch screen.
-In a folder with no dated file, it's there but gray.
+In a folder with no dated file, under **Today**, or in a file's versions, it's there but gray.
 It makes today's file from the folder's latest, with the same headings and labels, every answer on every page cleared, as [Start over](forms.md#starting-over) clears them, and opens it, and **Today** lists it.
 
 ```

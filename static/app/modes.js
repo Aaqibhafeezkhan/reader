@@ -8,13 +8,14 @@ import { renderNow } from './render.js';
 import { openAt } from './pages.js';
 import { frontMatter, typeOf } from '../markdown.js';
 
-// At this width and under the list doesn't fit beside the panes, so ☰ and
-// ⌘\ open it over them instead; picking a file, Esc or a click elsewhere
-// closes it again.
+// At this width and under the list doesn't fit beside the panes, and Work has
+// no list beside the page, so there ☰ and ⌘\ open it over them instead;
+// picking a file, Esc or a click elsewhere closes it again.
 const NARROW = matchMedia('(max-width: 900px)');
+const listOver = () => NARROW.matches || el.split.classList.contains('work-mode');
 
 export function toggleSidebar(force) {
-  if ((NARROW.matches || el.split.classList.contains('list-open')) && force === undefined) return toggleDrawer();
+  if (listOver() && force === undefined) return toggleDrawer();
   const hide = force ?? !el.split.classList.contains('no-sidebar');
   el.split.classList.toggle('no-sidebar', hide);
   // The keyboard isn't left in a list that's gone.
@@ -23,7 +24,7 @@ export function toggleSidebar(force) {
   remember('reader:sidebar', hide ? 'hidden' : 'shown');
 }
 
-/** The list over the panes, open or not, at a narrow width. */
+/** The list over the panes, open or not, at a narrow width or in Work. */
 export function toggleDrawer(open = !el.split.classList.contains('list-open')) {
   el.split.classList.toggle('list-open', open);
   listShown();
@@ -44,15 +45,13 @@ export function listSeen() {
  * being filled in shouldn't go for a look at the list; otherwise beside them.
  */
 export function showList() {
-  if (NARROW.matches || el.split.classList.contains('work-mode')) toggleDrawer(true);
+  if (listOver()) toggleDrawer(true);
   else toggleSidebar(false);
 }
 
-/** ☰ says whether the list is showing: beside the panes, or over them at a narrow width. */
+/** ☰ says whether the list is showing. */
 function listShown() {
-  const { classList } = el.split;
-  const shown = classList.contains('list-open') || (!NARROW.matches && !classList.contains('no-sidebar'));
-  el.sidebarToggle.setAttribute('aria-expanded', String(shown));
+  el.sidebarToggle.setAttribute('aria-expanded', String(listSeen()));
 }
 
 export function toggleHelp(show = el.help.hidden) {
@@ -123,6 +122,7 @@ export function setWorking(on, { chosen = true } = {}) {
   // Out of Work, a wide screen has the list beside the page again.
   if (!on && !NARROW.matches) el.split.classList.remove('list-open');
   el.split.classList.toggle('work-mode', on);
+  listShown();
   el.editor.readOnly = on || deck.open;
   el.workBtn.textContent = on ? 'Edit' : 'Work';
   el.workBtn.title = on ? 'Back to editing (⌘. or Esc)' : 'Work through it without editing (⌘.)';

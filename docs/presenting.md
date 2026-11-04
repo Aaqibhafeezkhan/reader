@@ -33,6 +33,8 @@ A file opened in the mode its type picks doesn't change the mode you chose for d
 the whole window, to read and to fill in. Nothing can be typed into the file, but task checkboxes
 and radio buttons still toggle, fields can be filled in, and puzzles can be played. `⌘.` or `Esc` goes back to editing. The mode is remembered.
 
+`☰` brings the [file list](files.md#the-file-list) over the page, and Work stays.
+
 A deck (below), `type: workbook` or `type: slides`, is a workbook in Work: each slide is a page, shown one at a
 time as a document is, at the size it's written and as long as it needs to
 be, with nothing of its notes. It opens on the page the cursor was on.

@@ -13,6 +13,9 @@ dot-directories and `node_modules`, and remembers the folder you were in.
 Typing in **Filter…** searches every folder at once, as one flat list with
 each file's folder beside it.
 
+`☰` (`⌘\`) shows and hides the list.
+In [Work](presenting.md#work), or on a narrow screen, it comes over the page, and pressing `☰` again, picking a file, or clicking away closes it, still in Work.
+
 **New**, the page with a plus beside **Filter…**, creates an empty file in the
 folder you're in, named `untitled.md` unless you give it another name. If you
 name a file that already exists, it's opened instead. To begin a series of dated

@@ -67,13 +67,21 @@ jobs:
           } | sort -un > issues.txt
 
           {
-            echo "## Issues"
+            echo "## Changes"
             echo
+            # A merged pull request says what really shipped, so it's listed in its issue's place.
             while read -r n; do
-              gh issue view "$n" --json number,title,state,url,labels \
-                --jq 'select(.state == "CLOSED" and all(.labels[]; .name != "review" and .name != "polish"))
-                  | "- \(.title) ([#\(.number)](\(.url)))"' 2>/dev/null || true
-            done < issues.txt
+              issue=$(gh issue view "$n" --json number,title,state,url,labels,closedByPullRequestsReferences 2>/dev/null) || continue
+              line=$(jq -r 'select(.state == "CLOSED" and all(.labels[]; .name != "review" and .name != "polish"))
+                | "- \(.title) ([#\(.number)](\(.url)))"' <<<"$issue")
+              [ -n "$line" ] || continue
+              for pr in $(jq -r '.closedByPullRequestsReferences[].number' <<<"$issue"); do
+                merged=$(gh pr view "$pr" --json number,title,state,url \
+                  --jq 'select(.state == "MERGED") | "- \(.title) ([#\(.number)](\(.url)))"' 2>/dev/null) || continue
+                if [ -n "$merged" ]; then line=$merged; break; fi
+              done
+              echo "$line"
+            done < issues.txt | awk '!seen[$0]++'
             echo
             if [ -n "$previous" ]; then
               echo "**Full changelog**: https://github.com/$GH_REPO/compare/$previous...v$VERSION"

@@ -24,7 +24,9 @@ globalThis.fetch = async (url, { method = 'GET', body } = {}) => {
     files = [...files, { path: 'journal/2026-11-03.md', date: '2026-11-03' }];
     starts = [{ dir: 'journal', open: 'journal/2026-11-03.md' }];
   }
+  if (ask.startsWith('/api/new')) files = [...files, { path: JSON.parse(body).name, date: null }];
   const out = ask.startsWith('/api/info') ? { name: 'notes', root: '/notes' }
+    : ask.startsWith('/api/new') ? { path: JSON.parse(body).name, created: true }
     : ask.startsWith('/api/tree') ? { today: '2026-11-03', starts, files: files.map((f) => ({ type: 'md', mtime: 1, ...f })) }
     : ask.startsWith('/api/start-day') ? (method === 'POST'
       ? { path: 'journal/2026-11-03.md', from: 'journal/2026-10-30.md', mtime: 2 }
@@ -188,6 +190,21 @@ test('from the list over the page in Work, a gray Start today\'s leaves it open,
   say({ type: 'started-over', edits: [], failed: null });
   await settled();
   assert.equal(state.current.path, 'journal/2026-11-03.md');
+  assert.equal(state.working, true);
+  setWorking(false);
+});
+
+test('from the list over the page in Work, New leaves it open until the file is made', async () => {
+  await fresh();
+  setWorking(true);
+  el.sidebarToggle.click();
+  el.newBtn.click();
+  assert.equal(listOpen(), true);
+  el.newName.value = 'made.md';
+  el.newForm.dispatchEvent(new window.Event('submit', { cancelable: true }));
+  await settled();
+  assert.equal(listOpen(), false);
+  assert.equal(state.current.path, 'made.md');
   assert.equal(state.working, true);
   setWorking(false);
 });

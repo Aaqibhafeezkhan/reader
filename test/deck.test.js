@@ -234,6 +234,67 @@ function presenting(n, { index = 0, reveal = 0, meta = {} } = {}) {
 
 const options = () => [...el.overview.querySelectorAll('[role="option"]')];
 
+test('a reload refreshes the open overview, preserving its highlight separately from the current slide', async () => {
+  presenting(4, { index: 1 });
+  deckKey({ key: 'O' });
+  deckKey({ key: 'ArrowRight' });
+  assert.equal(window.document.activeElement, options()[2]);
+
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({
+      css: '',
+      meta: {},
+      slides: Array.from({ length: 5 }, (_, i) => ({
+        body: `<h1>Reloaded ${i + 1}</h1>`,
+        notes: '',
+        notesHtml: '',
+        line: i,
+      })),
+    }),
+  });
+
+  assert.equal(await loadDeck(), true);
+  assert.equal(options().length, 5);
+  assert.equal(options()[1].classList.contains('now'), true);
+  assert.equal(options()[1].getAttribute('aria-current'), 'true');
+  assert.equal(options()[2].getAttribute('aria-selected'), 'true');
+  assert.equal(window.document.activeElement, options()[2]);
+  assert.equal(options()[2].classList.contains('now'), false);
+  deckKey({ key: 'Escape' });
+  deck.open = false;
+});
+
+test('a reload clamps an overview highlight when its slide is removed', async () => {
+  presenting(5, { index: 1 });
+  deckKey({ key: 'O' });
+  deckKey({ key: 'End' });
+  assert.equal(window.document.activeElement, options()[4]);
+
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({
+      css: '',
+      meta: {},
+      slides: Array.from({ length: 3 }, (_, i) => ({
+        body: `<h1>Shortened ${i + 1}</h1>`,
+        notes: '',
+        notesHtml: '',
+        line: i,
+      })),
+    }),
+  });
+
+  assert.equal(await loadDeck(), true);
+  assert.equal(options().length, 3);
+  assert.equal(window.document.activeElement, options()[2]);
+  assert.equal(options()[2].getAttribute('aria-selected'), 'true');
+  assert.equal(options()[1].classList.contains('now'), true);
+  deckKey({ key: 'Escape' });
+  deck.open = false;
+});
+
+
 test('the overview\'s keys are among the deck\'s at its foot', () => {
   assert.match(el.deck.querySelector('.deck-keys').textContent, /P slide start · O overview · T notes/);
 });

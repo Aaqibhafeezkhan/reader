@@ -295,6 +295,50 @@ test('a reload clamps an overview highlight when its slide is removed', async ()
 });
 
 
+test('Ctrl+G closes the overview before opening Go To', () => {
+  state.current = { path: 'talk.md', type: 'md' };
+  el.editor.value = '# A talk\\n';
+  presenting(3, { index: 1 });
+  deckKey({ key: 'O' });
+  assert.equal(el.overview.hidden, false);
+
+  openGoTo();
+
+  assert.equal(el.overview.hidden, true);
+  assert.equal(el.goto.hidden, false);
+  assert.equal(window.document.activeElement, el.gotoInput);
+  el.goto.hidden = true;
+  deck.open = false;
+});
+
+test('a theme change redraws the slide with the new theme', async () => {
+  const originalTheme = window.Theme;
+  let listener;
+  let chosen = 'light';
+  let dark = false;
+  window.Theme = {
+    chosen: () => chosen,
+    dark: () => dark,
+    onChange: (fn) => { listener = fn; },
+  };
+  const radios = [...el.theme.querySelectorAll('input[type=radio]')];
+  wireTheme();
+  assert.equal(radios.find((radio) => radio.value === 'light').checked, true);
+
+  const asked = presenting(1);
+  state.current = { path: 'talk.md', type: 'other' };
+  chosen = 'dark';
+  dark = true;
+  listener(true, 'dark');
+  await deck.stageReady;
+  await null;
+
+  assert.equal(radios.find((radio) => radio.value === 'dark').checked, true);
+  assert.equal(asked.at(-1).dark, true);
+  deck.open = false;
+  window.Theme = originalTheme;
+});
+
 test('the overview\'s keys are among the deck\'s at its foot', () => {
   assert.match(el.deck.querySelector('.deck-keys').textContent, /P slide start · O overview · T notes/);
 });

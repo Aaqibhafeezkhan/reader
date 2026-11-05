@@ -95,9 +95,11 @@
       say('Overview');
     }
 
-    function refresh(all, current = at) {
+    function refresh(all, current, highlighted = at) {
       if (root.hidden || !all.length) return;
-      open(all, Math.min(current, all.length - 1));
+      const last = all.length - 1;
+      open(all, Math.min(current, last));
+      highlight(Math.min(highlighted, last));
     }
 
     function close({ picked = false } = {}) {

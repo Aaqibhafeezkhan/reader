@@ -51,13 +51,13 @@ const KEPT = new Date(2026, 10, 3, 4, 0).getTime();
 const drawn = (text, now) => pages(text, { file: '2026-11-02.md', now }).pages;
 const count = (text, now) => tally(drawn(text, now).map((p, i) => mark(p.body, i)));
 
-test('the daily journal is a workbook of twelve pages, which opens in Work', () => {
+test('the daily journal is a workbook of nine pages, which opens in Work', () => {
   assert.equal(isDeck(JOURNAL), true);
   assert.match(JOURNAL, /^type: workbook$/m);
   const titles = drawn(JOURNAL, EVENING).map((p) => p.body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<[^>]+>/g, '').trim());
   assert.deepEqual(titles, [
-    'Today’s Celebrations', 'Daily Exercise', 'Meditation', 'Work To-Do', 'Gratitude Practice', 'Body Check-In',
-    'Social Connection', 'Personal To-Do', 'Learning &amp; Reading', 'Body Scan &amp; Stretch', 'Singing Warmup', 'How are you feeling?',
+    'Daily Exercise', 'Meditation', 'Gratitude Practice', 'Body Check-In', 'Social Connection',
+    'Learning &amp; Reading', 'Body Scan &amp; Stretch', 'Singing Warmup', 'How are you feeling?',
   ]);
 });
 
@@ -66,12 +66,12 @@ test('it\'s nobody\'s own: no one\'s project, issues, board or shelf', () => {
 });
 
 test('it\'s a day kept: filled in that evening, and from 4:00 the next morning a record of it', () => {
-  assert.deepEqual(count(JOURNAL, EVENING), { done: 9, of: 12 });
+  assert.deepEqual(count(JOURNAL, EVENING), { done: 6, of: 9 });
   assert.doesNotMatch(drawn(JOURNAL, EVENING).map((p) => p.body).join('\n'), /<input[^>]* disabled/);
   const kept = drawn(JOURNAL, KEPT).map((p) => p.body);
   for (const body of kept) assert.match(body, /<p class="open-until open-until-closed"[^>]*>No Longer Editable<\/p>/);
-  assert.deepEqual(count(JOURNAL, KEPT), { done: 9, of: 12 });
-  assert.match(shown(kept[4]), /The first frost, and the light on it at seven/);
+  assert.deepEqual(count(JOURNAL, KEPT), { done: 6, of: 9 });
+  assert.match(shown(kept[2]), /The first frost, and the light on it at seven/);
 });
 
 test('Copy for today makes today\'s from it: today\'s name and date, open until 4:00 tomorrow, and every answer cleared', async () => {
@@ -97,8 +97,8 @@ test('Copy for today makes today\'s from it: today\'s name and date, open until 
   assert.match(text, /^open-until: 2026-11-08 04:00$/m);
   assert.doesNotMatch(text, /\[x\]|\(x\)/, 'no box or choice is left ticked');
   assert.doesNotMatch(text, /^@ [^:\n]*:+ \S/m, 'no field is left filled');
-  assert.deepEqual(count(text, new Date(2026, 10, 7, 21, 0).getTime()), { done: 0, of: 12 });
+  assert.deepEqual(count(text, new Date(2026, 10, 7, 21, 0).getTime()), { done: 0, of: 9 });
   // What's not an answer is kept: the pages, the books, and how far each is read.
-  assert.equal(drawn(text, 0).length, 12);
+  assert.equal(drawn(text, 0).length, 9);
   assert.match(text, /progress:\[212\/432\] pages/);
 });

@@ -6,7 +6,7 @@ Samples of what reader is for, each a folder of its own, to open in reader and m
 
 - [How to Take Notes Like a Boss](take-notes-like-a-boss/tutorial.md): a tutorial on a day of talks, from bullets typed fast to your own thoughts, questions, words to look up, quotes and things to do.
   It comes with the notes it practices on, as they start and as they finish.
-- [Daily Journal](daily-journal/2026-11-02.md): a day of self-care as a workbook, a page at a time: exercise, meditation, to-dos, gratitude, reading, a singing warmup, and how you're feeling.
+- [Daily Journal](daily-journal/2026-11-02.md): a day of self-care as a workbook, a page at a time: exercise, meditation, gratitude, reading, a singing warmup, and how you're feeling.
   It's someone's Monday, filled in and kept.
 
 ## Opening one

@@ -27,7 +27,12 @@ makes the rest. PDFs open read-only in the left pane.
 The **Today** button, in the top bar, lists the files dated today in the file list, from every folder under the one reader was opened on, so that a daily file is one click away without knowing where it lives.
 They're listed as a search lists them, each with its folder, and typing in **Filter…** narrows them further.
 A workbook opens from there in Work, as it does from anywhere.
-With nothing dated today, the list says so.
+
+Under them, **Start today's** lists the folders of dated files with none for today yet, so a morning's series can be seen without going into each folder: each by its folder, with the file it would [start from](#starting-todays).
+Click one to start it there: its file is made, listed with today's, and **Today** stays, as does the file you have open, so you can go on to the next.
+Only a folder whose latest is from the last three days is listed; one left longer still offers **Start today's** beside **New** once you're in it.
+
+With nothing dated today and nothing to start, the list says so.
 
 The button stays pressed while they're showing.
 Pressing it again, `←`, or the path above the list goes back to the folder you were in.
@@ -63,7 +68,7 @@ journal/2026-11-02.md     the latest
 journal/2026-11-03.md     started from it
 ```
 
-- It's there however long ago the latest was, so a folder you come back to after a month still offers it.
+- It's there however long ago the latest was, so a folder you come back to after a month still offers it, though [Today](#today) only lists it to start for three days.
 - Once today's file is there, the calendar has a check instead, and opens that file.
 - The latest goes by the file's date, as above, so a `date:` wins over the name; not by when it was last changed. A date still to come is skipped.
   A version, like `2026-11-02.draft.md`, isn't counted.

@@ -99,8 +99,9 @@ function drawRows() {
 
 /**
  * The files dated today, from every folder, as a filter's matches are listed,
- * each with its folder, and the filter narrows them further. Nothing dated
- * today is said, rather than left an empty list.
+ * each with its folder, and the filter narrows them further. Under them, the
+ * series waiting for today's (src/dates.js), each to be started from here.
+ * Nothing dated today, and none waiting, is said, rather than left an empty list.
  */
 function drawToday(q) {
   const rows = filtered(state.files.filter((f) => f.date === state.today), q);
@@ -109,7 +110,27 @@ function drawToday(q) {
     li.querySelector('.file').setAttribute('aria-describedby', 'todayName filesKeys');
     el.files.append(li);
   }
-  if (!rows.length) el.filesNote.textContent = q ? `Nothing dated today matches “${q}”.` : 'Nothing is dated today.';
+  const waiting = [...state.starts.values()].filter((s) => s.waiting && (!q || s.from.toLowerCase().includes(q)))
+    .sort((a, b) => a.dir.localeCompare(b.dir));
+  if (waiting.length) {
+    const head = Object.assign(document.createElement('li'), { className: 'files-head', textContent: "Start today's" });
+    head.id = 'waitingName';
+    el.files.append(head, ...waiting.map(waitingItem));
+  }
+  if (!rows.length && !waiting.length) el.filesNote.textContent = q ? `Nothing dated today matches “${q}”.` : 'Nothing is dated today.';
+}
+
+/** A series waiting for today's, by its folder and the file it'd start from, which starts it, and stays in Today. */
+function waitingItem(start) {
+  const li = document.createElement('li');
+  const b = button('folder waiting', start.dir || state.rootName, `from ${splitPath(start.from).name}`);
+  b.dataset.dir = start.dir;
+  b.setAttribute('aria-describedby', 'waitingName filesKeys');
+  b.title = `Start today's ${splitPath(start.to).name} from ${start.date}.`;
+  b.insertAdjacentHTML('beforeend', `<span class="go">${icon('start-today')}</span>`);
+  b.addEventListener('click', () => startToday(start.dir, b, { inToday: true }));
+  li.append(b);
+  return li;
 }
 
 function drawCrumbs(shown) {

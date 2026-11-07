@@ -81,13 +81,20 @@ const baseName = (rel) => rel.slice(rel.lastIndexOf('/') + 1);
 const dayInName = (name) => (DAY_NAME.test(name) ? dateInName(name) : null);
 
 /**
+ * How many days a series is waiting for today's after its latest: three times
+ * how often it's written, which is every day, for now.
+ */
+export const WAITING_DAYS = 3;
+
+/**
  * The folders of `files` (each with its `date`) with a document dated in its
  * own name, on or before `day`: a series of files. Each is { dir, open }, if
- * `day`'s file is there already, or else { dir, from, date, to }: what `day`'s
- * is copied from, the latest of them before `day`, then its date, and what the
- * new file's called, that one's name with `day` in it. How long ago that was
- * doesn't matter, so a folder never stops offering, and someone coming back to
- * it finds what they left. Its date is the one every file has (`dateOf`), and
+ * `day`'s file is there already, or else { dir, from, date, to, waiting }: what
+ * `day`'s is copied from, the latest of them before `day`, then its date, what
+ * the new file's called, that one's name with `day` in it, and whether that
+ * was lately enough to suggest starting it (`WAITING_DAYS`). That's only a
+ * suggestion: however long ago it was, a folder never stops offering, and
+ * someone coming back to it finds what they left. Its date is the one every file has (`dateOf`), and
  * it's that which says which is latest. A date in the name is also needed to
  * make the new name, and a date to come isn't a day to copy from.
  */
@@ -105,7 +112,9 @@ export function startable(files, day) {
     }
     const latest = named.reduce((a, b) => (b.date > a.date || (b.date === a.date && b.path > a.path) ? b : a));
     const to = withDayInName(latest.path, day);
-    starts.push(here.some((f) => f.path === to) ? { dir, open: to } : { dir, from: latest.path, date: latest.date, to });
+    starts.push(here.some((f) => f.path === to) ? { dir, open: to } : {
+      dir, from: latest.path, date: latest.date, to, waiting: daysBetween(latest.date, day) <= WAITING_DAYS,
+    });
   }
   return starts;
 }

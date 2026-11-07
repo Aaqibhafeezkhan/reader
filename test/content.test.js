@@ -313,6 +313,17 @@ test('dated reads only the start of a file', () => {
   assert.equal(dates['book.md'], '2026-10-31');
 });
 
+test('startable goes by the files it\'s given, dated already, and reads none of them again', () => {
+  const { root, content } = fixture();
+  fs.mkdirSync(path.join(root, 'journal'));
+  fs.writeFileSync(path.join(root, 'journal', '2026-10-30.md'), '# a\n');
+  const files = content.dated();
+  assert.deepEqual(content.startable('2026-11-01', files), content.startable('2026-11-01'));
+  fs.rmSync(path.join(root, 'journal'), { recursive: true });
+  assert.equal(content.startable('2026-11-01', files)[0].from, 'journal/2026-10-30.md');
+  assert.deepEqual(content.startable('2026-11-01'), []);
+});
+
 function journal(text = '---\ndate: 2026-10-30\n---\n\n@ A: a\n') {
   const f = fixture();
   fs.mkdirSync(path.join(f.root, 'journal'));

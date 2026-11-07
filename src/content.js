@@ -8,7 +8,7 @@
  *   write(rel, text, opts)     atomic, with a conflict check and backups
  *   create(name?)              a new file, `untitled.md` by default
  *   branch(from, to)           a copy of a document, as another version of it
- *   startable(day)             the folders with a series of dated files, and where `day`'s is
+ *   startable(day, files?)     the folders with a series of dated files, and where `day`'s is: of `files`, if they're dated() already
  *   startFrom(dir, day)        what it would be made from: { from, to, text, mtime }
  *   startDay(dir, day, opts)   and made, from that with its answers cleared, if it isn't there
  *   copyFrom(rel, day?)        what a copy of a document would be called: { from, to, text, mtime, date }
@@ -570,7 +570,7 @@ export function createContent(rootDir) {
   }
 
   return { root, resolve, list, dated, read, write, create, branch,
-    startable: (day) => startable(dated(), day),
+    startable: (day, files = dated()) => startable(files, day),
     startFrom,
     startDay, copyFrom, copy, promote, rename, trash, restore, extract, unextract, statFile, backupRoot, trashRoot };
 }

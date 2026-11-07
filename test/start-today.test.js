@@ -337,3 +337,78 @@ test('pressed twice, it starts once', async () => {
   mock.timers.tick(15000);
   await settled();
 });
+
+// Under Today: the series waiting for today's, as the server says, each started from there.
+const WAITING = [
+  { ...JOURNAL[0], waiting: true },
+  { dir: 'old', from: 'old/invoice-2019-03-14.md', date: '2019-03-14', to: 'old/invoice-2026-11-03.md', waiting: false },
+  { dir: 'todo', open: 'todo/2026-11-03.md' },
+  { dir: '', from: '2026-11-01.md', date: '2026-11-01', to: '2026-11-03.md', waiting: true },
+];
+const waitingRows = () => [...el.files.querySelectorAll('.waiting')];
+/** Fresh, the series as `WAITING` has them, and Today showing. */
+async function inToday() {
+  await fresh();
+  starts = WAITING;
+  files = [...files, { path: 'todo/2026-11-03.md', date: '2026-11-03' }];
+  await loadTree();
+  el.todayBtn.click();
+}
+
+test('under Today, the series waiting for today\'s are listed after its files, by folder, with what each starts from', async () => {
+  await inToday();
+  const items = [...el.files.children].map((li) => li.querySelector('.file')?.dataset.path ?? li.querySelector('.waiting')?.dataset.dir ?? li.textContent);
+  assert.deepEqual(items, ['todo/2026-11-03.md', "Start today's", '', 'journal']);
+  const [top, journal] = waitingRows();
+  assert.equal(top.querySelector('.name').textContent, 'notes');
+  assert.equal(journal.querySelector('.name').textContent, 'journal');
+  assert.equal(journal.querySelector('.sub').textContent, 'from 2026-10-30.md');
+  assert.equal(journal.title, "Start today's 2026-11-03.md from 2026-11-01.");
+  assert.ok(journal.querySelector('svg'));
+  assert.equal(el.filesNote.textContent, '');
+  // Not one gone quiet, which still offers beside New.
+  assert.equal(el.files.querySelector('.waiting[data-dir="old"]'), null);
+  go('old', null, { focus: false });
+  assert.equal(gray(), false);
+});
+
+test('with nothing dated today, they\'re listed in its place, and the filter narrows them', async () => {
+  await inToday();
+  files = files.filter((f) => f.path !== 'todo/2026-11-03.md');
+  await loadTree();
+  assert.equal(el.filesNote.textContent, '');
+  assert.equal(waitingRows().length, 2);
+  el.filter.value = 'JOURNAL';
+  el.filter.dispatchEvent(new window.Event('input'));
+  assert.deepEqual(waitingRows().map((b) => b.dataset.dir), ['journal']);
+  el.filter.value = 'nothing';
+  el.filter.dispatchEvent(new window.Event('input'));
+  assert.deepEqual(waitingRows(), []);
+  assert.match(el.filesNote.textContent, /Nothing dated today matches/);
+});
+
+test('started from Today, its file is listed there, and Today and the open file stay', async () => {
+  await inToday();
+  el.todayBtn.click();
+  state.current = { path: 'notes.md', type: 'md' };
+  setWorking(true);
+  // Pressed in Work, it comes over the page.
+  el.todayBtn.click();
+  assert.equal(listOpen(), true);
+  assert.equal(state.todayShown, true);
+  el.files.querySelector('.waiting[data-dir="journal"]').click();
+  await settled();
+  assert.equal(listOpen(), true, 'the list stays over the page');
+  const { say } = framed();
+  say({ type: 'ready' });
+  await settled();
+  say({ type: 'started-over', edits: [], failed: null });
+  await settled();
+  assert.deepEqual(posts()[0].body, { dir: 'journal', from: 'journal/2026-10-30.md', mtime: 1, edits: [] });
+  assert.equal(state.todayShown, true);
+  assert.equal(state.current.path, 'notes.md');
+  assert.equal(document.activeElement, el.files.querySelector('.file[data-path="journal/2026-11-03.md"]'));
+  assert.equal(el.files.querySelector('.waiting[data-dir="journal"]'), null);
+  assert.match(el.toast.textContent, /Started journal\/2026-11-03\.md from 2026-10-30\.md/);
+  setWorking(false);
+});

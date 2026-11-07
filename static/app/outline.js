@@ -17,7 +17,8 @@ import { el, state } from './state.js';
 import { outline } from './sections.js';
 import { goToLine } from './goto.js';
 import { topLine } from './sync.js';
-import { drawTree, icon } from './files.js';
+import { drawTree } from './files.js';
+import { icon } from './icons.js';
 import { extractEntries, namesFor } from './extracting.js';
 
 let cache = { text: null, data: null };

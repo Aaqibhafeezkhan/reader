@@ -85,12 +85,15 @@ A date in a sentence and a definition stay as they were left.
 
 ### Making a copy
 
-**Make a copy**, in the top bar beside ⧉, copies the open file to a file of its own and opens it, to carry on in with no thought of folding it back in, as a [version](#versions) is.
-It's there in Edit and in Work alike, so it's how a workbook open in Work, with the file list out of sight, is copied.
+**Make a copy**, the icon of two pages in the top bar beside ⧉, copies the open file to a file of its own and opens it, to carry on in with no thought of folding it back in, as a [version](#versions) is.
+Beside it, **Copy for today**, a calendar with a sheet behind it, makes today's from it.
+They're there in Edit and in Work alike, so they're how a workbook open in Work, with the file list out of sight, is copied.
+Where one doesn't apply it's gray, and its tooltip, or a finger held on it, says why: with no file open, or a PDF, both are; Copy for today is too on a file with no date, or one dated today.
 
 - The copy is named for the file, with `-copy` on it: `notes.md` is copied as `notes-copy.md`, then `notes-copy-2.md`, and copying `notes-copy.md` makes `notes-copy-2.md` too.
 - From Edit it keeps its text. From Work, it starts with every answer cleared, as [Start over](forms.md#starting-over) clears them.
-- On a file dated another day than today, it says **Copy for today**, and makes today's, as [Start today's](#starting-todays) does: today's date in its name, its `date:` set to today, its `open-until:` keeping its distance, and its answers cleared, from Edit too.
+  That's so of a file dated another day too: Make a copy of `2026-10-30.md` is `2026-10-30-copy.md`.
+- Copy for today, on a file dated another day than today, makes today's, as [Start today's](#starting-todays) does: today's date in its name, its `date:` set to today, its `open-until:` keeping its distance, and its answers cleared, from Edit too.
   So a file from long ago, or one in a folder of its own, is started again today.
 - A file dated only by its `date:` keeps its name, with `-copy` on it, and today's `date:`.
 - A file already there is never replaced: if today's is there, Copy for today makes `2026-11-03-copy.md` beside it.

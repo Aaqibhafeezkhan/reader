@@ -24,7 +24,7 @@ Or, without the code, download a sample's folder from [the docs](https://jzheaux
 Copy the sample's folder into your own notes first, so what you change is yours and not reader's.
 
 A dated sample, like the daily journal, starts your own day from it:
-**Copy for today**, in the top bar, makes today's file beside it, with today's date and every answer cleared, and opens it, in Work if that's where you were.
+**Copy for today**, the calendar with a sheet behind it in the top bar, makes today's file beside it, with today's date and every answer cleared, and opens it, in Work if that's where you were.
 Change what's in it to suit you, and the next morning **Start today's**, in the **Today** list, starts that day's from yours.
 See [Files](https://jzheaux.github.io/reader/files.html#starting-todays) for how.
 

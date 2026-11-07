@@ -2,8 +2,9 @@ import { test, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { app, globals } from './dom.js';
 
-// Make a copy, in the top bar (gh-236): a file of its own, today's if the open
-// one is dated another day, its answers cleared for today or from Work.
+// Make a copy and Copy for today, in the top bar (gh-236): a file of its own,
+// or today's from a file dated another day, its answers cleared for today or
+// from Work. Gray, not gone, where they don't apply.
 
 mock.timers.enable({ apis: ['setTimeout'] });
 
@@ -48,6 +49,8 @@ await settled();
 
 const hidden = () => [...document.querySelectorAll('iframe.measure')].find((f) => f !== el.measure);
 const b = () => el.copyFile;
+const t = () => el.copyToday;
+const gray = (x) => x.getAttribute('aria-disabled') === 'true';
 const posts = () => asked.filter((a) => a.method === 'POST');
 
 function framed() {
@@ -70,24 +73,59 @@ async function fresh(p, { to = 'notes-copy.md' } = {}) {
   await settled();
 }
 
-test('it\'s beside the path\'s button, for an open document only', async () => {
+test('two icons beside the path\'s button, always there, gray where there\'s nothing to copy', async () => {
   await fresh(null);
-  assert.equal(b().hidden, true);
-  await fresh('notes.md');
-  assert.equal(b().hidden, false);
+  for (const x of [b(), t()]) {
+    assert.equal(x.hidden, false);
+    assert.ok(gray(x));
+    assert.equal(x.disabled, false, 'or it couldn\'t say why');
+    assert.ok(x.querySelector('svg'));
+    assert.equal(x.textContent, '');
+  }
+  assert.equal(b().getAttribute('aria-label'), 'Make a copy');
+  assert.equal(t().getAttribute('aria-label'), 'Copy for today');
+  assert.equal(b().title, 'Make a copy, once a file is open.');
   assert.equal(b().previousElementSibling, el.copyPath);
-  assert.equal(b().textContent, 'Make a copy');
+  assert.equal(t().previousElementSibling, b());
+  assert.notEqual(b().innerHTML, t().innerHTML);
+  b().click();
+  t().click();
+  await settled();
+  assert.deepEqual(asked, []);
+  await fresh('notes.md');
+  assert.ok(!gray(b()));
+  assert.match(b().title, /^Make a copy, a file of its own/);
   await open('doc.pdf');
   await settled();
-  assert.equal(b().hidden, true);
+  assert.ok(gray(b()));
+  assert.ok(gray(t()));
+  assert.match(b().title, /not a PDF/);
 });
 
-test('on a file dated another day it says Copy for today; dated today, Make a copy', async () => {
+test('Copy for today is there for a file dated another day; undated, or today\'s, it\'s gray and says why', async () => {
   await fresh('journal/2026-10-30.md');
-  assert.equal(b().textContent, 'Copy for today');
-  assert.match(b().title, /2026-11-03/);
+  assert.ok(!gray(t()));
+  assert.ok(!gray(b()));
+  assert.match(t().title, /2026-11-03/);
+  await fresh('notes.md');
+  assert.ok(gray(t()));
+  assert.equal(t().title, 'Copy for today, once the file has a date.');
+  t().click();
+  await settled();
+  assert.deepEqual(asked, []);
   await fresh('journal/2026-11-03.md');
-  assert.equal(b().textContent, 'Make a copy');
+  assert.ok(gray(t()));
+  assert.match(t().title, /this one is today's/);
+  assert.ok(!gray(b()));
+});
+
+test('Make a copy, from a file dated another day, is a plain copy', async () => {
+  await fresh('journal/2026-10-30.md', { to: 'journal/2026-10-30-copy.md' });
+  b().click();
+  await settled();
+  assert.deepEqual(asked.map((a) => a.ask), ['/api/copy?path=journal%2F2026-10-30.md', '/api/copy']);
+  assert.equal(posts()[0].body.today, false);
+  assert.equal(state.current.path, 'journal/2026-10-30-copy.md');
 });
 
 test('from Edit, a copy keeps its text: nothing is drawn to clear, and the copy opens', async () => {
@@ -124,7 +162,7 @@ test('from Work, a copy starts with its answers cleared, and opens in Work', asy
 
 test('Copy for today clears its answers, even from Edit, and asks for today\'s', async () => {
   await fresh('journal/2026-10-30.md', { to: 'journal/2026-11-03-copy.md' });
-  b().click();
+  t().click();
   await settled();
   assert.match(asked[0].ask, /today=1/);
   assert.match(asked[0].ask, /clear=1/);
@@ -140,7 +178,7 @@ test('Copy for today clears its answers, even from Edit, and asks for today\'s',
 
 test('a frame that fails, or a server that refuses, makes nothing and says so', async () => {
   await fresh('journal/2026-10-30.md');
-  b().click();
+  t().click();
   await settled();
   const { say } = framed();
   say({ type: 'ready' });
@@ -161,12 +199,12 @@ test('a frame that fails, or a server that refuses, makes nothing and says so', 
 
 test('pressed twice, it copies once', async () => {
   await fresh('journal/2026-10-30.md');
-  b().click();
-  b().click();
+  t().click();
+  t().click();
   await settled();
   assert.equal(asked.length, 1);
-  assert.equal(b().disabled, true);
+  assert.equal(t().disabled, true);
   mock.timers.tick(15000);
   await settled();
-  assert.equal(b().disabled, false);
+  assert.equal(t().disabled, false);
 });

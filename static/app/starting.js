@@ -17,6 +17,22 @@ const CLEAR_TIMEOUT = 15000;
 
 let starting = false;
 
+/**
+ * The edits that clear the answers of the file `plan` drew (`{ from, css,
+ * body }`), as Start over does, worked out in a hidden frame; or an error,
+ * if it fails or takes too long. Making a copy clears them so too.
+ */
+export async function startedOver(plan) {
+  const { edits, failed } = await askHidden(plan, plan.from, {
+    ask: { type: 'start-over' },
+    answer: 'started-over',
+    wait: CLEAR_TIMEOUT,
+    late: 'clearing its answers took too long',
+  });
+  if (failed) throw new Error(`clearing its answers failed: ${failed}`);
+  return edits;
+}
+
 /** Makes today's file in the folder `dir` and opens it; `button` is what was pressed. */
 export async function startToday(dir, button) {
   if (starting) return;
@@ -26,13 +42,7 @@ export async function startToday(dir, button) {
     // The latest may be the open file, with what's typed not yet on disk.
     if (!(await saveFirst())) throw new Error('the open file isn\'t saved');
     const plan = await api('GET', `/api/start-day?dir=${encodeURIComponent(dir)}`);
-    const { edits, failed } = await askHidden(plan, plan.from, {
-      ask: { type: 'start-over' },
-      answer: 'started-over',
-      wait: CLEAR_TIMEOUT,
-      late: 'clearing its answers took too long',
-    });
-    if (failed) throw new Error(`clearing its answers failed: ${failed}`);
+    const edits = await startedOver(plan);
     const made = await api('POST', '/api/start-day', { dir, from: plan.from, mtime: plan.mtime, edits });
     await loadTree();
     reveal(made.path);

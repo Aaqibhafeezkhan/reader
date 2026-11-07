@@ -22,6 +22,7 @@ import { wireLines, copyLines, goToLines } from './lines.js';
 import { wireOutline } from './outline.js';
 import { wireGoTo, openGoTo, isGoTo } from './goto.js';
 import { wireTheme } from './theme.js';
+import { makeCopy } from './copying.js';
 
 state.previewReady = whenReady(el.preview);
 deck.stageReady = whenReady(el.stage);
@@ -170,6 +171,7 @@ function wire() {
     else el.newForm.hidden = true;
   });
   el.startBtn.addEventListener('click', pressStart);
+  el.copyFile.addEventListener('click', makeCopy);
   setUpSideIcons();
   el.newForm.addEventListener('submit', (e) => {
     e.preventDefault();

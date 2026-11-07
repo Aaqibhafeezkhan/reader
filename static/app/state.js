@@ -7,7 +7,7 @@
 
 const $ = (id) => document.getElementById(id);
 export const el = {
-  rootName: $('rootName'), crumb: $('crumb'), copyPath: $('copyPath'), saveState: $('saveState'),
+  rootName: $('rootName'), crumb: $('crumb'), copyPath: $('copyPath'), copyFile: $('copyFile'), saveState: $('saveState'),
   sidebarToggle: $('sidebarToggle'), helpToggle: $('helpToggle'), help: $('help'),
   version: $('version'), helpVersion: $('helpVersion'), theme: $('theme'),
   split: $('split'), sidebar: $('sidebar'), filter: $('filter'), files: $('files'),

@@ -19,6 +19,7 @@ import { folderView, filtered, findGroup, groupOf, hasFolder, dirOf, splitPath }
 import { branch, rename, trash, promote } from './manage.js';
 import { drawOutline, entryKey, pickKey } from './outline.js';
 import { startToday } from './starting.js';
+import { drawCopy } from './copying.js';
 
 // Drawn with the text's own colour; the trash's is set red in the stylesheet.
 const ICONS = {
@@ -78,6 +79,7 @@ function drawRows() {
   else el.files.removeAttribute('aria-labelledby');
   drawCrumbs(!q || state.todayShown);
   drawStart();
+  drawCopy();
 
   if (state.todayShown) return drawToday(q);
   if (q) {

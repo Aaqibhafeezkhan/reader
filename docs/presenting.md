@@ -51,6 +51,8 @@ be, with nothing of its notes. It opens on the page the cursor was on.
 - Beside the dots, a bar and a count say how many pages are done, "7 of 12 done", of those with something to do; it fills as boxes are ticked.
   Beside it is the page showing, "Page 3 of 12".
   A workbook with nothing to do on any page has no bar.
+- Where the dots don't fit on one line, as on a phone, they and the bar give way:
+  the line keeps **Back**, **Next**, "7 of 12 done" and "Page 3 of 12".
 
 ## Decks
 

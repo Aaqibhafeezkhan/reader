@@ -5,6 +5,8 @@
  *   GET  /api/tree             listable files, newest first, each with its date; today's date; and the folders today's file could be started in
  *   GET  /api/start-day?dir=   { from, to, mtime, css, body }: the folder's latest file, drawn whole and open, to clear its answers
  *   POST /api/start-day        { dir, from, mtime, edits } -> { path, from, mtime }: today's file, made from it with `edits` made
+ *   GET  /api/copy?path=&today=&clear=   { from, to, mtime, date }: what a copy of it would be called, today's if `today` and it's dated; with `clear`, drawn whole and open as above, { css, body }
+ *   POST /api/copy             { path, mtime, edits, today? } -> { path, from, mtime }: and made, with `edits` made
  *   GET  /api/file?path=       { text, mtime }
  *   PUT  /api/file             { path, text, baseMtime, force?, explicit?, worked? }
  *   POST /api/new              { name? }
@@ -119,7 +121,7 @@ const FRAME_FILES = new Set([...fs.readFileSync(PREVIEW_HTML, 'utf8').matchAll(/
 // What each field of a request's body must be, when it's there at all.
 const FIELDS = {
   text: 'string', path: 'string', dir: 'string', name: 'string', from: 'string', to: 'string', base: 'string', trash: 'string',
-  baseMtime: 'number', mtime: 'number', worked: 'boolean',
+  baseMtime: 'number', mtime: 'number', worked: 'boolean', today: 'boolean',
 };
 
 const badRequest = (message) => Object.assign(new Error(message), { status: 400 });
@@ -328,6 +330,14 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
         const { css, body } = render(text, { file: start.from, read, lines: true, now: 0 });
         return sendJson(res, { ...start, css, body });
       }
+      if (route === '/api/copy') {
+        const ask = url.searchParams;
+        const { text, ...plan } = content.copyFrom(ask.get('path'), ask.get('today') ? today(now, dayStarts) : null);
+        if (!ask.get('clear')) return sendJson(res, plan);
+        // Drawn as Start today's draws one, never as a record.
+        const { css, body } = render(text, { file: plan.from, read, lines: true, now: 0 });
+        return sendJson(res, { ...plan, css, body });
+      }
       if (route === '/api/file') return sendJson(res, content.read(url.searchParams.get('path')));
       if (route === '/api/export') return sendExport(res, url.searchParams.get('path') || '');
       if (route.startsWith('/content/')) {
@@ -382,6 +392,9 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
     if (route === '/api/branch' && req.method === 'POST') return sendJson(res, content.branch(body.from, body.to));
     if (route === '/api/start-day' && req.method === 'POST') {
       return sendJson(res, content.startDay(body.dir ?? '', today(now, dayStarts), body));
+    }
+    if (route === '/api/copy' && req.method === 'POST') {
+      return sendJson(res, content.copy(body.path, { mtime: body.mtime, edits: body.edits ?? [], day: body.today ? today(now, dayStarts) : null }));
     }
     if (route === '/api/promote' && req.method === 'POST') return sendJson(res, content.promote(body.path, body.base));
     if (route === '/api/rename' && req.method === 'POST') return sendJson(res, content.rename(body.moves));

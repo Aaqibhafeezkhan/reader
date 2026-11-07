@@ -385,3 +385,60 @@ test('without a `date:`, `open-until:` keeps its distance from the date in the n
   content.startDay('journal', day, asked({ edits: [] }));
   assert.equal(fs.readFileSync(today, 'utf8'), '---\nopen-until: 2026-11-03\n---\n\n@ A:\n');
 });
+
+// Making a copy (gh-236): a file of its own, today's if it's dated, never over one that's there.
+
+const copied = (content, rel, over = {}) => content.copy(rel, { mtime: content.copyFrom(rel).mtime, ...over });
+
+test('a copy keeps its text, under a name no file has: -copy, then -copy-2', () => {
+  const { content, root } = fixture();
+  assert.equal(copied(content, 'a.md').path, 'a-copy.md');
+  assert.equal(fs.readFileSync(path.join(root, 'a-copy.md'), 'utf8'), '# a\n');
+  assert.equal(content.copyFrom('a.md').to, 'a-copy-2.md');
+  // A copy of a copy is another copy, not a-copy-copy.
+  assert.equal(copied(content, 'a-copy.md').path, 'a-copy-2.md');
+  assert.equal(copied(content, 'sub/b.markdown').path, 'sub/b-copy.markdown');
+  assert.equal(fs.readFileSync(path.join(root, 'a.md'), 'utf8'), '# a\n');
+});
+
+test('a copy for today takes today\'s name and date, clears what it\'s told, and moves `open-until:`', () => {
+  const { content, day, edit, root } = journal('---\ndate: 2026-10-30\nopen-until: 2026-10-31 04:00\n---\n\n@ A: a\n');
+  const plan = content.copyFrom('journal/2026-10-30.md', day);
+  assert.equal(plan.to, `journal/${day}.md`);
+  assert.equal(plan.date, '2026-10-30');
+  const edits = [{ ...edit, from: 5, to: 6 }];
+  assert.equal(copied(content, 'journal/2026-10-30.md', { edits, day }).path, `journal/${day}.md`);
+  assert.equal(fs.readFileSync(path.join(root, 'journal', `${day}.md`), 'utf8'), `---\ndate: ${day}\nopen-until: 2026-11-03 04:00\n---\n\n@ A:\n`);
+});
+
+test('a file dated only by its `date:` keeps its name for today, so it\'s a -copy', () => {
+  const { content, root } = fixture();
+  fs.writeFileSync(path.join(root, 'plan.md'), '---\ndate: 2026-10-30\n---\n');
+  assert.equal(copied(content, 'plan.md', { day: '2026-11-02' }).path, 'plan-copy.md');
+  assert.equal(fs.readFileSync(path.join(root, 'plan-copy.md'), 'utf8'), '---\ndate: 2026-11-02\n---\n');
+});
+
+test('with today\'s already there, a copy for today is a -copy of it, and today\'s is left be', () => {
+  const { content, day, today, root } = journal();
+  fs.writeFileSync(today, 'mine\n');
+  assert.equal(copied(content, 'journal/2026-10-30.md', { day }).path, `journal/${day}-copy.md`);
+  assert.equal(fs.readFileSync(today, 'utf8'), 'mine\n');
+  assert.match(fs.readFileSync(path.join(root, 'journal', `${day}-copy.md`), 'utf8'), new RegExp(`date: ${day}`));
+});
+
+test('an undated file copied for today is copied as it is', () => {
+  const { content, root } = fixture();
+  assert.equal(copied(content, 'sub/b.markdown', { day: '2026-11-02' }).path, 'sub/b-copy.markdown');
+  assert.equal(fs.readFileSync(path.join(root, 'sub/b-copy.markdown'), 'utf8'), 'b\n');
+});
+
+test('a copy writes nothing if the file has changed, or the edits don\'t fit, and copies only documents inside', () => {
+  const { content, root } = fixture();
+  assert.throws(() => content.copy('a.md', { mtime: 1 }), ConflictError);
+  assert.throws(() => copied(content, 'a.md', { edits: [{ from: 0, to: 1, before: ['no'], after: [''] }] }), ConflictError);
+  assert.throws(() => copied(content, 'a.md', { edits: 'all' }), ConflictError);
+  assert.equal(fs.existsSync(path.join(root, 'a-copy.md')), false);
+  for (const rel of ['doc.pdf', 'notes.txt', '../secret.md', 'link-out.md', '.hidden/c.md']) {
+    assert.throws(() => content.copyFrom(rel), (err) => err instanceof PathError, rel);
+  }
+});

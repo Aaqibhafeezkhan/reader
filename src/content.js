@@ -11,6 +11,8 @@
  *   startable(day)             the folders with a series of dated files, and where `day`'s is
  *   startFrom(dir, day)        what it would be made from: { from, to, text, mtime }
  *   startDay(dir, day, opts)   and made, from that with its answers cleared, if it isn't there
+ *   copyFrom(rel, day?)        what a copy of a document would be called: { from, to, text, mtime, date }
+ *   copy(rel, opts)            and made, a file of its own, `day`'s if it's dated
  *   promote(rel, base)         make a version the main one, `base.ext`
  *   rename(moves)              [{ from, to }], all or none, backups and all
  *   trash(rel) / restore(id)   into `.reader/trash/`, and back out
@@ -23,7 +25,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { dateOf, startable, withDate, daysBetween } from './dates.js';
+import { dateOf, startable, withDate, withDayInName, daysBetween } from './dates.js';
 import { movedLine } from './page.js';
 import { withEdits } from '../static/edits.js';
 
@@ -319,17 +321,65 @@ export function createContent(rootDir) {
   function startDay(dir, day, { from, mtime, edits }) {
     const start = startFrom(dir, day);
     if (start.from !== from || start.mtime !== mtime) throw new ConflictError(`${from} has changed since its answers were cleared`, start.mtime);
-    const cleared = withEdits(start.text, edits);
-    if (cleared == null) throw new ConflictError(`what was cleared doesn't fit ${from}`, start.mtime);
-    const abs = resolve(start.to);
+    return made(start, edits, day);
+  }
+
+  /**
+   * What a copy of the document `rel` would be: `{ from, to, text, mtime,
+   * date }`. For `day`, if it's dated (`dateOf`), the copy is that day's: its
+   * name has `day` in place of the date in it, and `date` is the one it's
+   * moved from. Otherwise it's null, and the name stays. Either name, if
+   * it's taken, has `-copy` put on it, then `-copy-2`, and so on, so
+   * `notes.md` is copied as `notes-copy.md`, and so is `notes-copy.md` itself.
+   */
+  function copyFrom(rel, day = null) {
+    if (!DOC_EXTS.has(path.extname(String(rel)).toLowerCase())) throw new PathError(`not a document: ${rel}`);
+    const { text, mtime } = read(rel);
+    const date = (day && dateOf(rel, text)) || null;
+    return { from: rel, to: unused(date ? withDayInName(rel, day) : rel), text, mtime, date };
+  }
+
+  /** `rel`, or the first of `rel-copy`, `rel-copy-2`, ... that no file has. */
+  function unused(rel) {
+    if (!fs.existsSync(resolve(rel))) return rel;
+    const ext = path.extname(rel);
+    const stem = rel.slice(0, rel.length - ext.length).replace(/-copy(?:-\d+)?$/, '');
+    for (let n = 1; ; n++) {
+      const to = `${stem}-copy${n > 1 ? `-${n}` : ''}${ext}`;
+      if (!fs.existsSync(resolve(to))) return to;
+    }
+  }
+
+  /**
+   * Copy the document `rel` to a file of its own, as copyFrom names it, with
+   * `edits` made to it (none keeps its text): `day`'s, if that's given and it's
+   * dated, as startDay makes one. They were worked out from `rel` as it was at
+   * `mtime`, so if it's changed since, nothing is written.
+   */
+  function copy(rel, { mtime, edits = [], day = null } = {}) {
+    const plan = copyFrom(rel, day);
+    if (plan.mtime !== mtime) throw new ConflictError(`${rel} has changed since it was copied`, plan.mtime);
+    return made(plan, edits, day);
+  }
+
+  /**
+   * Write the file `to`, `text` (from `from`) with `edits` made to it, never
+   * over a file that's there. With a `date`, it's made `day`'s: its `date:`
+   * set, and what its front matter dates by that one (`open-until:`) moved as far.
+   */
+  function made({ from, to, text, mtime, date }, edits, day) {
+    const cleared = withEdits(text, edits);
+    if (cleared == null) throw new ConflictError(`what was cleared doesn't fit ${from}`, mtime);
+    const away = date ? daysBetween(date, day) : 0;
+    const out = date ? withDate(cleared, day, (line) => movedLine(line, away)) : cleared;
+    const abs = resolve(to);
     try {
-      const away = daysBetween(start.date, day);
-      fs.writeFileSync(abs, withDate(cleared, day, (line) => movedLine(line, away)), { flag: 'wx', mode: statFile(from).stat.mode & 0o777 });
+      fs.writeFileSync(abs, out, { flag: 'wx', mode: statFile(from).stat.mode & 0o777 });
     } catch (err) {
-      if (err.code === 'EEXIST') throw new ConflictError(`${start.to} already exists`);
+      if (err.code === 'EEXIST') throw new ConflictError(`${to} already exists`);
       throw err;
     }
-    return { path: start.to, from, mtime: fs.statSync(abs).mtimeMs };
+    return { path: to, from, mtime: fs.statSync(abs).mtimeMs };
   }
 
   /**
@@ -522,7 +572,7 @@ export function createContent(rootDir) {
   return { root, resolve, list, dated, read, write, create, branch,
     startable: (day) => startable(dated(), day),
     startFrom,
-    startDay, promote, rename, trash, restore, extract, unextract, statFile, backupRoot, trashRoot };
+    startDay, copyFrom, copy, promote, rename, trash, restore, extract, unextract, statFile, backupRoot, trashRoot };
 }
 
 function pad(n, w = 2) {

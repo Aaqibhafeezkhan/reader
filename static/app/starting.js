@@ -8,6 +8,7 @@
  */
 
 import { api } from './api.js';
+import { el, state } from './state.js';
 import { saveFirst } from './saving.js';
 import { toast } from './status.js';
 import { askHidden } from './render.js';
@@ -33,8 +34,12 @@ export async function startedOver(plan) {
   return edits;
 }
 
-/** Makes today's file in the folder `dir` and opens it; `button` is what was pressed. */
-export async function startToday(dir, button) {
+/**
+ * Makes today's file in the folder `dir` and opens it; `button` is what was
+ * pressed. From Today, it's listed there instead, and the file open stays
+ * open, so a morning's series can be started one after another.
+ */
+export async function startToday(dir, button, { inToday = false } = {}) {
   if (starting) return;
   starting = true;
   button.disabled = true;
@@ -45,9 +50,14 @@ export async function startToday(dir, button) {
     const edits = await startedOver(plan);
     const made = await api('POST', '/api/start-day', { dir, from: plan.from, mtime: plan.mtime, edits });
     await loadTree();
+    const from = made.from.slice(made.from.lastIndexOf('/') + 1);
+    if (inToday && state.todayShown) {
+      el.files.querySelector(`.file[data-path="${CSS.escape(made.path)}"]`)?.focus();
+      return toast(`Started ${made.path} from ${from}`);
+    }
     reveal(made.path);
     await open(made.path);
-    toast(`Started from ${made.from.slice(made.from.lastIndexOf('/') + 1)}`);
+    toast(`Started from ${from}`);
   } catch (err) {
     toast(`Today's file wasn't started: ${err.message}`, true);
     // It may be that it's there already, and the offer should go.

@@ -2,7 +2,7 @@
  * A deck being worked through: a workbook, a page to a slide, one shown at a
  * time. Under it are Back and Next and a dot for each page, filled once the
  * page is done (see done.js), and a bar of how many are; a long one's dots
- * go in blocks (see dots.js).
+ * go in blocks (see dots.js), and a bar too narrow for them goes without.
  */
 
 import { el } from './state.js';
@@ -62,6 +62,18 @@ export function turnToLine(line) {
 export function wirePages() {
   el.pageBack.addEventListener('click', () => turn(-1));
   el.pageNext.addEventListener('click', () => turn(1));
+  // A window made narrower, or a phone turned, can leave the dots no room.
+  new ResizeObserver(fit).observe(el.pages);
+}
+
+/**
+ * The bar is one line: its dots, if they fit on it beside Back and Next and
+ * what's said of the pages, or else none, and "Page 1 of 12" says where the
+ * page is, as on a phone. Measured with the dots in, at their own width.
+ */
+export function fit() {
+  el.pages.classList.remove('crowded');
+  el.pages.classList.toggle('crowded', el.pageDots.scrollWidth > el.pageDots.clientWidth);
 }
 
 function dot({ title, done }, i, index) {
@@ -116,4 +128,5 @@ function draw() {
   el.pageNext.disabled = index === pages.length - 1;
   if (at === el.pageBack && el.pageBack.disabled) el.pageNext.focus();
   if (at === el.pageNext && el.pageNext.disabled) el.pageBack.focus();
+  fit();
 }

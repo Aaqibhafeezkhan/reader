@@ -113,10 +113,20 @@ button, .ghost { font: inherit; font-size: 13px; border-radius: 7px; cursor: poi
   padding: 8px 14px; border-top: 1px solid var(--line); background: var(--panel);
 }
 .pages[hidden] { display: none; }
+.pages > button { flex: none; }
+/* One line of them, or none: too many for the bar's width overflow, and pages.js
+   takes that as the bar being crowded (gh-247). */
 .page-dots {
-  flex: 1; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px;
-  list-style: none; margin: 0; padding: 0;
+  flex: 1; min-width: 0; display: flex; justify-content: safe center; gap: 2px;
+  overflow: hidden; list-style: none; margin: 0; padding: 0;
 }
+/* Crowded, as on a phone: Back and Next at the ends, and between them in words
+   how many are done and which page this is, the first shortened before the
+   second, and either before Next goes off the edge. */
+.pages.crowded .page-dots, .pages.crowded .page-done progress { display: none; }
+.pages.crowded .page-done { margin-left: auto; flex-shrink: 100; }
+.pages.crowded #pageNext { margin-left: auto; }
+.pages.crowded :is(.page-done, .page-done .progress, .progress-count, .page-count) { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .page-dot { display: block; padding: 6px; background: none; border: 0; border-radius: 50%; }
 .page-dot::before {
   content: ''; display: block; width: 9px; height: 9px; border-radius: 50%;

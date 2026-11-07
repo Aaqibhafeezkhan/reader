@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dayStart, dateOf, today, startable, withDate, daysBetween } from '../src/dates.js';
+import { dayStart, dateOf, today, startable, withDate, daysBetween, WAITING_DAYS } from '../src/dates.js';
 
 test('a file is dated by its `date:` front matter', () => {
   assert.equal(dateOf('list.md', '---\ndate: 2026-10-31\n---\n\n# A\n'), '2026-10-31');
@@ -82,7 +82,7 @@ const asked = (day, ...names) => startable(on(...names), day);
 
 test('a folder with a dated file can start today from its latest', () => {
   assert.deepEqual(asked('2026-11-03', '2026-10-30', '2026-11-01', '2026-10-31'),
-    [{ dir: 'j', from: 'j/2026-11-01.md', date: '2026-11-01', to: 'j/2026-11-03.md' }]);
+    [{ dir: 'j', from: 'j/2026-11-01.md', date: '2026-11-01', to: 'j/2026-11-03.md', waiting: true }]);
   // The top of the folder is a folder, and other documents don't matter.
   assert.equal(startable([md('2026-11-01.md', '2026-11-01'), md('a.md', null), md('b.md', null), md('c.md', null)], '2026-11-03')[0].dir, '');
 });
@@ -91,6 +91,17 @@ test('however long ago the latest was, it\'s still offered', () => {
   assert.equal(asked('2026-11-03', '2026-11-02')[0].from, 'j/2026-11-02.md');
   assert.equal(asked('2026-11-03', '2019-03-14')[0].from, 'j/2019-03-14.md');
   assert.equal(asked('2026-01-02', '2025-12-30')[0].to, 'j/2026-01-02.md', 'across a year');
+});
+
+test('it\'s waiting for today\'s, to be suggested, for three days after the latest, and offered after that too', () => {
+  assert.equal(WAITING_DAYS, 3);
+  assert.equal(asked('2026-11-03', '2026-11-02')[0].waiting, true);
+  assert.equal(asked('2026-11-03', '2026-10-31')[0].waiting, true, 'three days');
+  assert.equal(asked('2026-11-03', '2026-10-30')[0].waiting, false, 'four days');
+  assert.equal(asked('2026-11-03', '2019-03-14')[0].from, 'j/2019-03-14.md');
+  assert.equal(asked('2026-01-01', '2025-12-30')[0].waiting, true, 'across a year');
+  // It goes by the file's date, as the latest does.
+  assert.equal(startable([md('j/2019-03-14.md', '2026-11-02')], '2026-11-03')[0].waiting, true);
 });
 
 test('the latest goes by the file\'s date, not by when it was changed, or a date still to come', () => {

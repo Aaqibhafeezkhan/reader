@@ -321,7 +321,9 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
       }
       if (route === '/api/tree') {
         const day = today(now, dayStarts);
-        return sendJson(res, { files: content.dated(), today: day, starts: content.startable(day) });
+        // Each file's front matter read once, for both.
+        const files = content.dated();
+        return sendJson(res, { files, today: day, starts: content.startable(day, files) });
       }
       if (route === '/api/start-day') {
         const { text, ...start } = content.startFrom(url.searchParams.get('dir') ?? '', today(now, dayStarts));

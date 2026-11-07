@@ -199,6 +199,8 @@ button, .ghost { font: inherit; font-size: 13px; border-radius: 7px; cursor: poi
 .crumbs button:hover { background: var(--line-soft); color: var(--ink); }
 .crumbs button[aria-current] { color: var(--ink); font-weight: 600; }
 .crumbs .sep { color: var(--ink-soft); }
+/* the header's × clears the filter, so the box doesn't show the browser's own as well */
+#filter::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; display: none; }
 /* in their place, for Today or a filter (app/files.js drawFound): what was found, and an × back to the folder */
 .crumbs.found { flex-wrap: nowrap; align-items: center; }
 .crumbs .found-name { flex: 1; min-width: 0; padding: 1px 3px; color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

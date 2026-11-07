@@ -331,7 +331,23 @@ function fileButton(b, p) {
   if (state.current?.path === p) markNow(b);
   b.addEventListener('click', () => {
     if (state.current?.path !== p) open(p);
+    else if (followFound(p)) drawTree();
   });
+}
+
+/**
+ * A file picked from what Today or a filter found: the list is over its own
+ * folder now, under them, so that leaving them lands where the file is.
+ * Says whether it was.
+ */
+function followFound(p) {
+  if (!state.todayShown && !el.filter.value.trim()) return false;
+  const group = groupOf(state.files, p);
+  state.dir = dirOf(p);
+  state.group = group && group.opens.path !== p ? group.name : null;
+  state.outline = false;
+  remember(`reader:dir:${state.root}`, state.dir);
+  return true;
 }
 
 /** The open file's row, or the row of versions it's one of; the list is drawn again whenever that changes. */
@@ -556,8 +572,9 @@ export async function open(p) {
     renderNow({ resetScroll: true });
   }
 
+  if (followFound(p)) {
   // The outline shown is the open file's, wherever it's listed.
-  if (state.outline && type === 'md') {
+  } else if (state.outline && type === 'md') {
     const group = groupOf(state.files, p);
     state.dir = dirOf(p);
     state.group = group && group.opens.path !== p ? group.name : null;

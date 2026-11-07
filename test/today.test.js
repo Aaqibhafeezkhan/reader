@@ -253,6 +253,26 @@ test('a file\'s versions dated today are one row, as they are in a folder', asyn
   assert.equal(rows[0].querySelector('.sub').textContent, 'journal · 2 versions');
 });
 
+test('a file opened from Today, or from a filter, puts the list over its folder, so the × lands there', async () => {
+  await shown('journal');
+  row('todo/list.md').click();
+  await settled();
+  assert.equal(state.current.path, 'todo/list.md');
+  assert.equal(found(), 'Today · 2 files', 'Today stays, with what it found');
+  leave().click();
+  assert.equal(state.dir, 'todo');
+  assert.deepEqual(paths(), ['todo/list.md']);
+  await fresh('todo');
+  el.filter.value = 'plain';
+  el.filter.dispatchEvent(new window.Event('input'));
+  row('plain.md').click();
+  await settled();
+  leave().click();
+  assert.equal(el.filter.value, '');
+  assert.equal(state.dir, '');
+  await open('plain.md');
+});
+
 test('a workbook opens from Today in Work, and a document as last chosen', async () => {
   await shown();
   row('todo/list.md').click();

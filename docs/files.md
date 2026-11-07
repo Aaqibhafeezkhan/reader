@@ -13,6 +13,7 @@ dot-directories and `node_modules`, and remembers the folder you were in.
 Typing in **Filter…** searches every folder at once, as one flat list with
 each file's folder beside it.
 In place of the path, which it isn't in, it says what it found, as `“walk” · 3 files`, and its `×` clears the filter, back to the folder you were in.
+Open a file from what it found, and the `×` goes back to that file's folder instead.
 
 `☰` (`⌘\`) shows and hides the list.
 In [Work](presenting.md#work), or on a narrow screen, it comes over the page, and pressing `☰` again, picking a file, or clicking away closes it, still in Work.
@@ -37,7 +38,7 @@ Only a folder whose latest is from the last three days is listed; one left longe
 With nothing dated today and nothing to start, the list says so.
 
 The button stays pressed while they're showing.
-Pressing it again, `←`, or the `×` at the end of what it found goes back to the folder you were in, the filter cleared.
+Pressing it again, `←`, or the `×` at the end of what it found goes back to the folder you were in, the filter cleared, or to the folder of the file you opened from it.
 If the list is closed, the button opens it; in Work, or on a narrow screen, it comes over the page, and picking a file or clicking away closes it, still in Work.
 
 A file's date is the `date:` in its front matter:

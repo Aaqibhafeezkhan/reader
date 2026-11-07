@@ -233,3 +233,99 @@ test('a --frame-port given that is busy is refused; the one after the app\'s, wh
     held.close();
   }
 });
+
+/**
+ * A stand-in for the tailscale command, first on PATH, that answers as a
+ * connected machine with `served` already on its tailnet and writes down
+ * what else it's asked. Gives back that PATH and the log it writes.
+ */
+function fakeTailscale(served = {}) {
+  const bin = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-tailscale-'));
+  const log = path.join(bin, 'log');
+  const status = { BackendState: 'Running', Self: { DNSName: 'box.tail1.ts.net.', TailscaleIPs: ['100.64.0.1', 'fd7a::1'] } };
+  const config = { TCP: {}, Web: {} };
+  for (const [port, target] of Object.entries(served)) {
+    config.TCP[port] = { HTTP: true };
+    config.Web[`box.tail1.ts.net:${port}`] = { Handlers: { '/': { Proxy: target } } };
+  }
+  const script = path.join(bin, 'tailscale');
+  fs.writeFileSync(script, `#!/bin/sh
+case "$*" in
+  "status --json") echo '${JSON.stringify(status)}' ;;
+  "serve status --json") echo '${JSON.stringify(config)}' ;;
+  *) echo "$*" >> '${log}' ;;
+esac
+`);
+  fs.chmodSync(script, 0o755);
+  return { PATH: `${bin}${path.delimiter}${process.env.PATH}`, log };
+}
+
+/** Start reader to its last line, giving back all it printed, to be stopped with `stop`. */
+function startAll(env, ...args) {
+  const child = spawn(process.execPath, [READER, dir(), '--no-browser', ...args], { stdio: ['ignore', 'pipe', 'pipe'], env });
+  return new Promise((resolve, reject) => {
+    let out = '';
+    child.stdout.on('data', (c) => {
+      out += c;
+      if (out.includes('ctrl-c')) resolve({ out, stop: () => new Promise((done) => child.once('exit', done).kill()) });
+    });
+    child.stderr.on('data', (c) => (out += c));
+    child.on('exit', (code) => reject(new Error(`exited ${code}: ${out}`)));
+  });
+}
+
+test('--tailscale serves both ports on the tailnet, answers to its names, and takes them off when stopped', async () => {
+  const { PATH, log } = fakeTailscale();
+  const { out, stop } = await startAll({ ...process.env, PATH }, '--tailscale', '--port', '0', '--frame-port', '0');
+  const port = /http:\/\/127\.0\.0\.1:(\d+)\//.exec(out)[1];
+  try {
+    assert.match(out, new RegExp(`http://box\\.tail1\\.ts\\.net:${port}/`));
+    for (const host of ['box.tail1.ts.net', 'box', '100.64.0.1', '[fd7a::1]']) {
+      const status = await new Promise((resolve, reject) => {
+        http.get({ host: '127.0.0.1', port, path: '/api/tree', headers: { Host: `${host}:${port}` } }, (r) => {
+          r.resume();
+          resolve(r.statusCode);
+        }).on('error', reject);
+      });
+      assert.equal(status, 200, host);
+    }
+  } finally {
+    await stop();
+  }
+  const asked = fs.readFileSync(log, 'utf8').trim().split('\n');
+  const frames = /^serve --bg --http=(\d+) /.exec(asked[1])?.[1];
+  assert.notEqual(frames, port);
+  assert.deepEqual(asked, [
+    `serve --bg --http=${port} http://127.0.0.1:${port}`,
+    `serve --bg --http=${frames} http://127.0.0.1:${frames}`,
+    `serve --http=${port} off`,
+    `serve --http=${frames} off`,
+  ]);
+});
+
+test('--tailscale leaves a port the tailnet already serves to reader as it was', async () => {
+  const held = await hold(0);
+  const port = held.address().port;
+  held.close();
+  const { PATH, log } = fakeTailscale({ [port]: `http://127.0.0.1:${port}` });
+  const { stop } = await startAll({ ...process.env, PATH }, '--tailscale', '--port', String(port), '--frame-port', '0');
+  await stop();
+  const asked = fs.readFileSync(log, 'utf8');
+  assert.doesNotMatch(asked, new RegExp(`http=${port}\\b`));
+  assert.match(asked, /serve --bg --http=\d+ /);
+});
+
+test('--tailscale is refused when the tailnet serves the port for something else, or tailscale is missing', async () => {
+  const held = await hold(0);
+  const port = held.address().port;
+  held.close();
+  const { PATH, log } = fakeTailscale({ [port]: 'http://127.0.0.1:9' });
+  const taken = spawnSync(process.execPath, [READER, dir(), '--no-browser', '--tailscale', '--port', String(port)], { encoding: 'utf8', timeout: 5000, env: { ...process.env, PATH } });
+  assert.equal(taken.status, 1);
+  assert.match(taken.stderr, new RegExp(`already serves port ${port} for something else`));
+  assert.equal(fs.existsSync(log), false);
+  const missing = spawnSync(process.execPath, [READER, dir(), '--no-browser', '--tailscale'], { encoding: 'utf8', timeout: 5000, env: { ...process.env, PATH: path.dirname(process.execPath) } });
+  assert.equal(missing.status, 1);
+  assert.match(missing.stderr, /needs the tailscale command/);
+  assert.match(run(dir(), '--tailscale', '--host', '0.0.0.0').stderr, /goes without --host/);
+});

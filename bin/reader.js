@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- *   reader <dir> [--port 8734] [--frame-port 8735] [--no-browser] [--open <file>] [--day-starts 04:00] [--host <address> --allow-host <name>]
+ *   reader <dir> [--port 8734] [--frame-port 8735] [--no-browser] [--open <file>] [--day-starts 04:00] [--host <address> --allow-host <name>] [--tailscale]
  *   reader export <file>... [--out <file>] [--no-draw]
  *   reader --version
  *
@@ -14,10 +14,11 @@ import { spawn } from 'node:child_process';
 import { createServer, listenFrames } from '../src/server.js';
 import { dayStart } from '../src/dates.js';
 import { version } from '../src/version.js';
+import { tailnetNames, serve, unserve } from '../src/tailscale.js';
 
 const USAGE = `usage: reader <dir> [--port 8734] [--frame-port 8735] [--no-browser]
                      [--open <file>] [--day-starts <time>]
-                     [--host <addr> --allow-host <name>]
+                     [--host <addr> --allow-host <name>] [--tailscale]
        reader export <file>... [--out <file>] [--no-draw]
        reader --version
 
@@ -38,12 +39,16 @@ const USAGE = `usage: reader <dir> [--port 8734] [--frame-port 8735] [--no-brows
   --allow-host <name>
                  a name or address other devices reach this machine by, as
                  the browser will send it; repeat for more than one
+  --tailscale    share both ports on this machine's tailnet as well, with
+                 tailscale serve, at its tailnet name; taken off again when
+                 reader stops. There is no sign-in: anyone on the tailnet
+                 can read and write <dir>
   --version      print reader's version: v0.0.2, or v0.0.2+abc1234 from a
                  checkout that isn't at that release
 `;
 
 function parseArgs(argv) {
-  const opts = { dir: null, port: null, framePort: null, browser: true, open: null, host: '127.0.0.1', allowHosts: [], dayStarts: 0 };
+  const opts = { dir: null, port: null, framePort: null, browser: true, open: null, host: '127.0.0.1', allowHosts: [], dayStarts: 0, tailscale: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '-h' || a === '--help') {
@@ -60,6 +65,8 @@ function parseArgs(argv) {
       opts.framePort = portNumber(argv[++i]);
     } else if (a.startsWith('--frame-port=')) {
       opts.framePort = portNumber(a.slice('--frame-port='.length));
+    } else if (a === '--tailscale') {
+      opts.tailscale = true;
     } else if (a === '--no-browser') {
       opts.browser = false;
     } else if (a === '--open') {
@@ -84,6 +91,8 @@ function parseArgs(argv) {
     if (port !== null && (!Number.isInteger(port) || port < 0 || port > 65535)) fail(`${name} must be a number`);
   }
   if (opts.port !== null && opts.port !== 0 && opts.port === opts.framePort) fail('--port and --frame-port must differ');
+  // tailscale serve passes the tailnet's requests on to 127.0.0.1.
+  if (opts.tailscale && opts.host !== '127.0.0.1') fail('--tailscale serves from 127.0.0.1, so it goes without --host');
   return opts;
 }
 
@@ -132,7 +141,19 @@ if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) fail(`not a director
 // every network, this machine's own. An address listened on is one the
 // browser may name, though it isn't loopback.
 const at = EVERYWHERE.has(opts.host) ? '127.0.0.1' : opts.host.includes(':') ? `[${opts.host}]` : opts.host;
-const allowHosts = LOCAL.has(opts.host) || EVERYWHERE.has(opts.host) ? opts.allowHosts : [...opts.allowHosts, at];
+const allowHosts = LOCAL.has(opts.host) || EVERYWHERE.has(opts.host) ? [...opts.allowHosts] : [...opts.allowHosts, at];
+
+// Asked about before listening, so that reader answers to the tailnet's
+// names for this machine, and refuses at once if it can't share there.
+let tailnet = null;
+if (opts.tailscale) {
+  try {
+    tailnet = tailnetNames();
+  } catch (err) {
+    fail(err.message);
+  }
+  allowHosts.push(...tailnet.names);
+}
 
 const made = createServer({ root: dir, allowHosts, dayStarts: opts.dayStarts });
 const { server, content } = made;
@@ -171,6 +192,17 @@ server.on('listening', async () => {
       ? `port ${opts.framePort} is busy; pick another with --frame-port, or leave it off to use a free one.`
       : err.message);
   }
+  // Both ports on the tailnet, the frames' too, at the same numbers, so
+  // they're as far apart there as here. Taken off on the way out.
+  const shared = [];
+  if (tailnet) {
+    process.on('exit', () => shared.forEach(unserve));
+    try {
+      for (const p of [port, made.frames.address().port]) if (serve(tailnet.dns, p)) shared.push(p);
+    } catch (err) {
+      fail(err.message);
+    }
+  }
   const hash = opts.open ? `#${encodeURIComponent(opts.open)}` : '';
   const url = `http://${at}:${port}/${hash}`;
   const count = content.list().length;
@@ -178,6 +210,11 @@ server.on('listening', async () => {
   console.log(`  ${count} file${count === 1 ? '' : 's'}`);
   console.log(`  ${url}`);
   for (const name of opts.allowHosts) console.log(`  http://${name}:${port}/${hash}`);
+  if (tailnet) {
+    console.log(`  http://${tailnet.dns}:${port}/${hash}`);
+    console.log(`\n  shared on your tailnet with no sign-in: anyone on it can read and`);
+    console.log('  write these files.');
+  }
   if (!LOCAL.has(opts.host)) {
     console.log(`\n  listening on ${opts.host} with no sign-in: anyone who can reach this`);
     console.log('  machine can read and write these files. Keep it to a network you trust.');

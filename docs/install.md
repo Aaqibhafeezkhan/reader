@@ -46,7 +46,7 @@ tab. `--port` asks for one port exactly.
 
 ```console
 $ reader [dir] [--port 8734] [--frame-port 8735] [--no-browser] [--open <file>] [--day-starts 04:00]
-         [--host <address>] [--allow-host <name>]...
+         [--host <address>] [--allow-host <name>]... [--tailscale]
 $ reader export <file>... [--out <file>] [--no-draw]
 $ reader --version
 ```
@@ -85,3 +85,19 @@ does unless named. There is no sign-in: whoever can reach
 the machine can read and write `dir`, so the network is the boundary. Keep
 it to one you trust, such as a tailnet, or put a proxy that signs people in
 in front of it.
+
+If this machine is on a tailnet, `--tailscale` does that for you without
+listening anywhere but `127.0.0.1`:
+
+```console
+$ reader --tailscale
+```
+
+It serves both ports, the app's and the preview's, on the tailnet with
+`tailscale serve`, at the same numbers, answers to the tailnet's names for
+this machine, and prints the address to open there, like
+`http://my-mac.tail1234.ts.net:8734/`. When reader stops it takes them off
+the tailnet again, and a port already served to reader's, as by an earlier
+`tailscale serve` of your own, it leaves alone. It needs the `tailscale`
+command and the machine connected, and as above, anyone on the tailnet can
+read and write `dir`.

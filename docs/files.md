@@ -12,6 +12,7 @@ into it, and the path above the list to come back out. It skips
 dot-directories and `node_modules`, and remembers the folder you were in.
 Typing in **Filter…** searches every folder at once, as one flat list with
 each file's folder beside it.
+In place of the path, which it isn't in, it says what it found, as `“walk” · 3 files`, and its `×` clears the filter, back to the folder you were in.
 
 `☰` (`⌘\`) shows and hides the list.
 In [Work](presenting.md#work), or on a narrow screen, it comes over the page, and pressing `☰` again, picking a file, or clicking away closes it, still in Work.
@@ -26,6 +27,7 @@ makes the rest. PDFs open read-only in the left pane.
 
 The **Today** button, in the top bar, lists the files dated today in the file list, from every folder under the one reader was opened on, so that a daily file is one click away without knowing where it lives.
 They're listed as a search lists them, each with its folder, and typing in **Filter…** narrows them further.
+In place of the path above the list it says what it found, as `Today · 1 file, 2 to start`, or with a filter typed `Today · “walk” · 1 file`.
 A workbook opens from there in Work, as it does from anywhere.
 
 Under them, **Start today's** lists the folders of dated files with none for today yet, so a morning's series can be seen without going into each folder: each by its folder, with the file it would [start from](#starting-todays).
@@ -35,7 +37,7 @@ Only a folder whose latest is from the last three days is listed; one left longe
 With nothing dated today and nothing to start, the list says so.
 
 The button stays pressed while they're showing.
-Pressing it again, `←`, or the path above the list goes back to the folder you were in.
+Pressing it again, `←`, or the `×` at the end of what it found goes back to the folder you were in, the filter cleared.
 If the list is closed, the button opens it; in Work, or on a narrow screen, it comes over the page, and picking a file or clicking away closes it, still in Work.
 
 A file's date is the `date:` in its front matter:

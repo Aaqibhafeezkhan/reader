@@ -82,9 +82,70 @@ test('pressed, it lists the files dated today from every folder, as a search doe
   assert.deepEqual(paths(), [`journal/${TODAY}.md`, 'todo/list.md']);
   assert.equal(row('todo/list.md').querySelector('.sub').textContent, 'todo');
   assert.equal(el.files.querySelector('.folder'), null);
-  assert.equal(el.crumbs.hidden, false);
-  assert.match(el.crumbs.textContent, /Today$/);
   assert.equal(el.filesNote.textContent, '');
+});
+
+// Today is a search, of every folder: where the list is (the crumbs) would mislead,
+// and what it found is said in their place, with an × back to the folder.
+const found = () => (el.crumbs.hidden ? null : el.crumbs.querySelector('.found-name')?.textContent ?? 'crumbs');
+const leave = () => el.crumbs.querySelector('.leave');
+
+test('in Today, over a folder, the crumbs give way to what it found, and an × to leave it', async () => {
+  await fresh('journal');
+  assert.equal(found(), 'crumbs');
+  el.todayBtn.click();
+  assert.equal(found(), 'Today · 2 files');
+  assert.equal(el.crumbs.querySelectorAll('button').length, 1);
+  assert.equal(leave().getAttribute('aria-label'), 'Leave Today');
+  assert.ok(leave().querySelector('svg'));
+});
+
+test('what Today found is counted one by one, and nothing is said as nothing yet', async () => {
+  await fresh();
+  files = files.filter((f) => f.path !== 'todo/list.md');
+  await loadTree();
+  el.todayBtn.click();
+  assert.equal(found(), 'Today · 1 file');
+  files = files.map((f) => ({ ...f, date: null }));
+  await loadTree();
+  assert.equal(found(), 'Today · nothing yet');
+});
+
+test('a filter in Today says what it\'s narrowed to, and the × leaves Today and the filter both', async () => {
+  await shown('journal');
+  el.filter.value = 'List ';
+  el.filter.dispatchEvent(new window.Event('input'));
+  assert.equal(found(), 'Today · “List” · 1 file');
+  assert.equal(leave().getAttribute('aria-label'), 'Leave Today');
+  el.filter.value = 'plain';
+  el.filter.dispatchEvent(new window.Event('input'));
+  assert.equal(found(), 'Today · “plain” · nothing');
+  leave().click();
+  assert.equal(pressed(), 'false');
+  assert.equal(el.filter.value, '');
+  assert.equal(found(), 'crumbs');
+  assert.equal(state.dir, 'journal');
+});
+
+test('a filter, which lists from every folder too, says what it found, and its × clears it back to the folder', async () => {
+  await fresh('journal');
+  el.filter.value = 'md';
+  el.filter.dispatchEvent(new window.Event('input'));
+  assert.equal(found(), '“md” · 4 files');
+  assert.equal(el.files.getAttribute('aria-labelledby'), 'foundName');
+  el.filter.value = 'list';
+  el.filter.dispatchEvent(new window.Event('input'));
+  assert.equal(found(), '“list” · 1 file');
+  el.filter.value = 'nowhere';
+  el.filter.dispatchEvent(new window.Event('input'));
+  assert.equal(found(), '“nowhere” · no files');
+  assert.equal(leave().getAttribute('aria-label'), 'Clear the filter');
+  leave().click();
+  assert.equal(el.filter.value, '');
+  assert.equal(found(), 'crumbs');
+  assert.deepEqual(paths(), ['journal/2020-01-01.md', `journal/${TODAY}.md`]);
+  assertElement(document.activeElement, el.filter);
+  assert.equal(el.files.hasAttribute('aria-labelledby'), false);
 });
 
 test('the filter narrows them further, and clearing it gives them all back', async () => {
@@ -118,7 +179,7 @@ test('with nothing dated today the button stays, and the list says so', async ()
 for (const [how, out] of [
   ['pressing it again', () => el.todayBtn.click()],
   ['←', () => press(document.activeElement, 'ArrowLeft')],
-  ['the path above the list', () => el.crumbs.querySelectorAll('button')[1].click()],
+  ['its ×', () => leave().click()],
 ]) {
   test(`${how} goes back to the folder it was over`, async () => {
     await shown('journal');
@@ -128,7 +189,7 @@ for (const [how, out] of [
     assert.equal(pressed(), 'false');
     assert.equal(state.dir, 'journal');
     assert.deepEqual(paths(), ['journal/2020-01-01.md', `journal/${TODAY}.md`]);
-    assert.equal(el.crumbs.textContent.includes('Today'), false);
+    assert.equal(found(), 'crumbs');
   });
 }
 
@@ -207,9 +268,10 @@ test('a workbook opens from Today in Work, and a document as last chosen', async
   await open('plain.md');
 });
 
-test('a screen reader has Today\'s list by name, and each row\'s folder, Today and keys', async () => {
+test('a screen reader has Today\'s list by what it found, and each row\'s folder, Today and keys', async () => {
   await shown();
-  assert.equal(el.files.getAttribute('aria-labelledby'), 'todayName');
+  assert.equal(el.files.getAttribute('aria-labelledby'), 'foundName');
+  assert.equal(document.getElementById('foundName').textContent, 'Today · 2 files');
   assert.equal(document.getElementById('todayName').textContent, 'Today');
   const r = row('todo/list.md');
   assert.equal(r.tagName, 'BUTTON');

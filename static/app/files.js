@@ -63,16 +63,19 @@ function drawRows() {
   el.files.replaceChildren();
   el.todayBtn.setAttribute('aria-pressed', String(state.todayShown));
   el.filesNote.textContent = '';
-  if (state.todayShown) el.files.setAttribute('aria-labelledby', 'todayName');
+  // Today and a filter list from every folder, so where the list is (the
+  // crumbs) gives way to what it found, which names the list too.
+  if (state.todayShown || q) el.files.setAttribute('aria-labelledby', 'foundName');
   else el.files.removeAttribute('aria-labelledby');
-  drawCrumbs(!q || state.todayShown);
+  drawCrumbs(!q && !state.todayShown);
   drawStart();
   drawCopy();
 
   if (state.todayShown) return drawToday(q);
   if (q) {
-    for (const row of filtered(state.files, q)) el.files.append(rowItem(row, { dir: row.dir }));
-    return;
+    const rows = filtered(state.files, q);
+    for (const row of rows) el.files.append(rowItem(row, { dir: row.dir }));
+    return drawFound(`“${el.filter.value.trim()}” · ${count(rows.length, 'file') || 'no files'}`, 'Clear the filter', clearFilter);
   }
   if (state.outline && state.current?.type === 'md') return drawOutline();
   if (state.group) {
@@ -106,6 +109,32 @@ function drawToday(q) {
     el.files.append(head, ...waiting.map(waitingItem));
   }
   if (!rows.length && !waiting.length) el.filesNote.textContent = q ? `Nothing dated today matches “${q}”.` : 'Nothing is dated today.';
+  const found = [count(rows.length, 'file'), waiting.length ? `${waiting.length} to start` : ''].filter(Boolean).join(', ');
+  drawFound(['Today', q && `“${el.filter.value.trim()}”`, found || (q ? 'nothing' : 'nothing yet')].filter(Boolean).join(' · '), 'Leave Today', leaveToday);
+}
+
+const count = (n, what) => (n ? `${n} ${what}${n === 1 ? '' : 's'}` : '');
+
+/**
+ * In the crumbs' place, for a list drawn from every folder (Today, a filter):
+ * what it found, and an × that goes back to the folder it was over.
+ */
+function drawFound(said, leave, onLeave) {
+  el.crumbs.hidden = false;
+  el.crumbs.classList.add('found');
+  const name = Object.assign(document.createElement('span'), { id: 'foundName', className: 'found-name', textContent: said });
+  const x = Object.assign(document.createElement('button'), { type: 'button', className: 'leave', title: leave });
+  x.setAttribute('aria-label', leave);
+  x.innerHTML = icon('close');
+  x.addEventListener('click', onLeave);
+  el.crumbs.replaceChildren(name, x);
+}
+
+/** The ×, with a filter typed: the filter cleared, and the folder listed again, the filter still to type in. */
+function clearFilter() {
+  el.filter.value = '';
+  drawTree();
+  el.filter.focus();
 }
 
 /** A series waiting for today's, by its folder and the file it'd start from, which starts it, and stays in Today. */
@@ -123,14 +152,14 @@ function waitingItem(start) {
 
 function drawCrumbs(shown) {
   const parts = state.dir ? state.dir.split('/') : [];
-  el.crumbs.hidden = !shown || (!parts.length && !state.group && !state.outline && !state.todayShown);
+  el.crumbs.hidden = !shown || (!parts.length && !state.group && !state.outline);
+  el.crumbs.classList.remove('found');
   el.crumbs.replaceChildren();
   if (el.crumbs.hidden) return;
   const steps = [{ label: state.rootName, dir: '', group: null }];
   parts.forEach((part, i) => steps.push({ label: part, dir: parts.slice(0, i + 1).join('/'), group: null }));
   if (state.group) steps.push({ label: state.group, dir: state.dir, group: state.group });
-  if (state.outline && state.current && !state.todayShown) steps.push({ label: splitPath(state.current.path).name.replace(/\.(md|markdown)$/i, '') });
-  if (state.todayShown) steps.push({ label: 'Today' });
+  if (state.outline && state.current) steps.push({ label: splitPath(state.current.path).name.replace(/\.(md|markdown)$/i, '') });
   steps.forEach((s, i) => {
     if (i) el.crumbs.append(Object.assign(document.createElement('span'), { className: 'sep', textContent: '›' }));
     const b = document.createElement('button');

@@ -12,6 +12,7 @@ export const ICONS = {
   'new-file': '<path d="M9.5 2H4.3a.8.8 0 0 0-.8.8v10.4a.8.8 0 0 0 .8.8h7.4a.8.8 0 0 0 .8-.8V5zM9.5 2v3h3M8 7.5v4M6 9.5h4"/>',
   'start-today': '<rect x="2.5" y="3.5" width="11" height="10" rx="1.3"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3M8 8.2v3.6M6.2 10h3.6"/>',
   'open-today': '<rect x="2.5" y="3.5" width="11" height="10" rx="1.3"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3M5.8 10l1.6 1.6 2.9-3.1"/>',
+  close: '<path d="M4 4l8 8M12 4l-8 8"/>',
   promote: '<path d="M8 2.2l1.8 3.7 4 .6-2.9 2.8.7 4L8 11.4l-3.6 1.9.7-4L2.2 6.5l4-.6z"/>',
   // A page with another behind it, both dog-eared as New's is.
   'copy-file': '<path d="M8 5.5H3.3a.8.8 0 0 0-.8.8v7a.8.8 0 0 0 .8.8h6.4a.8.8 0 0 0 .8-.8V8zM8 5.5V8h2.5M5.5 5.5V2.8a.8.8 0 0 1 .8-.8H11l2.5 2.5v6.2a.8.8 0 0 1-.8.8h-2.2M11 2v2.5h2.5"/>',

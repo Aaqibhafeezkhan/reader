@@ -199,6 +199,12 @@ button, .ghost { font: inherit; font-size: 13px; border-radius: 7px; cursor: poi
 .crumbs button:hover { background: var(--line-soft); color: var(--ink); }
 .crumbs button[aria-current] { color: var(--ink); font-weight: 600; }
 .crumbs .sep { color: var(--ink-soft); }
+/* in their place, for Today or a filter (app/files.js drawFound): what was found, and an × back to the folder */
+.crumbs.found { flex-wrap: nowrap; align-items: center; }
+.crumbs .found-name { flex: 1; min-width: 0; padding: 1px 3px; color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crumbs .leave { flex: none; display: inline-flex; align-items: center; align-self: stretch; padding: 0 3px; max-width: none; }
+.crumbs .leave svg { width: 12px; height: 12px; }
+.crumbs .leave:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
 
 /* which reader this is, at the foot of the list (app/main.js) */
 .version {

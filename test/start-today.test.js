@@ -359,6 +359,7 @@ test('under Today, the series waiting for today\'s are listed after its files, b
   await inToday();
   const items = [...el.files.children].map((li) => li.querySelector('.file')?.dataset.path ?? li.querySelector('.waiting')?.dataset.dir ?? li.textContent);
   assert.deepEqual(items, ['todo/2026-11-03.md', "Start today's", '', 'journal']);
+  assert.equal(el.crumbs.querySelector('.found-name').textContent, 'Today · 1 file, 2 to start');
   const [top, journal] = waitingRows();
   assert.equal(top.querySelector('.name').textContent, 'notes');
   assert.equal(journal.querySelector('.name').textContent, 'journal');
@@ -378,6 +379,7 @@ test('with nothing dated today, they\'re listed in its place, and the filter nar
   await loadTree();
   assert.equal(el.filesNote.textContent, '');
   assert.equal(waitingRows().length, 2);
+  assert.equal(el.crumbs.querySelector('.found-name').textContent, 'Today · 2 to start');
   el.filter.value = 'JOURNAL';
   el.filter.dispatchEvent(new window.Event('input'));
   assert.deepEqual(waitingRows().map((b) => b.dataset.dir), ['journal']);

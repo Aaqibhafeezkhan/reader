@@ -104,12 +104,23 @@ export function startable(files, day) {
       continue;
     }
     const latest = named.reduce((a, b) => (b.date > a.date || (b.date === a.date && b.path > a.path) ? b : a));
-    const name = baseName(latest.path);
-    const at = name.lastIndexOf(dayInName(name));
-    const to = (dir ? `${dir}/` : '') + name.slice(0, at) + day + name.slice(at + day.length);
+    const to = withDayInName(latest.path, day);
     starts.push(here.some((f) => f.path === to) ? { dir, open: to } : { dir, from: latest.path, date: latest.date, to });
   }
   return starts;
+}
+
+/**
+ * The root-relative path `rel` with `day` in place of the date in its name
+ * (`dateInName`), so `log-2026-11-02.md` is `log-2026-11-03.md`; or `rel` as
+ * it is, with none.
+ */
+export function withDayInName(rel, day) {
+  const name = baseName(rel);
+  const date = dateInName(name);
+  if (!date) return rel;
+  const at = name.lastIndexOf(date);
+  return rel.slice(0, rel.length - name.length) + name.slice(0, at) + day + name.slice(at + date.length);
 }
 
 const DATE_LINE = /^([ \t]*date[ \t]*:[ \t]*)(["']?)(.*?)\2([ \t]*)$/i;

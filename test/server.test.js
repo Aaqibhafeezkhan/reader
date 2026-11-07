@@ -575,3 +575,34 @@ test('today\'s file starts from a folder\'s latest: drawn open, written once, an
     at.close();
   }
 });
+
+test('a copy is named and drawn by the server, today\'s if asked and dated, and written once', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-copy-'));
+  fs.writeFileSync(path.join(dir, '2026-10-30.md'), '---\ndate: 2026-10-30\nopen-until: 2026-10-30\n---\n\n- [x] Walk\n');
+  const { server: at } = createServer({ root: dir, now: () => new Date(2026, 10, 3, 9).getTime() });
+  await new Promise((r) => at.listen(0, '127.0.0.1', r));
+  try {
+    const url = `http://127.0.0.1:${at.address().port}`;
+    const plan = async (q) => (await fetch(`${url}/api/copy?${q}`)).json();
+    const post = (body) => fetch(`${url}/api/copy`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const kept = await plan('path=2026-10-30.md');
+    assert.equal(kept.to, '2026-10-30-copy.md');
+    assert.equal(kept.body, undefined, 'drawn only to be cleared');
+    const today = await plan('path=2026-10-30.md&today=1&clear=1');
+    assert.equal(today.to, '2026-11-03.md');
+    // Past its open-until, and still drawn with its box to clear.
+    assert.doesNotMatch(today.body, /open-until-closed/);
+    assert.match(today.body, /checkbox/);
+    const edits = [{ from: 5, to: 6, before: ['- [x] Walk'], after: ['- [ ] Walk'] }];
+    assert.equal((await post({ path: '2026-10-30.md', mtime: 1, edits, today: true })).status, 409);
+    assert.equal((await post({ path: '2026-10-30.md', mtime: today.mtime, edits, today: 'yes' })).status, 400);
+    const made = await post({ path: '2026-10-30.md', mtime: today.mtime, edits, today: true });
+    assert.equal((await made.json()).path, '2026-11-03.md');
+    assert.equal(fs.readFileSync(path.join(dir, '2026-11-03.md'), 'utf8'), '---\ndate: 2026-11-03\nopen-until: 2026-11-03\n---\n\n- [ ] Walk\n');
+    const again = await post({ path: '2026-10-30.md', mtime: today.mtime, edits: [], today: true });
+    assert.equal((await again.json()).path, '2026-11-03-copy.md');
+    assert.equal((await fetch(`${url}/api/copy?path=${encodeURIComponent('../x.md')}`)).status, 400);
+  } finally {
+    at.close();
+  }
+});

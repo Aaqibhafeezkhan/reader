@@ -36,6 +36,15 @@ download into reader.
   a day of talks, from bullets typed fast to your own thoughts, questions,
   words to look up, quotes and things to do
 
+## Samples
+
+Pages to make your own: each one to download into reader, and copy.
+
+- [A daily journal](https://jzheaux.github.io/reader/samples/daily-journal/2026-11-02.html):
+  a day of self-care as a workbook, a page at a time, someone's Monday kept;
+  [download it](https://jzheaux.github.io/reader/samples/daily-journal.zip), and
+  **Copy for today** starts your own
+
 ## Writing
 
 - [Asides](asides.md): your own voice in the margin, who it's from and what

@@ -1,7 +1,7 @@
 name: Docs
 
-# The pages in docs/, and the tutorials in samples/, exported by this
-# commit's reader and published to GitHub Pages. Each tutorial's folder is
+# The pages in docs/, and the tutorials and samples in samples/, exported by
+# this commit's reader and published to GitHub Pages. Each sample's folder is
 # zipped beside it, to download and open in reader. Nothing is committed:
 # the HTML and the zips are made fresh each time.
 on:
@@ -41,11 +41,11 @@ jobs:
       - name: Export
         working-directory: docs
         run: node ../bin/reader.js export -- *.md
-      - name: Export the tutorials
+      - name: Export the samples
         working-directory: samples
         run: find . -name '*.md' -not -path '*/.*' -print0 | xargs -0 node ../bin/reader.js export --
       - run: mkdir _site && cp docs/*.html _site/
-      - name: Publish the tutorials, each with a zip of its folder
+      - name: Publish the samples, each with a zip of its folder
         run: |
           cd samples
           for dir in */; do

@@ -1,6 +1,6 @@
 import { test, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { app, globals } from './dom.js';
+import { app, globals, assertElement } from './dom.js';
 
 // Make a copy and Copy for today, in the top bar (gh-236): a file of its own,
 // or today's from a file dated another day, its answers cleared for today or
@@ -121,8 +121,10 @@ test('Copy for today is there for a file dated another day; undated, or today\'s
 
 test('Make a copy, from a file dated another day, is a plain copy', async () => {
   await fresh('journal/2026-10-30.md', { to: 'journal/2026-10-30-copy.md' });
+  b().focus();
   b().click();
   await settled();
+  assertElement(document.activeElement, b(), 'the keyboard stays on the button');
   assert.deepEqual(asked.map((a) => a.ask), ['/api/copy?path=journal%2F2026-10-30.md', '/api/copy']);
   assert.equal(posts()[0].body.today, false);
   assert.equal(state.current.path, 'journal/2026-10-30-copy.md');
@@ -199,12 +201,14 @@ test('a frame that fails, or a server that refuses, makes nothing and says so', 
 
 test('pressed twice, it copies once', async () => {
   await fresh('journal/2026-10-30.md');
+  t().focus();
   t().click();
   t().click();
   await settled();
   assert.equal(asked.length, 1);
-  assert.equal(t().disabled, true);
+  assert.equal(t().disabled, false, 'not disabled, which would take the keyboard from it');
+  assertElement(document.activeElement, t());
   mock.timers.tick(15000);
   await settled();
-  assert.equal(t().disabled, false);
+  assertElement(document.activeElement, t(), 'nor once it\'s done');
 });

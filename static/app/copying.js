@@ -67,11 +67,10 @@ export function setUpCopy() {
 
 /** Makes the copy, today's or a plain one, and opens it. */
 export async function makeCopy(today) {
-  const b = today ? el.copyToday : el.copyFile;
   if ((today ? whyNotToday() : whyNot()) || copying) return;
   const p = state.current.path;
+  // Not disabled while it works, which would drop the keyboard from it to the page.
   copying = true;
-  b.disabled = true;
   try {
     if (!(await saveFirst())) throw new Error('the open file isn\'t saved');
     const clear = today || state.working;
@@ -88,7 +87,6 @@ export async function makeCopy(today) {
   } catch (err) {
     toast(`The copy wasn't made: ${err.message}`, true);
   } finally {
-    b.disabled = false;
     copying = false;
   }
 }

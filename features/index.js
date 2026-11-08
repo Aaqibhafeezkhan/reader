@@ -22,6 +22,11 @@
  *   matter as the feature's own, not the page's meta: asides' aliases,
  *   `reviewer #: Josh`. What it returns goes on `env.entries`, with the
  *   feature's `name` (src/page.js).
+ * - `moved`: `(line, days) => line or null`, for a front matter line that
+ *   says a date: the line as it's written for a copy of the page dated
+ *   `days` later, so the date keeps its distance from the page's, as
+ *   open-until moves its day (src/page.js's `movedLine`). Null for a line
+ *   that isn't the feature's.
  * - `closes`: `(entry) => ms`, for an entry the feature claimed that says
  *   when the page closes, becoming a record that can't be worked: the
  *   page is drawn `closed` past the earliest (src/page.js), and the server

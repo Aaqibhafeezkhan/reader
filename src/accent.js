@@ -18,14 +18,12 @@
  * always applies, and the system's own colours (forced-colors) still win.
  */
 
-import { COLORS } from '../features/names.js';
-
-const HEX = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+import { isColor } from '../features/names.js';
 
 /** `SeaGreen`, or a `#hex` in quotes or not -> the colour, in lower case, or null when it isn't one. */
 export function readAccent(value) {
   const text = String(value ?? '').trim().replace(/^(["'])(.*)\1$/, '$2').trim().toLowerCase();
-  return COLORS.has(text) || HEX.test(text) ? text : null;
+  return isColor(text) ? text : null;
 }
 
 /** The stylesheet for front matter's `accent:`, or `''` for none. */

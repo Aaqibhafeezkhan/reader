@@ -30,3 +30,10 @@ export const COLORS = new Set(`
   seagreen seashell sienna silver skyblue slateblue slategray slategrey snow springgreen steelblue tan
   teal thistle tomato turquoise violet wheat white whitesmoke yellow yellowgreen
 `.trim().split(/\s+/));
+
+const HEX = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+
+/** Whether `word` is a colour as the front matter takes one: a name CSS knows, or a `#hex`. */
+export function isColor(word) {
+  return COLORS.has(word.toLowerCase()) || HEX.test(word);
+}

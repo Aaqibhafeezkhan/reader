@@ -23,10 +23,9 @@
  * turns the text light when that reads better on the color (static/ink.js).
  */
 
-import { COLORS } from '../features/names.js';
+import { isColor } from '../features/names.js';
 import { escapeAttr } from '../features/source.js';
 
-const HEX = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 const IMAGE = /\.(png|jpe?g|gif|webp|svg|avif)(?:[?#]\S*)?$/i;
 const DIRECTIVE = /^[ \t]*background[ \t]*:[ \t]*(.+?)[ \t]*$/i;
 
@@ -42,7 +41,7 @@ export function readBackground(value) {
   let color;
   const rest = [];
   for (const word of text.split(/\s+/)) {
-    if (!color && (COLORS.has(word.toLowerCase()) || HEX.test(word))) color = word.toLowerCase();
+    if (!color && isColor(word)) color = word.toLowerCase();
     else rest.push(word);
   }
   const image = rest.join(' ');

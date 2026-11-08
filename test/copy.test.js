@@ -20,8 +20,15 @@ let files = FILES;
 let asked = [];
 let refuse = null;
 let made = 'notes-copy.md';
+// What's asked of the server, in order, and whether a save is refused.
+let log = [];
+let unsaved = false;
 globalThis.fetch = async (url, { method = 'GET', body } = {}) => {
   const ask = String(url);
+  log.push(`${method} ${ask.split('?')[0]}`);
+  if (ask.startsWith('/api/file') && method === 'PUT' && unsaved) {
+    return { ok: false, status: 500, statusText: 'Server Error', json: async () => ({ error: 'disk full' }) };
+  }
   if (ask.startsWith('/api/copy')) asked.push({ method, ask, body: body && JSON.parse(body) });
   if (ask.startsWith('/api/copy') && method === 'POST' && refuse) {
     return { ok: false, status: 409, statusText: 'Conflict', json: async () => ({ error: refuse }) };
@@ -197,6 +204,29 @@ test('a frame that fails, or a server that refuses, makes nothing and says so', 
   assert.match(el.toast.textContent, /already exists/);
   assert.equal(state.current.path, 'notes.md');
   assert.equal(b().disabled, false, 'and it can be tried again');
+});
+
+test('what\'s typed in the open file is saved before it\'s copied, and a save refused copies nothing', async () => {
+  for (const which of [b, t]) {
+    await fresh('journal/2026-10-30.md');
+    el.editor.value = '# A, typed\n';
+    log = [];
+    which().click();
+    await settled();
+    assert.deepEqual(log.filter((l) => /\/api\/(file|copy)$/.test(l)).slice(0, 2), ['PUT /api/file', 'GET /api/copy'], 'saved, then copied');
+    // Copy for today waits on a frame to clear it, which here never answers.
+    mock.timers.tick(15000);
+    await settled();
+    await fresh('journal/2026-10-30.md');
+    el.editor.value = '# A, typed again\n';
+    unsaved = true;
+    which().click();
+    await settled();
+    unsaved = false;
+    assert.deepEqual(asked, [], 'nothing copied');
+    assert.match(el.toast.textContent, /The copy wasn't made: the open file isn't saved/);
+    el.editor.value = state.saved;
+  }
 });
 
 test('pressed twice, it copies once', async () => {

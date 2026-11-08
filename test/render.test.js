@@ -105,6 +105,14 @@ test("without asides, a page's reviewers show in its byline by name, and its top
   assert.doesNotMatch(withoutAsides()('---\ntitle: T\n---\n\nWords.\n').css, /\.gm-byline \.gm-who/);
 });
 
+test('a key with a space and a character in it, not a reviewer or topic, shows in the byline, with asides on or off', () => {
+  const src = '---\ntitle: T\nweek 3: Legs day\nphase a: base\n---\n\nWords.\n';
+  for (const page of [render, withoutAsides()]) {
+    const byline = /<div class="gm-byline">([\s\S]*?)<\/div>/.exec(page(src).body)[1];
+    assert.equal(byline, '<span>week 3: Legs day</span><span>phase a: base</span>');
+  }
+});
+
 test('with asides, a reviewer shows in its legend, with a count, and not in the byline', () => {
   const { body, css } = render('---\ntitle: T\nauthor: Ann\nreviewer #: Josh\n---\n\nWords.\n\n~# a thought\n');
   assert.match(body, /<div class="gm-byline"><span>Ann<\/span><\/div>/);

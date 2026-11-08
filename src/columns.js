@@ -40,8 +40,8 @@ const CSS = fs.readFileSync(new URL('./columns.css', import.meta.url), 'utf8');
 // (src/slides.js, export.js), and what kind of document it is.
 const UNSHOWN = new Set(['title', 'author', 'date', 'tags', 'speaker', 'listener', 'background', 'accent', 'font', 'title-font', 'time', 'transition', 'paging', 'print', 'type']);
 
-// A key with an alias after it, `reviewer #` or `topic c`, and a reviewer's.
-const ALIASED = /[ \t]\S$/;
+// A key with an alias after it, `reviewer #` or `topic c` (not `week 3`), and a reviewer's.
+const ALIASED = /^(?:reviewer|topic)[ \t]\S$/;
 const REVIEWER = /^reviewer[ \t]\S$/;
 
 // A reviewer's chip in the byline, on a page that has one: the asides

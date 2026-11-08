@@ -161,7 +161,7 @@ What it is depends on whether the page is being written or run:
 | Where | What it is |
 | --- | --- |
 | Edit | a card: the video's thumbnail, the alt text as its caption; press it and the player takes its place and starts |
-| Work, and a slide | YouTube's player from the start, stopped; one press on its own play button plays it, with sound |
+| Work, and a slide | YouTube's player from the start, stopped; one press on its own play button plays it, with sound. Under 200px wide, as in a grid of three, it's the card until pressed, as YouTube's smallest player can't be started from its middle |
 | the overview, the speaker view | the card |
 | an exported page | the card, as a link to the video on YouTube |
 

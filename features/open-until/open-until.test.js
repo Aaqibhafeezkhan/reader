@@ -2,7 +2,7 @@ import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { render } from '../../src/render.js';
 import { slides, pages } from '../../src/slides.js';
-import { preview, settle, assertNotElement } from '../../test/dom.js';
+import { preview, settle, assertNotElement, assertElement } from '../../test/dom.js';
 import openUntil, { readUntil, closingTime, deadline } from './index.js';
 
 const at = (...parts) => new Date(...parts).getTime();
@@ -114,6 +114,8 @@ test('when the time comes while it\'s showing, the page shuts: a blank being typ
   await settle();
   assert.equal(window.Preview.closed, true);
   assert.equal(notice().textContent, 'No Longer Editable');
+  assert.equal(document.documentElement.querySelector('[aria-live]').textContent, 'No longer editable', 'and said');
+  assertElement(document.activeElement, notice(), 'the keyboard goes to the notice, from the blank it was in');
   assert.equal(document.querySelector('.field textarea'), null);
   assert.deepEqual(posted.filter((m) => m.type === 'edit').flatMap((m) => m.edits.map((e) => e.after[0])), ['@ Name {e.g. Ada}: Ada']);
   for (const box of document.querySelectorAll('input')) assert.equal(box.disabled, true);

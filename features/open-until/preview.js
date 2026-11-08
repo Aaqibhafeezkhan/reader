@@ -43,7 +43,7 @@
     n.textContent = 'No Longer Editable';
   }
 
-  function judge() {
+  function judge({ came = false } = {}) {
     clearTimeout(timer);
     const notices = [...document.querySelectorAll('.open-until[data-until]')];
     if (!notices.length) {
@@ -53,8 +53,15 @@
     const left = closingTime(notices[0].dataset.until) - Date.now();
     const closed = notices.some((n) => n.classList.contains('open-until-closed')) || !(left > 0);
     if (closed) {
+      // What had the keyboard, if the page had it, as the time came.
+      const had = came && document.activeElement !== document.body && document.body.contains(document.activeElement) ? document.activeElement : null;
       notices.forEach(shut);
       Preview.closed = true;
+      if (!came) return;
+      // Said, rather than left to the save of what was being typed, and the
+      // keyboard, if what had it is shut, to the notice that says why.
+      Preview.say('No longer editable');
+      if (had && (!had.isConnected || had.matches(':disabled') || document.activeElement === document.body)) notices[0].focus();
       return;
     }
     Preview.closed = false;
@@ -64,7 +71,7 @@
     }
     // Again just as the next minute of what's left has run out, the last
     // of them at the time itself.
-    timer = setTimeout(judge, (left % MINUTE || MINUTE) + 1);
+    timer = setTimeout(() => judge({ came: true }), (left % MINUTE || MINUTE) + 1);
   }
 
   Preview.register({ restore: judge });

@@ -4,9 +4,9 @@
  * beside the path's, as New and Start today's sit side by side in the list:
  * Make a copy, and, on a file dated another day, Copy for today, a copy as
  * Start today's makes one: the server names it, dates it, and writes it,
- * never over a file that's there. A copy for today, or one made from Work,
- * starts with its answers cleared, worked out as Start today's works them out
- * (starting.js); one from Edit keeps its text.
+ * never over a file that's there. A copy for today starts with its answers
+ * cleared, worked out as Start today's works them out (starting.js); a plain
+ * copy is the file whole, answers and all, from Edit or Work alike.
  *
  * Where a button doesn't apply it's gray, not gone, so the bar doesn't shift
  * and it can say why: aria-disabled, as Start today's is (files.js).
@@ -52,7 +52,7 @@ function draw(b, label, no, yes) {
 /** The two buttons beside the file's path, and what each would make. */
 export function drawCopy() {
   draw(el.copyFile, 'Make a copy', whyNot(),
-    'Make a copy, a file of its own; from Work, with its answers cleared.');
+    'Make a copy, a file of its own, answers and all.');
   draw(el.copyToday, 'Copy for today', whyNotToday(),
     `Copy for today, ${state.today}, with today's name and date and its answers cleared.`);
 }
@@ -73,7 +73,8 @@ export async function makeCopy(today) {
   copying = true;
   try {
     if (!(await saveFirst())) throw new Error('the open file isn\'t saved');
-    const clear = today || state.working;
+    // A copy is the file whole, wherever it's made; only today's starts over.
+    const clear = today;
     const ask = new URLSearchParams({ path: p });
     if (today) ask.set('today', '1');
     if (clear) ask.set('clear', '1');

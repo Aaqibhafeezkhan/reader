@@ -35,7 +35,7 @@ and radio buttons still toggle, fields can be filled in, and puzzles can be play
 
 `☰` brings the [file list](files.md#the-file-list) over the page, and Work stays.
 `Esc` there closes the list, not Work.
-**Make a copy**, an icon in the top bar, makes a file of its own from this one with its answers cleared, and opens it, still in Work; on a file dated another day, **Copy for today**, beside it, makes today's (see [Making a copy](files.md#making-a-copy)).
+**Make a copy**, an icon in the top bar, makes a file of its own from this one, answers and all, and opens it, still in Work; on a file dated another day, **Copy for today**, beside it, makes today's (see [Making a copy](files.md#making-a-copy)).
 
 A deck (below), `type: workbook` or `type: slides`, is a workbook in Work: each slide is a page, shown one at a
 time as a document is, at the size it's written and as long as it needs to

@@ -148,24 +148,17 @@ test('from Edit, a copy keeps its text: nothing is drawn to clear, and the copy 
   assert.match(el.toast.textContent, /Copied notes.md to notes-copy.md/);
 });
 
-test('from Work, a copy starts with its answers cleared, and opens in Work', async () => {
+test('from Work too, a copy keeps its answers, and opens in Work', async () => {
   await fresh('notes.md');
   setWorking(true);
   b().click();
   await settled();
-  assert.deepEqual(posts(), [], 'nothing written before the frame answers');
-  assert.match(asked[0].ask, /clear=1/);
-  assert.doesNotMatch(asked[0].ask, /today/);
-  const { sent, say } = framed();
-  say({ type: 'ready' });
-  await settled();
-  assert.deepEqual(sent.filter((m) => m.type !== 'ping').map((m) => m.type), ['render', 'start-over']);
-  const edits = [{ from: 1, to: 2, before: ['a'], after: [''] }];
-  say({ type: 'started-over', edits, failed: null });
-  await settled();
-  assert.deepEqual(posts()[0].body, { path: 'notes.md', mtime: 7, edits, today: false });
+  assert.equal(hidden(), undefined, 'nothing drawn to clear');
+  assert.deepEqual(asked.map((a) => a.ask), ['/api/copy?path=notes.md', '/api/copy']);
+  assert.deepEqual(posts()[0].body, { path: 'notes.md', mtime: 7, edits: [], today: false });
   assert.equal(state.current.path, 'notes-copy.md');
   assert.equal(state.working, true);
+  assert.equal(b().title, 'Make a copy, a file of its own, answers and all.');
   setWorking(false);
 });
 

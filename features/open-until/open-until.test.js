@@ -102,6 +102,19 @@ test('in the frame, a page the server drew open is shut by the reader\'s clock, 
   assert.equal(notice().tabIndex, 0);
 });
 
+test('in the frame, a page open until a day alone is open to the end of that day by the reader\'s clock, and shut from the next', () => {
+  const day = FORM.replace('open-until: 2026-10-28 04:00', 'open-until: 2026-10-28');
+  const shown = (now) => {
+    const p = preview();
+    frames.push(p.window);
+    p.window.Date.now = () => now;
+    p.show(render(day, { now: BEFORE }).body);
+    return p.window.Preview.closed;
+  };
+  assert.equal(shown(at(2026, 9, 28, 23, 59)), false, 'late on the day, still open');
+  assert.equal(shown(at(2026, 9, 29, 0, 0)), true, 'the next day, shut');
+});
+
 test('when the time comes while it\'s showing, the page shuts: a blank being typed in is kept and closed, and nothing is left to work', async () => {
   const p = showing(BEFORE, AFTER - 30);
   const { window, document, notice, posted } = p;

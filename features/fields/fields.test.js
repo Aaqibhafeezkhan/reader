@@ -174,10 +174,10 @@ test('a label that ends in its own stop, as a question does, is marked so it tak
   assert.match(body, /<span class="field-label">Name<\/span>/);
 });
 
-test('a field whose value is a date is the date, drawn by the date feature, the field round it', () => {
+test('a field whose value is a date is the date, drawn by the date feature, the field round it, a group named by its label', () => {
   const { body } = render('@ When: date:[]\n@ Due {a Friday}: date:2026-11-10[]\n');
-  assert.match(body, /<span class="field" data-line="0" data-text="@ When: date:\[\]" data-head="@ When:" data-kind="date"><span class="field-label">When<\/span><span class="field-held"><span class="date date-blank" data-line="0" data-col="8" data-text="@ When: date:\[\]" tabindex="0" role="button" aria-haspopup="dialog">pick a date<\/span><\/span><\/span>/);
-  assert.match(body, /data-kind="date"><span class="field-label">Due<\/span><span class="field-held"><time class="date" datetime="2026-11-10" data-line="1" data-col="18" [^>]*>November 10, 2026<\/time><\/span><\/span>/);
+  assert.match(body, /<span class="field" data-line="0" data-text="@ When: date:\[\]" data-head="@ When:" data-kind="date" role="group" aria-labelledby="field-0"><span class="field-label" id="field-0">When<\/span><span class="field-held"><span class="date date-blank" data-line="0" data-col="8" data-text="@ When: date:\[\]" tabindex="0" role="button" aria-haspopup="dialog">pick a date<\/span><\/span><\/span>/);
+  assert.match(body, /data-kind="date" role="group" aria-labelledby="field-1"><span class="field-label" id="field-1">Due<\/span><span class="field-held"><time class="date" datetime="2026-11-10" data-line="1" data-col="18" [^>]*>November 10, 2026<\/time><\/span><\/span>/);
   assert.doesNotMatch(body, /class="field-value"|[\uE000-\uF8FF]/);
 });
 

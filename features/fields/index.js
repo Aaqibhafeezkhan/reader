@@ -218,8 +218,9 @@ export function fields(md) {
   md.renderer.rules.field = (tokens, i, opts, env) => {
     const { line, text, head, label, hint, value, lines, kind, shown } = tokens[i].meta;
     const open = `<span class="field" data-line="${line}" data-text="${escapeAttr(text)}" data-head="${escapeAttr(head)}"`;
-    // A date, drawn by what's between this and the field's end.
-    if (kind === 'date') return `${open} data-kind="date"><span class="${labelClass(label)}">${escapeHtml(label)}</span><span class="field-held">`;
+    // A date, drawn by what's between this and the field's end: a group
+    // named by its label, so its button is heard with what it's for.
+    if (kind === 'date') return `${open} data-kind="date" role="group" aria-labelledby="field-${line}"><span class="${labelClass(label)}" id="field-${line}">${escapeHtml(label)}</span><span class="field-held">`;
     const picks = choices(text, head, value);
     if (picks) {
       // Its buttons a group, named by its label, and a question.

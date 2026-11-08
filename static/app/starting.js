@@ -41,8 +41,8 @@ export async function startedOver(plan) {
  */
 export async function startToday(dir, button, { inToday = false } = {}) {
   if (starting) return;
+  // Not disabled while it works, which would drop the keyboard from it to the page.
   starting = true;
-  button.disabled = true;
   try {
     // The latest may be the open file, with what's typed not yet on disk.
     if (!(await saveFirst())) throw new Error('the open file isn\'t saved');
@@ -63,7 +63,6 @@ export async function startToday(dir, button, { inToday = false } = {}) {
     // It may be that it's there already, and the offer should go.
     await loadTree().catch(() => {});
   } finally {
-    button.disabled = false;
     starting = false;
   }
 }

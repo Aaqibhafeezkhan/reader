@@ -1,6 +1,6 @@
 import { test, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { app, globals } from './dom.js';
+import { app, globals, assertElement } from './dom.js';
 
 // Start today's, in the files list: offered by what the server says, worked
 // out in a hidden frame, and written only once that's answered.
@@ -329,13 +329,16 @@ test('refused by the server, the list is looked at again', async () => {
 test('pressed twice, it starts once', async () => {
   await fresh('journal');
   const b = offer();
+  b.focus();
   b.click();
   b.click();
   await settled();
   assert.equal(asked.length, 1);
-  assert.equal(b.disabled, true);
+  assert.equal(b.disabled, false, 'not disabled, which would take the keyboard from it');
+  assertElement(document.activeElement, b);
   mock.timers.tick(15000);
   await settled();
+  assertElement(document.activeElement, b, 'nor once it\'s done');
 });
 
 // Under Today: the series waiting for today's, as the server says, each started from there.

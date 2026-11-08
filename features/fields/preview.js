@@ -157,13 +157,13 @@
 
     input.addEventListener('keydown', (e) => {
       if (!['Enter', 'Escape', 'Tab'].includes(e.key) || e.isComposing) return;
-      e.preventDefault();
       e.stopPropagation();
-      // A field drawn by another feature, a date, has no blank to move to.
-      const all = [...document.querySelectorAll('.field:not([data-choices])')].filter((f) => f.querySelector('.field-value'));
-      const next = e.key === 'Tab' && all[all.indexOf(field) + (e.shiftKey ? -1 : 1)];
-      close(e.key !== 'Escape', { stay: !next });
-      if (next) openField(next);
+      // Tab writes it and leaves the keyboard on its blank, for the browser
+      // to move on from as it would: to whatever's next that takes the
+      // keyboard, a link, a button or the next field's blank, which opens.
+      if (e.key === 'Tab') return close(true, { stay: true });
+      e.preventDefault();
+      close(e.key !== 'Escape', { stay: true });
     });
     input.addEventListener('blur', () => close(true));
   }

@@ -14,8 +14,15 @@ let starts = JOURNAL;
 let files = [{ path: 'journal/2026-10-30.md', date: '2026-10-30' }, { path: 'notes.md', date: null }];
 let asked = [];
 let refuse = null;
+// What's asked of the server, in order, and whether a save is refused.
+let log = [];
+let unsaved = false;
 globalThis.fetch = async (url, { method = 'GET', body } = {}) => {
   const ask = String(url);
+  log.push(`${method} ${ask.split('?')[0]}`);
+  if (ask.startsWith('/api/file') && method === 'PUT' && unsaved) {
+    return { ok: false, status: 500, statusText: 'Server Error', json: async () => ({ error: 'disk full' }) };
+  }
   if (ask.startsWith('/api/start-day')) asked.push({ method, ask, body: body && JSON.parse(body) });
   if (ask.startsWith('/api/start-day') && method === 'POST' && refuse) {
     return { ok: false, status: 409, statusText: 'Conflict', json: async () => ({ error: refuse }) };
@@ -39,7 +46,7 @@ globalThis.fetch = async (url, { method = 'GET', body } = {}) => {
 const { el, state } = await import('../static/app/state.js');
 Object.defineProperty(el.preview, 'contentWindow', { value: { postMessage() {} } });
 await import('../static/app/main.js');
-const { go, loadTree, drawTree } = await import('../static/app/files.js');
+const { go, loadTree, drawTree, open } = await import('../static/app/files.js');
 const { setWorking } = await import('../static/app/modes.js');
 const settled = async () => {
   for (let i = 0; i < 5; i++) await new Promise(setImmediate);
@@ -324,6 +331,28 @@ test('refused by the server, the list is looked at again', async () => {
   await settled();
   assert.match(el.toast.textContent, /already exists/);
   assert.equal(offer().getAttribute('aria-label'), "Open today's");
+});
+
+test('what\'s typed in the open file is saved before today\'s is started, and a save refused starts nothing', async () => {
+  await fresh('journal');
+  await open('journal/2026-10-30.md');
+  el.editor.value = '# A, typed\n';
+  log = [];
+  offer().click();
+  await settled();
+  assert.deepEqual(log.filter((l) => /\/api\/(file|start-day)$/.test(l)).slice(0, 2), ['PUT /api/file', 'GET /api/start-day'], 'saved, then started');
+  mock.timers.tick(15000);
+  await settled();
+  await fresh('journal');
+  await open('journal/2026-10-30.md');
+  el.editor.value = '# A, typed again\n';
+  unsaved = true;
+  offer().click();
+  await settled();
+  unsaved = false;
+  assert.deepEqual(asked, [], 'nothing started');
+  assert.match(el.toast.textContent, /Today's file wasn't started: the open file isn't saved/);
+  el.editor.value = state.saved;
 });
 
 test('pressed twice, it starts once', async () => {

@@ -21,7 +21,8 @@ const HEADINGS = 'h1, h2, h3, h4, h5, h6';
 export function mark(body, i) {
   const doc = new DOMParser().parseFromString(`<body>${body}</body>`, 'text/html');
   const heading = doc.querySelector(HEADINGS);
-  const title = heading?.textContent.trim() || `Page ${i + 1}`;
+  // As a screen reader hears it, an image by its alt, as the deck names a slide (spoken.js).
+  const title = (heading && Spoken.short(Spoken.spoken(heading, Infinity))) || `Page ${i + 1}`;
   const says = (h) => h.querySelector(':scope > [data-done]');
   if (heading && says(heading)) return { title, done: says(heading).dataset.done === 'true' };
   const all = [];

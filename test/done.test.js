@@ -21,6 +21,12 @@ const DECK = [
 
 const drawn = (src, opts) => pages(src, { file: 'a.md', ...opts }).pages;
 
+test("a page's name is its first heading as it's heard, an image in it by its alt", () => {
+  const [page] = drawn('# Why ![Rust](rust.png) wins\n\nWords.');
+  assert.equal(mark(page.body, 0).title, 'Why Rust wins');
+  assert.equal(mark('<p>No heading</p>', 2).title, 'Page 3');
+});
+
 test('a page is done by what\'s tagged on it: its heading\'s box, or every box ticked and every question answered', () => {
   const marks = drawn(DECK).map((p, i) => mark(p.body, i));
   assert.deepEqual(marks.map((m) => m.done), [true, false, true, true, false, null]);

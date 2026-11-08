@@ -177,6 +177,37 @@
     window.parent.postMessage({ type: 'fit', measure, zoom: fitted.zoom, fits: fitted.fits, wrapped }, '*');
   }
 
+  // A code block wider than the page scrolls sideways. One that does takes
+  // the keyboard, too, so its end can be reached with the arrows, and is
+  // named for what it is. Only one that overflows: a page of short code
+  // shouldn't be a page of Tab stops. What scrolls is the block, or the code
+  // in it when a feature has made that the part that scrolls (a fence's Copy
+  // button stays in its corner as the code scrolls under it).
+  const CODE_LANG = /(?:^|\s)language-([\w-]+)/;
+  const SCROLLS = new Set(['auto', 'scroll']);
+  const REACHED = ['tabindex', 'role', 'aria-label'];
+  const scroller = (pre) => {
+    const code = pre.querySelector(':scope > code');
+    return code && SCROLLS.has(getComputedStyle(code).overflowX) ? code : pre;
+  };
+  function reachableCode() {
+    for (const pre of document.querySelectorAll('.gm-doc pre')) {
+      const el = scroller(pre);
+      const other = el === pre ? pre.querySelector(':scope > code') : pre;
+      if (other?.hasAttribute('tabindex')) for (const a of REACHED) other.removeAttribute(a);
+      const over = el.scrollWidth > el.clientWidth + 1;
+      if (over === el.hasAttribute('tabindex')) continue;
+      if (over) {
+        const lang = CODE_LANG.exec(pre.querySelector('code')?.className || '');
+        el.setAttribute('tabindex', '0');
+        el.setAttribute('role', 'region');
+        el.setAttribute('aria-label', lang ? `Code, ${lang[1]}` : 'Code');
+      } else {
+        for (const a of REACHED) el.removeAttribute(a);
+      }
+    }
+  }
+
   // Images, fonts and what features draw change a slide's size as they
   // arrive. A measurement waits for them, a little while at most.
   const settled = () => Promise.race([
@@ -190,7 +221,7 @@
   ]);
   document.addEventListener('load', (e) => { if (Preview.deck && e.target.tagName === 'IMG') fit(); }, true);
   window.addEventListener('preview:drawn', () => { if (Preview.deck) fit(); });
-  window.addEventListener('resize', () => fit());
+  window.addEventListener('resize', () => { fit(); reachableCode(); });
 
   // Scrolling in step with the editor, by the line of the file each block
   // was drawn from (`data-line`). Whichever side was last touched leads and
@@ -408,7 +439,8 @@
     document.documentElement.classList.toggle('deck', Preview.deck);
     scaleTo(m.scale);
     fit();
-    if (m.measure != null) settled().then(() => fit(m.measure));
+    reachableCode();
+    if (m.measure != null) settled().then(() => { fit(m.measure); reachableCode(); });
     if (m.reveal != null) reveal(m.reveal, m.say);
     marks = null;
     if (m.lines != null) lines = m.lines;

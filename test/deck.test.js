@@ -244,6 +244,14 @@ test('a reload refreshes the open overview, preserving its highlight separately 
   const scrolled = [];
   prototype.scrollIntoView = function (how) { scrolled.push(how?.block); };
   el.deckSays.textContent = '';
+  // Scrolled down the thumbnails; a browser scrolls back to the top as they're replaced.
+  el.overview.scrollTop = 120;
+  const list = el.overview.querySelector('[role="listbox"]');
+  const replace = list.replaceChildren;
+  list.replaceChildren = function (...nodes) {
+    el.overview.scrollTop = 0;
+    return replace.apply(this, nodes);
+  };
 
   globalThis.fetch = async () => ({
     ok: true,
@@ -268,6 +276,8 @@ test('a reload refreshes the open overview, preserving its highlight separately 
   assert.equal(options()[2].classList.contains('now'), false);
   assert.notEqual(el.deckSays.textContent, 'Overview', 'a reload doesn\'t say the overview again, as every save would');
   assert.ok(!scrolled.includes('center'), 'nor bring the slide showing to the middle');
+  assert.equal(el.overview.scrollTop, 120, 'the thumbnails are where they were scrolled to');
+  delete list.replaceChildren;
   if (scroll) Object.defineProperty(prototype, 'scrollIntoView', scroll);
   else delete prototype.scrollIntoView;
   deckKey({ key: 'Escape' });

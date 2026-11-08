@@ -11,7 +11,8 @@ let started = Date.now();
 
 function waiting(show) {
   $('waiting').hidden = !show;
-  $('speaker').inert = show;
+  // Behind an open overview, it stays out of reach.
+  $('speaker').inert = show || overview?.isOpen;
 }
 
 waiting(true);
@@ -161,14 +162,17 @@ function openOverview() {
 
 channel.addEventListener('message', (e) => {
   const m = e.data || {};
-  // A deck sent afresh may not have the slides the overview has.
-  if (m.type === 'deck' || m.type === 'end') overview.close();
+  if (m.type === 'end') overview.close();
   if (m.type === 'deck') {
     // A deck opened on its first slide is the talk starting: so is the timer.
     if (m.open && !deck.open && m.index === 0) started = Date.now();
     Object.assign(deck, { slides: m.slides, css: m.css, title: m.title || '', meta: m.meta, index: m.index, reveal: m.reveal, scale: m.scale ?? 1, base: m.base, end: m.end, open: Boolean(m.open) });
     waiting(!m.open);
     draw({ fresh: true });
+    // Sent afresh, as on every save, an open overview is drawn again from
+    // its slides, quietly, where it was (overview.js); with the deck away, it goes.
+    if (!deck.open) overview.close();
+    else overview.refresh(deck.slides, deck.index);
   } else if (m.type === 'go') {
     deck.index = m.index;
     deck.reveal = m.reveal;
@@ -225,7 +229,11 @@ $('timer').addEventListener('click', (e) => {
 });
 window.addEventListener('resize', fit);
 // The slides drawn again in a theme chosen in the app, or the system's new one.
-Theme.onChange(() => { if (deck.slides.length) draw({ fresh: true }); });
+Theme.onChange(() => {
+  if (!deck.slides.length) return;
+  draw({ fresh: true });
+  overview.redraw();
+});
 fit();
 tick();
 setInterval(tick, 1000);

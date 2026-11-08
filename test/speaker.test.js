@@ -259,15 +259,46 @@ test('Esc puts the overview away here, the deck where it was, and says so', () =
   assert.ok($('overview').hidden);
 });
 
-test('a deck sent afresh puts the overview here away, as its slides may not be the ones laid out', () => {
+test('a deck sent afresh, as on a save, draws the overview here again, quietly, where it was', () => {
   const { $, press, say } = speaker();
   const slides = [{ body: '' }, { body: '' }, { body: '' }];
   say({ type: 'deck', open: true, index: 1, reveal: 0, slides, meta: {} });
   press('O');
-  assert.ok(!$('overview').hidden);
+  press('ArrowRight');
+  $('overview-heard').textContent = '';
+  say({ type: 'deck', open: true, index: 1, reveal: 0, slides: [...slides, { body: '' }], meta: {} });
+  assert.ok(!$('overview').hidden, 'still out');
+  const options = [...$('overview').querySelectorAll('[role="option"]')];
+  assert.equal(options.length, 4, 'with the slides as they are now');
+  assert.equal(options[2].getAttribute('aria-selected'), 'true', 'the highlight where it was');
+  assert.equal($('overview-heard').textContent, '', 'and nothing said');
+  assert.ok($('speaker').inert, 'the rest still out of reach behind it');
+  // With fewer slides, the highlight comes back to the last.
   say({ type: 'deck', open: true, index: 0, reveal: 0, slides: slides.slice(1), meta: {} });
+  assert.equal([...$('overview').querySelectorAll('[role="option"]')].at(-1).getAttribute('aria-selected'), 'true');
+  // A deck sent shut puts it away.
+  say({ type: 'deck', open: false, index: 0, reveal: 0, slides, meta: {} });
   assert.ok($('overview').hidden);
-  assert.ok(!$('speaker').inert, 'the rest is in reach again');
+  assert.ok(!$('waiting').hidden, 'the deck waited for again');
+});
+
+test("a theme change draws the overview's thumbnails here again, in the new theme", () => {
+  const { $, press, window, say } = speaker();
+  say({ type: 'deck', open: true, index: 0, reveal: 0, slides: [{ body: 'a' }, { body: 'b' }], meta: {} });
+  window.IntersectionObserver = class {
+    constructor(fn) { this.fn = fn; }
+    observe(target) { this.fn([{ target, isIntersecting: true }]); }
+    unobserve() {}
+    disconnect() {}
+  };
+  window.Theme.choose('light');
+  press('O');
+  const frame = $('overview').querySelector('iframe');
+  const drawn = [];
+  Object.defineProperty(frame, 'contentWindow', { value: { postMessage: (m) => drawn.push(m) }, configurable: true });
+  window.dispatchEvent(new window.MessageEvent('message', { data: { type: 'ready' }, source: frame.contentWindow }));
+  window.Theme.choose('dark');
+  assert.deepEqual(drawn.map((m) => m.dark), [false, true]);
 });
 
 test("both frames are sent the deck's title", async () => {

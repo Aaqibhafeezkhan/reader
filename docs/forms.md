@@ -96,7 +96,8 @@ The value still goes on the one line in the file, wrapping only on the page,
 and a blank grows if it outruns its lines. Click the label, the blank, or
 beside them to fill it in, right on the page: `Enter` (or clicking away)
 writes it into the file; `Esc` puts it back; `Tab` and `⇧Tab` write it and
-move to the next field or the one before. The value is shown just as typed,
+move on, as they would from anywhere on the page: to the next link, button
+or field, or the one before. The value is shown just as typed,
 with no markdown.
 
 A field can say what goes in it: text in braces at the end of its label is a **hint**, shown faint in the blank until something's filled in.

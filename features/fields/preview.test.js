@@ -211,10 +211,28 @@ test('a date field picks a day into its place on the line, and Tab goes past it'
   const [edit] = p.posted.filter((m) => m.type === 'edit').flatMap((m) => m.edits);
   assert.equal(edit.before[0], '@ When {a Friday}: date:[]');
   assert.match(edit.after[0], /^@ When \{a Friday\}: date:\d{4}-\d{2}-10\[\]$/);
-  p.document.querySelector('.field').click();
-  const input = p.document.querySelector('.field textarea');
-  input.dispatchEvent(new p.window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
-  assert.ok(p.document.querySelector('.field[data-kind="number"] textarea'), 'Tab goes on to the next blank');
+});
+
+test('Tab in a blank writes it and leaves the browser to go on, to a link, a date or the next blank, as it would', async () => {
+  const p = preview();
+  p.show(render('@ Name: Josh\n\nRead [the book](https://example.com/book) first.\n\n@ When: date:[]\n@ Age: number:[]\n').body);
+  const name = p.document.querySelector('.field .field-value');
+  for (const shiftKey of [false, true]) {
+    name.click();
+    const input = p.document.querySelector('.field textarea');
+    input.value = shiftKey ? 'Ada' : 'Josh Long';
+    const tab = new p.window.KeyboardEvent('keydown', { key: 'Tab', shiftKey, bubbles: true, cancelable: true });
+    input.dispatchEvent(tab);
+    await settle();
+    assert.equal(tab.defaultPrevented, false, 'the browser moves the keyboard on');
+    assertElement(p.document.activeElement, name, 'from the blank, its value written');
+    assert.equal(p.document.querySelector('textarea'), null, 'and no other blank opened past what\'s between');
+  }
+  const written = p.posted.filter((m) => m.type === 'edit').flatMap((m) => m.edits.map((e) => e.after[0]));
+  assert.deepEqual(written, ['@ Name: Josh Long', '@ Name: Ada']);
+  // The browser's Tab lands on the next blank, which opens.
+  p.document.querySelector('.field[data-kind="number"] .field-value').focus();
+  assert.ok(p.document.querySelector('.field[data-kind="number"] textarea'));
 });
 
 /**

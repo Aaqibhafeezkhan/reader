@@ -36,6 +36,10 @@ Then open <http://localhost:8734/>. `Ctrl-C` stops it.
 - **The user** is `node`, uid 1000, not root. A directory mounted from the
   host has to be writable by 1000, or the container run as its owner:
   `--user "$(id -u):$(id -g)"`.
+- **The clock** is the container's, which is UTC unless it's told otherwise.
+  Today and Start today's go by it, so in Denver tomorrow would come at 5pm
+  in the winter and 6pm in the summer. Give it yours with `-e TZ=`:
+  `-e TZ=America/Denver`; the image needs nothing more for it.
 
 ## From another device
 
@@ -66,6 +70,8 @@ services:
   reader:
     image: jzheaux/reader
     command: ["--allow-host", "nas.local"]
+    environment:
+      TZ: America/Denver
     ports:
       - "8734:8734"
       - "8735:8735"

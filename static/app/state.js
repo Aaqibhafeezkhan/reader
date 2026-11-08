@@ -11,7 +11,7 @@ export const el = {
   sidebarToggle: $('sidebarToggle'), helpToggle: $('helpToggle'), help: $('help'),
   version: $('version'), helpVersion: $('helpVersion'), theme: $('theme'),
   split: $('split'), sidebar: $('sidebar'), filter: $('filter'), files: $('files'),
-  todayBtn: $('todayBtn'), filesNote: $('filesNote'),
+  todayBtn: $('todayBtn'), filesNote: $('filesNote'), filesSays: $('filesSays'),
   newBtn: $('newBtn'), startBtn: $('startBtn'), crumbs: $('crumbs'), newForm: $('newForm'), newName: $('newName'),
   preview: $('preview'), pdfView: $('pdfView'), empty: $('empty'),
   editor: $('editor'), gutter: $('gutter'), gutterToggle: $('gutterToggle'),

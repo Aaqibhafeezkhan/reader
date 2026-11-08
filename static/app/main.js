@@ -7,7 +7,7 @@
 import { el, state, deck, dirty, remember } from './state.js';
 import { api } from './api.js';
 import { dirOf } from './versions.js';
-import { loadTree, drawTree, visiblePaths, step, open, follow, createFile, showNewForm, pressStart, setUpSideIcons, go, reveal, pressToday, rememberedDir, onListKey, onListDoubleClick } from './files.js';
+import { loadTree, drawTree, visiblePaths, step, open, follow, createFile, showNewForm, pressStart, setUpSideIcons, go, reveal, pressToday, filterTyped, rememberedDir, onListKey, onListDoubleClick } from './files.js';
 import { whenReady, showEmpty } from './render.js';
 import { save, saveFirst, saveOnLeave, reloadFromDisk, checkDisk } from './saving.js';
 import { toast, updateCursor } from './status.js';
@@ -146,7 +146,7 @@ function wire() {
   wireDrawer();
   wireTheme();
 
-  el.filter.addEventListener('input', drawTree);
+  el.filter.addEventListener('input', filterTyped);
   el.files.addEventListener('keydown', onListKey);
   el.files.addEventListener('dblclick', onListDoubleClick);
   el.todayBtn.addEventListener('click', pressToday);

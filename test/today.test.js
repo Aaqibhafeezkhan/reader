@@ -117,9 +117,11 @@ test('a filter in Today says what it\'s narrowed to, and the × leaves Today and
   el.filter.dispatchEvent(new window.Event('input'));
   assert.equal(found(), 'Today · “List” · 1 file');
   assert.equal(leave().getAttribute('aria-label'), 'Leave Today');
+  assert.equal(el.filesSays.textContent, 'Today · “List” · 1 file');
   el.filter.value = 'plain';
   el.filter.dispatchEvent(new window.Event('input'));
   assert.equal(found(), 'Today · “plain” · nothing');
+  assert.equal(el.filesSays.textContent, '', 'the list\'s own note says it');
   leave().click();
   assert.equal(pressed(), 'false');
   assert.equal(el.filter.value, '');
@@ -132,6 +134,7 @@ test('a filter, which lists from every folder too, says what it found, and its �
   el.filter.value = 'md';
   el.filter.dispatchEvent(new window.Event('input'));
   assert.equal(found(), '“md” · 4 files');
+  assert.equal(el.filesSays.textContent, '“md” · 4 files', 'and said, as it\'s typed');
   assert.equal(el.files.getAttribute('aria-labelledby'), 'foundName');
   el.filter.value = 'list';
   el.filter.dispatchEvent(new window.Event('input'));
@@ -139,8 +142,10 @@ test('a filter, which lists from every folder too, says what it found, and its �
   el.filter.value = 'nowhere';
   el.filter.dispatchEvent(new window.Event('input'));
   assert.equal(found(), '“nowhere” · no files');
+  assert.equal(el.filesSays.textContent, '“nowhere” · no files');
   assert.equal(leave().getAttribute('aria-label'), 'Clear the filter');
   leave().click();
+  assert.equal(el.filesSays.textContent, '');
   assert.equal(el.filter.value, '');
   assert.equal(found(), 'crumbs');
   assert.deepEqual(paths(), ['journal/2020-01-01.md', `journal/${TODAY}.md`]);

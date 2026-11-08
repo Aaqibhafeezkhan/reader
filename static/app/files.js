@@ -63,6 +63,7 @@ function drawRows() {
   el.files.replaceChildren();
   el.todayBtn.setAttribute('aria-pressed', String(state.todayShown));
   el.filesNote.textContent = '';
+  if (!q) el.filesSays.textContent = '';
   // Today and a filter list from every folder, so where the list is (the
   // crumbs) gives way to what it found, which names the list too.
   if (state.todayShown || q) el.files.setAttribute('aria-labelledby', 'foundName');
@@ -111,6 +112,16 @@ function drawToday(q) {
   if (!rows.length && !waiting.length) el.filesNote.textContent = q ? `Nothing dated today matches “${q}”.` : 'Nothing is dated today.';
   const found = [count(rows.length, 'file'), waiting.length ? `${waiting.length} to start` : ''].filter(Boolean).join(', ');
   drawFound(['Today', q && `“${el.filter.value.trim()}”`, found || (q ? 'nothing' : 'nothing yet')].filter(Boolean).join(' · '), 'Leave Today', leaveToday);
+}
+
+/**
+ * The filter typed in: the list drawn again, and what it found said, as it's
+ * seen above the list, unless the list's own note says it already.
+ */
+export function filterTyped() {
+  drawTree();
+  const q = el.filter.value.trim();
+  el.filesSays.textContent = q && !el.filesNote.textContent ? el.crumbs.querySelector('.found-name')?.textContent ?? '' : '';
 }
 
 const count = (n, what) => (n ? `${n} ${what}${n === 1 ? '' : 's'}` : '');

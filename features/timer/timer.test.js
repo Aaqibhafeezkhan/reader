@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { render } from '../../src/render.js';
-import { slides } from '../../src/slides.js';
+import { slides, pages } from '../../src/slides.js';
 import { preview, settle, assertElement } from '../../test/dom.js';
 import { duration } from './index.js';
 
@@ -28,10 +28,25 @@ test('timer:[2m] is its time, a Start button, and a Reset for once there\'s some
 test('each is known by its length, which of that length, and its section, so lines typed above leave it be', () => {
   const keys = (src) => [...render(src).body.matchAll(/data-key="([^"]*)"/g)].map((m) => m[1]);
   const src = '# A\n\ntimer:[2m] timer:[90s] timer:[2m]\n\n## B\n\ntimer:[2m]\n';
-  const [a, b] = [keys('# A\n\ntimer:[2m]')[0], keys('# B\n\ntimer:[2m]')[0]].map((k) => k.split('/')[1]);
+  const [a, b] = [keys('# A\n\ntimer:[2m]')[0], keys('# B\n\ntimer:[2m]')[0]].map((k) => k.split('/')[3]);
   assert.notEqual(a, b);
-  assert.deepEqual(keys(src), [`120/${a}/0`, `90/${a}/0`, `120/${a}/1`, `120/${b}/0`]);
+  const file = keys('# A\n\ntimer:[2m]')[0].split('/')[0];
+  assert.deepEqual(keys(src), [`${file}/0/120/${a}/0`, `${file}/0/90/${a}/0`, `${file}/0/120/${a}/1`, `${file}/0/120/${b}/0`]);
   assert.deepEqual(keys(src.replace('# A\n', '# A\n\nMore words.\n')), keys(src));
+});
+
+test("a timer isn't the same as one of its length and section in another file, or on another page or slide", () => {
+  const key = (src, options) => render(src, options).body.match(/data-key="([^"]*)"/)[1];
+  const src = '# Reset\n\ntimer:[2m]\n';
+  assert.notEqual(key(src, { file: '2026-11-07.md' }), key(src, { file: '2026-11-08.md' }));
+  assert.equal(key(src, { file: '2026-11-08.md' }), key(src, { file: '2026-11-08.md' }));
+  const two = `---\ntitle: T\n---\n\n${src}\n---\n\n${src}`;
+  const keys = (parts) => parts.map((p) => p.body.match(/data-key="([^"]*)"/)[1]);
+  for (const drawn of [pages(two).pages, slides(two).slides]) {
+    assert.equal(drawn.length, 2);
+    assert.notEqual(...keys(drawn));
+  }
+  assert.deepEqual(keys(pages(two).pages), keys(pages(two).pages), 'and the same again as the page is drawn anew');
 });
 
 test('what isn\'t a duration stays as typed, as does one in code or escaped', () => {

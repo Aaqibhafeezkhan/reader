@@ -75,17 +75,24 @@ export function timer(md) {
     },
   });
 
-  // Each timer is known again, as the page is drawn anew, by the section
-  // it's in and which of that section's timers of its length it is: lines
-  // typed above it, or on another part of the page, leave it running.
+  // Each timer is known again, as the page is drawn anew, by its file, the
+  // page (or slide) it's on, the section it's in and which of that section's
+  // timers of its length it is: lines typed above it, or on another part of
+  // the page, leave it running, and yesterday's leaves today's copy be.
   md.core.ruler.push('timer_key', (state) => {
     if (state.inlineMode) return;
     const { of } = sections(state);
     const seen = new Map();
+    // A deck draws each slide on its own, and they share an env.shared.
+    const shared = state.env.shared ?? {};
+    const slide = shared.timerParts = (shared.timerParts ?? -1) + 1;
+    const file = hash(state.env.file ?? '');
+    let page = 0;
     state.tokens.forEach((block, i) => {
+      if (block.type === 'hr' && block.level === 0) page += 1;
       for (const t of block.children ?? []) {
         if (t.type !== 'timer') continue;
-        const at = `${t.meta.seconds}/${hash(of[i].title)}`;
+        const at = `${file}/${slide + page}/${t.meta.seconds}/${hash(of[i].title)}`;
         const k = seen.get(at) ?? 0;
         seen.set(at, k + 1);
         t.meta.key = `${at}/${k}`;

@@ -113,7 +113,8 @@ function planRename(p, groupName) {
       }),
     };
   }
-  const g = state.group && !el.filter.value.trim() && groupOf(state.files, p);
+  // Only while that list is what's showing: Today and a filter list files as files.
+  const g = state.group && !state.todayShown && !el.filter.value.trim() && groupOf(state.files, p);
   const { dir, stem, ext } = splitPath(p);
   if (g) {
     // In a group's list: the version's own name. The main one has none to change.

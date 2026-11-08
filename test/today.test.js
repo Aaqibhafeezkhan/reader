@@ -340,6 +340,26 @@ test('F2 on a row in Today renames it there', async () => {
   assertElement(document.activeElement, row('todo/renamed.md'));
 });
 
+test("F2 on a row in Today renames the file, though Today was pressed from a file's versions", async () => {
+  await fresh();
+  // Its other version isn't dated today, so Today lists the main one as a file of its own.
+  files = [{ path: `journal/${TODAY}.md`, date: TODAY }, { path: `journal/${TODAY}.review.md`, date: null }, { path: 'todo/list.md', date: TODAY }];
+  await loadTree();
+  go('journal', TODAY, { focus: false });
+  el.todayBtn.click();
+  for (const [p, name] of [[`journal/${TODAY}.md`, TODAY], ['todo/list.md', 'list']]) {
+    const r = el.files.querySelector(`.file[data-path="${p}"]`);
+    r.focus();
+    press(r, 'F2');
+    const input = el.files.querySelector('.name-edit');
+    assert.ok(input, `${p}: a name to edit`);
+    assert.equal(input.value, name);
+    press(input, 'Escape');
+    await settled();
+    assert.equal(el.files.querySelector('.name-edit'), null);
+  }
+});
+
 test('renaming a file out of Today leaves the keyboard on the filter', async () => {
   await shown();
   const r = row('todo/list.md');

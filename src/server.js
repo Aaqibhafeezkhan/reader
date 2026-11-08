@@ -112,7 +112,7 @@ const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]']);
 
 // The preview frames' name, on the app's port. Chromium and Electron take any
 // .localhost name as this machine, without asking DNS.
-export const FRAME_HOST = 'frames.localhost';
+const FRAME_HOST = 'frames.localhost';
 
 // What the frames' origin serves of static/ besides preview.html: what it names.
 const PREVIEW_HTML = path.join(STATIC_DIR, 'preview.html');

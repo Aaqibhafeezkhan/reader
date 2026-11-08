@@ -122,7 +122,7 @@ function firstTokenAtOrAfter(tokens, line) {
  * at. Returns the notes annotated with `cut` and `endCut` (the token indexes
  * where the block they are commenting on starts and ends), in document order.
  */
-export function resolveAnchors(tokens, notes) {
+function resolveAnchors(tokens, notes) {
   return notes.map((a) => {
     const block = lastBlockBefore(tokens, a.anchor);
     if (!block) return { ...a, cut: 0, endCut: 0 };

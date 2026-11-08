@@ -21,7 +21,7 @@ function day(year, month, date) {
 }
 
 /** The date in the name of the file at a root-relative path, or null. Of several, the last. */
-export function dateInName(rel) {
+function dateInName(rel) {
   const found = [...rel.slice(rel.lastIndexOf('/') + 1).matchAll(IN_NAME)].map((m) => day(m[1], m[2], m[3]));
   return found.findLast(Boolean) ?? null;
 }

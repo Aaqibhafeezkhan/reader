@@ -23,9 +23,10 @@
  */
 
 import fs from 'node:fs';
-import { opens, panes, words } from '../layout.js';
+import { declare, opens, panes, words } from '../layout.js';
 
 export function row(md) {
+  declare(md, 'row', ['reverse']);
   md.block.ruler.before('fence', 'row', rule, { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
   md.core.ruler.after('inline', 'row_image', bare);
 }

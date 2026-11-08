@@ -22,15 +22,17 @@
  * letters, and that block takes the styles. Blocks nest; the innermost's
  * font leads and its color wins.
  *
- * `columns`, `row`, `tabs`, `compare` and `grid` are not styles but
- * layouts: a block named one has its fences, and the `+++` lines in it, left
- * as the layouts' marks (features/layout.js), with the layout's own words
- * (`reverse`, a grid's count), and any other names on it are its styles.
+ * The layouts, `columns`, `row`, `tabs`, `compare`, `grid` and `cards`,
+ * are not styles: a block named one has its fences, and the `+++` lines in
+ * it, left as the layouts' marks (features/layout.js), with the layout's own
+ * words (`reverse`, a grid's count), and any other names on it are its
+ * styles. Which are layouts each layout's feature says, so one left out is
+ * read here as a style.
  */
 
 import fs from 'node:fs';
 import { beforeExtract, fenced, MARKS } from '../source.js';
-import { LAYOUTS, owns, OPEN as LAYOUT_OPEN, DIVIDER, CLOSE as LAYOUT_CLOSE } from '../layout.js';
+import { layoutsOf, owns, OPEN as LAYOUT_OPEN, DIVIDER, CLOSE as LAYOUT_CLOSE } from '../layout.js';
 import { marking, markSpan } from '../mark.js';
 import { COLORS, GENERIC } from '../names.js';
 
@@ -80,6 +82,7 @@ function lines(state) {
   if (state.inlineMode || state.env.nested) return;
   const open = [];
   const code = fenced();
+  const layouts = layoutsOf(state.md);
   state.src = state.src.split('\n').map((line) => {
     if (code(line)) return line;
     const div = DIV.exec(line);
@@ -90,10 +93,10 @@ function lines(state) {
       // layout's are left for it to find.
       if (div[1]) {
         const names = div[1].trim().split(/\s+/);
-        const layout = names.map((n) => n.toLowerCase()).find((n) => LAYOUTS.includes(n));
+        const layout = names.map((n) => n.toLowerCase()).find((n) => layouts.has(n));
         // A layout's own words (`::: row reverse`) go with it, not the styles.
-        const own = names.map((n) => n.toLowerCase()).filter((n) => owns(layout, n));
-        const style = (n) => !LAYOUTS.includes(n.toLowerCase()) && !own.includes(n.toLowerCase());
+        const own = names.map((n) => n.toLowerCase()).filter((n) => owns(layouts.get(layout), n));
+        const style = (n) => !layouts.has(n.toLowerCase()) && !own.includes(n.toLowerCase());
         // A background on a block that isn't a layout is one box round it all.
         const bg = !layout && names.find(background);
         open.push({ names: names.filter((n) => style(n) && !(bg && background(n))), layout, bg });

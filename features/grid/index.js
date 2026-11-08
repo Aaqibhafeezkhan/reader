@@ -17,15 +17,16 @@
  * `:::` block (`::: grid 2 gray`), and grids nest in other `:::` blocks.
  *
  * The styles feature reads the fences, leaving this block's as the marks in
- * features/layout.js, with the grid's own words (`WORDS`) after the name:
+ * features/layout.js, with the words the grid declares after the name:
  * its count, and any other, a look for its cells, is a class here named
  * as the word is: `cards` draws them as cards (features/cards).
  */
 
 import fs from 'node:fs';
-import { opens, panes, words } from '../layout.js';
+import { declare, opens, panes, words } from '../layout.js';
 
 export function grid(md) {
+  declare(md, 'grid', [/^\d+$/, 'cards']);
   md.block.ruler.before('fence', 'grid', rule, { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
 }
 

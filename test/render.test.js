@@ -133,3 +133,36 @@ test('without asides, every page of the docs renders, in one column', () => {
     }
   }
 });
+
+// --- each feature left out --------------------------------------------------
+
+/** The features, less `name` and every feature built on it. */
+function without(name) {
+  const out = new Set([name]);
+  for (let more = true; more;) {
+    more = false;
+    for (const f of FEATURES) {
+      if (!out.has(f.name) && (f.requires ?? []).some((r) => out.has(r))) {
+        out.add(f.name);
+        more = true;
+      }
+    }
+  }
+  return FEATURES.filter((f) => !out.has(f.name));
+}
+
+test('with any one feature left out, and those built on it, every page of the docs and the journal renders, with no mark of a feature left in it', () => {
+  const dir = new URL('../docs/', import.meta.url);
+  const pages = [
+    ...readdirSync(dir).filter((f) => f.endsWith('.md')).map((f) => [f, readFileSync(new URL(f, dir), 'utf8')]),
+    ['journal.md', readFileSync(new URL('./fixtures/journal.md', import.meta.url), 'utf8')],
+  ];
+  // The private-use characters features mark the text with as they read it (features/source.js).
+  const MARK = /[\uE000-\uF8FF]/;
+  for (const page of [render, ...FEATURES.map((f) => makeRenderer(without(f.name)))]) {
+    for (const [file, src] of pages) {
+      const { body } = page(src, { file, lines: true });
+      assert.doesNotMatch(body, MARK, `${file}, ${page === render ? 'every feature' : 'one left out'}`);
+    }
+  }
+});

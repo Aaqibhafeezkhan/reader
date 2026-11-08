@@ -62,7 +62,7 @@ in a `::: tabs` block, its `+++ Source` and `+++ Rendered` tabs.
 | `static/awake.js` | keeps the screen on while a frame asks: steps under way |
 | `static/print.html` | the empty page a document is printed from, out of sight |
 | `features/source.js` | for features that read the source as written: each line read before anything else (`readLines`), a placeholder left in the text and turned into tokens once parsed, the page's sections (`sections`), escaping |
-| `features/layout.js` | the `:::` layouts, `columns`, `row`, `tabs` and `compare`: a block's panes, by `+++` lines or one to a block, for each layout feature to draw |
+| `features/layout.js` | what the `:::` layouts share: each layout's feature declares itself and the words it reads on its fence (`declare`), so one left out is no layout, and a block's panes, by `+++` lines or one to a block, for each to draw |
 | `features/blank.js` | a blank to fill in, as any feature draws one (fields, definitions), and whether a page can be worked where it's drawn: not on a slide, not once exported, not once it's a record (`open-until:`) |
 | `features/rows.js` | the page cut into rows, each passage beside the notes in the margin about it, whichever feature wrote them; and the block a note is written after (`lastBlockBefore`), where the words an aside chooses are |
 | `features/mark.js`, `features/color.js` | a mark, words circled, underlined or highlighted, as styles draws one (`[quick]{circle}`) and asides does (`~a[quick]`); and the colours an author names, in the family's hue for each, as marks and an aside's key draw them |

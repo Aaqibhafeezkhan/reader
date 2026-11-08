@@ -20,10 +20,13 @@
  * choice to tap (features/cards), and is a grid's word too: `::: grid 2
  * cards`.
  *
- * The styles feature reads the fences and leaves each line that's a
- * layout's as a mark of its own: the opening, the mark and the layout's
- * name, then any of its own words written on the fence (`WORDS`); each
- * `+++`, the mark and its label; the closing. A private-use
+ * Each layout's feature says it's one, and which words it reads on its
+ * fence, with `declare()`; this file names none, so a layout left out of
+ * the features' list is no layout at all, and its block is read as any
+ * other `:::` block. The styles feature reads the fences and leaves each
+ * line that's a declared layout's as a mark of its own: the opening, the
+ * mark and the layout's name, then any of its own words written on the
+ * fence; each `+++`, the mark and its label; the closing. A private-use
  * character each, which markdown passes through untouched and nothing else
  * writes. A layout's rule finds its own opening and splits what's in it
  * into panes with `panes()`.
@@ -32,18 +35,28 @@
 import { isOutput, readNotes } from './fence.js';
 import { MARKS } from './source.js';
 
-export const LAYOUTS = ['columns', 'row', 'tabs', 'compare', 'grid', 'cards'];
+// The layouts each markdown-it has been told of, by name, with their words.
+const declared = new WeakMap();
 
 /**
- * The words a layout reads on its own fence, not styles: `::: row
- * reverse`, a grid's count of columns (`::: grid 2`), and the look of its
- * cells, as cards (`::: grid 2 cards`, features/cards).
+ * Says, in a layout's plugin, that `name` is a layout in `md`, and the
+ * words it reads on its own fence, not styles: `::: row reverse`, a grid's
+ * count of columns (`::: grid 2`) and the look of its cells, as cards
+ * (`::: grid 2 cards`), each a word or a pattern.
  */
-export const WORDS = { row: ['reverse'], grid: [/^\d+$/, 'cards'] };
+export function declare(md, name, words = []) {
+  if (!declared.has(md)) declared.set(md, new Map());
+  declared.get(md).set(name, words);
+}
 
-/** Whether `word` on a `layout`'s fence is one of its `WORDS`. */
-export function owns(layout, word) {
-  return (WORDS[layout] ?? []).some((w) => (typeof w === 'string' ? w === word : w.test(word)));
+/** The layouts declared in `md`, by name, with their words. */
+export function layoutsOf(md) {
+  return declared.get(md) ?? new Map();
+}
+
+/** Whether `word` on a fence is one of the `words` its layout declared. */
+export function owns(words, word) {
+  return (words ?? []).some((w) => (typeof w === 'string' ? w === word : w.test(word)));
 }
 
 export const [OPEN, DIVIDER, CLOSE] = MARKS.layout;
@@ -57,7 +70,7 @@ export function opens(state, line, name) {
   return t === OPEN + name || t.startsWith(`${OPEN}${name} `);
 }
 
-/** The layout's own words on the fence that opens at `line` (`WORDS`). */
+/** The layout's own words on the fence that opens at `line`, as it declared them. */
 export function words(state, line) {
   return text(state, line).slice(OPEN.length).split(' ').slice(1);
 }

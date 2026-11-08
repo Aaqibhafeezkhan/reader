@@ -35,7 +35,7 @@
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import hljs from 'highlight.js';
-import { opens, panes } from '../layout.js';
+import { declare, opens, panes } from '../layout.js';
 import { escapeHtml, escapeAttr, fenceLanguage } from '../source.js';
 
 // How many versions the stylesheet can show the pick of.
@@ -44,6 +44,8 @@ const MAX = 12;
 const TOO_BIG = 4e6;
 
 export function tabs(md) {
+  declare(md, 'tabs');
+  declare(md, 'compare');
   md.block.ruler.before('fence', 'tabs', rule('tabs'), { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
   md.block.ruler.before('fence', 'compare', rule('compare'), { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
   md.core.ruler.push('compare_diff', diff);

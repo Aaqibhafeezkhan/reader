@@ -32,9 +32,10 @@
  */
 
 import fs from 'node:fs';
-import { opens, panes } from '../layout.js';
+import { declare, opens, panes } from '../layout.js';
 
 export function columns(md) {
+  declare(md, 'columns');
   md.block.ruler.before('fence', 'columns', rule, { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
 }
 

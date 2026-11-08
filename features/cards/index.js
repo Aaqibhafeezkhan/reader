@@ -26,9 +26,10 @@
  */
 
 import fs from 'node:fs';
-import { opens, panes } from '../layout.js';
+import { declare, opens, panes } from '../layout.js';
 
 export function cards(md) {
+  declare(md, 'cards');
   md.block.ruler.before('fence', 'cards', rule, { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
 }
 

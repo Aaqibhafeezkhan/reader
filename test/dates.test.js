@@ -13,6 +13,9 @@ test('without one, a file is dated by its own name', () => {
   assert.equal(dateOf('journal-2026-10-31-morning.md'), '2026-10-31');
   assert.equal(dateOf('journal/2026-10-31.review.md'), '2026-10-31');
   assert.equal(dateOf('2026-10-31.md', '# A\n\ndate: 2020-01-01\n'), '2026-10-31');
+  // Of several in a name, the last, if it's a day.
+  assert.equal(dateOf('2026-10-30-to-2026-10-31.md'), '2026-10-31');
+  assert.equal(dateOf('2026-10-30-to-2026-13-45.md'), '2026-10-30');
 });
 
 test('the folders a file is in don\'t date it', () => {

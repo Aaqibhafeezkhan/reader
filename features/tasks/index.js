@@ -215,7 +215,7 @@ function doneButton({ line, on, off, checked, done = checked, full = false, name
  * to be done and the questions, and the sections with boxes under it, which
  * count as one part each. A section with nothing in it to be done is done
  * only by its own box. Its title is set apart from the button, which goes
- * at the end of its line.
+ * at the end of its line, and names the heading on its own.
  */
 function sectionsDone(md) {
   md.core.ruler.push('task_sections', (state) => {
@@ -227,7 +227,7 @@ function sectionsDone(md) {
     state.tokens.forEach((block, i) => {
       const heading = state.tokens[i - 1]?.type === 'heading_open';
       for (const t of [block, ...(block.children ?? [])]) {
-        if (heading && t.type === 'task_box' && t.meta.heading) boxes.set(of[i], { box: t, inline: block, parts: [] });
+        if (heading && t.type === 'task_box' && t.meta.heading) boxes.set(of[i], { box: t, inline: block, heading: state.tokens[i - 1], parts: [] });
         else if (typeof t.meta?.done === 'boolean') parts.push({ section: of[i], done: () => t.meta.done });
         else if (typeof t.meta?.answered === 'boolean') parts.push({ section: of[i], done: () => t.meta.answered });
       }
@@ -245,12 +245,16 @@ function sectionsDone(md) {
       return own.box.meta.checked || own.full;
     };
     for (const own of boxes.values()) {
-      const { box, inline } = own;
+      const { box, inline, heading } = own;
       box.meta.done = isDone(own);
       box.meta.full = own.full;
       const title = inline.children.filter((t) => t !== box);
       const open = new state.Token('task_title_open', 'span', 1);
       open.attrSet('class', 'section-title');
+      // The heading is named by its title alone, not with its button's
+      // "Done: <title>" after it, which says its title again.
+      open.attrSet('id', `section-${box.meta.line}`);
+      heading.attrSet('aria-labelledby', `section-${box.meta.line}`);
       inline.children = [open, ...title, new state.Token('task_title_close', 'span', -1), box];
     }
   });

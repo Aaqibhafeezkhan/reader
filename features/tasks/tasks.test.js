@@ -90,7 +90,7 @@ test('on a slide, every box and choice is drawn as it stands and can\'t be chang
   const inputs = body.match(/<input [^>]*>|<button type="button" class="section-done"[^>]*>/g);
   assert.equal(inputs.length, 5);
   for (const input of inputs) assert.match(input, / disabled>$/);
-  assert.match(body, /<span class="section-title">Prep<\/span><button type="button" class="section-done" data-line="5" data-done="true" [^>]* aria-pressed="true" disabled><\/button>/);
+  assert.match(body, /<span class="section-title" id="section-5">Prep<\/span><button type="button" class="section-done" data-line="5" data-done="true" [^>]* aria-pressed="true" disabled><\/button>/);
   assert.match(body, /<input type="radio" class="choice-box" name="choice-\d+" [^>]*aria-label="coffee" checked disabled>/);
   assert.match(body, /<span class="stage-box" role="img" aria-label="onion: have \(1 of 3\)" title="have" data-done="false">/);
   assert.doesNotMatch(body, /<button(?! type="button" class="section-done")|task-reset/);
@@ -120,8 +120,8 @@ test('a Done pill takes a click 24px tall, past what it draws', () => {
 
 test('a box at the head of a heading is a Done button at the end of its line, and knows its line', () => {
   const { body } = render('# [ ] Gratitude\n\n# [x] Ways\n');
-  assert.match(body, /<h1 class="task-heading"[^>]*><span class="section-title">Gratitude<\/span><button type="button" class="section-done" data-line="0" data-done="false" data-own="false" data-full="false" data-on="# \[x\] Gratitude" data-off="# \[ \] Gratitude" aria-label="Done: Gratitude" aria-pressed="false"><\/button><\/h1>/);
-  assert.match(body, /<h1 class="task-heading"[^>]*><span class="section-title">Ways<\/span><button [^>]*data-line="2" data-done="true" data-own="true" [^>]*aria-pressed="true"><\/button><\/h1>/);
+  assert.match(body, /<h1 class="task-heading" aria-labelledby="section-0"><span class="section-title" id="section-0">Gratitude<\/span><button type="button" class="section-done" data-line="0" data-done="false" data-own="false" data-full="false" data-on="# \[x\] Gratitude" data-off="# \[ \] Gratitude" aria-label="Done: Gratitude" aria-pressed="false"><\/button><\/h1>/);
+  assert.match(body, /<h1 class="task-heading"[^>]*><span class="section-title" id="section-2">Ways<\/span><button [^>]*data-line="2" data-done="true" data-own="true" [^>]*aria-pressed="true"><\/button><\/h1>/);
   assert.doesNotMatch(body, /<input/, 'no box before its title');
 });
 

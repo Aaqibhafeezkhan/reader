@@ -40,10 +40,12 @@ test('a page is done when its first heading\'s section is, by its own box or by 
     '# [ ] Today\n\n- ( ) Navy Day\n\n## [ ] Ways\n\n- [x] Read',
     '# Plain\n\n## [x] Ways\n\n- [ ] Read, though the section says it\'s done\n\n## More\n\n- [x] Watch',
     '# Plain\n\n## [ ] Ways\n\n- [ ] Read',
+    // A section after a done one is a part of its own, and so is a task beside a heading's.
+    '# Plain\n\n## [x] Ticked\n\n## [ ] Ways\n\n- [ ] Read',
   ].join('\n\n---\n\n');
   const marks = drawn(SECTIONS).map((p, i) => mark(p.body, i));
-  assert.deepEqual(marks.map((m) => m.done), [true, false, true, false]);
-  assert.deepEqual(marks.map((m) => m.title), ['Today', 'Today', 'Plain', 'Plain'], 'a Done button is no part of the title');
+  assert.deepEqual(marks.map((m) => m.done), [true, false, true, false, false]);
+  assert.deepEqual(marks.map((m) => m.title), ['Today', 'Today', 'Plain', 'Plain', 'Plain'], 'a Done button is no part of the title');
 });
 
 test('a slide counts alike, though nothing on it can be ticked', () => {

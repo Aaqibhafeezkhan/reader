@@ -286,6 +286,29 @@ test('a section shows it\'s done once everything in it is, and undone once one i
   assert.deepEqual(said, ['true', 'false']);
 });
 
+test('as the page changes, a section with nothing to do stays done only by its button, and one after a done sibling still counts', async () => {
+  const { $$, click, edits } = await page('# [ ] Day\n\n## [ ] Empty\n\nWords.\n\n## [x] Ticked\n\n## [ ] Ways\n\n- [ ] Read\n- [ ] Watch\n');
+  const [day, empty, , ways] = $$('.section-done');
+  const [read, watch] = $$('.task-box');
+  click(read);
+  await edits();
+  assert.equal(empty.getAttribute('aria-pressed'), 'false', 'nothing in it, so not done by it');
+  assert.equal(ways.getAttribute('aria-pressed'), 'false');
+  click(watch);
+  await edits();
+  assert.equal(ways.getAttribute('aria-pressed'), 'true');
+  assert.equal(day.getAttribute('aria-pressed'), 'false', 'Empty is still not done');
+  // With only a done section before it, Ways undone leaves its heading undone.
+  const second = await page('# [ ] Day\n\n## [x] Ticked\n\n## [ ] Ways\n\n- [ ] Read\n');
+  const box = second.$('.task-box');
+  second.click(box);
+  await second.edits();
+  assert.equal(second.$$('.section-done')[0].getAttribute('aria-pressed'), 'true');
+  second.click(box);
+  await second.edits();
+  assert.equal(second.$$('.section-done')[0].getAttribute('aria-pressed'), 'false', 'Ways, after Ticked, is still one of its parts');
+});
+
 test('Start over clears a section\'s own [x] too', async () => {
   const { $, $$, click, edits } = await page(DAY.replace('## [ ] Ways', '## [x] Ways').replace('- [ ] Read', '- [x] Read'));
   const ways = $$('.section-done')[1];

@@ -4,14 +4,13 @@
 // Refuses to overwrite anything.
 //   node review-open.mjs <YYYY-MM-DD> --branch review/YYYY.MM.DD --tag 0.0.4 --look 221,237 --done 240,116 [--root <meetings dir>]
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
-import { carried } from './retro-carry.mjs';
-import { standing } from './batch-start.mjs';
+import { config, reviewers, tilde } from '../../lib/config.mjs';
+import { link, standing, title } from '../../lib/issues.mjs';
+import { carried, lastRetro as lastRetroOf } from '../../lib/retros.mjs';
 
-const REPO = 'jzheaux/reader';
-const REVIEWERS = 'reviewer #: Josh\nreviewer c: Claude';
+const c = config();
+const REVIEWERS = reviewers(c);
 const args = process.argv.slice(2);
 const date = args[0];
 const opt = (name, or = '') => {
@@ -19,16 +18,14 @@ const opt = (name, or = '') => {
   return i < 0 ? or : args[i + 1];
 };
 const list = (name) => opt(name).split(',').filter(Boolean);
-const root = path.resolve(opt('root', path.join(os.homedir(), 'Documents/self/io/reader/meetings')));
+const root = path.resolve(opt('root', c.meetings));
 const branch = opt('branch', `review/${(date ?? '').replaceAll('-', '.')}`);
-const worktree = `~/code/jzheaux/reader/.claude/worktrees/${branch.replace('/', '-')}`;
+const worktree = tilde(path.join(c.main, '.claude', 'worktrees', branch.replace('/', '-')));
 if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? '')) {
   console.error('usage: review-open.mjs <YYYY-MM-DD> --branch <b> --tag <t> --look 1,2 --done 3,4 [--root <dir>]');
   process.exit(2);
 }
 
-const title = (n) => execFileSync('gh', ['issue', 'view', n, '-R', REPO, '--json', 'title', '-q', '.title'], { encoding: 'utf8' }).replace(/\s+/g, ' ').trim();
-const link = (n) => `gh:${REPO}#${n}[gh-${n}]`;
 const looks = list('look').map((n) => ({ n, title: title(n) }));
 const dones = list('done').map((n) => ({ n, title: title(n) }));
 const day = path.join(root, date);
@@ -56,15 +53,15 @@ multibox:
 <fill: one line on what this batch is.>
 Branch \`${branch}\` (worktree \`.claude/worktrees/${branch.replace('/', '-')}\`): <fill: counts of issues, commits, tests, lint, what's pushed>.
 
-- [ ] Send to Claude
+- [ ] Send to ${c.ai}
 
-Each item below has a file and a box of its own: tick its **Send to Claude** when you've written in it, and I'll answer only that file while you carry on with the next.
+Each item below has a file and a box of its own: tick its **Send to ${c.ai}** when you've written in it, and I'll answer only that file while you carry on with the next.
 This box is for anything in this page, or for everything at once.
 
 To try it, run the branch's reader. It restarts itself when reader's code changes, and opens no new tab; I'll say when to reload the page.
 
 \`\`\`sh
-node --watch ${worktree}/bin/reader.js ~/Documents/self/io/reader/meetings/${date} --port 8734 --no-browser
+node --watch ${worktree}/bin/reader.js ${tilde(day)} --port 8734 --no-browser
 \`\`\`
 
 ## Please look
@@ -106,7 +103,7 @@ ${REVIEWERS}
 
 ← [review](../review.md)
 
-- [ ] Send to Claude
+- [ ] Send to ${c.ai}
 
 # [ ] Review
 progress:[]
@@ -132,7 +129,7 @@ All the following criteria must be accepted for this review to be complete.
 
    <fill: what it's about. A thing only to make you aware has no question; a settled decision is ticked, with why and what was turned down.>
 
-   Q (Claude): <fill>?
+   Q (${c.ai}): <fill>?
    - ( ) Yes
    - ( ) [@ Something else]
 
@@ -140,23 +137,23 @@ All the following criteria must be accepted for this review to be complete.
 
 <fill: compare gh-${n} with what shipped, and give your reasoning.>
 
-Q (Claude): Does ${link(n)} still describe what shipped?
+Q (${c.ai}): Does ${link(n)} still describe what shipped?
 - ( ) The issue stands
 - ( ) The issue stands, with a closing comment on what went beyond it
 - ( ) A PR replaces it
 - ( ) [@ Something else]
 `;
 
-const lastRetro = fs.existsSync(root) ? fs.readdirSync(root).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d) && d < date && fs.existsSync(path.join(root, d, 'retro.md'))).sort().pop() : null;
-const tries = lastRetro ? carried(fs.readFileSync(path.join(root, lastRetro, 'retro.md'), 'utf8')) : [];
+const lastRetro = lastRetroOf(root, date);
+const tries = lastRetro ? carried(fs.readFileSync(lastRetro, 'utf8')) : [];
 const retro = `---
 title: Retro ${date}
 ${REVIEWERS}
 ---
 
 How [the review](review.md) of date:${date}[] went.
-Add your own cards anywhere, \`+1\` the ones you agree with, and answer a card with \`A (Josh):\` under it.
-I'll answer under yours with \`A (Claude):\`, one discussion at a time.
+Add your own cards anywhere, \`+1\` the ones you agree with, and answer a card with \`A (${c.contributor}):\` under it.
+I'll answer under yours with \`A (${c.ai}):\`, one discussion at a time.
 
 ## Good
 
@@ -173,4 +170,4 @@ for (const l of looks) {
   fs.mkdirSync(path.join(day, `gh-${l.n}`, 'shots'), { recursive: true });
 }
 write('retro.md', retro);
-if (lastRetro) console.log(`carried ${tries.length} untried Tries from ${lastRetro}`);
+if (lastRetro) console.log(`carried ${tries.length} untried Tries from ${path.relative(root, lastRetro)}`);

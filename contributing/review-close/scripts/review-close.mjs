@@ -4,9 +4,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { boxes, files, open } from './asides-open.mjs';
+import { boxes, files, open } from '../../lib/asides-open.mjs';
+import { config, literal } from '../../lib/config.mjs';
 
 const [dayArg, worktree] = process.argv.slice(2);
+if (!dayArg || !worktree) {
+  console.error('usage: review-close.mjs <day folder> <worktree>');
+  process.exit(2);
+}
+const c = config();
 const day = path.resolve(dayArg);
 const git = (...a) => execFileSync('git', ['-C', worktree, ...a], { encoding: 'utf8' }).trim();
 const problems = [];
@@ -24,7 +30,9 @@ check(spawnSync('git', ['-C', worktree, 'merge-base', '--is-ancestor', 'main', '
 
 const log = git('log', 'main..HEAD', '--format=%B');
 const index = fs.readFileSync(path.join(day, 'review.md'), 'utf8');
-const issues = [...new Set([...index.matchAll(/^(?:- \[[ x]\](?:\[[ x]\]\[[ x]\])?|#+) .*?gh:jzheaux\/reader#(\d+)/gm), ...index.matchAll(/\((?:review\/gh-(\d+)\.md|gh-(\d+)\/review\.md)\), gh:/g)].map((m) => m[1] ?? m[2]))];
+// An issue in the index: a box or heading with its gh: link, or an item's file link followed by one.
+const listed = new RegExp(String.raw`^(?:- \[[ x]\](?:\[[ x]\]\[[ x]\])?|#+) .*?gh:${literal(c.repo)}#(\d+)`, 'gm');
+const issues = [...new Set([...index.matchAll(listed), ...index.matchAll(/\((?:review\/gh-(\d+)\.md|gh-(\d+)\/review\.md)\), gh:/g)].map((m) => m[1] ?? m[2]))];
 for (const n of issues) check(new RegExp(`closes gh-${n}\\b`, 'i').test(log), `a merge closes gh-${n}`);
 
 for (const [cmd, ...a] of [['npm', 'test'], ['npm', 'run', 'lint']]) {
@@ -49,7 +57,7 @@ check(!undecided.length, 'each item has its Closing, asking whether its issue st
 const left = boxes(day).filter((b) => !/fast-forward/.test(b.text));
 check(!left.length, 'no boxes left open', left.map((b) => `\n  ${b.at}: ${b.text.slice(0, 90)}`).join(''));
 const asides = open(day).filter((a) => !a.at.startsWith('retro.md'));
-check(!asides.length, 'no asides waiting on Claude', asides.map((a) => `\n  ${a.at}: ${a.text.slice(0, 90)}`).join(''));
+check(!asides.length, `no asides waiting on ${c.ai}`, asides.map((a) => `\n  ${a.at}: ${a.text.slice(0, 90)}`).join(''));
 // files() skips .reader, whose backups have directories named for each file.
 const fills = files(day).filter((f) => fs.readFileSync(f, 'utf8').includes('<fill'));
 check(!fills.length, 'nothing left as <fill>', fills.map((f) => path.relative(day, f)).join(', '));

@@ -1,9 +1,9 @@
-// What's waiting for Claude in a review folder: each `~#` aside with no `~c`
-// reply under it, and each retro card, answer or vote not Claude's with no
-// `A (Claude):` after it in its block. Shared by asides-watch.mjs and send-watch.mjs.
+// What's waiting for the AI in a review folder: each `~#` aside with no `~c`
+// reply under it, and each retro card, answer or vote not the AI's with no
+// `A (<ai>):` after it in its block. Shared by send-watch.mjs and review-close.mjs.
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { config, literal } from './config.mjs';
 
 export function files(dir) {
   const out = [];
@@ -16,8 +16,10 @@ export function files(dir) {
   return out;
 }
 
-export function open(root, dir = root) {
+export function open(root, dir = root, { ai } = config()) {
   const found = [];
+  const mine = new RegExp(`\\(${literal(ai)}\\)`);
+  const answer = new RegExp(`^A \\(${literal(ai)}\\):`);
   for (const f of files(dir)) {
     const lines = fs.readFileSync(f, 'utf8').split('\n');
     // What's in a fence is a sample, as in a card that sketches a syntax, not a thing to answer.
@@ -26,8 +28,8 @@ export function open(root, dir = root) {
       if (/^\s*(```|~~~)/.test(l)) { fence = !fence; return true; }
       return fence;
     });
-    // A try file may show an aside as a sample, so only an aside signed by Josh alone is his.
-    // `~# [x]` closes its thread, as gh-199 will: it, and his asides before it under the
+    // A try file may show an aside as a sample, so only an aside signed by the contributor alone is theirs.
+    // `~# [x]` closes its thread, as gh-199 will: it, and their asides before it under the
     // same line, wait on no one. A plain `~#` after it starts a new one.
     const closes = (s) => /^\s*~#\s+\[[xX]\]/.test(s);
     lines.forEach((l, i) => {
@@ -38,17 +40,17 @@ export function open(root, dir = root) {
       // the next line of text, a ~c is about that, and answers something else.
       for (let j = i + 1; j < lines.length && lines[j].trim(); j++) {
         if (/^\s*~c\b/.test(lines[j]) || closes(lines[j])) answered = true;
-        else if (!/^\s*~/.test(lines[j]) && !/^\s*(\`|\s)/.test(lines[j])) break;
+        else if (!/^\s*~/.test(lines[j]) && !/^\s*(`|\s)/.test(lines[j])) break;
       }
       if (!answered) found.push({ key: `${f}\u0000${l.trim()}`, at: `${path.relative(root, f)}:${i + 1}`, text: l.trim() });
     });
     // A card only means something to answer in a retro; a try file may just show one.
     if (path.basename(f) === 'retro.md') lines.forEach((l, i) => {
-      if (fenced[i] || !/^(Good|Bad|Try|Q|A|\+1)\b[^:]*:?/.test(l) || /\(Claude\)/.test(l)) return;
+      if (fenced[i] || !/^(Good|Bad|Try|Q|A|\+1)\b[^:]*:?/.test(l) || mine.test(l)) return;
       if (!/^(Good|Bad|Try|Q|A)( \[[ x]\])?( \([^)]*\))?:|^\+1/.test(l)) return;
       let answered = false;
       for (let j = i + 1; j < lines.length && lines[j].trim(); j++) {
-        if (/^A \(Claude\):/.test(lines[j])) answered = true;
+        if (answer.test(lines[j])) answered = true;
       }
       // A closed Good or Bad is finished with, whatever is under it.
       let top = i;
@@ -65,8 +67,9 @@ export function open(root, dir = root) {
 // fully ticked, a staged one (`- [x][ ][ ]`) included, but not the Send box; each
 // criterion, `1) [ ]`, not ticked; each `Try:` card not yet tried; and each set of
 // choices with none picked.
-export function boxes(root, dir = root) {
+export function boxes(root, dir = root, { ai } = config()) {
   const found = [];
+  const send = new RegExp(`Send to ${literal(ai)}\\b`);
   for (const f of files(dir).filter((p) => path.basename(p) === 'review.md' || path.basename(path.dirname(p)) === 'review')) {
     let fence = false;
     // A run of `- ( )` choices, asides allowed between them, is one question; it waits
@@ -94,7 +97,7 @@ export function boxes(root, dir = root) {
         return;
       }
       if (fence || !/^\s*[-*+] (\[[ xX]\])+/.test(l) || !/^\s*[-*+] (\[[xX]\])*\[ \]/.test(l)) return;
-      if (/Send to Claude\b/.test(l)) return;
+      if (send.test(l)) return;
       found.push({ at: `${path.relative(root, f)}:${i + 1}`, text: l.trim() });
     });
     endGroup();
@@ -102,13 +105,13 @@ export function boxes(root, dir = root) {
   return found;
 }
 
-// node asides-open.mjs <day folder>: both lists, for handing over a round.
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const dir = path.resolve(process.argv[2] || '.');
+// asides-open.mjs <day folder>: both lists, for handing over a round.
+export function main(argv) {
+  const dir = path.resolve(argv[0] || '.');
   const say = (title, list) => {
     console.log(`${title}: ${list.length}`);
     for (const a of list) console.log(`  ${a.at}: ${a.text.slice(0, 120)}`);
   };
-  say('Waiting on Claude', open(dir));
+  say(`Waiting on ${config().ai}`, open(dir));
   say('Waiting on you', boxes(dir));
 }

@@ -92,6 +92,15 @@ export default [
     ignores: FRAME,
     languageOptions: { sourceType: 'module', globals: globals.node },
   },
+  // The review skills' scripts; browse.mjs also hands functions to the page it drives.
+  {
+    files: ['contributing/**/*.mjs'],
+    languageOptions: { sourceType: 'module', globals: globals.node },
+  },
+  {
+    files: ['contributing/lib/browse.mjs'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
   // Each feature's files are its own, as a package's are in Java: see
   // `features` above.
   {

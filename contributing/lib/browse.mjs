@@ -252,7 +252,7 @@ async function safari(url) {
   // so whichever of those wasn't running before this run is ended with it.
   const automation = () => spawnSync('pgrep', ['-f', 'Safari Technology Preview.*--automation'], { encoding: 'utf8' }).stdout.split('\n').filter(Boolean);
   const before = new Set(automation());
-  enders.push(() => { for (const pid of automation()) if (!before.has(pid)) try { process.kill(Number(pid)); } catch {} });
+  enders.push(() => { for (const pid of automation()) if (!before.has(pid)) try { process.kill(Number(pid)); } catch { /* already gone */ } });
   const driver = spawn(STP, ['-p', String(port)], { stdio: ['ignore', 'pipe', 'pipe'] });
   enders.push(() => driver.kill());
   const base = `http://127.0.0.1:${port}`;
@@ -269,7 +269,7 @@ async function safari(url) {
       if (!/safaridriver/.test(r.headers.get('server') ?? '')) throw new Error(`port ${port} answered by ${r.headers.get('server') ?? 'something else'}`);
       break;
     } catch (e) {
-      if (i > 40) throw new Error(`safaridriver didn't start: ${e.message}`);
+      if (i > 40) throw new Error(`safaridriver didn't start: ${e.message}`, { cause: e });
       await new Promise((r) => setTimeout(r, 250));
     }
   }
@@ -311,7 +311,7 @@ async function safari(url) {
     const until = Date.now() + ms;
     for (;;) {
       try { return await call('POST', `${s0}/element`, { using: 'css selector', value: sel }); } catch (e) {
-        if (Date.now() > until) throw new Error(`${sel}: not found in ${ms} ms`);
+        if (Date.now() > until) throw new Error(`${sel}: not found in ${ms} ms`, { cause: e });
         await new Promise((r) => setTimeout(r, 150));
       }
     }
@@ -365,9 +365,9 @@ async function safari(url) {
       await call('POST', `${s0}/element/${idOf(ref)}/value`, { text: String(s.type) });
     },
     async press(s) {
-      const keys = { Enter: '', Tab: '', Escape: '', Backspace: '', ArrowLeft: '', ArrowUp: '', ArrowRight: '', ArrowDown: '' };
+      const keys = { Enter: '\uE007', Tab: '\uE004', Escape: '\uE00C', Backspace: '\uE003', ArrowLeft: '\uE012', ArrowUp: '\uE013', ArrowRight: '\uE014', ArrowDown: '\uE015' };
       // "Shift+Tab", as Playwright takes it: modifiers held down around the key.
-      const mods = { Shift: '', Control: '', Alt: '', Meta: '' };
+      const mods = { Shift: '\uE008', Control: '\uE009', Alt: '\uE00A', Meta: '\uE03D' };
       const parts = s.press.split('+');
       const k = keys[parts.at(-1)] ?? parts.at(-1);
       const held = parts.slice(0, -1).map((m) => mods[m] ?? m);

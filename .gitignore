@@ -7,3 +7,6 @@ node_modules/
 .notes/
 desktop/dist/
 shots/
+.agents/
+.meetings/
+contributing/config.local.json

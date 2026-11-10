@@ -37,6 +37,18 @@ The checks are the same, so it's the same script, not a step of its own. An issu
 
 ## 2. Then lay out the work
 
-The branch is `review/YYYY.MM.DD`, named for its review date, in a worktree under `.claude/worktrees/`. Each issue goes on `issue/gh-N`, commits say `See gh-N`, and each merges `--no-ff` with `Closes gh-N`. Commits are signed off, `git commit -s`. Nothing is pushed until `review-close`.
+The git steps are scripted, so they come out the same each time; don't do them by hand.
+
+```sh
+node scripts/branch.mjs review <review date, YYYY-MM-DD>   # review/YYYY.MM.DD from main, in .claude/worktrees/review-YYYY.MM.DD
+node scripts/branch.mjs issue 221                           # issue/gh-221 from it, in .claude/worktrees/issue-gh-221
+node scripts/branch.mjs merge 221 --trailer "Co-Authored-By: <you> <email>"
+```
+
+- The review branch is named for its review date, normally tomorrow. Give `--date` to `issue` and `merge` when there's more than one review branch.
+- Work on each issue in its own worktree, so issues can go side by side. Every commit there is signed off, `git commit -s`, and ends `See gh-N`, its own paragraph just before the trailers.
+- `merge` refuses a commit without `See gh-N`, and changes not committed. It merges `--no-ff` as `Merge issue/gh-N: <title>`, with `Closes gh-N`, the trailers you give and the sign-off, then removes the issue's worktree; the branch stays. If it stops on a conflict, resolve it in the review worktree and `git commit -s`, which keeps that message.
+- A follow-up to an issue already merged is a commit on the review branch ending `Polish gh-N`. A small change with no issue has no issue line.
+- Nothing is pushed until `review-close`.
 
 When the batch is merged, use `review-open`.

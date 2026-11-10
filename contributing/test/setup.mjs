@@ -34,6 +34,8 @@ export function settings(dir, { gh = { issues: {} }, ...over } = {}) {
   fs.writeFileSync(data, JSON.stringify(gh));
   return {
     READER_CONFIG: path.join(dir, 'no-config.json'),
+    // A checkout of its own, which a test that needs git makes with repo().
+    READER_CHECKOUT: path.join(dir, 'reader'),
     READER_MEETINGS: path.join(dir, 'meetings'),
     READER_REPO: 'acme/reader',
     READER_CONTRIBUTOR: 'Ada',

@@ -7,8 +7,8 @@
 //   contributor  READER_CONTRIBUTOR  the first word of git config user.name
 //   ai           READER_AI           Claude
 //
-// READER_CONFIG names a file to read in place of config.local.json, and READER_GH a script
-// to run with Node in place of gh, as the tests do.
+// READER_CONFIG names a file to read in place of config.local.json, READER_GH a script
+// to run with Node in place of gh, and READER_CHECKOUT another main checkout, as the tests do.
 //
 // The main checkout is the one every worktree shares, so a review's day folders and
 // settings are the same whichever worktree a script runs from.
@@ -41,7 +41,7 @@ export function mainCheckout(from = HERE) {
 }
 
 export function load({ env = process.env, from = HERE } = {}) {
-  const main = mainCheckout(from);
+  const main = env.READER_CHECKOUT ? path.resolve(untilde(env.READER_CHECKOUT)) : mainCheckout(from);
   // What git and gh run with: this process's environment, with what was given over it.
   const child = { ...process.env, ...env };
   // READER_CONFIG names another file, or none, as the tests do with a path that isn't there.

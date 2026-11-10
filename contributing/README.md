@@ -34,4 +34,4 @@ None needs setting.
 ```
 
 `node contributing/lib/config.mjs` prints what's in use.
-`READER_CONFIG` names a file to read in place of `config.local.json`.
+`READER_CONFIG` names a file to read in place of `config.local.json`, and `READER_CHECKOUT` a checkout to work on in place of this one; the tests use both.

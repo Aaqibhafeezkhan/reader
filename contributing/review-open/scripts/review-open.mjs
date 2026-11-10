@@ -2,10 +2,14 @@
 // each item to look at, holding its review.md, try files and shots/, and
 // retro.md with the last retro's untried Tries carried in. Fills in what a script can know; the rest is <fill>.
 // Refuses to overwrite anything.
-//   node review-open.mjs <YYYY-MM-DD> --branch review/YYYY.MM.DD --tag 0.0.4 --look 221,237 --done 240,116 [--root <meetings dir>]
+// The index's first line counts what's on the branch, if its worktree is there (counts.mjs);
+// --no-checks counts without running npm test and lint.
+//   node review-open.mjs <YYYY-MM-DD> --branch review/YYYY.MM.DD --tag 0.0.4 --look 221,237 --done 240,116 [--root <meetings dir>] [--no-checks]
 import fs from 'node:fs';
 import path from 'node:path';
 import { config, reviewers, tilde } from '../../lib/config.mjs';
+import { counts, line } from '../../lib/counts.mjs';
+import { worktreeFor } from '../../lib/git.mjs';
 import { link, standing, title } from '../../lib/issues.mjs';
 import { carried, lastRetro as lastRetroOf } from '../../lib/retros.mjs';
 
@@ -20,7 +24,7 @@ const opt = (name, or = '') => {
 const list = (name) => opt(name).split(',').filter(Boolean);
 const root = path.resolve(opt('root', c.meetings));
 const branch = opt('branch', `review/${(date ?? '').replaceAll('-', '.')}`);
-const worktree = tilde(path.join(c.main, '.claude', 'worktrees', branch.replace('/', '-')));
+const worktree = tilde(worktreeFor(c.main, branch));
 if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? '')) {
   console.error('usage: review-open.mjs <YYYY-MM-DD> --branch <b> --tag <t> --look 1,2 --done 3,4 [--root <dir>]');
   process.exit(2);
@@ -29,6 +33,9 @@ if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? '')) {
 const looks = list('look').map((n) => ({ n, title: title(n) }));
 const dones = list('done').map((n) => ({ n, title: title(n) }));
 const day = path.join(root, date);
+const where = fs.existsSync(worktreeFor(c.main, branch))
+  ? line(counts(worktreeFor(c.main, branch), { checks: !args.includes('--no-checks') }))
+  : '<fill: counts of issues, commits, tests, lint, what\'s pushed>';
 
 // A net for what got past batch-start: an item still offered to contributors.
 for (const { n } of [...looks, ...dones]) {
@@ -51,7 +58,7 @@ multibox:
 ---
 
 <fill: one line on what this batch is.>
-Branch \`${branch}\` (worktree \`.claude/worktrees/${branch.replace('/', '-')}\`): <fill: counts of issues, commits, tests, lint, what's pushed>.
+Branch \`${branch}\` (worktree \`.claude/worktrees/${branch.replace('/', '-')}\`): ${where}.
 
 - [ ] Send to ${c.ai}
 

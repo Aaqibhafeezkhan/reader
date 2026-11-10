@@ -21,11 +21,11 @@ The file is the decision of record, and the contributor reads it in reader. Writ
 node scripts/review-open.mjs <date> --branch review/<Y.M.D> --tag <milestone> --look 221,237 --done 240,116
 ```
 
-Give `--look` in the order they should look at them; the index lists them in that order. It writes `review.md` (the index), a folder `gh-N/` for each item to look at, holding its `review.md` and `shots/`, and `retro.md` with the last retro's untried Tries carried in. Then replace every `<fill>`. `review-close` fails on any that's left.
+Give `--look` in the order they should look at them; the index lists them in that order. It writes `review.md` (the index), a folder `gh-N/` for each item to look at, holding its `review.md` and `shots/`, and `retro.md` with the last retro's untried Tries carried in. If the branch's worktree is there, the index's first line already says where it stands, from `scripts/counts.mjs` (`--no-checks` counts without running the tests and lint). Then replace every `<fill>`. `review-close` fails on any that's left.
 
 ## 3. Fill in the index, `review.md`
 
-- **The first lines answer "where are we?"**: the branch, counts of issues, commits and tests, whether lint is clean, what's pushed.
+- **The first lines answer "where are we?"**: the branch, counts of issues, commits and tests, whether lint is clean, what's pushed. Run `node scripts/counts.mjs <worktree>` again before handing over, if anything's been committed since.
 - **The order** is: where we are and **Send to <ai>**; **Please look**; **Done, nothing to look at**; **Found along the way**; and last, `## [ ] Before merging`, so that the page reads as the merge waiting on everything above it.
 - **Before merging** lists what only the contributor can do about the whole batch, as `- [ ]`, then **Waiting on me**, **Waiting on a contributor** and what's left in the milestone, and ends with "Then: fast-forward `main`, push." as its last box. Never a box to look at the items, which their staged boxes and `# [ ] Review` already say, and never a check for one item, which goes in its **Acceptance Criteria**.
 - **Please look** items go in the order to look at them, said in a line above them ("Start with gh-237, as …"). Each is a `###` heading named for what it does, so that the outline lists it, with its staged box and one line of status under it.

@@ -164,10 +164,17 @@ I'll answer under yours with \`A (${c.ai}):\`, one discussion at a time.
 ${tries.join('\n\n')}
 `;
 
+// Nothing is written if any of it is there already, so a second run changes nothing.
+const targets = ['review.md', ...looks.map((l) => `gh-${l.n}/review.md`), 'retro.md'];
+const there = targets.filter((rel) => fs.existsSync(path.join(day, rel)));
+if (there.length) {
+  console.error(`already there, so nothing written: ${there.map((rel) => path.join(day, rel)).join(', ')}`);
+  process.exit(1);
+}
 write('review.md', index);
 for (const l of looks) {
   write(`gh-${l.n}/review.md`, item(l));
   fs.mkdirSync(path.join(day, `gh-${l.n}`, 'shots'), { recursive: true });
 }
 write('retro.md', retro);
-if (lastRetro) console.log(`carried ${tries.length} untried Tries from ${path.relative(root, lastRetro)}`);
+if (lastRetro) console.log(`carried ${tries.length} untried Tries from ${path.relative(root, lastRetro).split(path.sep).join("/")}`);

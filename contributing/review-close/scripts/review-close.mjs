@@ -36,7 +36,8 @@ const issues = [...new Set([...index.matchAll(listed), ...index.matchAll(/\((?:r
 for (const n of issues) check(new RegExp(`closes gh-${n}\\b`, 'i').test(log), `a merge closes gh-${n}`);
 
 for (const [cmd, ...a] of [['npm', 'test'], ['npm', 'run', 'lint']]) {
-  const run = spawnSync(cmd, a, { cwd: worktree, encoding: 'utf8' });
+  // npm is npm.cmd on Windows, which only a shell runs.
+  const run = spawnSync(cmd, a, { cwd: worktree, encoding: 'utf8', shell: process.platform === 'win32' });
   check(run.status === 0, [cmd, ...a].join(' '), (run.stdout + run.stderr).split('\n').slice(-12).join('\n'));
 }
 
@@ -60,7 +61,7 @@ const asides = open(day).filter((a) => !a.at.startsWith('retro.md'));
 check(!asides.length, `no asides waiting on ${c.ai}`, asides.map((a) => `\n  ${a.at}: ${a.text.slice(0, 90)}`).join(''));
 // files() skips .reader, whose backups have directories named for each file.
 const fills = files(day).filter((f) => fs.readFileSync(f, 'utf8').includes('<fill'));
-check(!fills.length, 'nothing left as <fill>', fills.map((f) => path.relative(day, f)).join(', '));
+check(!fills.length, 'nothing left as <fill>', fills.map((f) => path.relative(day, f).split(path.sep).join('/')).join(', '));
 
 for (const p of problems) console.log(`FAIL  ${p}`);
 console.log(problems.length ? `${problems.length} in the way` : 'ready: ask before pushing');

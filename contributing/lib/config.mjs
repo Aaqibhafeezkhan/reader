@@ -7,6 +7,9 @@
 //   contributor  READER_CONTRIBUTOR  the first word of git config user.name
 //   ai           READER_AI           Claude
 //
+// READER_CONFIG names a file to read in place of config.local.json, and READER_GH a script
+// to run with Node in place of gh, as the tests do.
+//
 // The main checkout is the one every worktree shares, so a review's day folders and
 // settings are the same whichever worktree a script runs from.
 import fs from 'node:fs';
@@ -17,13 +20,16 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
-const run = (cmd, args, cwd) => {
+const run = (cmd, args, cwd, env = process.env) => {
   try {
-    return execFileSync(cmd, args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    return execFileSync(cmd, args, { cwd, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
   } catch {
     return '';
   }
 };
+
+// gh, or for tests a script that stands in for it, READER_GH, run with this Node.
+export const ghCommand = (args, env = process.env) => (env.READER_GH ? [process.execPath, [env.READER_GH, ...args]] : ['gh', args]);
 
 // `~/x` as the home folder, as a shell would.
 export const untilde = (p) => (p === '~' || p.startsWith('~/') ? path.join(os.homedir(), p.slice(1)) : p);
@@ -36,7 +42,10 @@ export function mainCheckout(from = HERE) {
 
 export function load({ env = process.env, from = HERE } = {}) {
   const main = mainCheckout(from);
-  const file = path.join(main, 'contributing', 'config.local.json');
+  // What git and gh run with: this process's environment, with what was given over it.
+  const child = { ...process.env, ...env };
+  // READER_CONFIG names another file, or none, as the tests do with a path that isn't there.
+  const file = env.READER_CONFIG ? path.resolve(untilde(env.READER_CONFIG)) : path.join(main, 'contributing', 'config.local.json');
   let local = {};
   if (fs.existsSync(file)) {
     try {
@@ -55,8 +64,8 @@ export function load({ env = process.env, from = HERE } = {}) {
     return '';
   };
   // gh prints a sentence, not a repo, when none is set.
-  const ghRepo = () => /^[\w.-]+\/[\w.-]+$/.exec(run('gh', ['repo', 'set-default', '--view'], main))?.[0];
-  const gitName = () => run('git', ['config', 'user.name'], main).split(/\s+/)[0];
+  const ghRepo = () => /^[\w.-]+\/[\w.-]+$/.exec(run(...ghCommand(['repo', 'set-default', '--view'], env), main, child))?.[0];
+  const gitName = () => run('git', ['config', 'user.name'], main, child).split(/\s+/)[0];
   const out = {
     main,
     meetings: path.resolve(main, untilde(pick('meetings', 'READER_MEETINGS', () => '.meetings'))),

@@ -1,8 +1,8 @@
 // Reading issues from GitHub, through gh, for the configured repo.
 import { execFileSync } from 'node:child_process';
-import { config } from './config.mjs';
+import { config, ghCommand } from './config.mjs';
 
-const gh = (...a) => execFileSync('gh', [...a, '-R', config().repo], { encoding: 'utf8' });
+const gh = (...a) => execFileSync(...ghCommand([...a, '-R', config().repo]), { encoding: 'utf8' });
 const ghJSON = (...a) => JSON.parse(gh(...a));
 
 // An issue's title, on one line.

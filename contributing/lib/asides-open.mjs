@@ -5,6 +5,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { config, literal } from './config.mjs';
 
+// Where a line is, as `<path from root>:<line>`, with / between folders on every system.
+const where = (root, f, i) => `${path.relative(root, f).split(path.sep).join('/')}:${i + 1}`;
+
 export function files(dir) {
   const out = [];
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -42,7 +45,7 @@ export function open(root, dir = root, { ai } = config()) {
         if (/^\s*~c\b/.test(lines[j]) || closes(lines[j])) answered = true;
         else if (!/^\s*~/.test(lines[j]) && !/^\s*(`|\s)/.test(lines[j])) break;
       }
-      if (!answered) found.push({ key: `${f}\u0000${l.trim()}`, at: `${path.relative(root, f)}:${i + 1}`, text: l.trim() });
+      if (!answered) found.push({ key: `${f}\u0000${l.trim()}`, at: where(root, f, i), text: l.trim() });
     });
     // A card only means something to answer in a retro; a try file may just show one.
     if (path.basename(f) === 'retro.md') lines.forEach((l, i) => {
@@ -56,7 +59,7 @@ export function open(root, dir = root, { ai } = config()) {
       let top = i;
       while (top > 0 && lines[top - 1].trim()) top--;
       if (/^(Good|Bad) \[x\]/.test(lines[top])) answered = true;
-      if (!answered) found.push({ key: `${f}\u0000${l.trim()}`, at: `${path.relative(root, f)}:${i + 1}`, text: l.trim() });
+      if (!answered) found.push({ key: `${f}\u0000${l.trim()}`, at: where(root, f, i), text: l.trim() });
     });
   }
   return found;
@@ -82,23 +85,23 @@ export function boxes(root, dir = root, { ai } = config()) {
     fs.readFileSync(f, 'utf8').split('\n').forEach((l, i) => {
       if (/^\s*(```|~~~)/.test(l)) { endGroup(); fence = !fence; }
       if (!fence && /^\s*[-*+] \([ xX]\)/.test(l)) {
-        if (!group) group = { at: `${path.relative(root, f)}:${i + 1}`, text: l.trim(), picked: false };
+        if (!group) group = { at: where(root, f, i), text: l.trim(), picked: false };
         if (/^\s*[-*+] \([xX]\)/.test(l)) group.picked = true;
         return;
       }
       if (!fence && /^\s*~/.test(l) && group) return;
       endGroup();
       if (!fence && /^\s*@ [^:]*:\s*\([ xX]\)/.test(l) && !/\([xX]\)/.test(l)) {
-        found.push({ at: `${path.relative(root, f)}:${i + 1}`, text: l.trim() });
+        found.push({ at: where(root, f, i), text: l.trim() });
         return;
       }
       if (!fence && (/^\s*(\d+|[a-z])\) \[ \]/.test(l) || /^Try( \[ \])?( \([^)]*\))?:/.test(l))) {
-        found.push({ at: `${path.relative(root, f)}:${i + 1}`, text: l.trim() });
+        found.push({ at: where(root, f, i), text: l.trim() });
         return;
       }
       if (fence || !/^\s*[-*+] (\[[ xX]\])+/.test(l) || !/^\s*[-*+] (\[[xX]\])*\[ \]/.test(l)) return;
       if (send.test(l)) return;
-      found.push({ at: `${path.relative(root, f)}:${i + 1}`, text: l.trim() });
+      found.push({ at: where(root, f, i), text: l.trim() });
     });
     endGroup();
   }

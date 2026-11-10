@@ -37,18 +37,19 @@ export async function main(argv) {
           const ticked = m[1] !== ' ';
           // Already ticked when the watch starts counts too: it was sent while no one watched.
           if (ticked && (first || was.get(key) === false)) {
-            const day = path.relative(ROOT, f).split(path.sep)[0];
+            // Paths with /, as asides-open gives them, on every system.
+            const rel = path.relative(ROOT, f).split(path.sep).join('/');
+            const day = rel.split('/')[0];
             // The day's own review.md is about the whole day. An item's box, in gh-N/review.md, is
             // about everything in its folder. (Older days: review/gh-N.md, with the day's try/.)
-            const rel = path.relative(ROOT, f);
-            const dir = path.dirname(rel);
-            const whole = rel === path.join(day, 'review.md');
-            const legacy = path.basename(dir) === 'review';
+            const dir = path.posix.dirname(rel);
+            const whole = rel === `${day}/review.md`;
+            const legacy = path.posix.basename(dir) === 'review';
             const about = (w) => whole
               || (legacy ? w.at.startsWith(`${rel}:`) || w.at.startsWith(`${day}/try/`) || w.at.startsWith(`${rel.replace(/\.md$/, '')}/`)
                 : dir === day ? w.at.startsWith(`${rel}:`) : w.at.startsWith(`${dir}/`));
             const waiting = open(ROOT, path.join(ROOT, day)).filter(about);
-            console.log(`send ${path.relative(ROOT, f)}:${i + 1}: ${waiting.length} waiting${waiting.map((a) => `\n  ${a.at}: ${a.text.slice(0, 120)}`).join('')}`);
+            console.log(`send ${rel}:${i + 1}: ${waiting.length} waiting${waiting.map((a) => `\n  ${a.at}: ${a.text.slice(0, 120)}`).join('')}`);
             if (opt.once) process.exit(0);
           }
           was.set(key, ticked);

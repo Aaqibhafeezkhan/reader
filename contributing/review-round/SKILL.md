@@ -1,6 +1,6 @@
 ---
 name: review-round
-description: Answer a round of the contributor's review in reader-markdown files. Use when the Send to <ai> watcher fires or they say a review file is ready, and when something gets settled in chat during a review.
+description: Answer a round of the contributor's review in reader-markdown files. Use when the Send watcher fires or they say a review file is ready, and when something gets settled in chat during a review.
 ---
 
 # Answer a round

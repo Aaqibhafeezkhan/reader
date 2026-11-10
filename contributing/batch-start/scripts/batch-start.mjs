@@ -21,6 +21,8 @@ function wordings(text) {
 
 const c = config();
 const MEETINGS = c.meetings;
+// A path under the day folders, with / between folders on every system.
+const shown = (p) => path.relative(MEETINGS, p).split(path.sep).join('/');
 const args = process.argv.slice(2);
 const r = args.indexOf('--retro');
 const retro = r < 0 ? lastRetro(MEETINGS) : args.splice(r, 2)[1];
@@ -62,9 +64,9 @@ for (const n of nums.split(',').filter(Boolean)) {
 if (batch) {
   fs.mkdirSync(path.dirname(batch), { recursive: true });
   fs.writeFileSync(batch, text);
-  if (added.length) console.log(`ok    ${path.relative(MEETINGS, batch)}: added ${added.map((n) => `gh-${n}`).join(', ')}`);
+  if (added.length) console.log(`ok    ${shown(batch)}: added ${added.map((n) => `gh-${n}`).join(', ')}`);
   for (const [n, ticked] of wordings(text)) if (!ticked && nums.split(',').includes(n)) {
-    console.log(`WORD  gh-${n}: its wording isn't ticked in ${path.relative(MEETINGS, batch)}`);
+    console.log(`WORD  gh-${n}: its wording isn't ticked in ${shown(batch)}`);
     stop++;
   }
 } else {
@@ -72,10 +74,10 @@ if (batch) {
   stop++;
 }
 const left = retro ? owed(fs.readFileSync(retro, 'utf8')) : [];
-for (const o of left) console.log(`OWED  ${path.relative(MEETINGS, retro)}: ${o.card.slice(0, 90)}\n        Outcome: ${o.outcome}`);
+for (const o of left) console.log(`OWED  ${shown(retro)}: ${o.card.slice(0, 90)}\n        Outcome: ${o.outcome}`);
 if (left.length) {
   stop += left.length;
   console.log('        Do it before the batch, or file it as an issue, then add a later Outcome: to that card saying which.');
-} else if (retro) console.log(`ok    nothing waiting on me in ${path.relative(MEETINGS, retro)}`);
+} else if (retro) console.log(`ok    nothing waiting on me in ${shown(retro)}`);
 console.log(stop ? `${stop} to look at before starting` : 'ready to start');
 process.exit(stop ? 1 : 0);

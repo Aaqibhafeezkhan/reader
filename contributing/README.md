@@ -34,3 +34,4 @@ None needs setting.
 ```
 
 `node contributing/lib/config.mjs` prints what's in use.
+`READER_CONFIG` names a file to read in place of `config.local.json`.

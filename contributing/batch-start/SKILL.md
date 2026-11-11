@@ -48,6 +48,7 @@ node scripts/branch.mjs merge 221 --trailer "Co-Authored-By: <you> <email>"
 - The review branch is named for its review date, normally tomorrow. Give `--date` to `issue` and `merge` when there's more than one review branch.
 - Work on each issue in its own worktree, so issues can go side by side; `issue` links the review worktree's `node_modules` into it, and `merge` takes the link away. Every commit there is signed off, `git commit -s`, and ends `See gh-N`, its own paragraph just before the trailers.
 - `merge` refuses a commit without `See gh-N`, and changes not committed. It merges `--no-ff` as `Merge issue/gh-N: <title>`, with `Closes gh-N`, the trailers you give and the sign-off, then removes the issue's worktree; the branch stays. If it stops on a conflict, resolve it in the review worktree and `git commit -s`, which keeps that message.
+- Anything new that's seen is built to be seen and pressed by everyone from its first commit: 24 by 24 pixels to press, 3 to 1 for its marks, and drawn in the system's colours. Decided then, it's cheap; `review-open` checks it.
 - A follow-up to an issue already merged is a commit on the review branch ending `Polish gh-N`. A small change with no issue has no issue line.
 - Nothing is pushed until `review-close`.
 

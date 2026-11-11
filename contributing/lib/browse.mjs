@@ -6,8 +6,12 @@
 // folder, so nothing it clicks writes to a file that matters.
 //
 //   node browse.mjs <file.md> --steps <steps.json> --repo <reader checkout>
-//        [--browser chromium|webkit|firefox|safari] [--phone] [--out <dir>]
+//        [--browser chromium|webkit|firefox|safari] [--phone] [--zoom 2] [--forced-colors] [--out <dir>]
 //        [--step-timeout 8000] [--timeout 120000]
+//
+// --zoom 2 lays the page out as the browser's 200% would: half the window, at
+// twice the pixels. --forced-colors is the system's colours, as Windows' contrast
+// themes give. Both are Playwright's, so not for safari.
 //
 // safari is Safari Technology Preview, never the Safari you use: its own
 // safaridriver and its own windows. Once only, it needs
@@ -31,7 +35,7 @@
 //   { "wait": ".gm-doc", "frame": true }      until it's there
 //   { "until": "document.title !== ''", "frame": true }   until it's true
 //   { "eval": "document.querySelectorAll('.done').length", "frame": true }  prints it
-//   { "shot": "after-drag" }                  <out>/<browser>[-phone]-<name>.png
+//   { "shot": "after-drag" }                  <out>/<browser>[-phone][-zoom2][-forced]-<name>.png
 //   { "sleep": 300 }
 // Each step may also have "timeout" in ms. It stops at the first step that fails,
 // takes a shot named failed, and exits 1.
@@ -54,6 +58,8 @@ const { values: opt, positionals } = parseArgs({
     repo: { type: 'string', default: process.cwd() },
     browser: { type: 'string', default: 'chromium' },
     phone: { type: 'boolean', default: false },
+    zoom: { type: 'string', default: '1' },
+    'forced-colors': { type: 'boolean', default: false },
     out: { type: 'string', default: 'shots' },
     'step-timeout': { type: 'string', default: '8000' },
     timeout: { type: 'string', default: '120000' },
@@ -62,12 +68,21 @@ const { values: opt, positionals } = parseArgs({
 const file = positionals[0] && path.resolve(positionals[0]);
 const repo = path.resolve(opt.repo);
 if (!file || !opt.steps || !fs.existsSync(path.join(repo, 'bin/reader.js'))) {
-  console.error('usage: browse.mjs <file.md> --steps <steps.json> --repo <reader checkout> [--browser chromium|webkit|firefox|safari] [--phone] [--out <dir>]');
+  console.error('usage: browse.mjs <file.md> --steps <steps.json> --repo <reader checkout> [--browser chromium|webkit|firefox|safari] [--phone] [--zoom 2] [--forced-colors] [--out <dir>]');
   process.exit(2);
 }
 const steps = JSON.parse(fs.readFileSync(opt.steps, 'utf8'));
 const STEP_MS = Number(opt['step-timeout']);
-const label = `${opt.browser}${opt.phone ? '-phone' : ''}`;
+const zoom = Number(opt.zoom);
+if (!(zoom >= 1 && zoom <= 4)) {
+  console.error(`--zoom is from 1 to 4, not ${opt.zoom}`);
+  process.exit(2);
+}
+if (opt.browser === 'safari' && (zoom !== 1 || opt['forced-colors'])) {
+  console.error('--zoom and --forced-colors are for Playwright\'s browsers, not safari');
+  process.exit(2);
+}
+const label = `${opt.browser}${opt.phone ? '-phone' : ''}${zoom !== 1 ? `-zoom${opt.zoom}` : ''}${opt['forced-colors'] ? '-forced' : ''}`;
 fs.mkdirSync(opt.out, { recursive: true });
 
 // Everything to end, last started first. end() runs each once, whatever fails.
@@ -129,9 +144,13 @@ async function playwright(url) {
   const browser = await within(30000, 'starting the browser', pw[opt.browser].launch());
   enders.push(() => browser.close());
   const phone = opt.browser === 'webkit' ? pw.devices['iPhone 14'] : pw.devices['Pixel 7'];
+  const size = opt.phone ? PHONE : DESKTOP;
+  // Zoomed, the page has the room the window would have at that zoom.
+  const viewport = { width: Math.round(size.width / zoom), height: Math.round(size.height / zoom) };
+  const seen = { ...(zoom !== 1 ? { deviceScaleFactor: zoom } : {}), ...(opt['forced-colors'] ? { forcedColors: 'active' } : {}) };
   const context = await browser.newContext(opt.phone
-    ? { ...phone, viewport: PHONE, ...(opt.browser === 'firefox' ? { isMobile: undefined } : {}) }
-    : { viewport: DESKTOP, hasTouch: true });
+    ? { ...phone, viewport, ...seen, ...(opt.browser === 'firefox' ? { isMobile: undefined } : {}) }
+    : { viewport, hasTouch: true, ...seen });
   const page = await context.newPage();
   await within(15000, 'opening reader', page.goto(url));
   await within(15000, 'reader drawing', page.waitForSelector('#preview'));

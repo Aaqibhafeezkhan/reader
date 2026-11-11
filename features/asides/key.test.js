@@ -56,7 +56,7 @@ test("a colour an author names is the family's hue for it, which reads in light 
   const key = makeKey([readEntry('reviewer j: Josh, gold'), readEntry('reviewer m: Maria, navy'), readEntry('topic s: Style, #ffd700')]);
   assert.deepEqual([...key.values()].map((e) => e.color), ['var(--gm-amber)', 'var(--gm-blue)', '#ffd700']);
   const { body } = render('-----\nreviewer j: Josh, gold\ntopic c: Coherence, yellow\n-----\n\nWords.\n\n~jc Hm.\n');
-  assert.match(body, /<span class="gm-who" style="--by: var\(--gm-amber\)">Josh <b>1<\/b><\/span><span class="gm-topic" style="--topic: var\(--gm-amber\)">Coherence <b>1<\/b><\/span>/);
+  assert.match(body, /<button class="gm-who" type="button" data-filter="by" data-alias="j" aria-pressed="false" style="--by: var\(--gm-amber\)">Josh <b>1<\/b><\/button><button class="gm-topic" type="button" data-filter="about" data-alias="c" aria-pressed="false" style="--topic: var\(--gm-amber\)">Coherence <b>1<\/b><\/button>/);
 });
 
 test("a colour an author wrote that isn't the family's is marked for the page to keep readable, and the family's isn't", () => {
@@ -67,7 +67,8 @@ test("a colour an author wrote that isn't the family's is marked for the page to
   assert.equal(ownColor(null), false);
   const { body } = render('-----\nreviewer j: Josh, gold\nreviewer m: Maria, #ffd700\ntopic c: Coherence\ntopic s: Style, papayawhip\n-----\n\nWords.\n\n~jc Hm.\n~ms So.\n');
   // the legend: gold is the family's amber, and Coherence a dealt colour, both drawn as they're defined
-  assert.match(body, /<div class="gm-legend"><span class="gm-who" style="--by: var\(--gm-amber\)">Josh <b>1<\/b><\/span><span class="gm-who gm-own" style="--by: #ffd700">Maria <b>1<\/b><\/span><span class="gm-topic" style="--topic: var\(--gm-key-8\)">Coherence <b>1<\/b><\/span><span class="gm-topic gm-own" style="--topic: papayawhip">Style <b>1<\/b><\/span><\/div>/);
+  const chips = /<div class="gm-legend"[^>]*>([\s\S]*?)<\/div>/.exec(body)[1].replace(/ type="button" data-filter="\w+" data-alias="." aria-pressed="false"/g, '').replace(/<button type="button" class="gm-legend-clear"[^>]*>×<\/button>/, '');
+  assert.equal(chips, '<button class="gm-who" style="--by: var(--gm-amber)">Josh <b>1</b></button><button class="gm-who gm-own" style="--by: #ffd700">Maria <b>1</b></button><button class="gm-topic" style="--topic: var(--gm-key-8)">Coherence <b>1</b></button><button class="gm-topic gm-own" style="--topic: papayawhip">Style <b>1</b></button>');
   // and an aside's chips
   assert.match(body, /<span class="gm-by"><span class="gm-who">Josh<\/span><span class="gm-topic" style="--topic: var\(--gm-key-8\)">Coherence<\/span><\/span>Hm./);
   assert.match(body, /<span class="gm-by"><span class="gm-who gm-own">Maria<\/span><span class="gm-topic gm-own" style="--topic: papayawhip">Style<\/span><\/span>So./);
@@ -103,11 +104,11 @@ test('without a key, or with none of its aliases, `~word` is text as before', ()
 
 test('the columns show chips, the reviewer\'s colour, and a legend', () => {
   const { body } = render(`${KEY}One.\n\n~#c Contradicts.\n\nTwo.\n\n~cx Also.\n\n~ Mine.\n`);
-  assert.match(body, /<div class="gm-aside-cell gm-attributed" role="note" style="--by: var\(--gm-key-1\)">\n<p><span class="gm-by"><span class="gm-who">Josh<\/span><span class="gm-topic" style="--topic: var\(--gm-key-8\)">Coherence<\/span><\/span>Contradicts.<\/p>/);
+  assert.match(body, /<div class="gm-aside-cell gm-attributed" role="note" style="--by: var\(--gm-key-1\)" data-by="#" data-about="c">\n<p><span class="gm-by"><span class="gm-who">Josh<\/span><span class="gm-topic" style="--topic: var\(--gm-key-8\)">Coherence<\/span><\/span>Contradicts.<\/p>/);
   // A topic alone keeps the usual rule; an undeclared alias is marked.
-  assert.match(body, /<div class="gm-aside-cell gm-attributed" role="note">\n<p><span class="gm-by"><span class="gm-topic"[^>]*>Coherence<\/span><span class="gm-unknown"[^>]*>x\?<\/span><\/span>Also.<\/p>/);
+  assert.match(body, /<div class="gm-aside-cell gm-attributed" role="note" data-about="c">\n<p><span class="gm-by"><span class="gm-topic"[^>]*>Coherence<\/span><span class="gm-unknown"[^>]*>x\?<\/span><\/span>Also.<\/p>/);
   assert.match(body, /<span class="gm-mark" aria-hidden="true">~<\/span>Mine./);
-  assert.match(body, /<div class="gm-legend"><span class="gm-who" style="--by: var\(--gm-key-1\)">Josh <b>1<\/b><\/span><span class="gm-topic" style="--topic: var\(--gm-key-8\)">Coherence <b>2<\/b><\/span><\/div>/);
+  assert.match(body, /<div class="gm-legend" role="group" aria-label="Show the asides of"><button class="gm-who" type="button" data-filter="by" data-alias="#" aria-pressed="false" style="--by: var\(--gm-key-1\)">Josh <b>1<\/b><\/button><button class="gm-topic" type="button" data-filter="about" data-alias="c" aria-pressed="false" style="--topic: var\(--gm-key-8\)">Coherence <b>2<\/b><\/button><button type="button" class="gm-legend-clear" aria-label="Show every aside" hidden>×<\/button><\/div>/);
   // The key isn't masthead meta.
   assert.doesNotMatch(body, /reviewer #/);
 });

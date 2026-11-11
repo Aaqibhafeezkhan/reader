@@ -9,14 +9,14 @@ const KEY = '-----\ntopic a: adjectives, circle\ntopic v: verbs, teal, highlight
 const marks = (body) => [...body.matchAll(/<span class="mk mk-(\w+)" role="mark"(?: title="[^"]*")?(?: style="--mk: ([^"]+)")? data-mark="([^"]+)">([^<]*)/g)]
   .map(([, style, color, id, text]) => ({ id, style, color, text }));
 /** Each aside about words: the mark it's tied to and the words it set at its start. */
-const tied = (body) => [...body.matchAll(/<div class="gm-aside-cell[^"]*" role="note"(?: style="[^"]*")?(?: data-mark="([^"]+)")?(?: data-in-tab="\d+")?>\n<p>(?:<span class="gm-by">.*?<\/span><\/span>|<span class="gm-mark" aria-hidden="true">~<\/span>)?<q class="mk-about[^"]*"[^>]*>([^<]*)<\/q>/g)]
+const tied = (body) => [...body.matchAll(/<div class="gm-aside-cell[^"]*" role="note"(?: style="[^"]*")?(?: data-mark="([^"]+)")?(?: data-by="[^"]*")?(?: data-about="[^"]*")?(?: data-in-tab="\d+")?>\n<p>(?:<span class="gm-by">.*?<\/span><\/span>|<span class="gm-mark" aria-hidden="true">~<\/span>)?<q class="mk-about[^"]*"[^>]*>([^<]*)<\/q>/g)]
   .map(([, id, words]) => ({ id, words }));
 
 test('an aside marks the words it names in the line above, in its topic\'s colour and style', () => {
   const { body } = render(`${KEY}the quick brown fox\n~a[quick] nice job\n`);
   assert.deepEqual(marks(body), [{ id: 'mk-1', style: 'circle', color: 'var(--gm-key-8)', text: 'quick' }]);
   assert.deepEqual(tied(body), [{ id: 'mk-1', words: 'quick' }]);
-  assert.match(body, /<div class="gm-aside-cell gm-attributed" role="note" style="--mk: var\(--gm-key-8\)" data-mark="mk-1">/);
+  assert.match(body, /<div class="gm-aside-cell gm-attributed" role="note" style="--mk: var\(--gm-key-8\)" data-mark="mk-1" data-about="a">/);
   assert.match(body, /<\/q>nice job<\/p>/);
 });
 
@@ -121,7 +121,7 @@ test('an aside written in a tab marks its words there, and shows with that tab',
   const { body } = render(`${KEY}::: tabs\n+++ Source\n~~~markdown\nthe quick brown fox\n~a[quick] nice\n~~~\n+++ Rendered\nthe quick brown fox\n~a[quick] nice\n:::\n`);
   assert.deepEqual(marks(body).map((m) => m.text), ['quick']);
   assert.deepEqual(tied(body), [{ id: 'mk-1', words: 'quick' }]);
-  assert.match(body, /<div class="gm-aside-cell gm-attributed" role="note" style="[^"]*" data-mark="mk-1" data-in-tab="2">/);
+  assert.match(body, /<div class="gm-aside-cell gm-attributed" role="note" style="[^"]*" data-mark="mk-1" data-about="a" data-in-tab="2">/);
 });
 
 test('an aside after a tabs block, or in none, is beside it whichever tab shows', () => {

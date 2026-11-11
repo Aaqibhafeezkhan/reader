@@ -353,6 +353,8 @@
     Preview.workable = !m.deck;
     // Run, in Work or on a slide, rather than written, in Edit.
     Preview.running = Boolean(m.deck || m.working);
+    // How the page is set to be seen, as the address says.
+    Preview.address = m.address && typeof m.address === 'object' ? m.address : {};
     // What features and puzzles were in the middle of carries over.
     Preview.replace(document.body, () => {
       // Put together out of the page first, so no image is asked for
@@ -456,6 +458,9 @@
       giveBack();
     } else if (m.type === 'tab') {
       tab(m.back, null);
+    } else if (m.type === 'address') {
+      Preview.address = m.params && typeof m.params === 'object' ? m.params : {};
+      window.dispatchEvent(new Event('preview:address'));
     }
   });
 

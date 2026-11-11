@@ -6,7 +6,9 @@
  * the fonts arriving, and just before printing. An aside that isn't beside
  * its words (a page too narrow for the margin) gets no line: it names the
  * words at its start. A thread's box, ticked, writes its aside's `[x]`
- * (gh-199). Runs in the preview frame.
+ * (gh-199). The legend's chips filter the asides by who and what about,
+ * dimming the rest, as the address keeps it (gh-21). Runs in the preview
+ * frame.
  */
 (() => {
   const NS = 'http://www.w3.org/2000/svg';
@@ -141,5 +143,52 @@
     const line = Number(box.dataset.line);
     const as = (on) => (on ? box.dataset.on : box.dataset.off);
     Preview.edit([{ from: line, to: line + 1, before: [as(box.defaultChecked)], after: [as(box.checked)] }], { undo: true });
+  });
+
+  // The legend's filter (gh-21): its chips toggle which reviewers' and which
+  // topics' asides show, any of the reviewers picked, and any of the topics,
+  // both when both are; the others are dimmed, not taken away, so where they
+  // are still shows. A thread shows when any voice in it does, and its other
+  // replies are dimmed. The writer's own asides aren't filtered. It's kept
+  // in the address, `?by=%23&about=c`, not the file.
+  const chosen = () => ({ by: [...(Preview.address.by ?? '')], about: [...(Preview.address.about ?? '')] });
+  const voiced = (el) => Boolean(el.dataset.by || el.dataset.about);
+  const shows = (el, { by, about }) => (!by.length || by.includes(el.dataset.by))
+    && (!about.length || [...(el.dataset.about ?? '')].some((a) => about.includes(a)));
+
+  function filter() {
+    const f = chosen();
+    const on = f.by.length + f.about.length > 0;
+    for (const legend of document.querySelectorAll('.gm-legend[role="group"]')) {
+      for (const b of legend.querySelectorAll('button[data-filter]')) b.setAttribute('aria-pressed', String(f[b.dataset.filter].includes(b.dataset.alias)));
+      const clear = legend.querySelector('.gm-legend-clear');
+      if (clear) clear.hidden = !on;
+    }
+    for (const cell of document.querySelectorAll('.gm-aside-cell')) {
+      const replies = [...cell.querySelectorAll('.gm-reply')];
+      const voices = [cell, ...replies].filter(voiced);
+      const thread = !on || !voices.length || voices.some((v) => shows(v, f));
+      cell.classList.toggle('gm-filtered-out', !thread);
+      for (const r of replies) r.classList.toggle('gm-filtered-out', on && thread && voiced(r) && !shows(r, f));
+    }
+    later();
+  }
+  Preview.register({ restore: filter });
+  window.addEventListener('preview:address', filter);
+
+  document.addEventListener('click', (e) => {
+    const chip = e.target.closest?.('.gm-legend button[data-filter]');
+    const clear = e.target.closest?.('.gm-legend .gm-legend-clear');
+    if (!chip && !clear) return;
+    const f = chosen();
+    if (clear) f.by = f.about = [];
+    else {
+      const list = f[chip.dataset.filter];
+      const at = list.indexOf(chip.dataset.alias);
+      if (at < 0) list.push(chip.dataset.alias);
+      else list.splice(at, 1);
+    }
+    Preview.setAddress({ ...Preview.address, by: f.by.join(''), about: f.about.join('') });
+    if (clear) document.querySelector('.gm-legend button[data-filter]')?.focus();
   });
 })();

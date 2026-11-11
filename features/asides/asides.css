@@ -108,3 +108,31 @@
 .gm-thread[open] > summary { margin-bottom: var(--gm-space-3); }
 .gm-resolved { font-style: normal; color: var(--gm-ink-soft); }
 .gm-legend .gm-resolved { color: inherit; opacity: 0.8; }
+
+/* ---------- the legend's filter (gh-21) --------------------------------- */
+
+/* Each chip in the legend toggles a filter of the asides by it. */
+.gm-legend button { cursor: pointer; }
+.gm-legend button.gm-who { border: 0; }
+.gm-legend button:focus-visible { outline: 2px solid var(--gm-accent); outline-offset: 2px; }
+/* Picked, it's ringed in its own colour; those not picked, while some are, fade. */
+.gm-legend button[aria-pressed="true"] { outline: 2px solid var(--by, var(--topic, var(--gm-accent))); outline-offset: 2px; }
+.gm-legend:has(button[aria-pressed="true"]) button[data-filter][aria-pressed="false"] { opacity: 0.55; }
+.gm-legend-clear {
+  font: 600 0.74em/1.5 var(--gm-sans);
+  color: var(--gm-ink-soft);
+  background: none;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 0 var(--gm-space-3);
+  vertical-align: 0.1em;
+}
+.gm-legend-clear[hidden] { display: none; }
+/* What the filter leaves out is dimmed, not taken away. */
+.gm-filtered-out { opacity: 0.3; }
+/* Printed, every aside is as it's written, the filter and all. */
+@media print {
+  .gm-filtered-out { opacity: 1; }
+  .gm-legend-clear { display: none; }
+  .gm-legend:has(button[aria-pressed="true"]) button[data-filter] { opacity: 1; outline: none; }
+}

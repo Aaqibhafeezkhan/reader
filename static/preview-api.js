@@ -55,6 +55,14 @@
  *     replaces, and there from the start, so the first thing said is heard
  *     too. The same text said again is still heard.
  *
+ *   Preview.address, Preview.setAddress(params)
+ *     How the page is set to be seen, as the app's address keeps it, so a
+ *     view can be shared or reloaded (`#review.md?by=%23`): an object of
+ *     strings, set before each render is drawn, and again, with
+ *     `preview:address` sent to the window, when only the address changes.
+ *     A feature sets it with `setAddress`, which tells the app and sends
+ *     `preview:address` too; it isn't the file, so nothing is written.
+ *
  *   Preview.fromApp(e)
  *     Whether a message is the app's: from the page around the frame, at
  *     one of the app's origins, which the server names in the frame's
@@ -198,6 +206,12 @@
     },
     fromApp: (e) => e.source === window.parent && APP.includes(e.origin),
     deck: false,
+    address: {},
+    setAddress(params) {
+      this.address = { ...params };
+      window.parent.postMessage({ type: 'address', params: this.address }, '*');
+      window.dispatchEvent(new Event('preview:address'));
+    },
     get workable() {
       return workable;
     },

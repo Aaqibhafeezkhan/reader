@@ -19,6 +19,7 @@ import { wireFit } from './fit.js';
 import { wireSync } from './sync.js';
 import { printDocument } from './exporting.js';
 import { wireLines, copyLines, goToLines } from './lines.js';
+import { readAddress, writeAddress } from './address.js';
 import { wireOutline } from './outline.js';
 import { wireGoTo, openGoTo, isGoTo } from './goto.js';
 import { wireTheme } from './theme.js';
@@ -42,7 +43,7 @@ async function init() {
   go(rememberedDir(), null, { focus: false });
 
   // The file in the address, or the one last changed in the folder last shown.
-  const { wanted, line, last } = fromHash();
+  const { wanted, line, last } = readAddress();
   const under = state.files.filter((f) => dirOf(f.path) === state.dir);
   const first = state.files.find((f) => f.path === wanted)
     || under.find((f) => f.type === 'md') || state.files.find((f) => f.type === 'md') || state.files[0];
@@ -71,29 +72,14 @@ function showVersion({ label, url, release } = {}) {
   el.version.hidden = el.helpVersion.hidden = false;
 }
 
-/**
- * The address can name a file and lines, as a copied one does: `#notes/talk.md:13-18`.
- * One that doesn't decode names nothing.
- */
-function fromHash() {
-  let hash;
-  try {
-    hash = decodeURIComponent(location.hash.slice(1));
-  } catch {
-    return {};
-  }
-  const [, wanted, line, last] = hash.match(/^(.*?)(?::(\d+)(?:-(\d+))?)?$/);
-  return { wanted, line: line && Number(line), last: Number(last || line) };
-}
-
 /** An address changed after loading, by a link or by hand: open what it names. */
 async function followHash() {
-  const { wanted, line, last } = fromHash();
+  const { wanted, line, last, params } = readAddress();
   if (!state.files.some((f) => f.path === wanted)) return;
   if (wanted !== state.current?.path) {
     reveal(wanted);
     await open(wanted);
-  }
+  } else Frames.post(el.preview, { type: 'address', params });
   if (wanted === state.current?.path && line) goToLines(line, last);
 }
 
@@ -117,6 +103,8 @@ function wire() {
     else if (e.data?.type === 'swipe') turn(e.data.by);
     else if (e.data?.type === 'follow') follow(e.data.href);
     else if (e.data?.type === 'key') onKey({ ...e.data, preventDefault() {} });
+    // How the page is set to be seen, kept in the address (address.js).
+    else if (e.data?.type === 'address' && state.current && e.data.params && typeof e.data.params === 'object') writeAddress(state.current.path, e.data.params);
   });
 
   el.workBtn.addEventListener('click', () => setWorking(!state.working));

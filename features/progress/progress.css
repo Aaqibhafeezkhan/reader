@@ -8,10 +8,19 @@
 .progress progress {
   width: 8em;
   height: 0.6em;
-  accent-color: var(--gm-accent);
 }
-.progress-count {
-  font: 600 0.85em/1 var(--gm-sans);
-  font-variant-numeric: tabular-nums;
-  color: var(--gm-ink-soft);
+/* Drawn in the page's colours, as a browser's own bar isn't alike in each:
+   Firefox's, given an accent-color, drew an empty one full in the dark theme
+   (gh-248). Where colours are forced, it's the browser's own. */
+@media not (forced-colors: active) {
+  .progress progress {
+    appearance: none;
+    border: 0;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--gm-rule);
+  }
+  .progress progress::-webkit-progress-bar { background: var(--gm-rule); }
+  .progress progress::-webkit-progress-value { background: var(--gm-accent); }
+  .progress progress::-moz-progress-bar { background: var(--gm-accent); }
 }

@@ -123,6 +123,14 @@ in is marked, and its part opens. Parts are folded otherwise; `▸` and `▾`,
 or `→` and `←`, open and fold one. The outline follows the open file, so
 `⌘⌥↑` and `⌘⌥↓` still step through the folder's files.
 
+### Folding the page
+
+In Edit and Work, any heading on the page can fold its section away, to read a long document a part at a time.
+Click the heading, or the `›` that shows before it, and what's under it goes, up to the next heading at its level or above, with the asides beside it; click again to bring it back.
+A finished section, `## [x] Stretch` (see [Sections to finish](forms.md)), starts folded, and any other starts open.
+Going to a place in a folded section, from the outline, `⌃G` or a link, opens it first.
+Folding is a way of seeing the page, not part of it: nothing is written in the file, it lasts while the file is open, and a printed or exported page, or a slide, has every section showing.
+
 ### Taking a part out into a file of its own
 
 The arrow-out-of-a-box icon at the end of an entry takes that part out into a file

@@ -23,7 +23,7 @@ test('with lines, each block names the line of the file it came from', () => {
   assert.match(body, /<h1 data-line="3">Head<\/h1>/);
   assert.match(body, /<p data-line="7">para<\/p>/);
   assert.match(body, /<ul data-line="9">\n<li data-line="9">one<\/li>\n<li data-line="10">two<\/li>/);
-  assert.match(body, /<div class="gm-aside-cell" role="note">\n<p><span class="gm-mark" aria-hidden="true">~<\/span>an aside<\/p>/);
+  assert.match(body, /<div class="gm-aside-cell" role="note">\n<details class="gm-thread" open>\n<summary[^>]*><span class="gm-mark" aria-hidden="true">~<\/span>an aside<\/summary>/);
   assert.doesNotMatch(render(src).body, /data-line/);
 });
 
@@ -116,7 +116,7 @@ test('a key with a space and a character in it, not a reviewer or topic, shows i
 test('with asides, a reviewer shows in its legend, with a count, and not in the byline', () => {
   const { body, css } = render('---\ntitle: T\nauthor: Ann\nreviewer #: Josh\n---\n\nWords.\n\n~# a thought\n');
   assert.match(body, /<div class="gm-byline"><span>Ann<\/span><\/div>/);
-  assert.match(body, /<div class="gm-legend"><span class="gm-who" style="--by: var\(--gm-key-1\)">Josh <b>1<\/b><\/span><\/div>/);
+  assert.match(body, /<div class="gm-legend"[^>]*><button class="gm-who"[^>]* style="--by: var\(--gm-key-1\)">Josh <b>1<\/b><\/button>/);
   assert.doesNotMatch(css, /\.gm-byline \.gm-who/);
 });
 

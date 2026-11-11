@@ -21,3 +21,9 @@ ol.badges > li:not(.gm-cont)::before {
   font-style: normal;
   user-select: none;
 }
+/* Printed, the document has no padding for a badge to hang into, so the list
+   is indented as far as its badges reach: the gap, .4em, and a badge of two
+   digits, at its .8em (gh-251). */
+@media print {
+  ol.badges { padding-left: max(var(--gm-indent), 2.2em); }
+}

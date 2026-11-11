@@ -51,11 +51,14 @@ const bareLength = (value) => /(^|[\s(,-])\.?\d[\d.]*(rem|em|px|pt|ch|ex|lh|vh|v
 const OWN = new Set([
   // the sheet's own margins, and as far again from what it heads
   '.gm-doc padding',
+  // and more of it where headings fold, for their chevrons (features/fold)
+  '.gm-doc:has(.fold-heading) padding-left',
   '.gm-masthead margin-bottom',
   // room for what's hung in it, drawn at a set size
   'blockquote.quoted padding-left',
   'blockquote.quoted:not(.gm-cont)::before margin',
   'li.qa padding-left',
+  'ol.badges padding-left',
   // hairlines: as near as a border, or on one
   '.stage-box gap',
   '.stage-box padding',

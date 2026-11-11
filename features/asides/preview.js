@@ -5,7 +5,10 @@
  * have moved: a render, the page or a slide changing size, a step showing,
  * the fonts arriving, and just before printing. An aside that isn't beside
  * its words (a page too narrow for the margin) gets no line: it names the
- * words at its start. Runs in the preview frame.
+ * words at its start. A thread's Resolve button writes its aside's `[x]`
+ * (gh-199). The legend's chips filter the asides by who and what about,
+ * dimming the rest, as the address keeps it (gh-21). Runs in the preview
+ * frame.
  */
 (() => {
   const NS = 'http://www.w3.org/2000/svg';
@@ -127,4 +130,109 @@
       pick(el.dataset.mark, on);
     });
   }
+
+  // What's been folded or opened by hand is kept over a render, as typing
+  // makes one, by the aside's first line; written nowhere.
+  const folds = new Map();
+  const firstLine = (d) => d.querySelector(':scope > summary')?.textContent.trim();
+  document.addEventListener('toggle', (e) => {
+    if (e.target.matches?.('details.gm-thread')) folds.set(firstLine(e.target), e.target.open);
+  }, true);
+  // An aside that's a line and no more, no replies under it, has nothing to
+  // fold: it's shown open, with no chevron, and its line takes no click.
+  // Whether it is depends on the margin's width, so it's measured each time.
+  function measure() {
+    for (const d of document.querySelectorAll('details.gm-thread')) {
+      const summary = d.querySelector(':scope > summary');
+      let one = d.children.length === 1;
+      if (one) {
+        d.classList.add('gm-measuring');
+        one = summary.scrollWidth <= summary.clientWidth + 1;
+        d.classList.remove('gm-measuring');
+      }
+      d.classList.toggle('gm-one-line', one);
+      if (one && !d.open) d.open = true;
+    }
+  }
+  document.addEventListener('click', (e) => {
+    if (e.target.closest?.('details.gm-one-line > summary') && !e.target.closest('a, button')) e.preventDefault();
+  });
+  new ResizeObserver(() => measure()).observe(document.documentElement);
+
+  Preview.register({
+    restore() {
+      for (const d of document.querySelectorAll('details.gm-thread')) {
+        const open = folds.get(firstLine(d));
+        if (open != null && open !== d.open) d.open = open;
+      }
+      measure();
+    },
+  });
+
+  // A thread's check (gh-199) writes its aside's line, `[x]` or
+  // `[ ]`, as a heading's Done does; the re-render that follows folds the
+  // thread, or opens it. Where the page can't be worked, it's shut.
+  document.addEventListener('click', (e) => {
+    const button = e.target.closest?.('button.gm-resolve');
+    if (!button) return;
+    // In the aside's first line, which folds it: pressed, it doesn't.
+    e.preventDefault();
+    if (button.disabled || !Preview.workable) return;
+    const line = Number(button.dataset.line);
+    const was = button.getAttribute('aria-pressed') === 'true';
+    const as = (on) => (on ? button.dataset.on : button.dataset.off);
+    Preview.edit([{ from: line, to: line + 1, before: [as(was)], after: [as(!was)] }], { undo: true });
+    button.setAttribute('aria-pressed', String(!was));
+  });
+
+  // The legend's filter (gh-21): its chips toggle which reviewers' and which
+  // topics' asides show, any of the reviewers picked, and any of the topics,
+  // both when both are; the others are dimmed, not taken away, so where they
+  // are still shows. A thread shows when any voice in it does, and each
+  // other voice in it is dimmed, the aside that opened it too. The writer's own asides aren't filtered. It's kept
+  // in the address, `?by=%23&about=c`, not the file.
+  const chosen = () => ({ by: [...(Preview.address.by ?? '')], about: [...(Preview.address.about ?? '')] });
+  const voiced = (el) => Boolean(el.dataset.by || el.dataset.about);
+  const shows = (el, { by, about }) => (!by.length || by.includes(el.dataset.by))
+    && (!about.length || [...(el.dataset.about ?? '')].some((a) => about.includes(a)));
+
+  function filter() {
+    const f = chosen();
+    const on = f.by.length + f.about.length > 0;
+    for (const legend of document.querySelectorAll('.gm-legend[role="group"]')) {
+      for (const b of legend.querySelectorAll('button[data-filter]')) b.setAttribute('aria-pressed', String(f[b.dataset.filter].includes(b.dataset.alias)));
+      const clear = legend.querySelector('.gm-legend-clear');
+      if (clear) clear.hidden = !on;
+    }
+    for (const cell of document.querySelectorAll('.gm-aside-cell')) {
+      const replies = [...cell.querySelectorAll('.gm-reply')];
+      const voices = [cell, ...replies].filter(voiced);
+      const thread = !on || !voices.length || voices.some((v) => shows(v, f));
+      cell.classList.toggle('gm-filtered-out', !thread);
+      // In a thread that shows, each voice that doesn't is dimmed, the aside
+      // that opened it as well as a reply: its first line and the rest of it.
+      const opener = [...(cell.querySelector(':scope > .gm-thread')?.children ?? [])].filter((el) => !el.matches('.gm-replies'));
+      for (const el of opener) el.classList.toggle('gm-filtered-out', on && thread && voiced(cell) && !shows(cell, f));
+      for (const r of replies) r.classList.toggle('gm-filtered-out', on && thread && voiced(r) && !shows(r, f));
+    }
+    later();
+  }
+  Preview.register({ restore: filter });
+  window.addEventListener('preview:address', filter);
+
+  document.addEventListener('click', (e) => {
+    const chip = e.target.closest?.('.gm-legend button[data-filter]');
+    const clear = e.target.closest?.('.gm-legend .gm-legend-clear');
+    if (!chip && !clear) return;
+    const f = chosen();
+    if (clear) f.by = f.about = [];
+    else {
+      const list = f[chip.dataset.filter];
+      const at = list.indexOf(chip.dataset.alias);
+      if (at < 0) list.push(chip.dataset.alias);
+      else list.splice(at, 1);
+    }
+    Preview.setAddress({ ...Preview.address, by: f.by.join(''), about: f.about.join('') });
+    if (clear) document.querySelector('.gm-legend button[data-filter]')?.focus();
+  });
 })();

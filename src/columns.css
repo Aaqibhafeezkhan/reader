@@ -72,6 +72,7 @@
   --gm-ink-soft: #555;
   --gm-ink-done: #6a6a6a;    /* a done task's, softer still */
   --gm-ink-faint: #9e9a93;   /* marks, not text */
+  --gm-control-ink: #85817a; /* a control's mark, a check or a chevron: 3:1 on the paper */
   --gm-aside-ink: #4a5a72;
   --gm-rule: #d9d6d0;
   --gm-rule-strong: #b9b5ad;
@@ -132,6 +133,7 @@
   --gm-ink-soft: #cfcbc3;
   --gm-ink-done: #aaa69f;
   --gm-ink-faint: #80848c;
+  --gm-control-ink: var(--gm-ink-faint);
   --gm-aside-ink: #cdd6e4;
   --gm-rule: rgba(255, 255, 255, .32);
   --gm-rule-strong: rgba(255, 255, 255, .5);
@@ -184,6 +186,7 @@
     --gm-ink-soft: #4c4c4c;
     --gm-ink-done: var(--gm-ink-soft);
     --gm-ink-faint: #726f6a;
+    --gm-control-ink: var(--gm-ink-faint);
     --gm-aside-ink: #404d62;
     --gm-rule: #8b8985;
     --gm-rule-strong: #716e6a;
@@ -207,6 +210,7 @@
     --gm-ink-soft: #d0cdc5;
     --gm-ink-done: var(--gm-ink-soft);
     --gm-ink-faint: #94989e;
+    --gm-control-ink: var(--gm-ink-faint);
     --gm-rule: rgba(255, 255, 255, .5);
     --gm-rule-strong: rgba(255, 255, 255, .7);
     --gm-aside-rule: rgba(205, 214, 228, .75);
@@ -292,7 +296,7 @@
  * `@media (forced-colors: active)`. */
 @media (forced-colors: active) {
   :root, :root.gm-dark {
-    --gm-ink: CanvasText; --gm-ink-soft: CanvasText; --gm-ink-done: CanvasText; --gm-ink-faint: GrayText; --gm-aside-ink: CanvasText;
+    --gm-ink: CanvasText; --gm-ink-soft: CanvasText; --gm-ink-done: CanvasText; --gm-ink-faint: GrayText; --gm-control-ink: GrayText; --gm-aside-ink: CanvasText;
     --gm-rule: CanvasText; --gm-rule-strong: CanvasText; --gm-aside-rule: CanvasText;
     --gm-paper: Canvas; --gm-wash: Canvas; --gm-well: Canvas; --gm-th: Canvas; --gm-stripe: Canvas; --gm-lit: Canvas;
     --gm-output: Canvas; --gm-output-rule: CanvasText; --gm-output-split: CanvasText; --gm-output-lit: Canvas;

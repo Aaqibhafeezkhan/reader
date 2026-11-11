@@ -27,6 +27,8 @@ export function goToLine(line, { focus = true } = {}) {
   const start = lines.slice(0, n).reduce((sum, l) => sum + l.length + 1, 0);
   t.setSelectionRange(start, start);
   setAt(n, { goto: true });
+  // Opened, if it's folded away in the preview, before it's scrolled to.
+  Frames.post(el.preview, { type: 'open-to', line: n });
   if (state.working) {
     Frames.post(el.preview, { type: 'scroll', line: n });
     return;

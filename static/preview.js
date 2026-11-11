@@ -353,6 +353,8 @@
     Preview.workable = !m.deck;
     // Run, in Work or on a slide, rather than written, in Edit.
     Preview.running = Boolean(m.deck || m.working);
+    // How the page is set to be seen, as the address says.
+    Preview.address = m.address && typeof m.address === 'object' ? m.address : {};
     // What features and puzzles were in the middle of carries over.
     Preview.replace(document.body, () => {
       // Put together out of the page first, so no image is asked for
@@ -456,6 +458,14 @@
       giveBack();
     } else if (m.type === 'tab') {
       tab(m.back, null);
+    } else if (m.type === 'open-to') {
+      // Gone to by the outline or Go to: whatever has it out of sight opens
+      // first (features/fold), and the page is measured again.
+      window.dispatchEvent(new CustomEvent('preview:open-to', { detail: { line: Number(m.line) } }));
+      marks = null;
+    } else if (m.type === 'address') {
+      Preview.address = m.params && typeof m.params === 'object' ? m.params : {};
+      window.dispatchEvent(new Event('preview:address'));
     }
   });
 
@@ -465,7 +475,10 @@
     if (!a) return;
     e.preventDefault();
     const t = document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
-    if (t) t.scrollIntoView({ behavior: 'smooth' });
+    if (!t) return;
+    window.dispatchEvent(new CustomEvent('preview:open-to', { detail: { target: t } }));
+    marks = null;
+    t.scrollIntoView({ behavior: 'smooth' });
   });
 
   // A link to another markdown file being served opens it in the app, and

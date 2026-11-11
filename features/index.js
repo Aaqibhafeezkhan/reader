@@ -76,6 +76,7 @@ import grid from './grid/index.js';
 import cards from './cards/index.js';
 import row from './row/index.js';
 import tabs from './tabs/index.js';
+import fold from './fold/index.js';
 
 // open-until comes first, so that in the preview frame the page is judged
 // open or closed before any other feature puts back what it kept. styles
@@ -86,8 +87,9 @@ import tabs from './tabs/index.js';
 // styles, which leaves them the lines their blocks open and close on. date comes after fields and tasks, so the lines
 // they keep are as written, without its marks. tabs comes last, so the
 // words it compares are the ones the others leave as text; only the `late`
-// plugins, which find the words an aside chooses, come after it.
-export const FEATURES = checkRequires([openUntil, asides, fields, tasks, qa, definitions, sizes, alerts, attributions, styles, columns, row, grid, cards, date, scripture, scriptureLds, search, rfc, pitch, timer, count, progress, social, math, arrows, emoji, highlight, mermaid, headline, number, badges, steps, ingredients, puzzles, tabs]);
+// plugins, which find the words an aside chooses, come after it. fold
+// comes after it, marking a heading by its line as written, whoever draws it.
+export const FEATURES = checkRequires([openUntil, asides, fields, tasks, qa, definitions, sizes, alerts, attributions, styles, columns, row, grid, cards, date, scripture, scriptureLds, search, rfc, pitch, timer, count, progress, social, math, arrows, emoji, highlight, mermaid, headline, number, badges, steps, ingredients, puzzles, tabs, fold]);
 
 /**
  * Throws unless each feature's `requires` names features in the list that

@@ -19,7 +19,7 @@ test('::: styles every block until the closing :::', () => {
   assert.match(body, /<td class="font" style="text-align:right; color: red; --font: 'georgia'">2<\/td>/);
   assert.match(body, /<hr>/);
   assert.match(body, /<code>\[c\]\{red\}\n<\/code>/);
-  assert.match(body, new RegExp(`<p ${style}><span class="gm-mark" aria-hidden="true">~</span>aside</p>`));
+  assert.match(body, new RegExp(`<summary ${style}><span class="gm-mark" aria-hidden="true">~</span>aside</summary>`));
   assert.match(body, /<p>after<\/p>\n<p>:::<\/p>/);
   assert.doesNotMatch(body, /[\uE000-\uE007]/);
 });
@@ -58,7 +58,7 @@ test('a ::: with nothing open stays as typed, and code inside a block is left al
 
 test('an aside in a ::: block keeps its mark', () => {
   const { body } = render('::: red\n~ aside\n:::\n');
-  assert.match(body, /<p style="color: red"><span class="gm-mark" aria-hidden="true">~<\/span>aside<\/p>/);
+  assert.match(body, /<summary style="color: red"><span class="gm-mark" aria-hidden="true">~<\/span>aside<\/summary>/);
 });
 
 test('the stylesheet comes with the feature', () => {

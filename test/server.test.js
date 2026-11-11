@@ -411,11 +411,14 @@ test('the preview frames\' origin, by name or by port, serves what a frame loads
 test('published on other ports, the frames\' port keeps its distance from the app\'s (gh-206)', async () => {
   const port = server.address().port;
   const apart = Number(new URL(frames).port) - port;
-  const app = await told(port, 'localhost:9000', '/');
-  assert.equal(app.name, 'http://frames.localhost:9000');
-  assert.equal(app.port, `http://localhost:${9000 + apart}`);
-  const preview = await asking(Number(new URL(frames).port), `localhost:${9000 + apart}`, '/preview.html');
-  assert.match(preview.headers['content-security-policy'], /frame-ancestors http:\/\/localhost:9000(;|$)/);
+  // Published where both ports are ports: the frames' was any free one, so
+  // the two can be far apart, either way, as Linux's free ports run 32768-60999.
+  const published = apart < 0 ? 1024 - apart : 1024;
+  const app = await told(port, `localhost:${published}`, '/');
+  assert.equal(app.name, `http://frames.localhost:${published}`);
+  assert.equal(app.port, `http://localhost:${published + apart}`);
+  const preview = await asking(Number(new URL(frames).port), `localhost:${published + apart}`, '/preview.html');
+  assert.match(preview.headers['content-security-policy'], new RegExp(`frame-ancestors http://localhost:${published}(;|$)`));
 });
 
 test('[::1] is sent on to 127.0.0.1, the same port and address, since a policy can\'t name it (gh-206)', async () => {

@@ -33,7 +33,8 @@ import { fileURLToPath } from 'node:url';
 import { preprocess } from './preprocess.js';
 import { readEntry, makeKey, ownClass } from './key.js';
 import { marks, about } from './marks.js';
-import { escapeHtml } from '../source.js';
+import { escapeHtml, escapeAttr } from '../source.js';
+import { shut } from '../blank.js';
 
 export function asides(md) {
   const rule = (state) => {
@@ -47,7 +48,13 @@ export function asides(md) {
     // Each aside's line, and each line left, traced back to the file
     // through the page's own trace.
     const page = state.env.sourceLines ?? [];
-    for (const a of asides) a.line = page[a.line] ?? a.line;
+    for (const a of [...asides, ...asides.flatMap((t) => t.replies ?? [])]) a.line = page[a.line] ?? a.line;
+    // A reply naming no topic is about its thread's, for the filter and the
+    // legend, though its chips stay as written; one naming its own is about
+    // those alone (gh-21's review).
+    for (const t of asides) {
+      for (const r of t.replies ?? []) if (r.by && !r.by.topics.length && t.by?.topics.length) r.about = t.by.topics;
+    }
     state.env.sourceLines = lines.map((k) => page[k] ?? k);
     state.env.asides = asides;
     // The key's topics, for a mark in braces to be in (`[words]{c}`).
@@ -56,7 +63,7 @@ export function asides(md) {
     // out, once every rule has run, so the words it chose are marked by then.
     const { md, env } = state;
     env.margin = [...(env.margin ?? []), ...asides.map((aside) => ({ anchor: aside.anchor, render: (attrs) => cell(md, aside, env, attrs) }))];
-    const shown = legend(asides, key);
+    const shown = legend(asides, key, env);
     if (shown) env.masthead = [...(env.masthead ?? []), shown];
   };
   // After the page's front matter and comments are off, or after
@@ -79,19 +86,65 @@ function cell(md, aside, env, attrs = '') {
   const words = about(aside.mark);
   const tied = aside.mark?.id;
   const style = [aside.by?.who && `--by: ${escapeHtml(aside.by.who.color)}`, tied && aside.mark.color && `--mk: ${escapeHtml(aside.mark.color)}`].filter(Boolean).join('; ');
-  attrs = `${style ? ` style="${style}"` : ''}${tied ? ` data-mark="${escapeHtml(tied)}"` : ''}${attrs}`;
+  attrs = `${style ? ` style="${style}"` : ''}${tied ? ` data-mark="${escapeHtml(tied)}"` : ''}${voice(aside.by)}${attrs}`;
+  const replies = aside.replies?.length ? `<div class="gm-replies">\n${aside.replies.map((r) => reply(md, r, env)).join('')}</div>\n` : '';
+  const resolved = Boolean(aside.box?.checked);
+  // A thread that can be resolved opens with its check, before who it's from,
+  // grey until it's resolved, then green (gh-199).
+  const check = aside.box ? resolveButton(aside, env) : '';
+  // Every aside folds to its first line, cut short, and opens to the rest:
+  // a resolved one starts folded, the rest open; folding writes nothing.
+  const fold = (opener) => {
+    // Its first paragraph is the summary, keeping its attributes (its line).
+    const first = /^<p\b([^>]*)>([\s\S]*?)<\/p>\n?/.exec(opener);
+    const rest = opener.slice(first[0].length);
+    return `<details class="gm-thread"${resolved ? '' : ' open'}>\n<summary${first[1]}>${resolved ? '<span class="vh">Resolved: </span>' : ''}${first[2]}</summary>\n${rest}${replies}</details>\n`;
+  };
+  const classes = `gm-aside-cell${aside.by ? ' gm-attributed' : ''}${aside.box ? ' gm-resolvable' : ''}${resolved ? ' gm-is-resolved' : ''}`;
   // An attributed aside opens with who it's from and what it's about, at the
   // start of its first paragraph, or above it when it doesn't open with one.
   if (aside.by) {
-    const chips = byChips(aside.by) + words;
-    const opened = /^<p\b/.test(html) ? html.replace(/^<p\b([^>]*)>/, `<p$1>${chips}`) : `${chips}\n${html}`;
-    return `<div class="gm-aside-cell gm-attributed" role="note"${attrs}>\n${opened}</div>`;
+    const chips = check + byChips(aside.by) + words;
+    const opened = /^<p\b/.test(html) ? html.replace(/^<p\b([^>]*)>/, `<p$1>${chips}`) : `<p>${chips}</p>\n${html}`;
+    return `<div class="${classes}" role="note"${attrs}>\n${fold(opened)}</div>`;
   }
   // Slip the `~` in front of the first line of prose so the mark survives into
   // the printed page. It's seen, not read: the aside is a note.
-  const lead = `<span class="gm-mark" aria-hidden="true">~</span>${words}`;
-  const marked = /<p\b/.test(html) ? html.replace(/<p\b([^>]*)>/, `<p$1>${lead}`) : words ? `<p>${lead}</p>\n${html}` : html;
-  return `<div class="gm-aside-cell" role="note"${attrs}>\n${marked}</div>`;
+  const lead = `${check}<span class="gm-mark" aria-hidden="true">~</span>${words}`;
+  const marked = /^<p\b/.test(html) ? html.replace(/^<p\b([^>]*)>/, `<p$1>${lead}`) : `<p>${lead}</p>\n${html}`;
+  return `<div class="${classes}" role="note"${attrs}>\n${fold(marked)}</div>`;
+}
+
+/**
+ * The check that resolves a thread, grey until it's pressed and green once
+ * it is, as a heading's Done: pressed, it writes the aside's line with
+ * `[x]`, or `[ ]` again (preview.js).
+ */
+function resolveButton(aside, env) {
+  const { checked, on, off } = aside.box;
+  return `<button type="button" class="gm-resolve" data-line="${aside.line}" data-on="${escapeAttr(on)}" data-off="${escapeAttr(off)}"`
+    + ` aria-pressed="${checked}" aria-label="Resolved"${shut(env)}></button>`;
+}
+
+/** A reply in a thread, opening with who it's from, as an aside does. */
+function reply(md, r, env) {
+  const html = md.renderer.render(asideTokens(md, r, env), md.options, env);
+  const lead = r.by ? byChips(r.by) : '<span class="gm-mark" aria-hidden="true">~~</span>';
+  const opened = /^<p\b/.test(html) ? html.replace(/^<p\b([^>]*)>/, `<p$1>${lead}`) : `<p>${lead}</p>\n${html}`;
+  const style = r.by?.who ? ` style="--by: ${escapeHtml(r.by.who.color)}"` : '';
+  return `<div class="gm-reply${r.by ? ' gm-attributed' : ''}"${style}${voice(r.by, r.about)}>\n${opened}</div>\n`;
+}
+
+/**
+ * Who an aside or a reply is from and what it's about (`about`, a reply's
+ * thread's topics when it names none), by their aliases,
+ * for the legend's filter to go by (preview.js, gh-21): ` data-by="#"
+ * data-about="cv"`, or '' for the writer's own.
+ */
+function voice(by, about = by?.topics) {
+  if (!by) return '';
+  const topics = about.map((t) => t.alias).join('');
+  return `${by.who ? ` data-by="${escapeAttr(by.who.alias)}"` : ''}${topics ? ` data-about="${escapeAttr(topics)}"` : ''}`;
 }
 
 /** The tokens of one aside's content. */
@@ -118,21 +171,43 @@ export function byChips(by) {
 }
 
 /**
- * Who and what a document's asides are from and about, with how many of
- * each, in the order they're declared: a legend for the masthead, or ''.
+ * Who and what a document's asides and replies are from and about, with
+ * how many of each, and how many threads each opened that are still to be
+ * resolved, in the order
+ * they're declared: a legend for the masthead, or ''.
  */
-export function legend(asides, key) {
+export function legend(asides, key, env = {}) {
+  // Each aside and each reply counts towards who wrote it and what it's
+  // about; and each thread still to resolve, once, towards who opened it
+  // and what it opened about, so what's left for each one shows.
   const counts = new Map();
-  for (const a of asides) {
-    if (!a.by) continue;
-    for (const e of [a.by.who, ...a.by.topics].filter(Boolean)) counts.set(e, (counts.get(e) || 0) + 1);
+  const open = new Map();
+  const add = (into, e) => into.set(e, (into.get(e) || 0) + 1);
+  for (const thread of asides) {
+    for (const a of [thread, ...(thread.replies ?? [])]) {
+      if (!a.by) continue;
+      for (const e of [a.by.who, ...(a.about ?? a.by.topics)].filter(Boolean)) add(counts, e);
+    }
+  }
+  for (const thread of asides) {
+    if (thread.box && !thread.box.checked && thread.by) for (const e of [thread.by.who, ...thread.by.topics].filter(Boolean)) add(open, e);
   }
   if (!counts.size) return '';
   const used = [...(key?.values() || [])].filter((e) => counts.has(e));
-  const chip = (e) => e.kind === 'reviewer'
-    ? `<span class="${chipClass('gm-who', e.color)}" style="--by: ${escapeHtml(e.color)}">${escapeHtml(e.name)} <b>${counts.get(e)}</b></span>`
-    : `<span class="${chipClass('gm-topic', e.color)}" style="--topic: ${escapeHtml(e.color)}">${escapeHtml(e.name)} <b>${counts.get(e)}</b></span>`;
-  return `<div class="gm-legend">${used.map(chip).join('')}</div>`;
+  // What's unresolved, in a dot at the chip's corner, said in words too.
+  const count = (e) => `<b>${counts.get(e)}</b>${open.has(e) ? `<span class="gm-unresolved" title="${open.get(e)} unresolved"><span class="vh">, unresolved: </span>${open.get(e)}</span>` : ''}`;
+  // Where the page is read in the app, each chip toggles a filter of the
+  // asides by it, and a last button clears it (preview.js, gh-21); not in
+  // an export, nor on a slide.
+  const filters = !env.exported && !env.deck;
+  const tag = filters ? 'button' : 'span';
+  const chip = (e) => {
+    const by = e.kind === 'reviewer';
+    const toggle = filters ? ` type="button" data-filter="${by ? 'by' : 'about'}" data-alias="${escapeAttr(e.alias)}" aria-pressed="false"` : '';
+    return `<${tag} class="${chipClass(by ? 'gm-who' : 'gm-topic', e.color)}"${toggle} style="${by ? '--by' : '--topic'}: ${escapeHtml(e.color)}">${escapeHtml(e.name)} ${count(e)}</${tag}>`;
+  };
+  const clear = filters ? '<button type="button" class="gm-legend-clear" aria-label="Show every aside" hidden>×</button>' : '';
+  return `<div class="gm-legend"${filters ? ' role="group" aria-label="Show the asides of"' : ''}>${used.map(chip).join('')}${clear}</div>`;
 }
 
 export default {

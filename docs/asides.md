@@ -74,6 +74,12 @@ finger. With more than one, or in a document with no aliases, a `~word`
 line reads as text, as it always has. In a deck, the aliases go in the
 deck's front matter.
 
+In Edit and Work, click a name or a topic in the legend to show only its asides; the others are dimmed, not taken away, so you can still see where they are.
+Several reviewers mean any of them, and so do several topics; a reviewer and a topic together mean both, as Josh's asides about Coherence.
+A reply is about its thread's topics, unless it names its own, and in a thread, whatever the filter leaves out is dimmed, the aside that opened it too.
+The filter is kept in the address, `#review.md?by=%23&about=c`, so a filtered page can be shared or reloaded; click a name again, or the `×` beside them, to show every aside.
+It isn't written in the file, and a printed or exported page shows every aside.
+
 A colour you name is drawn in the palette's hue for it, deep on a light
 page and bright on a dark one, so a name and its count read as text
 either way: `reviewer m: Maria, gold` is the palette's amber.
@@ -93,6 +99,47 @@ A `#hex`, or another name, is kept, but a pill, a chip or the legend
 takes it darker on a light page, or lighter on a dark one, where it
 wouldn't read: `#ffd700` is a dark gold. The rule and the marks keep it as
 it's written.
+
+## Threads
+
+Reviewing in the margin is a conversation, so an aside can be answered.
+A line starting `~~` straight under an aside is a **reply** to it, with its own aliases, or none:
+
+::: tabs
++++ Source
+```markdown
+Every ticked item can use up an ingredient.
+~#c [ ] Does this mean a shopping item can hold it back?
+~~m Yes, and ticking it uses the ingredient up.
+~~# Then let's go back to steps only.
+
+Only a recipe's steps use one up.
+~# [x] Is the shopping list left alone?
+~~m It is.
+```
++++ Rendered
+Every ticked item can use up an ingredient.
+~#c [ ] Does this mean a shopping item can hold it back?
+~~m Yes, and ticking it uses the ingredient up.
+~~# Then let's go back to steps only.
+
+Only a recipe's steps use one up.
+~# [x] Is the shopping list left alone?
+~~m It is.
+:::
+
+The replies sit under the aside, a little in, each opening with who wrote it, and the thread keeps the aside's place beside its line.
+Replies are flat: every `~~` after an aside answers that thread, as comments under a review comment do.
+A reply counts towards its reviewer in the legend.
+`~~` only starts a reply before a space or a run of aliases, so `~~struck~~` text is struck through, as it always was.
+
+Any aside folds to its first line, and opens again, by its `›`; folding is a way of reading the page, so nothing is written.
+
+A box after the aliases, `~# [ ]`, as after a heading's hashes, makes a thread that can be **resolved**, with a grey check before who it's from.
+Press it, and its `[x]` is written into the file: the check turns green, the thread goes into the done ink, as a ticked task does, and it starts folded, out of the way but kept as the record of what was decided.
+In the legend, a dot at a name's corner counts what's in its threads still to resolve, so what's left to talk through shows.
+
+Elsewhere, a thread reads as plain text: a question, its answers, and `[x]` as done.
 
 ## Marks
 

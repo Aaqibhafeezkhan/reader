@@ -139,6 +139,17 @@ test('send-watch on the index\'s box lists the whole day, and watches for the co
   assert.equal(out, 'send 2026-11-22/review.md:2: 1 waiting\n  2026-11-22/gh-7/review.md:2: ~# about the item\n');
 });
 
+test('send-watch passes over a box left ticked from a round already answered, with nothing waiting', (t) => {
+  const dir = scratch(t);
+  tree(path.join(dir, 'meetings'), {
+    '2026-11-09/review.md': '- [x] Send to Claude\n\nAll answered.\n',
+    '2026-11-11/gh-199/review.md': '- [x] Send to Claude\n\nItem line.\n~# about the item\n',
+  });
+  const { status, out } = run('review-round/scripts/send-watch.mjs', ['50', '--once'], settings(dir));
+  assert.equal(status, 0, out);
+  assert.equal(out, 'send 2026-11-11/gh-199/review.md:1: 1 waiting\n  2026-11-11/gh-199/review.md:4: ~# about the item\n');
+});
+
 test('send-watch says so when there are no day folders', (t) => {
   const dir = scratch(t);
   const { status, out } = run('review-round/scripts/send-watch.mjs', ['50', '--once'], settings(dir));

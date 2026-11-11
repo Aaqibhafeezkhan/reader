@@ -56,6 +56,7 @@ const OWN = new Set([
   'blockquote.quoted padding-left',
   'blockquote.quoted:not(.gm-cont)::before margin',
   'li.qa padding-left',
+  'ol.badges padding-left',
   // hairlines: as near as a border, or on one
   '.stage-box gap',
   '.stage-box padding',

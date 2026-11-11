@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { render } from '../../src/render.js';
 
 const speaker = (src, opts) => /<div class="gm-speaker">\n([\s\S]*?)<\/div>\n<div(?: class="gm-asides")?>/.exec(render(src, opts).body)[1];
@@ -77,4 +78,11 @@ test('its stylesheet lets the rest go under when it has no room, and a bar besid
   assert.match(css, /\.row-rest > p > \.progress:first-child progress \{ flex: 1/);
   // reversed, once the rest goes under, the first block keeps to the start edge
   assert.match(css, /\.row-reverse \{ flex-direction: row-reverse; justify-content: flex-end; \}/);
+});
+
+test('a bar beside the words may shrink, so the words stay inside the row at phone width in Firefox too', () => {
+  const css = readFileSync(new URL('./row.css', import.meta.url), 'utf8');
+  // Firefox kept the bar as wide as its own, and "326 of 1007 pages" ran past the card (gh-250).
+  assert.match(css, /^\.row-rest > p > \.progress:first-child \{ flex: 1; min-width: 0; \}$/m);
+  assert.match(css, /^\.row-rest > p > \.progress:first-child progress \{[^}]*min-width: 3em;/m, 'the bar itself keeps a little width');
 });

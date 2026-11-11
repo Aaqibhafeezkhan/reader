@@ -19,5 +19,6 @@
 .row-rest > p { margin: var(--gm-space-1) 0; }
 /* a bar beside it takes the width that's left */
 .row-rest > p:has(> .progress:first-child) { display: flex; align-items: center; gap: var(--gm-space-3); }
-.row-rest > p > .progress:first-child { flex: 1; }
+/* min-width: 0, as Firefox otherwise keeps the bar as wide as a browser draws one, pushing the words past the edge (gh-250) */
+.row-rest > p > .progress:first-child { flex: 1; min-width: 0; }
 .row-rest > p > .progress:first-child progress { flex: 1; width: auto; min-width: 3em; }

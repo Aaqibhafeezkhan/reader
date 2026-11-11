@@ -102,3 +102,17 @@ test('a thread\'s Resolve button writes its aside\'s line ticked, and unticked a
   await settle();
   assert.equal(deck.posted.filter((m) => m.type === 'edit').length, 0);
 });
+
+test('every aside folds and opens, a resolved one starting folded, and what\'s folded by hand is kept over a render, written nowhere', async () => {
+  const p = page();
+  const threads = () => p.$$('details.gm-thread').map((d) => d.open);
+  assert.deepEqual(threads(), [true, true, true], 'none resolved, all open');
+  const mine = p.$$('details.gm-thread')[2];
+  mine.open = false;
+  mine.dispatchEvent(new p.window.Event('toggle'));
+  p.show(render(DOC).body);
+  assert.deepEqual(threads(), [true, true, false]);
+  await settle();
+  assert.equal(p.posted.filter((m) => m.type === 'edit').length, 0);
+  assert.deepEqual(page(DOC.replace('~#d [ ]', '~#d [x]')).$$('details.gm-thread').map((d) => d.open), [false, true, true]);
+});

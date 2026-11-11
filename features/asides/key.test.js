@@ -104,9 +104,9 @@ test('without a key, or with none of its aliases, `~word` is text as before', ()
 
 test('the columns show chips, the reviewer\'s colour, and a legend', () => {
   const { body } = render(`${KEY}One.\n\n~#c Contradicts.\n\nTwo.\n\n~cx Also.\n\n~ Mine.\n`);
-  assert.match(body, /<div class="gm-aside-cell gm-attributed" role="note" style="--by: var\(--gm-key-1\)" data-by="#" data-about="c">\n<p><span class="gm-by"><span class="gm-who">Josh<\/span><span class="gm-topic" style="--topic: var\(--gm-key-8\)">Coherence<\/span><\/span>Contradicts.<\/p>/);
+  assert.match(body, /<div class="gm-aside-cell gm-attributed" role="note" style="--by: var\(--gm-key-1\)" data-by="#" data-about="c">\n<details class="gm-thread" open>\n<summary><span class="gm-by"><span class="gm-who">Josh<\/span><span class="gm-topic" style="--topic: var\(--gm-key-8\)">Coherence<\/span><\/span>Contradicts.<\/summary>/);
   // A topic alone keeps the usual rule; an undeclared alias is marked.
-  assert.match(body, /<div class="gm-aside-cell gm-attributed" role="note" data-about="c">\n<p><span class="gm-by"><span class="gm-topic"[^>]*>Coherence<\/span><span class="gm-unknown"[^>]*>x\?<\/span><\/span>Also.<\/p>/);
+  assert.match(body, /<div class="gm-aside-cell gm-attributed" role="note" data-about="c">\n<details class="gm-thread" open>\n<summary><span class="gm-by"><span class="gm-topic"[^>]*>Coherence<\/span><span class="gm-unknown"[^>]*>x\?<\/span><\/span>Also.<\/summary>/);
   assert.match(body, /<span class="gm-mark" aria-hidden="true">~<\/span>Mine./);
   assert.match(body, /<div class="gm-legend" role="group" aria-label="Show the asides of"><button class="gm-who" type="button" data-filter="by" data-alias="#" aria-pressed="false" style="--by: var\(--gm-key-1\)">Josh <b>1<\/b><\/button><button class="gm-topic" type="button" data-filter="about" data-alias="c" aria-pressed="false" style="--topic: var\(--gm-key-8\)">Coherence <b>2<\/b><\/button><button type="button" class="gm-legend-clear" aria-label="Show every aside" hidden>×<\/button><\/div>/);
   // The key isn't masthead meta.

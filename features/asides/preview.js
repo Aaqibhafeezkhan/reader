@@ -131,12 +131,31 @@
     });
   }
 
-  // A thread's Resolve button (gh-199) writes its aside's line, `[x]` or
+  // What's been folded or opened by hand is kept over a render, as typing
+  // makes one, by the aside's first line; written nowhere.
+  const folds = new Map();
+  const firstLine = (d) => d.querySelector(':scope > summary')?.textContent.trim();
+  document.addEventListener('toggle', (e) => {
+    if (e.target.matches?.('details.gm-thread')) folds.set(firstLine(e.target), e.target.open);
+  }, true);
+  Preview.register({
+    restore() {
+      for (const d of document.querySelectorAll('details.gm-thread')) {
+        const open = folds.get(firstLine(d));
+        if (open != null && open !== d.open) d.open = open;
+      }
+    },
+  });
+
+  // A thread's check (gh-199) writes its aside's line, `[x]` or
   // `[ ]`, as a heading's Done does; the re-render that follows folds the
   // thread, or opens it. Where the page can't be worked, it's shut.
   document.addEventListener('click', (e) => {
     const button = e.target.closest?.('button.gm-resolve');
-    if (!button || button.disabled || !Preview.workable) return;
+    if (!button) return;
+    // In the aside's first line, which folds it: pressed, it doesn't.
+    e.preventDefault();
+    if (button.disabled || !Preview.workable) return;
     const line = Number(button.dataset.line);
     const was = button.getAttribute('aria-pressed') === 'true';
     const as = (on) => (on ? button.dataset.on : button.dataset.off);

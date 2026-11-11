@@ -132,9 +132,10 @@ Replies are flat: every `~~` after an aside answers that thread, as comments und
 A reply counts towards its reviewer in the legend.
 `~~` only starts a reply before a space or a run of aliases, so `~~struck~~` text is struck through, as it always was.
 
-A box after the aliases, `~# [ ]`, as after a heading's hashes, makes a thread that can be **resolved**, and it ends in a **Resolve** button.
-Press it, and its `[x]` is written into the file: the thread folds to its first line, and stays as the record of what was decided.
-Opening it shows the rest of the thread again, without changing the file.
+Any aside folds to its first line, and opens again, by its `›`; folding is a way of reading the page, so nothing is written.
+
+A box after the aliases, `~# [ ]`, as after a heading's hashes, makes a thread that can be **resolved**, with a grey check before who it's from.
+Press it, and its `[x]` is written into the file: the check turns green, the thread goes into the done ink, as a ticked task does, and it starts folded, out of the way but kept as the record of what was decided.
 In the legend, a dot at a name's corner counts what's in its threads still to resolve, so what's left to talk through shows.
 
 Elsewhere, a thread reads as plain text: a question, its answers, and `[x]` as done.

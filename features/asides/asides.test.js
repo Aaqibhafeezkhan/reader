@@ -219,7 +219,7 @@ test('a document with no asides is a single pair', () => {
 // --- threads: replies, and resolving them (gh-199) -------------------------
 
 const KEYED = '---\nreviewer #: Josh\nreviewer c: Claude\ntopic d: Design\n---\n\n';
-const cells = (body) => [...body.matchAll(/<div class="gm-aside-cell[\s\S]*?<\/div>\n(?=<\/div>|<div class="gm-aside-cell)/g)].map((m) => m[0]);
+const cells = (body) => [...body.matchAll(/<div class="gm-aside-cell[\s\S]*?<\/details>\n<\/div>/g)].map((m) => m[0]);
 
 test('a ~~ line under an aside is a reply in its thread, flat, each with who wrote it, wrapping as an aside does', () => {
   const { asides } = parse(`${KEYED}A line.\n~# Does it?\n~~c Yes, and\n  it wraps.\n~~# Then steps only.\n~~ And mine.\n`);
@@ -227,7 +227,7 @@ test('a ~~ line under an aside is a reply in its thread, flat, each with who wro
   assert.deepEqual(asides[0].replies.map((r) => [r.by?.who?.name ?? null, r.text, r.line]),
     [['Claude', 'Yes, and\nit wraps.', 8], ['Josh', 'Then steps only.', 10], [null, 'And mine.', 11]]);
   const [cell] = cells(render(`${KEYED}A line.\n~# Does it?\n~~c Yes.\n`).body);
-  assert.match(cell, /<p><span class="gm-by"><span class="gm-who">Josh<\/span><\/span>Does it\?<\/p>\n<div class="gm-reply gm-attributed" style="--by: var\(--gm-key-2\)" data-by="c">\n<p><span class="gm-by"><span class="gm-who">Claude<\/span><\/span>Yes\.<\/p>/);
+  assert.match(cell, /<details class="gm-thread" open>\n<summary><span class="gm-by"><span class="gm-who">Josh<\/span><\/span>Does it\?<\/summary>\n<div class="gm-replies">\n<div class="gm-reply gm-attributed" style="--by: var\(--gm-key-2\)" data-by="c">\n<p><span class="gm-by"><span class="gm-who">Claude<\/span><\/span>Yes\.<\/p>/);
 });
 
 test('~~ is a reply only straight under an aside, and only before a space or an alias run: strikethrough is untouched', () => {
@@ -255,14 +255,14 @@ test('a box after the aliases makes a thread that can be resolved, writing its o
   assert.equal(preprocess('~ [later] not a box\n').asides[0].box, undefined);
 
   const [open] = cells(render(`${KEYED}A line.\n~# [ ] Does it?\n`).body);
-  assert.match(open, /<p><span class="gm-by"><span class="gm-who">Josh<\/span><\/span>Does it\?<\/p>\n<p class="gm-thread-foot"><button type="button" class="gm-resolve" data-line="7" data-on="~# \[x\] Does it\?" data-off="~# \[ \] Does it\?" aria-pressed="false"><\/button><\/p>/);
-  assert.doesNotMatch(open, /<details/);
+  assert.match(open, /<details class="gm-thread" open>\n<summary><button type="button" class="gm-resolve" data-line="7" data-on="~# \[x\] Does it\?" data-off="~# \[ \] Does it\?" aria-pressed="false" aria-label="Resolved"><\/button><span class="gm-by"><span class="gm-who">Josh<\/span><\/span>Does it\?<\/summary>/);
+  assert.match(open, /<details class="gm-thread" open>/, 'open, as it isn\'t resolved');
 });
 
 test('a resolved thread folds to its first line, its chips not drawn again, and it opens without a change to the file', () => {
   const [cell] = cells(render(`${KEYED}A line.\n~# [x] Settled?\n~~c Yes.\n`).body);
   assert.match(cell, /^<div class="gm-aside-cell gm-attributed gm-resolvable gm-is-resolved"/);
-  assert.match(cell, /<details class="gm-thread">\n<summary><span class="vh">Resolved: <\/span><span class="gm-by"><span class="gm-who">Josh<\/span><\/span>Settled\?<\/summary>\n<div class="gm-reply[\s\S]*Yes\.[\s\S]*<button type="button" class="gm-resolve"[^>]* aria-pressed="true"><\/button><\/p>\n<\/details>/);
+  assert.match(cell, /<details class="gm-thread">\n<summary><span class="vh">Resolved: <\/span><button type="button" class="gm-resolve"[^>]* aria-pressed="true" aria-label="Resolved"><\/button><span class="gm-by"><span class="gm-who">Josh<\/span><\/span>Settled\?<\/summary>\n<div class="gm-replies">\n<div class="gm-reply[\s\S]*Yes\.[\s\S]*<\/details>/);
   assert.equal(cell.match(/class="gm-who">Josh/g).length, 1, 'who opened it, once');
 });
 

@@ -45,7 +45,7 @@ test('the address\'s filter dims the other attributed asides, a thread showing w
   assert.equal(p.$('.gm-legend-clear').hidden, false);
 
   const both = page(DOC, { by: '#', about: 'd' });
-  assert.deepEqual(both.dimmed(), ['ClaudeYes.', 'JoshThen steps only.', 'ClaudeAbout the rest.'], 'reviewers and topics together: both must match, so a reply about no topic is dimmed');
+  assert.deepEqual(both.dimmed(), ['ClaudeYes.', 'ClaudeAbout the rest.'], 'reviewers and topics together: both must match, a reply naming no topic about its thread\'s');
   assert.deepEqual(page(DOC, {}).dimmed(), [], 'with no filter, nothing is dimmed');
   assert.equal(page(DOC, {}).$('.gm-legend-clear').hidden, true);
 });
@@ -56,7 +56,7 @@ test('a chip toggles its reviewer or topic in the address, any of each, and the 
   p.click(p.chip('Claude'));
   p.click(p.chip('Design'));
   assert.deepEqual(p.addresses(), [{ by: '#', about: '' }, { by: '#c', about: '' }, { by: '#c', about: 'd' }]);
-  assert.deepEqual(p.dimmed(), ['ClaudeYes.', 'JoshThen steps only.', 'ClaudeAbout the rest.'], 'Josh\'s or Claude\'s, about Design: only the aside that opened the thread');
+  assert.deepEqual(p.dimmed(), ['ClaudeAbout the rest.'], 'Josh\'s or Claude\'s, about Design: the whole Design thread, its replies about its topic');
   p.click(p.chip('Josh'));
   assert.deepEqual(p.addresses(), [{ by: 'c', about: 'd' }]);
   p.click(p.$('.gm-legend-clear'));
@@ -66,10 +66,15 @@ test('a chip toggles its reviewer or topic in the address, any of each, and the 
   assert.equal(p.posted.filter((m) => m.type === 'edit').length, 0, 'a view, not the file: nothing is written');
 });
 
+test('a reply naming no topic is about its thread\'s, and one naming its own is about those alone', () => {
+  const p = page(DOC.replace('~~# Then steps only.', '~~#d Then steps only.\n~~c Off it: what about drinks?').replace('topic d: Design', 'topic d: Design\ntopic k: Drinks').replace('~~c Off it:', '~~ck Off it:'), { about: 'd' });
+  assert.deepEqual(p.dimmed(), ['ClaudeDrinksOff it: what about drinks?', 'ClaudeAbout the rest.']);
+});
+
 test('the filter is drawn again when only the address changes, as when it\'s edited by hand', () => {
   const p = page();
   p.send({ type: 'address', params: { about: 'd' } });
-  assert.deepEqual(p.dimmed(), ['ClaudeYes.', 'JoshThen steps only.', 'ClaudeAbout the rest.']);
+  assert.deepEqual(p.dimmed(), ['ClaudeAbout the rest.']);
   assert.equal(p.chip('Design').getAttribute('aria-pressed'), 'true');
 });
 

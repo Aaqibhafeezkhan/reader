@@ -242,7 +242,7 @@ test('~~ is a reply only straight under an aside, and only before a space or an 
 test('a reply counts towards its reviewer in the legend, and what\'s still to resolve is a dot at its chip\'s corner', () => {
   const { body } = render(`${KEYED}One.\n~#d [ ] Open?\n~~c Yes.\n\nTwo.\n~# [x] Settled?\n~~c Yes.\n~~# Good.\n\nThree.\n~# Not to resolve.\n`);
   const legend = /<div class="gm-legend"[^>]*>([\s\S]*?)<\/div>/.exec(body)[1];
-  assert.equal(legend.replace(/<span class="vh">[^<]*<\/span>/g, '|').replace(/<[^>]+>/g, '').replace(/\s+/g, ' '), 'Josh 4|1Claude 2|1Design 1|1×');
+  assert.equal(legend.replace(/<span class="vh">[^<]*<\/span>/g, '|').replace(/<[^>]+>/g, '').replace(/\s+/g, ' '), 'Josh 4|1Claude 2|1Design 2|2×', 'Claude\'s reply in the Design thread is about Design too');
   assert.match(legend, /Josh <b>4<\/b><span class="gm-unresolved" title="1 unresolved"><span class="vh">, unresolved: <\/span>1<\/span>/);
   assert.doesNotMatch(render(`${KEYED}One.\n~# [x] Settled?\n`).body, /gm-unresolved/, 'nothing left, no dot');
 });

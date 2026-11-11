@@ -76,6 +76,7 @@ deck's front matter.
 
 In Edit and Work, click a name or a topic in the legend to show only its asides; the others are dimmed, not taken away, so you can still see where they are.
 Several reviewers mean any of them, and so do several topics; a reviewer and a topic together mean both, as Josh's asides about Coherence.
+A reply is about its thread's topics, unless it names its own, and in a thread, whatever the filter leaves out is dimmed, the aside that opened it too.
 The filter is kept in the address, `#review.md?by=%23&about=c`, so a filtered page can be shared or reloaded; click a name again, or the `×` beside them, to show every aside.
 It isn't written in the file, and a printed or exported page shows every aside.
 

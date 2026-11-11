@@ -49,6 +49,12 @@ export function asides(md) {
     // through the page's own trace.
     const page = state.env.sourceLines ?? [];
     for (const a of [...asides, ...asides.flatMap((t) => t.replies ?? [])]) a.line = page[a.line] ?? a.line;
+    // A reply naming no topic is about its thread's, for the filter and the
+    // legend, though its chips stay as written; one naming its own is about
+    // those alone (gh-21's review).
+    for (const t of asides) {
+      for (const r of t.replies ?? []) if (r.by && !r.by.topics.length && t.by?.topics.length) r.about = t.by.topics;
+    }
     state.env.sourceLines = lines.map((k) => page[k] ?? k);
     state.env.asides = asides;
     // The key's topics, for a mark in braces to be in (`[words]{c}`).
@@ -126,17 +132,18 @@ function reply(md, r, env) {
   const lead = r.by ? byChips(r.by) : '<span class="gm-mark" aria-hidden="true">~~</span>';
   const opened = /^<p\b/.test(html) ? html.replace(/^<p\b([^>]*)>/, `<p$1>${lead}`) : `<p>${lead}</p>\n${html}`;
   const style = r.by?.who ? ` style="--by: ${escapeHtml(r.by.who.color)}"` : '';
-  return `<div class="gm-reply${r.by ? ' gm-attributed' : ''}"${style}${voice(r.by)}>\n${opened}</div>\n`;
+  return `<div class="gm-reply${r.by ? ' gm-attributed' : ''}"${style}${voice(r.by, r.about)}>\n${opened}</div>\n`;
 }
 
 /**
- * Who an aside or a reply is from and what it's about, by their aliases,
+ * Who an aside or a reply is from and what it's about (`about`, a reply's
+ * thread's topics when it names none), by their aliases,
  * for the legend's filter to go by (preview.js, gh-21): ` data-by="#"
  * data-about="cv"`, or '' for the writer's own.
  */
-function voice(by) {
+function voice(by, about = by?.topics) {
   if (!by) return '';
-  const topics = by.topics.map((t) => t.alias).join('');
+  const topics = about.map((t) => t.alias).join('');
   return `${by.who ? ` data-by="${escapeAttr(by.who.alias)}"` : ''}${topics ? ` data-about="${escapeAttr(topics)}"` : ''}`;
 }
 
@@ -178,7 +185,7 @@ export function legend(asides, key, env = {}) {
   for (const thread of asides) {
     for (const a of [thread, ...(thread.replies ?? [])]) {
       if (!a.by) continue;
-      for (const e of [a.by.who, ...a.by.topics].filter(Boolean)) {
+      for (const e of [a.by.who, ...(a.about ?? a.by.topics)].filter(Boolean)) {
         add(counts, e);
         if (thread.box && !thread.box.checked) add(open, e);
       }

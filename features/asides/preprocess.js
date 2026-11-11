@@ -27,6 +27,24 @@ const FENCE_RE = /^\s{0,3}(`{3,}|~{3,})/;
 // to mark them in braces (see marks.js): `~v[jumped]{circle}`.
 const ASIDE_RE = new RegExp(String.raw`^([ \t]*)~(?!~)([^\s~[]*)(?:\[((?:[^\]\\\n]|\\.)+)\](?:\{(${STYLES.join('|')})\})?)?([ \t]+.*)?$`, 'i');
 
+// A reply, `~~` at the start of a line and then a space or a run of aliases
+// (`~~c Yes.`): an answer to the aside above it, in its thread. `~~strike~~`
+// has no space after its run, and `~~~` is a fence.
+const REPLY_RE = /^([ \t]*)~~([^\s~[]*)([ \t]+.*)?$/;
+
+// A box straight after an aside's aliases, `~# [ ]`, as after a heading's
+// hashes: the thread can be resolved, and `[x]` says it is.
+const BOX_RE = /^\[([ xX])\](?=\s|$)[ \t]*/;
+
+/** Is `line` a reply, and if so, whose: `{ m, by }`. */
+function replyOf(line, key) {
+  const m = REPLY_RE.exec(line);
+  if (!m || !m[3]?.trim()) return null;
+  if (!m[2]) return { m, by: null };
+  const by = attribute(m[2], key);
+  return by ? { m, by } : null;
+}
+
 /**
  * Is `line` an aside, and if so, whose and about what: `{ by, select }`,
  * with `by` null for the writer's own and `select` null when it names no
@@ -74,7 +92,9 @@ function indentOf(line) {
  *   An aside written with the key's aliases
  *   has `by: { who, topics, unknown }`. One naming words in brackets
  *   has `select: { text, nth, style }`, and `within` when it's written
- *   straight under the line they're in.
+ *   straight under the line they're in. One with a box after its aliases
+ *   has `box: { checked, on, off }`, its line ticked and not; and one
+ *   answered has `replies`, each `{ text, line, by }`.
  */
 export function preprocess(src, key = new Map()) {
   const lines = String(src).replace(/\r\n?/g, '\n').split('\n');
@@ -113,32 +133,35 @@ export function preprocess(src, key = new Map()) {
     // continuation is a non-blank line that is either indented past the `~`,
     // prefixed with its own `~`, or (after a blank) plain prose lazily wrapped
     // onto the next line. Anything that starts a new block ends the aside.
-    const markerIndent = indentOf(line);
     const am = found.m;
-    const first = (am[5] || '').trim();
-    const head = am[0].length - am[1].length - (am[5] || '').length;
-    const contentIndent = expandTabs(line).indexOf('~') + head + 1;
-    const body = [first];
     const startLine = i;
-    i++;
+    let first = (am[5] || '').trim();
+    // A box after its aliases makes it a thread that can be resolved: the
+    // line as written, ticked and not, for the page to write back.
+    const box = BOX_RE.exec(first);
+    if (box) first = first.slice(box[0].length);
+    const head = am[0].length - am[1].length - (am[5] || '').length;
+    const body = [first];
+    i = carryOn(i, line, head, within, body);
+    const aside = {
+      anchor: out.length,
+      text: body.join('\n').replace(/\s+$/, ''),
+      line: startLine,
+      ...(found.by && { by: found.by }),
+      ...(found.select && { select: found.select, within }),
+      ...(box && { box: boxOf(line, box[1] !== ' ') }),
+    };
 
-    while (i < lines.length) {
-      const next = lines[i];
-      if (!next.trim()) break;
-      if (FENCE_RE.test(next)) break;
-      // A fresh `~` starts a fresh thought. Two tildes in a row are two
-      // separate asides that happen to share an anchor -- they will sit in the
-      // same cell, each keeping its own mark. A continuation line with no `~`
-      // is instead a wrapped line of the *same* thought.
-      if (asideOf(next, key)) break;
-      const ind = indentOf(next);
-      if (ind > markerIndent || (!within && !BLOCK_START_RE.test(next))) {
-        body.push(expandTabs(next).slice(Math.min(ind, contentIndent)));
-        i++;
-        continue;
-      }
-      break;
+    // Its replies, each `~~` straight under it or under the last, and their
+    // own continuation lines: one thread, flat, as the replies to a comment.
+    const replies = [];
+    for (let r; i < lines.length && (r = replyOf(lines[i], key));) {
+      const at = i;
+      const words = [(r.m[3] || '').trim()];
+      i = carryOn(i, lines[i], r.m[0].length - r.m[1].length - r.m[3].length, within, words);
+      replies.push({ text: words.join('\n').replace(/\s+$/, ''), line: at, ...(r.by && { by: r.by }) });
     }
+    if (replies.length) aside.replies = replies;
 
     // Swallow one blank line after the aside so removing it does not leave a
     // double blank that would loosen or split the surrounding list -- unless
@@ -146,14 +169,44 @@ export function preprocess(src, key = new Map()) {
     // next from joining the paragraph above.
     if (!within && i < lines.length && !lines[i].trim()) i++;
 
-    asides.push({
-      anchor: out.length,
-      text: body.join('\n').replace(/\s+$/, ''),
-      line: startLine,
-      ...(found.by && { by: found.by }),
-      ...(found.select && { select: found.select, within }),
-    });
+    asides.push(aside);
+  }
+
+  /**
+   * The continuation lines of an aside or a reply that starts on `lines[at]`,
+   * whose marker and aliases take `head` characters, pushed onto `body`:
+   * returns the line after them.
+   */
+  function carryOn(at, line, head, within, body) {
+    const markerIndent = indentOf(line);
+    const contentIndent = expandTabs(line).indexOf('~') + head + 1;
+    let k = at + 1;
+    while (k < lines.length) {
+      const next = lines[k];
+      if (!next.trim()) break;
+      if (FENCE_RE.test(next)) break;
+      // A fresh `~` starts a fresh thought. Two tildes in a row are two
+      // separate asides that happen to share an anchor -- they will sit in the
+      // same cell, each keeping its own mark. A `~~` is a reply to it. A
+      // continuation line with no `~` is instead a wrapped line of the *same*
+      // thought.
+      if (asideOf(next, key) || replyOf(next, key)) break;
+      const ind = indentOf(next);
+      if (ind > markerIndent || (!within && !BLOCK_START_RE.test(next))) {
+        body.push(expandTabs(next).slice(Math.min(ind, contentIndent)));
+        k++;
+        continue;
+      }
+      break;
+    }
+    return k;
   }
 
   return { source: out.join('\n'), asides, lines: from };
+}
+
+/** An aside's box: whether it's ticked, and its line both ways, `on` and `off`. */
+function boxOf(line, checked) {
+  const at = (mark) => line.replace(/^([ \t]*~[^\s~[]*[ \t]+)\[[ xX]\]/, `$1[${mark}]`);
+  return { checked, on: at('x'), off: at(' ') };
 }

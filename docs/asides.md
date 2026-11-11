@@ -94,6 +94,46 @@ takes it darker on a light page, or lighter on a dark one, where it
 wouldn't read: `#ffd700` is a dark gold. The rule and the marks keep it as
 it's written.
 
+## Threads
+
+Reviewing in the margin is a conversation, so an aside can be answered.
+A line starting `~~` straight under an aside is a **reply** to it, with its own aliases, or none:
+
+::: tabs
++++ Source
+```markdown
+Every ticked item can use up an ingredient.
+~#c [ ] Does this mean a shopping item can hold it back?
+~~m Yes, and ticking it uses the ingredient up.
+~~# Then let's go back to steps only.
+
+Only a recipe's steps use one up.
+~# [x] Is the shopping list left alone?
+~~m It is.
+```
++++ Rendered
+Every ticked item can use up an ingredient.
+~#c [ ] Does this mean a shopping item can hold it back?
+~~m Yes, and ticking it uses the ingredient up.
+~~# Then let's go back to steps only.
+
+Only a recipe's steps use one up.
+~# [x] Is the shopping list left alone?
+~~m It is.
+:::
+
+The replies sit under the aside, a little in, each opening with who wrote it, and the thread keeps the aside's place beside its line.
+Replies are flat: every `~~` after an aside answers that thread, as comments under a review comment do.
+A reply counts towards its reviewer in the legend.
+`~~` only starts a reply before a space or a run of aliases, so `~~struck~~` text is struck through, as it always was.
+
+A box after the aliases, `~# [ ]`, as after a heading's hashes, makes a thread that can be **resolved**.
+Tick it, and its `[x]` is written into the file: the thread folds to who opened it and "resolved", and stays as the record of what was decided.
+Opening it shows the thread again, without changing the file.
+The legend counts what's in resolved threads apart, `Josh 3 (1 resolved)`, so what's left to talk through shows.
+
+Elsewhere, a thread reads as plain text: a question, its answers, and `[x]` as done.
+
 ## Marks
 
 An aside can say which **words** it's about, and they're marked as a pen

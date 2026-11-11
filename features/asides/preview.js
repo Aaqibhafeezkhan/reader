@@ -5,7 +5,8 @@
  * have moved: a render, the page or a slide changing size, a step showing,
  * the fonts arriving, and just before printing. An aside that isn't beside
  * its words (a page too narrow for the margin) gets no line: it names the
- * words at its start. Runs in the preview frame.
+ * words at its start. A thread's box, ticked, writes its aside's `[x]`
+ * (gh-199). Runs in the preview frame.
  */
 (() => {
   const NS = 'http://www.w3.org/2000/svg';
@@ -127,4 +128,18 @@
       pick(el.dataset.mark, on);
     });
   }
+
+  // A thread's box (gh-199) writes its aside's line, `[x]` or `[ ]`, as a
+  // task's does; the re-render that follows folds the thread, or opens it.
+  // Where the page can't be worked, it takes no click.
+  document.addEventListener('click', (e) => {
+    if (e.target.matches?.('input.gm-resolve') && !Preview.workable) e.preventDefault();
+  }, true);
+  document.addEventListener('change', (e) => {
+    const box = e.target;
+    if (!box.matches?.('input.gm-resolve') || !Preview.workable) return;
+    const line = Number(box.dataset.line);
+    const as = (on) => (on ? box.dataset.on : box.dataset.off);
+    Preview.edit([{ from: line, to: line + 1, before: [as(box.defaultChecked)], after: [as(box.checked)] }], { undo: true });
+  });
 })();

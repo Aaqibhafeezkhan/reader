@@ -151,6 +151,24 @@ $ npm start -- ~/Documents/notes      # run it from the checkout
 $ npm run dist                        # the installer for this platform, in desktop/dist
 ```
 
+## Working in batches
+
+This is optional: any change can come as a PR of its own.
+A batch is a few issues worked together and reviewed together, with an AI or without, before they go to `main` as one PR.
+The skills and scripts in [`contributing/`](contributing/) take an AI through it; see [its README](contributing/README.md) to set them up.
+
+1. **Start.** Choose the issues, and check them: their milestone, open PRs that mention them, and whether each still says what's wanted (`batch-start`).
+   The batch goes on `review/YYYY.MM.DD`, named for the day it's reviewed, and each issue on `issue/gh-N` from it.
+2. **Work.** Each commit on an issue's branch ends `See gh-N`, and is signed off (`git commit -s`).
+   An issue is merged into the review branch with `--no-ff`, its merge commit saying `Closes gh-N`.
+3. **Open the review.** The review is laid out in reader-markdown, in a folder for the day: an index of the batch, and a file for each issue to look at (`review-open`).
+4. **Review it in rounds.** Write in those files, with `~` asides and ticked boxes, and the AI answers each round (`review-round`).
+   A follow-up commit for an issue ends `Polish gh-N`.
+5. **Close it.** Once nothing's left open, the review branch goes to `main` as a PR titled `Batch YYYY.MM.DD` (`review-close`).
+   A committer merges it with a merge commit, never a squash or a rebase, so each `Closes gh-N` reaches `main` and closes its issue.
+
+Afterwards, a retro of how it went carries what to try next time into the next batch (`retro`).
+
 ## Releasing
 
 Each version has a milestone, titled with the version, that closes with a

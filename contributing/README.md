@@ -1,12 +1,12 @@
 # Working in batches, with an AI
 
 The skills here take a batch of issues from start to merge with an AI that reads the open [Agent Skills](https://agentskills.io/specification) format: each folder is one skill, its `SKILL.md` and its `scripts/`.
-They're optional.
+They're optional; [CONTRIBUTING.md](../CONTRIBUTING.md#working-in-batches) says how a batch goes.
 
 - `batch-start`: check a batch's issues before work starts.
 - `review-open`: lay out the review of a finished batch, in reader-markdown.
 - `review-round`: answer each round of the review.
-- `review-close`: check that nothing's left, then merge.
+- `review-close`: check that nothing's left, then open the batch's PR into `main`.
 - `retro`: a retro of how the review went.
 
 ## Set up

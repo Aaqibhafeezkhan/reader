@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { file, frames, run, assertElement } from './dom.js';
 
 /**
@@ -327,4 +328,11 @@ test("both frames are sent the deck's title", async () => {
   const render = (name) => sent[name].find((m) => m.type === 'render');
   assert.equal(render('now').title, 'talk');
   assert.equal(render('next').title, 'talk');
+});
+
+test('its layout places only its own sections, so the overview\'s slide that\'s now stays in order and the same size', () => {
+  const css = readFileSync(new URL('../static/speaker.css', import.meta.url), 'utf8');
+  // `.now { grid-area: now }` also took the overview's current slide out of its grid (gh-249).
+  const placed = [...css.matchAll(/^([^{}\n]+)\{[^}]*grid-area:/gm)].map((m) => m[1].trim());
+  assert.deepEqual(placed, ['#speaker > .now', '#speaker > .next', '#speaker > .notes']);
 });

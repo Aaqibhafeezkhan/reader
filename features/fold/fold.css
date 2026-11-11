@@ -36,6 +36,10 @@
 .fold-toggle:focus-visible { outline: 2px solid var(--gm-accent); outline-offset: 1px; }
 @media screen {
   .fold-hidden { display: none !important; }
+  /* Room for the chevrons in the page's margin, apart from the preview's
+     edge, where headings fold: the text moves right a little (gh-100's
+     review). Not on paper or in an export, where nothing folds. */
+  .gm-doc:has(.fold-heading) { padding-left: calc(1.5rem + var(--gm-space-6)); }
 }
 @media print {
   .fold-toggle { display: none; }

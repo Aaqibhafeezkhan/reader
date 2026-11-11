@@ -12,6 +12,7 @@ import { exportDocument } from './exporting.js';
 import { showPdf } from './pdf.js';
 import { renderNow, showPreview, showEmpty } from './render.js';
 import { scheduleGutter } from './lines.js';
+import { paramsFor, writeAddress } from './address.js';
 import { setSaveState, updateCounts, toast } from './status.js';
 import { updatePresentable } from './deck.js';
 import { openIn, listSeen, showList, toggleDrawer } from './modes.js';
@@ -590,7 +591,8 @@ export async function open(p) {
     state.dir = dirOf(p);
     state.group = group && group.opens.path !== p ? group.name : null;
   } else state.outline = false;
-  history.replaceState(null, '', `#${encodeURIComponent(p)}`);
+  // The address keeps how the file is set to be seen while it's the one named.
+  writeAddress(p, paramsFor(p));
   document.title = `${p} — ${state.rootName}`;
   el.crumb.textContent = p;
   el.copyPath.hidden = false;

@@ -9,6 +9,7 @@ import { updatePresentable } from './deck.js';
 import { scheduleFitCheck } from './fit.js';
 import { sendScroll } from './sync.js';
 import { setPages } from './pages.js';
+import { paramsFor } from './address.js';
 
 // The frame says 'ready' when it loads, but it may have loaded before this
 // module ran and that message is gone. So also ask: a 'ping' is answered with
@@ -104,6 +105,8 @@ export async function renderNow({ resetScroll = false } = {}) {
     working: state.working,
     // drawn in the app's theme, unless its own background says otherwise
     dark: Theme.dark(),
+    // how the page is set to be seen, as the address says (address.js)
+    address: paramsFor(path),
   });
   // What's above may have grown or shrunk; put the page back level.
   if (!resetScroll) sendScroll();

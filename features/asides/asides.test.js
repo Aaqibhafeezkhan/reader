@@ -227,7 +227,7 @@ test('a ~~ line under an aside is a reply in its thread, flat, each with who wro
   assert.deepEqual(asides[0].replies.map((r) => [r.by?.who?.name ?? null, r.text, r.line]),
     [['Claude', 'Yes, and\nit wraps.', 8], ['Josh', 'Then steps only.', 10], [null, 'And mine.', 11]]);
   const [cell] = cells(render(`${KEYED}A line.\n~# Does it?\n~~c Yes.\n`).body);
-  assert.match(cell, /<p><span class="gm-by"><span class="gm-who">Josh<\/span><\/span>Does it\?<\/p>\n<div class="gm-reply gm-attributed" style="--by: var\(--gm-key-2\)">\n<p><span class="gm-by"><span class="gm-who">Claude<\/span><\/span>Yes\.<\/p>/);
+  assert.match(cell, /<p><span class="gm-by"><span class="gm-who">Josh<\/span><\/span>Does it\?<\/p>\n<div class="gm-reply gm-attributed" style="--by: var\(--gm-key-2\)" data-by="c">\n<p><span class="gm-by"><span class="gm-who">Claude<\/span><\/span>Yes\.<\/p>/);
 });
 
 test('~~ is a reply only straight under an aside, and only before a space or an alias run: strikethrough is untouched', () => {
@@ -241,8 +241,8 @@ test('~~ is a reply only straight under an aside, and only before a space or an 
 
 test('a reply counts towards its reviewer in the legend, and a resolved thread\'s are counted apart', () => {
   const { body } = render(`${KEYED}One.\n~#d [ ] Open?\n~~c Yes.\n\nTwo.\n~# [x] Settled?\n~~c Yes.\n~~# Good.\n`);
-  const legend = /<div class="gm-legend">([\s\S]*?)<\/div>/.exec(body)[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ');
-  assert.equal(legend, 'Josh 3 (2 resolved)Claude 2 (1 resolved)Design 1');
+  const legend = /<div class="gm-legend"[^>]*>([\s\S]*?)<\/div>/.exec(body)[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ');
+  assert.equal(legend, 'Josh 3 (2 resolved)Claude 2 (1 resolved)Design 1×');
 });
 
 test('a box after the aliases makes a thread that can be resolved, writing its own line ticked or not', () => {

@@ -116,7 +116,7 @@ test('a key with a space and a character in it, not a reviewer or topic, shows i
 test('with asides, a reviewer shows in its legend, with a count, and not in the byline', () => {
   const { body, css } = render('---\ntitle: T\nauthor: Ann\nreviewer #: Josh\n---\n\nWords.\n\n~# a thought\n');
   assert.match(body, /<div class="gm-byline"><span>Ann<\/span><\/div>/);
-  assert.match(body, /<div class="gm-legend"><span class="gm-who" style="--by: var\(--gm-key-1\)">Josh <b>1<\/b><\/span><\/div>/);
+  assert.match(body, /<div class="gm-legend"[^>]*><button class="gm-who"[^>]* style="--by: var\(--gm-key-1\)">Josh <b>1<\/b><\/button>/);
   assert.doesNotMatch(css, /\.gm-byline \.gm-who/);
 });
 

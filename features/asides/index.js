@@ -57,7 +57,7 @@ export function asides(md) {
     // out, once every rule has run, so the words it chose are marked by then.
     const { md, env } = state;
     env.margin = [...(env.margin ?? []), ...asides.map((aside) => ({ anchor: aside.anchor, render: (attrs) => cell(md, aside, env, attrs) }))];
-    const shown = legend(asides, key);
+    const shown = legend(asides, key, env);
     if (shown) env.masthead = [...(env.masthead ?? []), shown];
   };
   // After the page's front matter and comments are off, or after
@@ -80,7 +80,7 @@ function cell(md, aside, env, attrs = '') {
   const words = about(aside.mark);
   const tied = aside.mark?.id;
   const style = [aside.by?.who && `--by: ${escapeHtml(aside.by.who.color)}`, tied && aside.mark.color && `--mk: ${escapeHtml(aside.mark.color)}`].filter(Boolean).join('; ');
-  attrs = `${style ? ` style="${style}"` : ''}${tied ? ` data-mark="${escapeHtml(tied)}"` : ''}${attrs}`;
+  attrs = `${style ? ` style="${style}"` : ''}${tied ? ` data-mark="${escapeHtml(tied)}"` : ''}${voice(aside.by)}${attrs}`;
   const box = aside.box ? resolveBox(aside, env) : '';
   const replies = (aside.replies ?? []).map((r) => reply(md, r, env)).join('');
   const resolved = aside.box?.checked;
@@ -120,7 +120,18 @@ function reply(md, r, env) {
   const lead = r.by ? byChips(r.by) : '<span class="gm-mark" aria-hidden="true">~~</span>';
   const opened = /^<p\b/.test(html) ? html.replace(/^<p\b([^>]*)>/, `<p$1>${lead}`) : `<p>${lead}</p>\n${html}`;
   const style = r.by?.who ? ` style="--by: ${escapeHtml(r.by.who.color)}"` : '';
-  return `<div class="gm-reply${r.by ? ' gm-attributed' : ''}"${style}>\n${opened}</div>\n`;
+  return `<div class="gm-reply${r.by ? ' gm-attributed' : ''}"${style}${voice(r.by)}>\n${opened}</div>\n`;
+}
+
+/**
+ * Who an aside or a reply is from and what it's about, by their aliases,
+ * for the legend's filter to go by (preview.js, gh-21): ` data-by="#"
+ * data-about="cv"`, or '' for the writer's own.
+ */
+function voice(by) {
+  if (!by) return '';
+  const topics = by.topics.map((t) => t.alias).join('');
+  return `${by.who ? ` data-by="${escapeAttr(by.who.alias)}"` : ''}${topics ? ` data-about="${escapeAttr(topics)}"` : ''}`;
 }
 
 /** The tokens of one aside's content. */
@@ -151,7 +162,7 @@ export function byChips(by) {
  * how many of each, and how many of those are resolved, in the order
  * they're declared: a legend for the masthead, or ''.
  */
-export function legend(asides, key) {
+export function legend(asides, key, env = {}) {
   // Each aside and each reply counts towards who wrote it and what it's
   // about; those in a resolved thread are counted apart, so what's left shows.
   const counts = new Map();
@@ -169,10 +180,18 @@ export function legend(asides, key) {
   if (!counts.size) return '';
   const used = [...(key?.values() || [])].filter((e) => counts.has(e));
   const count = (e) => `<b>${counts.get(e)}</b>${resolved.has(e) ? ` <span class="gm-resolved">(${resolved.get(e)} resolved)</span>` : ''}`;
-  const chip = (e) => e.kind === 'reviewer'
-    ? `<span class="${chipClass('gm-who', e.color)}" style="--by: ${escapeHtml(e.color)}">${escapeHtml(e.name)} ${count(e)}</span>`
-    : `<span class="${chipClass('gm-topic', e.color)}" style="--topic: ${escapeHtml(e.color)}">${escapeHtml(e.name)} ${count(e)}</span>`;
-  return `<div class="gm-legend">${used.map(chip).join('')}</div>`;
+  // Where the page is read in the app, each chip toggles a filter of the
+  // asides by it, and a last button clears it (preview.js, gh-21); not in
+  // an export, nor on a slide.
+  const filters = !env.exported && !env.deck;
+  const tag = filters ? 'button' : 'span';
+  const chip = (e) => {
+    const by = e.kind === 'reviewer';
+    const toggle = filters ? ` type="button" data-filter="${by ? 'by' : 'about'}" data-alias="${escapeAttr(e.alias)}" aria-pressed="false"` : '';
+    return `<${tag} class="${chipClass(by ? 'gm-who' : 'gm-topic', e.color)}"${toggle} style="${by ? '--by' : '--topic'}: ${escapeHtml(e.color)}">${escapeHtml(e.name)} ${count(e)}</${tag}>`;
+  };
+  const clear = filters ? '<button type="button" class="gm-legend-clear" aria-label="Show every aside" hidden>×</button>' : '';
+  return `<div class="gm-legend"${filters ? ' role="group" aria-label="Show the asides of"' : ''}>${used.map(chip).join('')}${clear}</div>`;
 }
 
 export default {

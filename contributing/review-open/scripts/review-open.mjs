@@ -128,7 +128,7 @@ progress:[]
 
 All the following criteria must be accepted for this review to be complete.
 
-1) [ ] Chrome: <fill: how it was checked, or remove>
+1) [ ] Chrome: <fill: how it was checked; or "Check Chrome: <what to look for>", if it wasn't; or remove>
 2) [ ] Safari: <fill>
 3) [ ] Firefox: <fill>
 4) [ ] :iphone: phone: <fill>

@@ -138,12 +138,34 @@
   document.addEventListener('toggle', (e) => {
     if (e.target.matches?.('details.gm-thread')) folds.set(firstLine(e.target), e.target.open);
   }, true);
+  // An aside that's a line and no more, no replies under it, has nothing to
+  // fold: it's shown open, with no chevron, and its line takes no click.
+  // Whether it is depends on the margin's width, so it's measured each time.
+  function measure() {
+    for (const d of document.querySelectorAll('details.gm-thread')) {
+      const summary = d.querySelector(':scope > summary');
+      let one = d.children.length === 1;
+      if (one) {
+        d.classList.add('gm-measuring');
+        one = summary.scrollWidth <= summary.clientWidth + 1;
+        d.classList.remove('gm-measuring');
+      }
+      d.classList.toggle('gm-one-line', one);
+      if (one && !d.open) d.open = true;
+    }
+  }
+  document.addEventListener('click', (e) => {
+    if (e.target.closest?.('details.gm-one-line > summary') && !e.target.closest('a, button')) e.preventDefault();
+  });
+  new ResizeObserver(() => measure()).observe(document.documentElement);
+
   Preview.register({
     restore() {
       for (const d of document.querySelectorAll('details.gm-thread')) {
         const open = folds.get(firstLine(d));
         if (open != null && open !== d.open) d.open = open;
       }
+      measure();
     },
   });
 

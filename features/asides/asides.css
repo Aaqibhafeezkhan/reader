@@ -88,6 +88,7 @@
 .gm-replies {
   margin-top: var(--gm-space-3);
   padding-left: var(--gm-space-4);
+  /* Its rule starts where the aside's words and check do, the chevrons apart. */
   border-left: 2px solid var(--gm-aside-rule);
 }
 .gm-reply + .gm-reply { margin-top: var(--gm-space-3); }
@@ -114,8 +115,12 @@
   .gm-resolve[aria-pressed="true"] { color: Highlight; }
 }
 
-/* Every aside folds to its first line, cut short, after a chevron, ›
- * folded and ⌄ open; opened, the rest under it. */
+/* Every aside folds to its first line, cut short, by a chevron, ›
+ * folded and ⌄ open, in a column of its own before the aside, so its words,
+ * its check and its replies' rule all start in one line; opened, the rest
+ * under it. One that's a line and no more has nothing to fold, and no
+ * chevron (preview.js). */
+.gm-thread { position: relative; padding-left: var(--gm-space-5); }
 .gm-thread > summary {
   list-style: none;
   cursor: pointer;
@@ -128,17 +133,22 @@
 }
 .gm-thread > summary::before {
   content: "";
-  display: inline-block;
+  position: absolute;
+  left: var(--gm-space-1);
+  top: 0.5lh;
   width: 0.4em;
   height: 0.4em;
-  margin: 0 var(--gm-space-4) 0 var(--gm-space-1);
-  vertical-align: 0.15em;
+  translate: 0 -70%;
   border-right: 1.5px solid var(--gm-ink-faint);
   border-bottom: 1.5px solid var(--gm-ink-faint);
   rotate: -45deg;
   transition: rotate 0.15s;
 }
 .gm-thread[open] > summary::before { rotate: 45deg; }
+.gm-thread.gm-one-line > summary { cursor: auto; }
+/* Measured as one line would be, to see whether it is. */
+.gm-thread.gm-measuring > summary { white-space: nowrap; overflow: hidden; }
+.gm-thread.gm-one-line > summary::before { content: none; }
 .gm-thread > summary:focus-visible { outline: 2px solid var(--gm-accent); outline-offset: 2px; }
 .gm-thread[open] > summary + * { margin-top: var(--gm-space-4); }
 

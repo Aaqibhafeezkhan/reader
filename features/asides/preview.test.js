@@ -107,12 +107,25 @@ test('every aside folds and opens, a resolved one starting folded, and what\'s f
   const p = page();
   const threads = () => p.$$('details.gm-thread').map((d) => d.open);
   assert.deepEqual(threads(), [true, true, true], 'none resolved, all open');
-  const mine = p.$$('details.gm-thread')[2];
-  mine.open = false;
-  mine.dispatchEvent(new p.window.Event('toggle'));
+  const thread = p.$$('details.gm-thread')[0];
+  thread.open = false;
+  thread.dispatchEvent(new p.window.Event('toggle'));
   p.show(render(DOC).body);
-  assert.deepEqual(threads(), [true, true, false]);
+  assert.deepEqual(threads(), [false, true, true]);
   await settle();
   assert.equal(p.posted.filter((m) => m.type === 'edit').length, 0);
   assert.deepEqual(page(DOC.replace('~#d [ ]', '~#d [x]')).$$('details.gm-thread').map((d) => d.open), [false, true, true]);
+});
+
+test('an aside of a line and no more, with no replies, has nothing to fold: no chevron, and open', () => {
+  // The test page lays nothing out, so every line fits on one.
+  const p = page(DOC.replace('~ My own.', '~ [x] My own, resolved.'));
+  const [thread, claude, mine] = p.$$('details.gm-thread');
+  assert.equal(thread.classList.contains('gm-one-line'), false, 'a thread has its replies to fold');
+  assert.equal(claude.classList.contains('gm-one-line'), true);
+  assert.equal(mine.classList.contains('gm-one-line'), true);
+  assert.equal(mine.open, true, 'resolved, but with nothing to fold away');
+  const click = new p.window.MouseEvent('click', { bubbles: true, cancelable: true });
+  claude.querySelector('summary').dispatchEvent(click);
+  assert.equal(click.defaultPrevented, true, 'its line takes no click');
 });

@@ -19,6 +19,11 @@ if (args.length) {
     // As gh does when none is set: a sentence, not a repo.
     say(data.default ?? 'X No default remote repository has been set.');
   } else if (what === 'repo' && verb === 'view') {
+    // As gh does: the repo is its argument, and -R isn't a flag of repo view.
+    if (args.includes('-R')) {
+      process.stderr.write("unknown shorthand flag: 'R' in -R\n");
+      process.exit(1);
+    }
     say({ mergeCommitAllowed: data.mergeCommitAllowed ?? true });
   } else if (what === 'issue' && verb === 'view') {
     const issue = data.issues[args[2]];

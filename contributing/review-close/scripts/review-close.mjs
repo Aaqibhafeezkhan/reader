@@ -19,7 +19,8 @@ if (!dayArg || !worktree) {
 const c = config();
 const day = path.resolve(dayArg);
 const git = (...a) => execFileSync('git', ['-C', worktree, ...a], { encoding: 'utf8' }).trim();
-const gh = (...a) => JSON.parse(execFileSync(...ghCommand([...a, '-R', c.repo]), { encoding: 'utf8' }));
+const json = (args) => JSON.parse(execFileSync(...ghCommand(args), { encoding: 'utf8' }));
+const gh = (...a) => json([...a, '-R', c.repo]);
 const problems = [];
 const ok = (m) => console.log(`ok    ${m}`);
 const check = (good, m, why = '') => {
@@ -33,7 +34,8 @@ git('fetch', '-q', 'origin');
 check(git('rev-parse', 'main') === git('rev-parse', 'origin/main'), 'main matches origin/main');
 check(spawnSync('git', ['-C', worktree, 'merge-base', '--is-ancestor', 'main', 'HEAD']).status === 0, 'the branch has all of main');
 // A squash or a rebase leaves the merge commits behind, and their Closes gh-N with them.
-check(gh('repo', 'view', '--json', 'mergeCommitAllowed').mergeCommitAllowed, `${c.repo} allows merge commits`);
+// repo view names the repo as its argument; it has no -R.
+check(json(['repo', 'view', c.repo, '--json', 'mergeCommitAllowed']).mergeCommitAllowed, `${c.repo} allows merge commits`);
 
 const log = git('log', 'main..HEAD', '--format=%B');
 const index = fs.readFileSync(path.join(day, 'review.md'), 'utf8');

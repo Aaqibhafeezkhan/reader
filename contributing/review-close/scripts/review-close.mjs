@@ -94,11 +94,13 @@ Each issue's merge commit says \`Closes gh-N\`, so merge this with a merge commi
 `);
 
 const q = (s) => (/^[\w./:@=-]+$/.test(s) ? s : `"${s.replace(/(["\\$`])/g, '\\$1')}"`);
+// A path to paste: a shell expands ~ only outside quotes.
+const at = (p) => { const t = tilde(p); return t.startsWith('~/') ? `~/${q(t.slice(2))}` : q(t); };
 const [pr] = gh('pr', 'list', '--head', branch, '--state', 'open', '--json', 'number,url');
 console.log(`ready. wrote ${tilde(body)}, the PR's body. Each step below is outward: ask before each one.`);
-console.log(`  git -C ${q(tilde(worktree))} push -u origin ${branch}`);
-if (pr) console.log(`  gh pr edit ${pr.number} -R ${c.repo} --body-file ${q(tilde(body))}    (it's open: ${pr.url})`);
-else console.log(`  gh pr create -R ${c.repo} --base main --head ${branch} --title ${q(prTitle)} --body-file ${q(tilde(body))}`);
+console.log(`  git -C ${at(worktree)} push -u origin ${branch}`);
+if (pr) console.log(`  gh pr edit ${pr.number} -R ${c.repo} --body-file ${at(body)}    (it's open: ${pr.url})`);
+else console.log(`  gh pr create -R ${c.repo} --base main --head ${branch} --title ${q(prTitle)} --body-file ${at(body)}`);
 console.log('Once it\'s approved, a committer merges it with a merge commit, then brings main up to it:');
 console.log(`  gh pr merge ${pr ? pr.number : branch} -R ${c.repo} --merge`);
-console.log(`  git -C ${q(tilde(c.main))} pull --ff-only origin main`);
+console.log(`  git -C ${at(c.main)} pull --ff-only origin main`);

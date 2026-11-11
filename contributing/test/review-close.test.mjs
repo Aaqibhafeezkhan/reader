@@ -65,6 +65,15 @@ function ready(t, { test: npmTest = OK, lint = OK, gh = {} } = {}) {
 
 const close = ({ env, day, work }) => run('review-close/scripts/review-close.mjs', [day, work], env);
 
+test('the steps it prints can be pasted: a path under home starts ~/, outside any quotes', (t) => {
+  const r = ready(t);
+  const { status, out } = close({ ...r, env: { ...r.env, HOME: path.dirname(r.env.READER_MEETINGS) } });
+  assert.equal(status, 0, out);
+  assert.match(out, /^ {2}git -C ~\/\S+ push -u origin /m);
+  assert.match(out, /--body-file ~\/\S*pr\.md$/m);
+  assert.doesNotMatch(out, /"~/);
+});
+
 test('a closed review is ready: it writes the PR\'s body and prints the outward steps, running none of them', (t) => {
   const r = ready(t);
   const { status, out } = close(r);

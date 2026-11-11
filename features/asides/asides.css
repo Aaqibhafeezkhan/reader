@@ -120,7 +120,7 @@
  * its check and its replies' rule all start in one line; opened, the rest
  * under it. One that's a line and no more has nothing to fold, and no
  * chevron (preview.js). */
-.gm-thread { position: relative; padding-left: var(--gm-space-5); }
+.gm-thread { position: relative; padding-left: var(--gm-space-6); }
 .gm-thread > summary {
   list-style: none;
   cursor: pointer;

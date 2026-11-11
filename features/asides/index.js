@@ -172,24 +172,25 @@ export function byChips(by) {
 
 /**
  * Who and what a document's asides and replies are from and about, with
- * how many of each, and how many of those are in threads still to be
+ * how many of each, and how many threads each opened that are still to be
  * resolved, in the order
  * they're declared: a legend for the masthead, or ''.
  */
 export function legend(asides, key, env = {}) {
   // Each aside and each reply counts towards who wrote it and what it's
-  // about; and those in a thread still to resolve, apart, so what's left shows.
+  // about; and each thread still to resolve, once, towards who opened it
+  // and what it opened about, so what's left for each one shows.
   const counts = new Map();
   const open = new Map();
   const add = (into, e) => into.set(e, (into.get(e) || 0) + 1);
   for (const thread of asides) {
     for (const a of [thread, ...(thread.replies ?? [])]) {
       if (!a.by) continue;
-      for (const e of [a.by.who, ...(a.about ?? a.by.topics)].filter(Boolean)) {
-        add(counts, e);
-        if (thread.box && !thread.box.checked) add(open, e);
-      }
+      for (const e of [a.by.who, ...(a.about ?? a.by.topics)].filter(Boolean)) add(counts, e);
     }
+  }
+  for (const thread of asides) {
+    if (thread.box && !thread.box.checked && thread.by) for (const e of [thread.by.who, ...thread.by.topics].filter(Boolean)) add(open, e);
   }
   if (!counts.size) return '';
   const used = [...(key?.values() || [])].filter((e) => counts.has(e));

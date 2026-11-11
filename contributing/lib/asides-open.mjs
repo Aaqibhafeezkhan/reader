@@ -1,5 +1,5 @@
-// What's waiting for the AI in a review folder: each `~#` aside with no `~c`
-// reply under it, and each retro card, answer or vote not the AI's with no
+// What's waiting for the AI in a review folder: each `~#` aside whose thread
+// doesn't end in the AI's answer, `~c` or a `~~c` reply, and each retro card, answer or vote not the AI's with no
 // `A (<ai>):` after it in its block. Shared by send-watch.mjs and review-close.mjs.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -42,7 +42,10 @@ export function open(root, dir = root, { ai } = config()) {
       // Its answer comes straight after it, among the asides under the same line. Past
       // the next line of text, a ~c is about that, and answers something else.
       for (let j = i + 1; j < lines.length && lines[j].trim(); j++) {
-        if (/^\s*~c\b/.test(lines[j]) || closes(lines[j])) answered = true;
+        // A thread's replies (gh-199): the AI's answers it, and the contributor's,
+        // `~~#`, asks again.
+        if (/^\s*~~?c\b/.test(lines[j]) || closes(lines[j])) answered = true;
+        else if (/^\s*~~#(\s|$)/.test(lines[j])) answered = false;
         else if (!/^\s*~/.test(lines[j]) && !/^\s*(`|\s)/.test(lines[j])) break;
       }
       if (!answered) found.push({ key: `${f}\u0000${l.trim()}`, at: where(root, f, i), text: l.trim() });

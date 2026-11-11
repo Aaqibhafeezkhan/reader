@@ -38,6 +38,29 @@ test('an aside waits until the AI answers under it, or the contributor closes it
   ]);
 });
 
+test('a thread waits until its last word is the AI\'s reply, ~~c, and again when the contributor replies after it', (t) => {
+  const day = tree(scratch(t), {
+    'review.md': [
+      'One line.',
+      '~# a question',
+      '~~c an answer',
+      '  over two lines',
+      '',
+      'Two line.',
+      '~# a question',
+      '~~c an answer',
+      '~~# but what about',
+      '',
+      'Three line.',
+      '~# and another',
+      '~~c one',
+      '~~# then',
+      '~~c two',
+    ].join('\n'),
+  });
+  assert.deepEqual(open(day, day, CLAUDE).map((a) => a.at), ['review.md:7']);
+});
+
 test('a retro card waits for the AI\'s answer, named as the config names it', (t) => {
   const day = tree(scratch(t), {
     'retro.md': [

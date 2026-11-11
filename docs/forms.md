@@ -42,6 +42,7 @@ A list in `::: cards` draws each choice as a card, to tap anywhere (see
 A heading written with a box, `## [ ] Stretch`, is a section to finish.
 Its line ends in a **Done** button; pressed, it reads **✓ Done**, the title goes into the done ink, and the heading in the file becomes `## [x] Stretch`.
 Pressing it again takes that back.
+A section written done, `## [x] Stretch`, starts folded on the page, out of the way; click its heading to open it ([Folding the page](files.md)).
 
 A section is done, too, once everything in it that can be done is: its boxes ticked, its choices made, and each section with a box under it done.
 It shows **✓ Done** on its own then, and stays done until one of them is undone.

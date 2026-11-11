@@ -1,0 +1,42 @@
+/* Fold (index.js): a heading's button, which folds its section away and
+ * opens it again, in the margin before it; and what's folded, out of sight
+ * on the screen, though not on paper. */
+.fold-heading { position: relative; cursor: pointer; }
+.fold-toggle {
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  translate: 0 -50%;
+  margin-right: var(--gm-space-2);
+  padding: 0 var(--gm-space-1);
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--gm-ink-soft);
+  font: 0.9rem/1 var(--gm-sans);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, rotate 0.15s;
+}
+.fold-toggle::before {
+  content: "";
+  display: block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin: var(--gm-space-2);
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  rotate: 45deg;
+  transition: rotate 0.15s;
+}
+/* Seen when the heading's pointed at or the button's reached by the
+ * keyboard, and always while its section is folded. */
+.fold-heading:hover .fold-toggle, .fold-toggle:focus-visible, .fold-toggle[aria-expanded="false"] { opacity: 1; }
+.fold-toggle[aria-expanded="false"]::before { rotate: -45deg; }
+.fold-toggle:focus-visible { outline: 2px solid var(--gm-accent); outline-offset: 1px; }
+@media screen {
+  .fold-hidden { display: none !important; }
+}
+@media print {
+  .fold-toggle { display: none; }
+}

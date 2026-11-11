@@ -63,6 +63,11 @@
  *     A feature sets it with `setAddress`, which tells the app and sends
  *     `preview:address` too; it isn't the file, so nothing is written.
  *
+ *   preview:open-to
+ *     Sent to the window before the page goes to a place, from the outline
+ *     or Go to (`detail.line`) or by a link in it (`detail.target`), so a
+ *     feature with it out of sight can show it first (features/fold).
+ *
  *   Preview.fromApp(e)
  *     Whether a message is the app's: from the page around the frame, at
  *     one of the app's origins, which the server names in the frame's

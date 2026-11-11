@@ -81,37 +81,44 @@ function cell(md, aside, env, attrs = '') {
   const tied = aside.mark?.id;
   const style = [aside.by?.who && `--by: ${escapeHtml(aside.by.who.color)}`, tied && aside.mark.color && `--mk: ${escapeHtml(aside.mark.color)}`].filter(Boolean).join('; ');
   attrs = `${style ? ` style="${style}"` : ''}${tied ? ` data-mark="${escapeHtml(tied)}"` : ''}${voice(aside.by)}${attrs}`;
-  const box = aside.box ? resolveBox(aside, env) : '';
   const replies = (aside.replies ?? []).map((r) => reply(md, r, env)).join('');
   const resolved = aside.box?.checked;
-  // A resolved thread folds to who opened it and "resolved"; opened, it's
-  // the thread again, the file as it was (gh-199).
-  const fold = (inner) => (resolved
-    ? `<details class="gm-thread">\n<summary>${aside.by ? byChips(aside.by) : '<span class="gm-mark" aria-hidden="true">~</span>'}<span class="gm-resolved">resolved</span></summary>\n${inner}</details>\n`
-    : inner);
+  // A thread that can be resolved ends with its button, as a section to
+  // finish does with its Done (gh-199).
+  const foot = aside.box ? `<p class="gm-thread-foot">${resolveButton(aside, env)}</p>\n` : '';
+  // A resolved thread folds to its first line, cut short; opened, it's the
+  // rest, the file as it was, without its first line again.
+  const fold = (opener) => {
+    if (!resolved) return opener + replies + foot;
+    const first = /^<p\b[^>]*>([\s\S]*?)<\/p>\n?/.exec(opener);
+    const head = first ? first[1] : aside.by ? byChips(aside.by) : '<span class="gm-mark" aria-hidden="true">~</span>';
+    const rest = first ? opener.slice(first[0].length) : opener;
+    return `<details class="gm-thread">\n<summary><span class="vh">Resolved: </span>${head}</summary>\n${rest}${replies}${foot}</details>\n`;
+  };
   const classes = `gm-aside-cell${aside.by ? ' gm-attributed' : ''}${aside.box ? ' gm-resolvable' : ''}${resolved ? ' gm-is-resolved' : ''}`;
   // An attributed aside opens with who it's from and what it's about, at the
   // start of its first paragraph, or above it when it doesn't open with one.
   if (aside.by) {
-    const chips = byChips(aside.by) + box + words;
+    const chips = byChips(aside.by) + words;
     const opened = /^<p\b/.test(html) ? html.replace(/^<p\b([^>]*)>/, `<p$1>${chips}`) : `${chips}\n${html}`;
-    return `<div class="${classes}" role="note"${attrs}>\n${fold(opened + replies)}</div>`;
+    return `<div class="${classes}" role="note"${attrs}>\n${fold(opened)}</div>`;
   }
   // Slip the `~` in front of the first line of prose so the mark survives into
   // the printed page. It's seen, not read: the aside is a note.
-  const lead = `<span class="gm-mark" aria-hidden="true">~</span>${box}${words}`;
-  const marked = /<p\b/.test(html) ? html.replace(/<p\b([^>]*)>/, `<p$1>${lead}`) : words || box ? `<p>${lead}</p>\n${html}` : html;
-  return `<div class="${classes}" role="note"${attrs}>\n${fold(marked + replies)}</div>`;
+  const lead = `<span class="gm-mark" aria-hidden="true">~</span>${words}`;
+  const marked = /<p\b/.test(html) ? html.replace(/<p\b([^>]*)>/, `<p$1>${lead}`) : words ? `<p>${lead}</p>\n${html}` : html;
+  return `<div class="${classes}" role="note"${attrs}>\n${fold(marked)}</div>`;
 }
 
 /**
- * The box that resolves a thread: ticked, it writes the aside's line with
- * `[x]` (preview.js), as a task's box does.
+ * The button that resolves a thread, "Resolve", and "✓ Resolved" once it
+ * is, as a heading's Done: pressed, it writes the aside's line with `[x]`,
+ * or `[ ]` again (preview.js).
  */
-function resolveBox(aside, env) {
+function resolveButton(aside, env) {
   const { checked, on, off } = aside.box;
-  return `<input type="checkbox" class="gm-resolve" data-line="${aside.line}" data-on="${escapeAttr(on)}" data-off="${escapeAttr(off)}"`
-    + ` aria-label="Resolved"${checked ? ' checked' : ''}${shut(env)}>`;
+  return `<button type="button" class="gm-resolve" data-line="${aside.line}" data-on="${escapeAttr(on)}" data-off="${escapeAttr(off)}"`
+    + ` aria-pressed="${checked}"${shut(env)}></button>`;
 }
 
 /** A reply in a thread, opening with who it's from, as an aside does. */
@@ -159,27 +166,29 @@ export function byChips(by) {
 
 /**
  * Who and what a document's asides and replies are from and about, with
- * how many of each, and how many of those are resolved, in the order
+ * how many of each, and how many of those are in threads still to be
+ * resolved, in the order
  * they're declared: a legend for the masthead, or ''.
  */
 export function legend(asides, key, env = {}) {
   // Each aside and each reply counts towards who wrote it and what it's
-  // about; those in a resolved thread are counted apart, so what's left shows.
+  // about; and those in a thread still to resolve, apart, so what's left shows.
   const counts = new Map();
-  const resolved = new Map();
+  const open = new Map();
   const add = (into, e) => into.set(e, (into.get(e) || 0) + 1);
   for (const thread of asides) {
     for (const a of [thread, ...(thread.replies ?? [])]) {
       if (!a.by) continue;
       for (const e of [a.by.who, ...a.by.topics].filter(Boolean)) {
         add(counts, e);
-        if (thread.box?.checked) add(resolved, e);
+        if (thread.box && !thread.box.checked) add(open, e);
       }
     }
   }
   if (!counts.size) return '';
   const used = [...(key?.values() || [])].filter((e) => counts.has(e));
-  const count = (e) => `<b>${counts.get(e)}</b>${resolved.has(e) ? ` <span class="gm-resolved">(${resolved.get(e)} resolved)</span>` : ''}`;
+  // What's unresolved, in a dot at the chip's corner, said in words too.
+  const count = (e) => `<b>${counts.get(e)}</b>${open.has(e) ? `<span class="gm-unresolved" title="${open.get(e)} unresolved"><span class="vh">, unresolved: </span>${open.get(e)}</span>` : ''}`;
   // Where the page is read in the app, each chip toggles a filter of the
   // asides by it, and a last button clears it (preview.js, gh-21); not in
   // an export, nor on a slide.

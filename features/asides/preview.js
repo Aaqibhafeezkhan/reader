@@ -5,7 +5,7 @@
  * have moved: a render, the page or a slide changing size, a step showing,
  * the fonts arriving, and just before printing. An aside that isn't beside
  * its words (a page too narrow for the margin) gets no line: it names the
- * words at its start. A thread's box, ticked, writes its aside's `[x]`
+ * words at its start. A thread's Resolve button writes its aside's `[x]`
  * (gh-199). The legend's chips filter the asides by who and what about,
  * dimming the rest, as the address keeps it (gh-21). Runs in the preview
  * frame.
@@ -131,18 +131,17 @@
     });
   }
 
-  // A thread's box (gh-199) writes its aside's line, `[x]` or `[ ]`, as a
-  // task's does; the re-render that follows folds the thread, or opens it.
-  // Where the page can't be worked, it takes no click.
+  // A thread's Resolve button (gh-199) writes its aside's line, `[x]` or
+  // `[ ]`, as a heading's Done does; the re-render that follows folds the
+  // thread, or opens it. Where the page can't be worked, it's shut.
   document.addEventListener('click', (e) => {
-    if (e.target.matches?.('input.gm-resolve') && !Preview.workable) e.preventDefault();
-  }, true);
-  document.addEventListener('change', (e) => {
-    const box = e.target;
-    if (!box.matches?.('input.gm-resolve') || !Preview.workable) return;
-    const line = Number(box.dataset.line);
-    const as = (on) => (on ? box.dataset.on : box.dataset.off);
-    Preview.edit([{ from: line, to: line + 1, before: [as(box.defaultChecked)], after: [as(box.checked)] }], { undo: true });
+    const button = e.target.closest?.('button.gm-resolve');
+    if (!button || button.disabled || !Preview.workable) return;
+    const line = Number(button.dataset.line);
+    const was = button.getAttribute('aria-pressed') === 'true';
+    const as = (on) => (on ? button.dataset.on : button.dataset.off);
+    Preview.edit([{ from: line, to: line + 1, before: [as(was)], after: [as(!was)] }], { undo: true });
+    button.setAttribute('aria-pressed', String(!was));
   });
 
   // The legend's filter (gh-21): its chips toggle which reviewers' and which

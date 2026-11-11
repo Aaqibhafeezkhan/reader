@@ -75,23 +75,30 @@ test('the filter is drawn again when only the address changes, as when it\'s edi
 
 test('exported, the legend is words, with nothing to click', () => {
   const { body } = render(DOC, { exported: true });
-  assert.match(body, /<div class="gm-legend"><span class="gm-who" style="--by: var\(--gm-key-1\)">Josh <b>2<\/b><\/span>/);
+  assert.match(body, /<div class="gm-legend"><span class="gm-who" style="--by: var\(--gm-key-1\)">Josh <b>2<\/b><span class="gm-unresolved"/);
   assert.doesNotMatch(body, /gm-legend-clear|data-filter/);
 });
 
 // --- a thread's box (gh-199) -----------------------------------------------
 
-test('a thread\'s box writes its aside\'s line ticked, as one edit the editor can undo, and is shut on a slide', async () => {
+test('a thread\'s Resolve button writes its aside\'s line ticked, and unticked again, as one edit the editor can undo, and is shut on a slide', async () => {
   const p = page();
-  const box = p.$('input.gm-resolve');
-  box.checked = true;
-  box.dispatchEvent(new p.window.Event('change', { bubbles: true }));
+  const button = p.$('button.gm-resolve');
+  p.click(button);
   await settle();
-  const [edit] = p.posted.filter((m) => m.type === 'edit');
+  const [edit] = p.posted.splice(0).filter((m) => m.type === 'edit');
   assert.equal(edit.undo, true);
   assert.deepEqual(edit.edits.map((e) => [e.from, e.before.join(''), e.after.join('')]), [[7, '~#d [ ] Does it?', '~#d [x] Does it?']]);
+  assert.equal(button.getAttribute('aria-pressed'), 'true');
+  p.click(button);
+  await settle();
+  assert.deepEqual(p.posted.filter((m) => m.type === 'edit')[0].edits.map((e) => e.after.join('')), ['~#d [ ] Does it?']);
 
   const deck = preview();
   deck.show(slides(`${DOC}\n---\n\n# Next\n`).slides[0].body, { deck: true });
-  assert.equal(deck.document.querySelector('input.gm-resolve').disabled, true);
+  const shut = deck.document.querySelector('button.gm-resolve');
+  assert.equal(shut.disabled, true);
+  deck.document.querySelector('button.gm-resolve').dispatchEvent(new deck.window.MouseEvent('click', { bubbles: true }));
+  await settle();
+  assert.equal(deck.posted.filter((m) => m.type === 'edit').length, 0);
 });

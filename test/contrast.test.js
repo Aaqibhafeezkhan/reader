@@ -209,6 +209,12 @@ test("the document's inks read on its paper and every ground on it, light and da
   }
 });
 
+test("a control's mark, a check or a chevron, reads at 3:1 on the paper, light and dark, and with more contrast asked for", () => {
+  for (const [set, themes] of [['', doc], ['more ', docMore]]) {
+    for (const [theme, t] of Object.entries(themes)) readable(t['gm-control-ink'], t['gm-paper'], `${set}${theme} --gm-control-ink on --gm-paper`, 3);
+  }
+});
+
 test("the family's hues read on the paper and a fence, and the paper on them", () => {
   for (const [theme, t] of Object.entries(doc)) {
     for (const hue of FAMILY) {

@@ -106,11 +106,16 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--gm-ink-faint);
+  color: var(--gm-control-ink);
   cursor: pointer;
   vertical-align: 0.05em;
+  position: relative;
 }
 .gm-resolve::after { content: "\2713"; }
+/* Its mark is small, but what takes a press is 24 pixels square (WCAG
+ * 2.5.8), reaching past it, over nothing else that takes one, and moving
+ * nothing. */
+.gm-resolve::before { content: ""; position: absolute; inset: 50% auto auto 50%; width: 24px; height: 24px; translate: -50% -50%; }
 .gm-resolve:hover:not(:disabled) { color: var(--gm-ink-soft); }
 .gm-resolve[aria-pressed="true"] { color: var(--gm-green); }
 .gm-resolve:disabled { cursor: default; }
@@ -143,8 +148,8 @@
   width: 0.4em;
   height: 0.4em;
   translate: 0 -70%;
-  border-right: 1.5px solid var(--gm-ink-faint);
-  border-bottom: 1.5px solid var(--gm-ink-faint);
+  border-right: 1.5px solid var(--gm-control-ink);
+  border-bottom: 1.5px solid var(--gm-control-ink);
   rotate: -45deg;
   transition: rotate 0.15s;
 }
@@ -180,7 +185,8 @@
 }
 .gm-legend > * + * { margin-left: var(--gm-space-4); }
 @media (forced-colors: active) {
-  .gm-unresolved { background: Highlight; color: HighlightText; }
+  /* Drawn in the system's colours as they're named, inside a topic's chip as a reviewer's. */
+  .gm-unresolved { forced-color-adjust: none; background: Highlight; color: HighlightText; }
 }
 
 /* ---------- the legend's filter (gh-21) --------------------------------- */

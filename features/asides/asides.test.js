@@ -12,6 +12,7 @@ import { page } from '../../src/page.js';
 import { preprocess } from './preprocess.js';
 import { splitPairs } from '../rows.js';
 import { render } from '../../src/render.js';
+import { slides } from '../../src/slides.js';
 
 /** A document parsed for columns: its front matter, asides, and the rows they cut it into. */
 function parse(src) {
@@ -214,3 +215,55 @@ test('a document with no asides is a single pair', () => {
   assert.equal(pairs[0].notes.length, 0);
 });
 
+
+// --- threads: replies, and resolving them (gh-199) -------------------------
+
+const KEYED = '---\nreviewer #: Josh\nreviewer c: Claude\ntopic d: Design\n---\n\n';
+const cells = (body) => [...body.matchAll(/<div class="gm-aside-cell[\s\S]*?<\/div>\n(?=<\/div>|<div class="gm-aside-cell)/g)].map((m) => m[0]);
+
+test('a ~~ line under an aside is a reply in its thread, flat, each with who wrote it, wrapping as an aside does', () => {
+  const { asides } = parse(`${KEYED}A line.\n~# Does it?\n~~c Yes, and\n  it wraps.\n~~# Then steps only.\n~~ And mine.\n`);
+  assert.equal(asides.length, 1, 'one thread, keeping the first aside\'s place');
+  assert.deepEqual(asides[0].replies.map((r) => [r.by?.who?.name ?? null, r.text, r.line]),
+    [['Claude', 'Yes, and\nit wraps.', 8], ['Josh', 'Then steps only.', 10], [null, 'And mine.', 11]]);
+  const [cell] = cells(render(`${KEYED}A line.\n~# Does it?\n~~c Yes.\n`).body);
+  assert.match(cell, /<p><span class="gm-by"><span class="gm-who">Josh<\/span><\/span>Does it\?<\/p>\n<div class="gm-reply gm-attributed" style="--by: var\(--gm-key-2\)">\n<p><span class="gm-by"><span class="gm-who">Claude<\/span><\/span>Yes\.<\/p>/);
+});
+
+test('~~ is a reply only straight under an aside, and only before a space or an alias run: strikethrough is untouched', () => {
+  const { source, asides } = preprocess('Text.\n~~ not a reply\n\n~~struck~~ and on\n\n~ an aside\n~~struck~~ too\n', new Map());
+  assert.equal(asides.length, 1);
+  assert.equal(asides[0].replies, undefined);
+  assert.match(source, /^~~ not a reply$/m);
+  assert.match(source, /^~~struck~~ and on$/m);
+  assert.equal(asides[0].text, 'an aside\n~~struck~~ too', 'struck text under an aside wraps it, as before');
+});
+
+test('a reply counts towards its reviewer in the legend, and a resolved thread\'s are counted apart', () => {
+  const { body } = render(`${KEYED}One.\n~#d [ ] Open?\n~~c Yes.\n\nTwo.\n~# [x] Settled?\n~~c Yes.\n~~# Good.\n`);
+  const legend = /<div class="gm-legend">([\s\S]*?)<\/div>/.exec(body)[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ');
+  assert.equal(legend, 'Josh 3 (2 resolved)Claude 2 (1 resolved)Design 1');
+});
+
+test('a box after the aliases makes a thread that can be resolved, writing its own line ticked or not', () => {
+  const { asides } = parse(`${KEYED}A line.\n  ~#d [ ] Does it?\n`);
+  assert.deepEqual(asides[0].box, { checked: false, on: '  ~#d [x] Does it?', off: '  ~#d [ ] Does it?' });
+  assert.equal(asides[0].text, 'Does it?');
+  assert.equal(preprocess('~ [X] done\n').asides[0].box.checked, true, 'an aside of the writer\'s own can be resolved too');
+  assert.equal(preprocess('~ [later] not a box\n').asides[0].box, undefined);
+
+  const [open] = cells(render(`${KEYED}A line.\n~# [ ] Does it?\n`).body);
+  assert.match(open, /<input type="checkbox" class="gm-resolve" data-line="7" data-on="~# \[x\] Does it\?" data-off="~# \[ \] Does it\?" aria-label="Resolved">Does it\?/);
+  assert.doesNotMatch(open, /<details/);
+});
+
+test('a resolved thread folds to who opened it and "resolved", the whole thread inside, and it opens without a change to the file', () => {
+  const [cell] = cells(render(`${KEYED}A line.\n~# [x] Settled?\n~~c Yes.\n`).body);
+  assert.match(cell, /^<div class="gm-aside-cell gm-attributed gm-resolvable gm-is-resolved"/);
+  assert.match(cell, /<details class="gm-thread">\n<summary><span class="gm-by"><span class="gm-who">Josh<\/span><\/span><span class="gm-resolved">resolved<\/span><\/summary>\n<p>[\s\S]*checked>Settled\?<\/p>\n<div class="gm-reply[\s\S]*Yes\.[\s\S]*<\/details>/);
+});
+
+test('a thread\'s box is shut where the page can\'t be worked, as on a slide', () => {
+  const { body } = slides(`${KEYED}A line.\n~# [ ] Does it?\n\n---\n\n# Next\n`).slides[0];
+  assert.match(body, /<input type="checkbox" class="gm-resolve"[^>]* disabled>/);
+});

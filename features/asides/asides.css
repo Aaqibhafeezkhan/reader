@@ -82,3 +82,29 @@
 /* the masthead's legend: who and what the asides are from and about */
 .gm-legend { margin-top: var(--gm-space-3); font-size: 0.95rem; }
 .gm-legend b { font-weight: 400; margin-left: var(--gm-space-1); }
+
+/* ---------- threads (gh-199) --------------------------------------------- */
+
+/* A reply, `~~`, under the aside it answers, a little in, in the voice of
+ * whoever wrote it. */
+.gm-reply {
+  margin-top: var(--gm-space-3);
+  padding-left: var(--gm-space-4);
+  border-left: 2px solid var(--by, var(--gm-aside-rule));
+}
+/* The box that resolves a thread, after who opened it. */
+.gm-resolve {
+  margin: 0 var(--gm-space-2) 0 0;
+  vertical-align: -0.1em;
+  accent-color: var(--gm-accent);
+}
+/* A resolved thread, folded to who opened it and "resolved"; opened, the
+ * thread again. */
+.gm-thread > summary {
+  cursor: pointer;
+  font-style: normal;
+  color: var(--gm-ink-soft);
+}
+.gm-thread[open] > summary { margin-bottom: var(--gm-space-3); }
+.gm-resolved { font-style: normal; color: var(--gm-ink-soft); }
+.gm-legend .gm-resolved { color: inherit; opacity: 0.8; }

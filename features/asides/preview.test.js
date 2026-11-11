@@ -39,7 +39,7 @@ function page(markdown = DOC, address = {}) {
 
 test('the address\'s filter dims the other attributed asides, a thread showing when any voice in it does, the writer\'s own left alone', () => {
   const p = page(DOC, { by: 'c' });
-  assert.deepEqual(p.dimmed(), ['JoshThen steps only.'], 'Josh\'s thread shows, for Claude\'s reply in it, its other replies dimmed');
+  assert.deepEqual(p.dimmed(), ['JoshDesignDoes it?', 'JoshThen steps only.'], 'Josh\'s thread shows, for Claude\'s reply in it, and each of Josh\'s voices in it is dimmed, the aside that opened it too');
   assert.equal(p.chip('Claude').getAttribute('aria-pressed'), 'true');
   assert.equal(p.chip('Josh').getAttribute('aria-pressed'), 'false');
   assert.equal(p.$('.gm-legend-clear').hidden, false);

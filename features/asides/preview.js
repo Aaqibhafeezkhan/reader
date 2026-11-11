@@ -188,8 +188,8 @@
   // The legend's filter (gh-21): its chips toggle which reviewers' and which
   // topics' asides show, any of the reviewers picked, and any of the topics,
   // both when both are; the others are dimmed, not taken away, so where they
-  // are still shows. A thread shows when any voice in it does, and its other
-  // replies are dimmed. The writer's own asides aren't filtered. It's kept
+  // are still shows. A thread shows when any voice in it does, and each
+  // other voice in it is dimmed, the aside that opened it too. The writer's own asides aren't filtered. It's kept
   // in the address, `?by=%23&about=c`, not the file.
   const chosen = () => ({ by: [...(Preview.address.by ?? '')], about: [...(Preview.address.about ?? '')] });
   const voiced = (el) => Boolean(el.dataset.by || el.dataset.about);
@@ -209,6 +209,10 @@
       const voices = [cell, ...replies].filter(voiced);
       const thread = !on || !voices.length || voices.some((v) => shows(v, f));
       cell.classList.toggle('gm-filtered-out', !thread);
+      // In a thread that shows, each voice that doesn't is dimmed, the aside
+      // that opened it as well as a reply: its first line and the rest of it.
+      const opener = [...(cell.querySelector(':scope > .gm-thread')?.children ?? [])].filter((el) => !el.matches('.gm-replies'));
+      for (const el of opener) el.classList.toggle('gm-filtered-out', on && thread && voiced(cell) && !shows(cell, f));
       for (const r of replies) r.classList.toggle('gm-filtered-out', on && thread && voiced(r) && !shows(r, f));
     }
     later();

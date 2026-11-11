@@ -1,4 +1,4 @@
-node_modules/
+node_modules
 .DS_Store
 .reader/
 .claude/
@@ -7,3 +7,6 @@ node_modules/
 .notes/
 desktop/dist/
 shots/
+.agents/
+.meetings/
+contributing/config.local.json

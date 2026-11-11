@@ -2,12 +2,15 @@
 //   node branch.mjs review <YYYY-MM-DD>
 //       review/YYYY.MM.DD from main, in .claude/worktrees/review-YYYY.MM.DD
 //   node branch.mjs issue <N> [--date <YYYY-MM-DD>]
-//       issue/gh-N from the review branch, in .claude/worktrees/issue-gh-N
+//       issue/gh-N from the review branch, in .claude/worktrees/issue-gh-N,
+//       with the review worktree's node_modules linked in, or main's
 //   node branch.mjs merge <N> [--date <YYYY-MM-DD>] [--trailer "Co-Authored-By: Name <email>"]...
 //       issue/gh-N into the review branch, --no-ff, as "Merge issue/gh-N: <title>",
-//       "Closes gh-N", any trailers given, and the sign-off; then its worktree goes
+//       "Closes gh-N", any trailers given, and the sign-off; then its worktree goes,
+//       the node_modules link first
 // Without --date, the review branch is the only review/ branch there is.
 import fs from 'node:fs';
+import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { config, tilde } from '../../lib/config.mjs';
 import { title } from '../../lib/issues.mjs';
@@ -53,6 +56,22 @@ function checkout(branch, from) {
   console.log(`${branch} in ${tilde(wt)}, from ${from}`);
 }
 
+// An issue's worktree borrows node_modules, so its tests run without an install.
+// .gitignore's node_modules, with no slash, ignores the link; merge takes it away all the same.
+const MODULES = 'node_modules';
+function lend(to, ...from) {
+  const own = path.join(to, MODULES);
+  if (fs.existsSync(own)) return;
+  const there = from.filter(Boolean).map((d) => path.join(d, MODULES)).find((d) => fs.existsSync(d));
+  if (!there) return console.log(`no ${MODULES} to link: npm install there, or in ${tilde(from.find(Boolean))}`);
+  fs.symlinkSync(there, own, 'dir');
+  console.log(`linked ${tilde(there)} in`);
+}
+function unlend(wt) {
+  const own = path.join(wt, MODULES);
+  if (fs.lstatSync(own, { throwIfNoEntry: false })?.isSymbolicLink()) fs.unlinkSync(own);
+}
+
 if (cmd === 'review') {
   if (!DATE.test(arg ?? '')) fail(USAGE, 2);
   // Only what's known locally: a fetch is for review-close.
@@ -62,7 +81,10 @@ if (cmd === 'review') {
   checkout(reviewBranch(arg), 'main');
 } else if (cmd === 'issue') {
   if (!/^\d+$/.test(arg ?? '')) fail(USAGE, 2);
-  checkout(issueBranch(arg), review());
+  const rb = review();
+  checkout(issueBranch(arg), rb);
+  const at = worktrees(main);
+  lend(at[issueBranch(arg)], at[rb], main);
   console.log(`Commits there end "See gh-${arg}", and are signed off: git commit -s.`);
 } else if (cmd === 'merge') {
   if (!/^\d+$/.test(arg ?? '')) fail(USAGE, 2);
@@ -72,6 +94,7 @@ if (cmd === 'review') {
   const at = worktrees(main);
   const into = at[rb];
   if (!into) fail(`${rb} isn't checked out anywhere: branch.mjs review gives it its worktree`);
+  if (at[ib]) unlend(at[ib]);
   for (const wt of [into, at[ib]].filter(Boolean)) {
     const d = dirt(wt);
     if (d) fail(`${tilde(wt)} has changes not committed:\n${d}`);

@@ -14,7 +14,8 @@ function checkout(t, scripts = {}) {
   const main = env.READER_CHECKOUT;
   tree(main, {
     'package.json': JSON.stringify({ scripts: { test: 'node -e "console.log(\'ℹ tests 3\'); console.log(\'ℹ fail 0\')"', lint: 'node -e ""', ...scripts } }),
-    '.gitignore': '.claude/\n',
+    // As reader's: node_modules without a slash, so that a link to one is ignored as well.
+    '.gitignore': '.claude/\nnode_modules\n',
   });
   const git = repo(main);
   const branch = (...args) => run('batch-start/scripts/branch.mjs', args, env);
@@ -52,6 +53,32 @@ test('issue starts issue/gh-N from the review branch, in a worktree of its own',
   assert.match(out, /end "See gh-21"/);
   assert.equal(git('rev-parse', 'issue/gh-21'), git('rev-parse', 'review/2026.11.22'));
   assert.ok(fs.existsSync(path.join(wt('issue-gh-21'), 'ahead.txt')));
+});
+
+test('an issue\'s worktree borrows the review worktree\'s node_modules, and merge takes the link away', (t) => {
+  const { main, branch, wt, commit } = checkout(t);
+  fs.mkdirSync(path.join(main, 'node_modules'));
+  branch('review', '2026-11-22');
+  fs.mkdirSync(path.join(wt('review-2026.11.22'), 'node_modules'));
+  const { status, out } = branch('issue', '21');
+  assert.equal(status, 0, out);
+  const link = path.join(wt('issue-gh-21'), 'node_modules');
+  assert.equal(fs.readlinkSync(link), path.join(wt('review-2026.11.22'), 'node_modules'), 'the review worktree\'s, before main\'s');
+  assert.match(out, /^linked .*review-2026\.11\.22\/node_modules in$/m);
+
+  commit(wt('issue-gh-21'), 'fold.js', 'Fold Pages\n\nSee gh-21');
+  const merged = branch('merge', '21');
+  assert.equal(merged.status, 0, merged.out);
+  assert.ok(!fs.existsSync(wt('issue-gh-21')), 'its worktree goes, the link no change to stop it');
+  assert.ok(fs.existsSync(path.join(wt('review-2026.11.22'), 'node_modules')), 'what it linked to stays');
+});
+
+test('with no node_modules anywhere, issue says to install', (t) => {
+  const { branch } = checkout(t);
+  branch('review', '2026-11-22');
+  const { status, out } = branch('issue', '21');
+  assert.equal(status, 0, out);
+  assert.match(out, /^no node_modules to link: npm install there, or in /m);
 });
 
 test('with more than one review branch, it asks which', (t) => {

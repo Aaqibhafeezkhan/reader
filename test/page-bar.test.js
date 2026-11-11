@@ -44,3 +44,12 @@ test('the dots never wrap or squeeze Back and Next: they overflow, which is how 
   assert.match(rule('.pages > button'), /flex: none/);
   assert.match(rule('.pages.crowded .page-dots, .pages.crowded .page-done progress'), /display: none/);
 });
+
+test('the bar of pages done is drawn in the palette\'s colours, and the browser\'s own where colours are forced', () => {
+  // Firefox drew an empty bar full in the dark theme from an accent-color (gh-248).
+  assert.doesNotMatch(rule('.page-done progress'), /accent-color:/);
+  const drawn = /@media not \(forced-colors: active\) \{\n([\s\S]*?)\n\}/.exec(style)?.[1] ?? '';
+  assert.match(drawn, /^ {2}progress \{[^}]*appearance: none;[^}]*background: var\(--line\);/m);
+  assert.match(drawn, /progress::-webkit-progress-value \{ background: var\(--accent\); \}/);
+  assert.match(drawn, /progress::-moz-progress-bar \{ background: var\(--accent\); \}/);
+});

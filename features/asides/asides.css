@@ -23,7 +23,8 @@
   font-size: 0.86rem;
   line-height: 1.45;
   color: var(--gm-aside-ink);
-  /* Without the rule beside it, for now, to see how it reads (gh-199's review). */
+  /* Its rule is what a mark's line comes across the margin to (preview.js). */
+  border-left: 2px solid var(--gm-aside-rule);
   padding-left: var(--gm-space-5);
   break-inside: avoid;
 }
@@ -47,9 +48,12 @@
   padding-left: var(--gm-space-6);
 }
 
-/* An aside from a reviewer, about a topic (key.js): their name in a chip,
- * each topic in an outlined pill. Names, not only colours, so it holds up in print. The
- * paper on a chip: a key's colours read on the paper, and so it on them. */
+/* An aside from a reviewer, about a topic (key.js): the rule in the
+ * reviewer's colour, their name in a chip, each topic in an outlined pill.
+ * Names, not only colours, so it holds up in print. The paper on a chip: a
+ * key's colours read on the paper, and so it on them. A reply's own colour
+ * shows only in its chip, its rule grey (gh-199). */
+.gm-attributed { border-left-color: var(--by, var(--gm-aside-rule)); }
 .gm-by { font-style: normal; margin-right: var(--gm-space-2); }
 .gm-who, .gm-topic, .gm-unknown {
   display: inline-block;

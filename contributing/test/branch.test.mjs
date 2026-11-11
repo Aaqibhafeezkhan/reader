@@ -64,7 +64,7 @@ test('an issue\'s worktree borrows the review worktree\'s node_modules, and merg
   assert.equal(status, 0, out);
   const link = path.join(wt('issue-gh-21'), 'node_modules');
   assert.equal(fs.readlinkSync(link), path.join(wt('review-2026.11.22'), 'node_modules'), 'the review worktree\'s, before main\'s');
-  assert.match(out, /^linked .*review-2026\.11\.22\/node_modules in$/m);
+  assert.match(out, /^linked .*review-2026\.11\.22[\\/]node_modules in$/m);
 
   commit(wt('issue-gh-21'), 'fold.js', 'Fold Pages\n\nSee gh-21');
   const merged = branch('merge', '21');

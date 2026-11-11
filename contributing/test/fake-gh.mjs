@@ -7,6 +7,7 @@
 //     "mergeCommitAllowed": true }
 // Run with no arguments, as the test runner does to every file in test/, it does nothing.
 import fs from 'node:fs';
+import { literal } from '../lib/config.mjs';
 
 const args = process.argv.slice(2);
 if (args.length) {
@@ -43,7 +44,7 @@ if (args.length) {
     say((data.prs ?? []).filter((p) => p.head === opt('--head')).map((p) => ({ number: p.number, url: p.url })));
   } else if (what === 'pr' && verb === 'list') {
     const n = opt('--search').split(' ')[0];
-    say((data.prs ?? []).filter((p) => new RegExp(`\\b${n}\\b`).test(`${p.title} ${p.body ?? ''}`))
+    say((data.prs ?? []).filter((p) => new RegExp(`\\b${literal(n)}\\b`).test(`${p.title} ${p.body ?? ''}`))
       .map((p) => ({ number: p.number, title: p.title, author: { login: p.author } })));
   } else {
     process.stderr.write(`fake gh: no answer for ${args.join(' ')}\n`);

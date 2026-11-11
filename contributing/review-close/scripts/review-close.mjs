@@ -93,9 +93,10 @@ ${tally}; tests and lint pass.
 Each issue's merge commit says \`Closes gh-N\`, so merge this with a merge commit, not a squash or a rebase, and each closes its issue.
 `);
 
-// Quoted for the shell it's pasted in: on Windows, \ is part of a path, not an escape.
+// Quoted for the shell it's pasted in. On Windows, \ is part of a path, not an escape,
+// and a " inside is doubled, as PowerShell and cmd both read it.
 const WIN = process.platform === 'win32';
-const q = (s) => (/^[\w./:@=-]+$/.test(s) ? s : WIN ? `"${s.replace(/"/g, '\\"')}"` : `"${s.replace(/(["\\$`])/g, '\\$1')}"`);
+const q = (s) => (/^[\w./:@=-]+$/.test(s) ? s : WIN ? `"${s.replace(/"/g, '""')}"` : `"${s.replace(/(["\\$`])/g, '\\$1')}"`);
 // A path to paste: a shell expands ~ only outside quotes.
 const at = (p) => { const t = tilde(p); return t.startsWith(`~${path.sep}`) ? `~${path.sep}${q(t.slice(2))}` : q(t); };
 const [pr] = gh('pr', 'list', '--head', branch, '--state', 'open', '--json', 'number,url');

@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { ghCalls, read, repo, run, scratch, settings, tree } from './setup.mjs';
+import { literal } from '../lib/config.mjs';
 
 const OK = 'node -e ""';
 
@@ -81,7 +82,7 @@ test('a closed review is ready: it writes the PR\'s body and prints the outward 
   assert.equal(status, 0, out);
   for (const ok of ['the worktree is clean', 'main matches origin/main', 'the branch has all of main', 'acme/reader allows merge commits', 'a merge closes gh-21',
     'npm test', 'npm run lint', 'each item has its Closing, asking whether its issue stands', 'no boxes left open',
-    'no asides waiting on Claude', 'nothing left as <fill>']) assert.match(out, new RegExp(`^ok {4}${ok.replace(/[.*+?()[\]]/g, '\\$&')}$`, 'm'));
+    'no asides waiting on Claude', 'nothing left as <fill>']) assert.match(out, new RegExp(`^ok {4}${literal(ok)}$`, 'm'));
   assert.match(out, /^ready\. wrote .*pr\.md, the PR's body\. Each step below is outward: ask before each one\.$/m);
   assert.match(out, /^ {2}git -C .*work"? push -u origin review\/2026\.11\.22$/m);
   assert.match(out, /^ {2}gh pr create -R acme\/reader --base main --head review\/2026\.11\.22 --title "Batch 2026\.11\.22" --body-file .*pr\.md"?$/m);

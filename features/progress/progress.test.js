@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import MarkdownIt from 'markdown-it';
 import { render } from '../../src/render.js';
 import { slides } from '../../src/slides.js';
@@ -60,4 +61,15 @@ test('in the preview, the bar fills as its boxes are ticked, before the page is 
   click($('input[data-line="10"]'));
   await settle();
   assert.deepEqual(shows(), [2, '2 of 3'], 'not a box in another section');
+});
+
+test('the bar is drawn in the page\'s colours, empty as empty in every browser, and the browser\'s own where colours are forced', () => {
+  const css = readFileSync(new URL('./progress.css', import.meta.url), 'utf8');
+  // Firefox drew an empty bar full in the dark theme from an accent-color (gh-248).
+  assert.doesNotMatch(css, /accent-color:/);
+  const drawn = /@media not \(forced-colors: active\) \{([\s\S]*)\n\}/.exec(css)?.[1] ?? '';
+  assert.match(drawn, /\.progress progress \{[^}]*appearance: none;[^}]*background: var\(--gm-rule\);/);
+  assert.match(drawn, /\.progress progress::-webkit-progress-bar \{ background: var\(--gm-rule\); \}/);
+  assert.match(drawn, /\.progress progress::-webkit-progress-value \{ background: var\(--gm-accent\); \}/);
+  assert.match(drawn, /\.progress progress::-moz-progress-bar \{ background: var\(--gm-accent\); \}/);
 });

@@ -100,7 +100,7 @@ Waiting on me: <fill>.
 Waiting on a contributor: <fill>.
 Left in ${opt('tag', 'this milestone')} after this: <fill>.
 
-- [ ] Then: fast-forward \`main\`, push.
+- [ ] Then: push, open the PR, merge it.
 `;
 
 const item = ({ n, title: t }) => `---

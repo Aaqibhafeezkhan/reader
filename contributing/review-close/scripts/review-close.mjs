@@ -1,11 +1,15 @@
-// Whether a review's branch is ready to fast-forward onto main. Read-only: it
-// checks, and says what's in the way. Pushing is a separate step, after a yes.
+// Whether a review's branch is ready for its PR into main. It checks, says what's in
+// the way, and once nothing is, writes the PR's body into the day folder as pr.md and
+// prints the outward commands: the push, the PR, and the merge with a merge commit,
+// which is what lets each issue's "Closes gh-N" close it. It runs none of them.
 //   node review-close.mjs <day folder> <worktree>
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { boxes, files, open } from '../../lib/asides-open.mjs';
-import { config, literal } from '../../lib/config.mjs';
+import { config, ghCommand, literal, tilde } from '../../lib/config.mjs';
+import { counts, line } from '../../lib/counts.mjs';
+import { title } from '../../lib/issues.mjs';
 
 const [dayArg, worktree] = process.argv.slice(2);
 if (!dayArg || !worktree) {
@@ -15,6 +19,7 @@ if (!dayArg || !worktree) {
 const c = config();
 const day = path.resolve(dayArg);
 const git = (...a) => execFileSync('git', ['-C', worktree, ...a], { encoding: 'utf8' }).trim();
+const gh = (...a) => JSON.parse(execFileSync(...ghCommand([...a, '-R', c.repo]), { encoding: 'utf8' }));
 const problems = [];
 const ok = (m) => console.log(`ok    ${m}`);
 const check = (good, m, why = '') => {
@@ -26,7 +31,9 @@ const dirty = git('status', '--short');
 check(!dirty, 'the worktree is clean', dirty);
 git('fetch', '-q', 'origin');
 check(git('rev-parse', 'main') === git('rev-parse', 'origin/main'), 'main matches origin/main');
-check(spawnSync('git', ['-C', worktree, 'merge-base', '--is-ancestor', 'main', 'HEAD']).status === 0, 'the branch fast-forwards from main');
+check(spawnSync('git', ['-C', worktree, 'merge-base', '--is-ancestor', 'main', 'HEAD']).status === 0, 'the branch has all of main');
+// A squash or a rebase leaves the merge commits behind, and their Closes gh-N with them.
+check(gh('repo', 'view', '--json', 'mergeCommitAllowed').mergeCommitAllowed, `${c.repo} allows merge commits`);
 
 const log = git('log', 'main..HEAD', '--format=%B');
 const index = fs.readFileSync(path.join(day, 'review.md'), 'utf8');
@@ -55,7 +62,8 @@ const undecided = items.filter((f) => {
 });
 check(!undecided.length, 'each item has its Closing, asking whether its issue stands', undecided.join(', '));
 
-const left = boxes(day).filter((b) => !/fast-forward/.test(b.text));
+// The last box, ticked once it's merged: "Then: push, open the PR, merge it." (older days: "fast-forward").
+const left = boxes(day).filter((b) => !/Then: (?:push|fast-forward)/.test(b.text));
 check(!left.length, 'no boxes left open', left.map((b) => `\n  ${b.at}: ${b.text.slice(0, 90)}`).join(''));
 const asides = open(day).filter((a) => !a.at.startsWith('retro.md'));
 check(!asides.length, `no asides waiting on ${c.ai}`, asides.map((a) => `\n  ${a.at}: ${a.text.slice(0, 90)}`).join(''));
@@ -64,5 +72,31 @@ const fills = files(day).filter((f) => fs.readFileSync(f, 'utf8').includes('<fil
 check(!fills.length, 'nothing left as <fill>', fills.map((f) => path.relative(day, f).split(path.sep).join('/')).join(', '));
 
 for (const p of problems) console.log(`FAIL  ${p}`);
-console.log(problems.length ? `${problems.length} in the way` : 'ready: ask before pushing');
-process.exit(problems.length ? 1 : 0);
+if (problems.length) {
+  console.log(`${problems.length} in the way`);
+  process.exit(1);
+}
+
+// The PR: "Batch 2026.11.22", its body the index's first line, its issues and its counts.
+const branch = git('rev-parse', '--abbrev-ref', 'HEAD');
+const prTitle = `Batch ${branch.replace(/^review\//, '')}`;
+const summary = index.replace(/^---\n[\s\S]*?\n---\n/, '').trim().split('\n')[0];
+const tally = line({ ...counts(worktree, { checks: false }), pushed: undefined });
+const body = path.join(day, 'pr.md');
+fs.writeFileSync(body, `${summary}
+
+${issues.map((n) => `- #${n} ${title(n)}`).join('\n')}
+
+${tally}; tests and lint pass.
+Each issue's merge commit says \`Closes gh-N\`, so merge this with a merge commit, not a squash or a rebase, and each closes its issue.
+`);
+
+const q = (s) => (/^[\w./:@=-]+$/.test(s) ? s : `"${s.replace(/(["\\$`])/g, '\\$1')}"`);
+const [pr] = gh('pr', 'list', '--head', branch, '--state', 'open', '--json', 'number,url');
+console.log(`ready. wrote ${tilde(body)}, the PR's body. Each step below is outward: ask before each one.`);
+console.log(`  git -C ${q(tilde(worktree))} push -u origin ${branch}`);
+if (pr) console.log(`  gh pr edit ${pr.number} -R ${c.repo} --body-file ${q(tilde(body))}    (it's open: ${pr.url})`);
+else console.log(`  gh pr create -R ${c.repo} --base main --head ${branch} --title ${q(prTitle)} --body-file ${q(tilde(body))}`);
+console.log('Once it\'s approved, a committer merges it with a merge commit, then brings main up to it:');
+console.log(`  gh pr merge ${pr ? pr.number : branch} -R ${c.repo} --merge`);
+console.log(`  git -C ${q(tilde(c.main))} pull --ff-only origin main`);

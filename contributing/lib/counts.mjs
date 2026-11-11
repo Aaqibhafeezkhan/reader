@@ -46,7 +46,8 @@ export function line(c) {
     parts.push(c.tests.ok ? `${n}, all passing` : Number.isNaN(c.tests.failing) ? `${n}, failing` : `${n}, ${c.tests.failing} failing`);
   }
   if (c.lint) parts.push(c.lint.ok ? 'lint clean' : Number.isNaN(c.lint.problems) ? 'lint failing' : `lint: ${plural(c.lint.problems, 'problem')}`);
-  parts.push(!c.pushed ? 'nothing pushed'
+  // pushed: undefined leaves it out, as a PR's body does.
+  if (c.pushed !== undefined) parts.push(!c.pushed ? 'nothing pushed'
     : !c.pushed.ahead && !c.pushed.behind ? 'pushed'
       : `pushed, ${[c.pushed.ahead && `${c.pushed.ahead} ahead`, c.pushed.behind && `${c.pushed.behind} behind`].filter(Boolean).join(' and ')}`);
   return parts.join('; ');

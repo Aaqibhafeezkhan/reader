@@ -3,7 +3,8 @@
 // READER_GH_LOG, a line of JSON each.
 //   { "default": "acme/reader" | null,
 //     "issues": { "12": { "title", "body", "state", "milestone", "labels": ["good first issue"] } },
-//     "prs": [{ "number", "title", "body", "author" }] }
+//     "prs": [{ "number", "title", "body", "author", "head", "url" }],
+//     "mergeCommitAllowed": true }
 // Run with no arguments, as the test runner does to every file in test/, it does nothing.
 import fs from 'node:fs';
 
@@ -17,6 +18,8 @@ if (args.length) {
   if (what === 'repo' && verb === 'set-default') {
     // As gh does when none is set: a sentence, not a repo.
     say(data.default ?? 'X No default remote repository has been set.');
+  } else if (what === 'repo' && verb === 'view') {
+    say({ mergeCommitAllowed: data.mergeCommitAllowed ?? true });
   } else if (what === 'issue' && verb === 'view') {
     const issue = data.issues[args[2]];
     if (!issue) {
@@ -31,6 +34,8 @@ if (args.length) {
       labels: (issue.labels ?? []).map((name) => ({ name })),
     };
     say(args.includes('-q') ? full[opt('-q').slice(1)] : Object.fromEntries(opt('--json').split(',').map((k) => [k, full[k]])));
+  } else if (what === 'pr' && verb === 'list' && args.includes('--head')) {
+    say((data.prs ?? []).filter((p) => p.head === opt('--head')).map((p) => ({ number: p.number, url: p.url })));
   } else if (what === 'pr' && verb === 'list') {
     const n = opt('--search').split(' ')[0];
     say((data.prs ?? []).filter((p) => new RegExp(`\\b${n}\\b`).test(`${p.title} ${p.body ?? ''}`))

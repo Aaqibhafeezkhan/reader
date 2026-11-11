@@ -67,10 +67,11 @@ const close = ({ env, day, work }) => run('review-close/scripts/review-close.mjs
 
 test('the steps it prints can be pasted: a path under home starts ~/, outside any quotes', (t) => {
   const r = ready(t);
-  const { status, out } = close({ ...r, env: { ...r.env, HOME: path.dirname(r.env.READER_MEETINGS) } });
+  const home = path.dirname(r.env.READER_MEETINGS);
+  const { status, out } = close({ ...r, env: { ...r.env, HOME: home, USERPROFILE: home } });
   assert.equal(status, 0, out);
-  assert.match(out, /^ {2}git -C ~\/\S+ push -u origin /m);
-  assert.match(out, /--body-file ~\/\S*pr\.md$/m);
+  assert.match(out, /^ {2}git -C ~[\\/]\S+ push -u origin /m);
+  assert.match(out, /--body-file ~[\\/]\S*pr\.md"?$/m);
   assert.doesNotMatch(out, /"~/);
 });
 
@@ -82,8 +83,8 @@ test('a closed review is ready: it writes the PR\'s body and prints the outward 
     'npm test', 'npm run lint', 'each item has its Closing, asking whether its issue stands', 'no boxes left open',
     'no asides waiting on Claude', 'nothing left as <fill>']) assert.match(out, new RegExp(`^ok {4}${ok.replace(/[.*+?()[\]]/g, '\\$&')}$`, 'm'));
   assert.match(out, /^ready\. wrote .*pr\.md, the PR's body\. Each step below is outward: ask before each one\.$/m);
-  assert.match(out, /^ {2}git -C .*work push -u origin review\/2026\.11\.22$/m);
-  assert.match(out, /^ {2}gh pr create -R acme\/reader --base main --head review\/2026\.11\.22 --title "Batch 2026\.11\.22" --body-file .*pr\.md$/m);
+  assert.match(out, /^ {2}git -C .*work"? push -u origin review\/2026\.11\.22$/m);
+  assert.match(out, /^ {2}gh pr create -R acme\/reader --base main --head review\/2026\.11\.22 --title "Batch 2026\.11\.22" --body-file .*pr\.md"?$/m);
   assert.match(out, /^ {2}gh pr merge review\/2026\.11\.22 -R acme\/reader --merge$/m);
   assert.equal(read(r.day, 'pr.md'), [
     'Pages fold, and nothing else.',
@@ -104,7 +105,7 @@ test('with its PR already open, it says to update the body in place of opening a
   const r = ready(t, { gh: { prs: [{ number: 300, title: 'Batch 2026.11.22', head: 'review/2026.11.22', url: 'https://github.com/acme/reader/pull/300' }] } });
   const { status, out } = close(r);
   assert.equal(status, 0, out);
-  assert.match(out, /^ {2}gh pr edit 300 -R acme\/reader --body-file .*pr\.md {4}\(it's open: https:\/\/github\.com\/acme\/reader\/pull\/300\)$/m);
+  assert.match(out, /^ {2}gh pr edit 300 -R acme\/reader --body-file .*pr\.md"? {4}\(it's open: https:\/\/github\.com\/acme\/reader\/pull\/300\)$/m);
   assert.doesNotMatch(out, /gh pr create/);
   assert.match(out, /^ {2}gh pr merge 300 -R acme\/reader --merge$/m);
 });

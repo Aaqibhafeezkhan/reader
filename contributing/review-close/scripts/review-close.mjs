@@ -93,9 +93,11 @@ ${tally}; tests and lint pass.
 Each issue's merge commit says \`Closes gh-N\`, so merge this with a merge commit, not a squash or a rebase, and each closes its issue.
 `);
 
-const q = (s) => (/^[\w./:@=-]+$/.test(s) ? s : `"${s.replace(/(["\\$`])/g, '\\$1')}"`);
+// Quoted for the shell it's pasted in: on Windows, \ is part of a path, not an escape.
+const WIN = process.platform === 'win32';
+const q = (s) => (/^[\w./:@=-]+$/.test(s) ? s : WIN ? `"${s.replace(/"/g, '\\"')}"` : `"${s.replace(/(["\\$`])/g, '\\$1')}"`);
 // A path to paste: a shell expands ~ only outside quotes.
-const at = (p) => { const t = tilde(p); return t.startsWith('~/') ? `~/${q(t.slice(2))}` : q(t); };
+const at = (p) => { const t = tilde(p); return t.startsWith(`~${path.sep}`) ? `~${path.sep}${q(t.slice(2))}` : q(t); };
 const [pr] = gh('pr', 'list', '--head', branch, '--state', 'open', '--json', 'number,url');
 console.log(`ready. wrote ${tilde(body)}, the PR's body. Each step below is outward: ask before each one.`);
 console.log(`  git -C ${at(worktree)} push -u origin ${branch}`);

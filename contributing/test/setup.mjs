@@ -12,7 +12,8 @@ export const FAKE_GH = path.join(CONTRIBUTING, 'test', 'fake-gh.mjs');
 
 // A scratch folder, removed when the test ends.
 export function scratch(t) {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'contributing-')));
+  // Its real name: on Windows the temp folder is given short, RUNNER~1, and git names it in full.
+  const dir = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'contributing-')));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   return dir;
 }

@@ -37,7 +37,8 @@ export const untilde = (p) => (p === '~' || p.startsWith('~/') ? path.join(os.ho
 // The main checkout: the folder holding the .git that every worktree shares.
 export function mainCheckout(from = HERE) {
   const common = run('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], from);
-  return common ? path.dirname(common) : path.resolve(HERE, '../..');
+  // git names it with / on Windows too; resolved, it's in the system's own way.
+  return common ? path.resolve(path.dirname(common)) : path.resolve(HERE, '../..');
 }
 
 export function load({ env = process.env, from = HERE } = {}) {

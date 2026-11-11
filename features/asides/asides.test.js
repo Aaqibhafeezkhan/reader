@@ -10,6 +10,15 @@ import MarkdownIt from 'markdown-it';
 import { asides } from './index.js';
 import { page } from '../../src/page.js';
 import { preprocess } from './preprocess.js';
+import { Window } from 'happy-dom';
+
+// What HTML reads as, as a browser parses it, each of `stand` (selector: text) said as given.
+function text(html, stand = {}) {
+  const div = new Window().document.createElement('div');
+  div.innerHTML = html;
+  for (const [sel, said] of Object.entries(stand)) for (const el of div.querySelectorAll(sel)) el.replaceWith(said);
+  return div.textContent.replace(/\s+/g, ' ');
+}
 import { splitPairs } from '../rows.js';
 import { render } from '../../src/render.js';
 import { slides } from '../../src/slides.js';
@@ -242,7 +251,7 @@ test('~~ is a reply only straight under an aside, and only before a space or an 
 test('a reply counts towards its reviewer in the legend, and a dot at a chip\'s corner counts the threads it opened still to resolve', () => {
   const { body } = render(`${KEYED}One.\n~#d [ ] Open?\n~~c Yes.\n\nTwo.\n~# [x] Settled?\n~~c Yes.\n~~# Good.\n\nThree.\n~# Not to resolve.\n`);
   const legend = /<div class="gm-legend"[^>]*>([\s\S]*?)<\/div>/.exec(body)[1];
-  assert.equal(legend.replace(/<span class="vh">[^<]*<\/span>/g, '|').replace(/<[^>]+>/g, '').replace(/\s+/g, ' '), 'Josh 4|1Claude 2Design 2|1×', 'the dot counts the open threads each one opened: Claude\'s replies in Josh\'s add none');
+  assert.equal(text(legend, { '.vh': '|' }), 'Josh 4|1Claude 2Design 2|1×', 'the dot counts the open threads each one opened: Claude\'s replies in Josh\'s add none');
   assert.match(legend, /Josh <b>4<\/b><span class="gm-unresolved" title="1 unresolved"><span class="vh">, unresolved: <\/span>1<\/span>/);
   assert.doesNotMatch(render(`${KEYED}One.\n~# [x] Settled?\n`).body, /gm-unresolved/, 'nothing left, no dot');
 });

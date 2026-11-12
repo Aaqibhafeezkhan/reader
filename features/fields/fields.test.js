@@ -32,7 +32,7 @@ test('a field carried into an aside keeps its line', () => {
 
 test('a field in a ::: block is styled with it', () => {
   const { body } = render('::: red\n@ Name: x\n:::\n');
-  assert.match(body, /<p style="color: red"><span class="field" data-line="1" /);
+  assert.match(body, /<p style="color: var\(--gm-red\)"><span class="field" data-line="1" /);
 });
 
 test('a field of ( ) choices is radio buttons in a row, each knowing its line with only it picked', () => {

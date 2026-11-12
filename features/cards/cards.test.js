@@ -18,7 +18,7 @@ test('a plain list is cards with nothing to pick, and without a list each block 
 
 test('it is a word of a grid too, the same class, and neither is a style', () => {
   const html = speaker('::: grid 2 cards red\n- [ ] a\n- [x] b\n:::\n');
-  assert.match(html, /^<div class="grid grid-items cards" style="--grid: 2">\n<ul>\n<li class="task" style="color: red">/);
+  assert.match(html, /^<div class="grid grid-items cards" style="--grid: 2">\n<ul>\n<li class="task" style="color: var\(--gm-red\)">/);
   assert.doesNotMatch(html + speaker('::: cards georgia\n- a\n:::\n'), /'cards'|'grid'/);
   assert.match(speaker('::: cards georgia\n- a\n:::\n'), /^<div class="cards">\n<ul>\n<li class="font" style="--font: 'georgia'">a<\/li>/);
 });

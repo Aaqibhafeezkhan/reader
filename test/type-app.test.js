@@ -1,7 +1,7 @@
 import { test, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { app, globals, assertNotElement } from './dom.js';
+import { app, globals, assertElement, assertNotElement } from './dom.js';
 
 // The mode a file opens in, by its `type:` (#57): a workbook in Work, slides
 // in Edit, a document in whichever was last chosen.
@@ -71,8 +71,8 @@ test('a workbook opened from the files list gives the page the keyboard, not the
   const row = el.files.querySelector('.file');
   assert.ok(row, 'no row in the files list');
   row.focus();
-  assert.equal(document.activeElement, row);
+  assertElement(document.activeElement, row);
   await open('journal.md');
   assert.equal(working(), true);
-  assert.equal(document.activeElement, el.preview);
+  assertElement(document.activeElement, el.preview);
 });

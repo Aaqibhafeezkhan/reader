@@ -34,6 +34,27 @@ line starting at the margin that isn't `Q:` or `A:` ends the exchange.
 
 A backslash (`\A:`) keeps a line that happens to start that way as typed.
 
+An answer can be a pick from choices, `( )` in front of each, as a
+[field's](forms.md#fields) are: they're radio buttons in a row, one set to
+each `A:` line. Clicking one writes `(x)` in front of it, and `( )` in front of
+the rest. A [blank](forms.md#blanks-in-a-sentence) as one of them is a blank,
+and filling it in picks it, the answer and the `(x)` written together:
+
+::: tabs
++++ Source
+```markdown
+Q (Claude): Put the page bar fix in 0.0.4?
+A: ( ) Yes ( ) No ( ) [@ Something else]
+```
++++ Rendered
+Q (Claude): Put the page bar fix in 0.0.4?
+A: ( ) Yes ( ) No ( ) [@ Something else]
+:::
+
+The line has to start with a choice, each with words after it, or it's read
+as typed: `A: I'd say (x) marks the spot` is only an answer. [Start
+over](forms.md#starting-over) clears the choice picked, and the blank.
+
 ## Retro cards and votes
 
 A retro's cards work the same way: `Good:`, `Bad:` and `Try:` each start a

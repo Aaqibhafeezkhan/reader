@@ -442,3 +442,53 @@ test('someone else\'s message starts nothing over', () => {
   p.send({ type: 'start-over' }, { origin: 'http://elsewhere.example' });
   assert.deepEqual(p.posted, []);
 });
+
+/** The page `md` draws, in the preview frame: `fill(blank, value)` types it in and clicks away, `sent()` what each turn wrote, as [before, after]. */
+function choosing(md) {
+  const p = preview();
+  p.show(render(md).body);
+  const sent = async () => {
+    await settle();
+    return p.posted.splice(0).filter((m) => m.type === 'edit').map((m) => m.edits.map((e) => [e.before[0], e.after[0]]));
+  };
+  const fill = (blank, value) => {
+    blank.click();
+    const input = blank.querySelector('textarea');
+    input.value = value;
+    input.blur();
+    return sent();
+  };
+  const $ = (sel) => p.document.querySelector(sel);
+  return { ...p, $, sent, fill };
+}
+
+test('a blank that\'s one of a field\'s choices, filled in, picks it in the same edit; picking another keeps what\'s in it', async () => {
+  const line = '@ Milestone: (x) 0.0.5 ( ) [@ Something else]';
+  const p = choosing(`${line}\n`);
+  const boxes = () => [...p.document.querySelectorAll('.field-choice input')];
+  assert.deepEqual(await p.fill(p.$('.field-inline'), '0.0.6 (x)'), [[[line, '@ Milestone: ( ) 0.0.5 (x) [@ Something else: 0.0.6 (x)]']]]);
+  assert.deepEqual(boxes().map((b) => b.checked), [false, true]);
+  assert.equal(p.$('.field[data-choices]').dataset.answered, 'true');
+  boxes()[0].click();
+  assert.deepEqual(await p.sent(), [[['@ Milestone: ( ) 0.0.5 (x) [@ Something else: 0.0.6 (x)]', '@ Milestone: (x) 0.0.5 ( ) [@ Something else: 0.0.6 (x)]']]]);
+  // Filled in again, it picks its choice again; emptied, it leaves the choice as it is.
+  assert.deepEqual(await p.fill(p.$('.field-inline'), '1.0'), [[['@ Milestone: (x) 0.0.5 ( ) [@ Something else: 0.0.6 (x)]', '@ Milestone: ( ) 0.0.5 (x) [@ Something else: 1.0]']]]);
+  assert.deepEqual(await p.fill(p.$('.field-inline'), ''), [[['@ Milestone: ( ) 0.0.5 (x) [@ Something else: 1.0]', '@ Milestone: ( ) 0.0.5 (x) [@ Something else]']]]);
+});
+
+test('Start over lets go of a field\'s choice and empties the blank in it, as one edit of its line', async () => {
+  const md = '## Plan\nreset:[]\n\n@ Milestone: ( ) 0.0.5 (x) [@ Something else: 0.0.6] ( ) [@ Or]\n';
+  const p = startOver(md);
+  p.document.querySelectorAll('.field-inline')[1].click();
+  const input = p.document.querySelector('.field-inline textarea');
+  input.value = 'later';
+  input.blur();
+  await settle();
+  // From the line as that turn wrote it: the last blank filled, and picked.
+  const [{ edits }] = await p.press();
+  assert.deepEqual(edits.map((e) => [e.before[0], e.after[0]]), [[
+    '@ Milestone: ( ) 0.0.5 ( ) [@ Something else: 0.0.6] (x) [@ Or: later]',
+    '@ Milestone: ( ) 0.0.5 ( ) [@ Something else] ( ) [@ Or]',
+  ]]);
+  assert.deepEqual([...p.document.querySelectorAll('.field-choice input')].map((b) => b.checked), [false, false, false]);
+});

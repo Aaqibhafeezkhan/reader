@@ -25,6 +25,16 @@
  * click on a card's label writes or takes away the `[x]` (preview.js);
  * `[ ]` is a card not yet done, as no box is.
  *
+ * An answer whose line is all `( )` choices, each with words after it, as
+ * a field's can be (features/choices.js), is one to pick from: radio
+ * buttons in a row, one set to each `A:` line, a group named by what it
+ * answers. Each knows its line as written with only it picked; a blank as
+ * one of them is the fields feature's, and filling it in picks it
+ * (preview.js). A line whose marks aren't all outside emphasis and links
+ * stays as typed.
+ *
+ *   A: ( ) Yes ( ) [@ Something else]
+ *
  * Before anything else reads the source -- the asides included, so
  * that an aside ends where an exchange's line begins -- each such line
  * becomes a `+` list item (so it never joins a `-` or `*` list above it), and
@@ -36,8 +46,9 @@
 
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { beforeExtract, keepWritten, addClass, escapeAttr, fenced } from '../source.js';
-import { workable } from '../blank.js';
+import { beforeExtract, keepWritten, addClass, escapeAttr, fenced, unplaced, textToken } from '../source.js';
+import { workable, shut, inlineBlanks, codeSpans } from '../blank.js';
+import { MARK, choicesIn, pickedAt } from '../choices.js';
 
 // The speaker of each exchange's line, kept on `env` under a key no other feature can name, so that
 // one reads this one's tokens instead (gh-282); an aside's parse, a copy of
@@ -80,6 +91,38 @@ export function qa(md) {
     return `${label}${mark}</span>${tally}${name ? `<span class="qa-name">${md.renderInline(name)}</span>` : ''}`;
   };
   md.renderer.rules.qa_para = () => '<span class="qa-para"></span>';
+  // An answer's choices: a group of buttons named by what it answers, a
+  // question (see source.js's tags), each knowing its line with only it picked.
+  md.renderer.rules.qa_choices_open = (tokens, i) => {
+    const { line, text, off, answered, name } = tokens[i].meta;
+    return `<span class="qa-choices" role="radiogroup" aria-label="${escapeAttr(name || 'Answer')}" data-line="${line}"`
+      + ` data-text="${escapeAttr(text)}" data-off="${escapeAttr(off)}" data-answered="${answered}">`;
+  };
+  md.renderer.rules.qa_choices_close = () => '</span>';
+  // A choice's words pick it, unless there's a blank in them, to be filled
+  // in: then only its button does, in a label of its own as big as a
+  // finger, named by its words (fields/index.js draws one alike).
+  md.renderer.rules.qa_choice_open = (tokens, i, options, env) => {
+    const { line, on, checked, blank, name } = tokens[i].meta;
+    const box = `<input type="radio" class="qa-box" name="qa-${line}" data-on="${escapeAttr(on)}"`
+      + `${blank ? ` aria-label="${escapeAttr(name)}"` : ''}${checked ? ' checked' : ''}${shut(env)}>`;
+    return blank ? `<span class="qa-choice qa-choice-blank"><label class="qa-choice-box">${box}</label>` : `<label class="qa-choice">${box} `;
+  };
+  md.renderer.rules.qa_choice_close = (tokens, i) => (tokens[i].meta.blank ? '</span>' : '</label>');
+}
+
+/**
+ * The choices on an answer's line, `written`, line `line` of the file, if
+ * its answer is all choices: `{ line, text, checked, on, off, head }`, each
+ * choice's line with only it picked (`on`) and the line with none (`off`).
+ * A mark in a blank's answer or in code is that's, not a choice.
+ */
+function answerChoices(written, line, head) {
+  const at = QA.exec(written)?.[0].length;
+  if (!at) return null;
+  const found = choicesIn(written, at, [...inlineBlanks(written), ...codeSpans(written)]);
+  if (!found) return null;
+  return { line, text: written, checked: found.map((c) => c.checked), on: found.map((c, k) => pickedAt(written, found, k)), off: pickedAt(written, found), head };
 }
 
 /**
@@ -119,12 +162,13 @@ function lines(state) {
     const [m, who, box] = q;
     const name = q[3]?.trim() ?? '';
     const text = line.slice(m.length);
+    const choices = who === 'A' ? answerChoices(state.env.written?.[n] ?? line, base + n, head) : null;
     if (open && open.who === who && !CARDS.has(who) && (!name || name === open.name)) {
-      said.set(n, { more: true });
+      said.set(n, { more: true, choices });
       return `  ${text}`;
     }
     open = { who, name };
-    const item = { who, name, votes: 0, head };
+    const item = { who, name, votes: 0, head, choices };
     if (who !== 'A') item.head = head = item;
     if (CARDS.has(who)) {
       const written = state.env.written?.[n] ?? line;
@@ -155,6 +199,7 @@ function items(state) {
   // Lines the parser saw -> lines as written, before asides were taken out.
   const source = state.env.sourceLines;
   const said = { get: (n) => state.env[SAID].get(source?.[n] ?? n) };
+  choose(state, said);
   const tokens = state.tokens;
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
@@ -176,6 +221,110 @@ function items(state) {
       i = carryOn(state, i, said);
     }
   }
+}
+
+/**
+ * Makes the choices on each answer's line that has them (`choices`), and
+ * keeps the words of each question and card, to name the choices answering
+ * it by.
+ */
+function choose(state, said) {
+  const tokens = state.tokens;
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    const item = t.type === 'list_item_open' && t.markup === '+' && said.get(t.map?.[0]);
+    if (item?.who && item.who !== 'A' && item.who !== '+1') {
+      const inline = tokens.slice(i + 1).find((x) => x.type === 'inline');
+      item.words = words(inline?.children ?? []);
+    } else if (t.type === 'inline' && t.map && t.children) {
+      chooseIn(state, t, said);
+    }
+  }
+}
+
+/** What `children` say, in words: their text, a blank's what goes there. */
+const words = (children) => unplaced(children.map((c) => (/break$/.test(c.type) ? ' ' : c.nesting === 0 && !c.type.startsWith('html') ? c.content : '')).join(''))
+  .replace(/\s+/g, ' ').trim();
+
+/**
+ * Each line of `inline` that's an answer's with choices, made into them:
+ * its line breaks say which line is which, as carryOn's do. A line that
+ * doesn't start and end outside any emphasis or link stays as typed.
+ */
+function chooseIn(state, inline, said) {
+  let line = inline.map[0];
+  let depth = 0;
+  let from = 0;
+  let row = [];
+  const out = [];
+  const end = () => {
+    const choices = !from && !depth && said.get(line)?.choices;
+    out.push(...(choices ? choiceRow(state, row, choices) : row));
+    row = [];
+  };
+  for (const c of inline.children) {
+    if (/break$/.test(c.type)) {
+      end();
+      out.push(c);
+      line++;
+      from = depth;
+      continue;
+    }
+    row.push(c);
+    depth += c.nesting;
+  }
+  end();
+  inline.children = out;
+}
+
+/**
+ * The tokens of an answer's line, `row`, as its choices: a group, each
+ * choice's mark its button, and its words up to the next. As typed, unless
+ * its marks are the ones `choices` found on the line as written, each
+ * outside emphasis and links.
+ */
+function choiceRow(state, row, choices) {
+  const parts = [];
+  let depth = 0;
+  for (const c of row) {
+    if (c.type === 'text' && c.content.search(MARK) >= 0) {
+      if (depth) return row;
+      c.content.split(MARK).forEach((piece, k) => parts.push(k % 2 ? { mark: piece } : textToken(state, piece)));
+    } else parts.push(c);
+    depth += c.nesting;
+  }
+  if (parts.filter((p) => p.mark).length !== choices.on.length) return row;
+  const open = new state.Token('qa_choices_open', 'span', 1);
+  open.meta = { ...choices, answered: choices.checked.some(Boolean), name: choices.head?.words };
+  const out = [open];
+  let choice = null;
+  const finish = () => {
+    if (!choice) return;
+    const last = out.at(-1);
+    if (last.type === 'text') last.content = last.content.trimEnd();
+    choice.meta.blank = choice.meta.tokens.some((t) => t.type === 'field_inline');
+    choice.meta.name = words(choice.meta.tokens);
+    out.push(Object.assign(new state.Token('qa_choice_close', '', -1), { meta: choice.meta }));
+  };
+  for (const p of parts) {
+    if (p.mark) {
+      finish();
+      const k = (choice?.meta.k ?? -1) + 1;
+      choice = new state.Token('qa_choice_open', '', 1);
+      choice.meta = { k, line: choices.line, on: choices.on[k], checked: choices.checked[k], tokens: [] };
+      out.push(choice);
+    } else if (!choice) {
+      // Before the first mark, only space, as on the line as written.
+      if (p.type !== 'text' || p.content.trim()) return row;
+    } else {
+      if (!choice.meta.tokens.length && p.type === 'text') p.content = p.content.trimStart();
+      choice.meta.tokens.push(p);
+      out.push(p);
+    }
+  }
+  finish();
+  out.push(new state.Token('qa_choices_close', '', -1));
+  return out;
 }
 
 /**

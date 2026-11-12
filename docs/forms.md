@@ -137,6 +137,21 @@ of it, and `( )` in front of the rest.
 @ Session: ( ) Sat AM (x) Sat PM ( ) Sun AM ( ) Sun PM
 :::
 
+A [blank](#blanks-in-a-sentence) as one of the choices is a blank, for
+whatever the others leave out. Filling it in picks it, so the answer and the
+`(x)` go into the file together; picking another after keeps what's in it.
+Choices work the same way on an [answer's line](notes.md#questions-and-answers),
+`A: ( ) Yes ( ) [@ Something else]`.
+
+::: tabs
++++ Source
+```markdown
+@ Milestone: ( ) 0.0.5 ( ) 0.0.6 ( ) [@ Something else]
+```
++++ Rendered
+@ Milestone: ( ) 0.0.5 ( ) 0.0.6 ( ) [@ Something else]
+:::
+
 A field's value can say what kind of value it holds.
 A value that's a [date](#dates), `date:[]`, makes the field a date: it shows the calendar `date:` shows anywhere else, and picking a day writes it into the file in the value's place.
 A value of `number:[]` makes it a field that holds a number: it's filled in as any field is, but only a number can be typed, and it's written back as `number:12[]`.
@@ -249,7 +264,7 @@ staged or a choice, as one edit you can undo. `reset:[Clear]` names it.
 It's as much for a todo list or a game as for a [recipe](recipes.md).
 
 It empties the section's fields too, in the same edit, wherever they are in it, as in tabs or columns.
-That's a field's value, a blank in a sentence, and a field's choices.
+That's a field's value, a blank in a sentence, a field's choices, and an answer's (`A: ( ) Yes ( ) No`).
 A field that holds a date or a number stays one, ready for the next: `@ When: date:2026-11-03[]` becomes `@ When: date:[]`.
 Each [puzzle](puzzles.md#starting-over) in the section goes back to its start, in that same edit.
 It stops at a `---`, so it clears the same page in Edit as in Work, and under no heading, its section is that page.

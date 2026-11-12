@@ -6,9 +6,10 @@ import { render } from '../../src/render.js';
 const HOST = /<div class="puzzle"(?:[^>"]|"[^"]*")*>/g;
 
 test('a fence naming a puzzle is wrapped for the preview, numbered in order', () => {
-  const shared = { puzzles: 2 };
+  // Two on a deck's slide before this one, as the deck shares what's drawn.
+  const shared = {};
+  render('```sudoku\n.\n```\n\n```sudoku\n.\n```\n', { shared });
   const { body } = render('```sudoku\n5 3 .\n```\n\n```js\nx\n```\n\n```sudoku\n.\n```\n', { shared });
-  assert.equal(shared.puzzles, 4);
   assert.match(body, /<div class="puzzle" data-kind="sudoku" data-puzzle="2" data-from="1" data-to="2"><pre><code class="language-sudoku">5 3 \.\n<\/code><\/pre><\/div>/);
   assert.match(body, /data-puzzle="3" data-from="9" data-to="10"/);
   assert.match(body, /<pre><code class="hljs language-js">x\n<\/code><\/pre>/);

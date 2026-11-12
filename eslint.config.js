@@ -1,11 +1,29 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import js from '@eslint/js';
+import { SHARED_ENV } from './features/source.js';
 import globals from 'globals';
 
 const FEATURES = fileURLToPath(new URL('./features/', import.meta.url));
 
 const FRAME = ['features/*/preview.js', 'features/puzzles/kinds/*.js'];
+
+// Each feature's name, by its directory.
+const NAMES = new Set(fs.readdirSync(FEATURES, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name));
+
+/**
+ * A feature that reads another's placeholder, by the one whose it is:
+ * where the other's is found at the start of a line, ahead of this one's
+ * own, and this one has to step past it. Anything else reads the other's
+ * tokens.
+ */
+const PLACED = {
+  // A `:::` block's marker may lead a definition's line.
+  definitions: ['styles'],
+  // A list item's or a heading's braces come after its box, as tasks has placed it.
+  styles: ['tasks'],
+};
 
 /**
  * The feature whose directory holds `file`, at any depth, or null for a
@@ -27,12 +45,23 @@ function featureOf(file, dir) {
  * default export of its index.js, and only features/index.js imports it.
  * A feature's own tests sit in its directory, and may reach ../../src/ and
  * ../../test/ as any file may.
+ *
+ * Nor does a feature read another's placeholders, `MARKS.<name>` in
+ * features/source.js, which it leaves in the text before the text is
+ * parsed: it reads the tokens they become, which carry their words in
+ * `content` (gh-282). PLACED lists the few that must.
+ *
+ * And a feature sets on `env` only the names in SHARED_ENV, which say what
+ * they mean (features/source.js); it keeps its own state under a Symbol of
+ * its own, which no other can name.
  */
 const features = {
   meta: {
     type: 'problem',
     messages: {
       private: "features/{{name}}/ is that feature's own: share what's needed from the top of features/, or go through features/index.js.",
+      env: "env.{{name}} isn't one of the names features share (SHARED_ENV, features/source.js): keep a feature's own state under a Symbol of its own, `state.env[KEY]`, or add the name there, saying what it means. See gh-282.",
+      placed: "MARKS.{{name}} is the {{name}} feature's placeholder: read the tokens it becomes, which carry their words in `content`, and run after them if need be (md.core.ruler.after). See gh-282.",
     },
   },
   create(context) {
@@ -52,7 +81,35 @@ const features = {
     const literal = (node) => node?.type === 'Literal' ? node.value
       : node?.type === 'TemplateLiteral' && !node.expressions.length ? node.quasis[0].value.cooked : null;
     const source = (node) => node.source && check(node.source, literal(node.source), imported);
+    // MARKS.date, MARKS['date'] or const { date } = MARKS, outside features/date/.
+    const own = featureOf(from);
+    const placed = (node, name) => {
+      if (!NAMES.has(name) || name === own || PLACED[own]?.includes(name)) return;
+      context.report({ node, messageId: 'placed', data: { name } });
+    };
+    const isMarks = (node) => node?.type === 'Identifier' && node.name === 'MARKS';
+    // env.x = ..., state.env.x ??= ..., in a feature's own files.
+    const isEnv = (node) => (node?.type === 'Identifier' && node.name === 'env')
+      || (node?.type === 'MemberExpression' && !node.computed && node.property.name === 'env');
     return {
+      AssignmentExpression(node) {
+        const to = node.left;
+        if (!own || to.type !== 'MemberExpression' || to.computed || !isEnv(to.object)) return;
+        if (!SHARED_ENV.includes(to.property.name)) context.report({ node: to, messageId: 'env', data: { name: to.property.name } });
+      },
+      MemberExpression(node) {
+        if (!isMarks(node.object)) return;
+        const name = node.computed ? literal(node.property) : node.property.name;
+        if (typeof name === 'string') placed(node, name);
+      },
+      VariableDeclarator(node) {
+        if (!isMarks(node.init) || node.id.type !== 'ObjectPattern') return;
+        for (const p of node.id.properties) {
+          if (p.type !== 'Property') continue;
+          const name = p.computed ? literal(p.key) : p.key.name ?? p.key.value;
+          if (typeof name === 'string') placed(p, name);
+        }
+      },
       ImportDeclaration: source,
       ExportNamedDeclaration: source,
       ExportAllDeclaration: source,

@@ -78,7 +78,21 @@ export const MARKS = {
 
 /**
  * What a feature may find on `env`, named for what it means rather than for
- * the feature that set it:
+ * the feature that set it. These are all the names `env` has: a feature
+ * keeps its own state under a Symbol of its own (gh-282), and lint fails on
+ * one that sets any other name (eslint.config.js).
+ *
+ * What the page is drawn with, from `render()`'s options (src/render.js):
+ * `lineBase`, `file`, `read`, `entries`, `lines`, `matter`, `drawn`,
+ * `exported`, `deck`, `now`; and `shared`, what a deck's slides share,
+ * where each feature keeps its own under a Symbol, too.
+ *
+ * What the core reads off the page first (src/page.js): `frontMatter`,
+ * `closed` (whether it's past its `open-until:`), and `sourceLines`, each
+ * line the parser sees -> its line as written, which asides adds to as it
+ * takes its lines out.
+ *
+ * What features leave for the others and the core:
  *
  * - `nested`: this is a parse of a note's own body, apart from the page's
  *   (an aside's), whose lines were read with the rest; a rule over the
@@ -87,7 +101,16 @@ export const MARKS = {
  *   alias (`[words]{c}`), each `{ name, color, style }`, in a Map; the
  *   asides feature's key declares them. Without it, `{c}` is a font
  *   (features/mark.js).
+ * - `written`: the source's lines as written, before any feature changed
+ *   them (`keepWritten`).
+ * - `margin`: the notes in the page's margin, each `{ anchor, render(attrs) }`
+ *   (src/columns.js).
+ * - `masthead`: what goes in the masthead, under the title (the asides'
+ *   legend).
+ * - `byline`: what goes at the end of the byline (when the page closes).
  */
+export const SHARED_ENV = ['lineBase', 'file', 'read', 'entries', 'lines', 'matter', 'drawn', 'exported', 'deck', 'now', 'shared',
+  'frontMatter', 'closed', 'sourceLines', 'nested', 'topics', 'written', 'margin', 'masthead', 'byline'];
 
 /**
  * The tags a feature may leave on a token's `meta` for the others to read,

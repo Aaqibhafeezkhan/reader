@@ -33,6 +33,10 @@ import { ownClass } from './key.js';
 import { ASIDES } from './preprocess.js';
 import { escapeHtml, textToken } from '../source.js';
 
+// What this feature keeps across a deck's slides, on `env.shared`, under a key
+// no other feature can name (gh-282).
+const MARKED = Symbol('marks');
+
 export function marks(md) {
   md.core.ruler.push('marks', (state) => {
     if (state.inlineMode || state.env.nested) return;
@@ -41,7 +45,7 @@ export function marks(md) {
     for (const block of state.tokens) {
       if (block.type !== 'inline' || !block.children) continue;
       for (const c of block.children) {
-        if (c.nesting === 1 && c.meta?.mark && !c.attrGet('data-mark')) c.attrSet('data-mark', `mk-${shared.marks = (shared.marks ?? 0) + 1}`);
+        if (c.nesting === 1 && c.meta?.mark && !c.attrGet('data-mark')) c.attrSet('data-mark', `mk-${shared[MARKED] = (shared[MARKED] ?? 0) + 1}`);
       }
     }
     for (const { aside, span, color } of chosen) {

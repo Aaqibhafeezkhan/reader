@@ -28,6 +28,11 @@ import { fileURLToPath } from 'node:url';
 import { beforeExtract, readLines, MARKS, escapeHtml, escapeAttr, textToken, split, eachText, escapeRegExp, wordForms } from '../source.js';
 import { typable } from '../blank.js';
 
+// What this feature keeps across a deck's slides, on `env.shared`, under a key
+// no other feature can name (gh-282).
+const POPS = Symbol('defPops');
+const KNOWN = Symbol('definitions');
+
 // A term can't open with `[` (an image) and holds no colon or parentheses.
 // A name may hold a link, whose address is in parentheses of its own.
 const DEF = /^\\?![ \t]*([^\s[!:()][^:()\n]*?)[ \t]*(?:\(((?:[^()\n]|\([^()\n]*\))*)\)[ \t]*)?:(?:[ \t]+(.*?))?[ \t]*$/;
@@ -87,7 +92,7 @@ export function definitions(md) {
     // a second time as part of its text. Counted across a deck's slides, which
     // an export puts on one page.
     const shared = env.shared ?? env;
-    const id = `def-pop-${shared.defPops = (shared.defPops ?? 0) + 1}`;
+    const id = `def-pop-${shared[POPS] = (shared[POPS] ?? 0) + 1}`;
     return `<span class="def-use" tabindex="0" aria-describedby="${id}">${escapeHtml(text)}`
       + `<span class="def-pop" role="tooltip" aria-hidden="true"><b class="def-pop-term">${escapeHtml(term)}</b> <span id="${id}">${meaning}</span></span></span>`;
   };
@@ -111,7 +116,7 @@ function lines(state) {
   state.env[DEFINITIONS] = found;
   // A deck's later slides know the terms its earlier ones defined.
   const shared = state.env.shared ?? (state.env.shared = {});
-  const known = shared.definitions ?? (shared.definitions = new Map());
+  const known = shared[KNOWN] ?? (shared[KNOWN] = new Map());
   for (const d of found) {
     const senses = known.get(d.term);
     if (senses && !senses.includes(d)) senses.push(d);
@@ -174,7 +179,7 @@ function block(state, startLine, endLine, silent) {
  */
 function uses(state) {
   if (state.inlineMode) return;
-  const known = state.env.shared?.definitions;
+  const known = state.env.shared?.[KNOWN];
   if (!known?.size) return;
   // An acronym is matched as written, or with an `s`; a word or phrase in
   // lower case, in any case, plural or singular (`!innovation tokens`).

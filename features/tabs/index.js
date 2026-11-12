@@ -38,6 +38,10 @@ import hljs from 'highlight.js';
 import { declare, opens, panes } from '../layout.js';
 import { escapeHtml, escapeAttr, fenceLanguage } from '../source.js';
 
+// What this feature keeps across a deck's slides, on `env.shared`, under a key
+// no other feature can name (gh-282).
+const TABS = Symbol('tabs');
+
 // How many versions the stylesheet can show the pick of.
 const MAX = 12;
 // A diff this many word pairs or more is too big to work out on every render.
@@ -77,8 +81,8 @@ function rule(name) {
     open.map = [startLine, Math.min(end + 1, endLine)];
     // Counted through the whole document: a deck's slides, its asides.
     const shared = state.env.shared ?? state.env;
-    shared.tabs = (shared.tabs ?? 0) + 1;
-    const group = `${name}-${shared.tabs}`;
+    shared[TABS] = (shared[TABS] ?? 0) + 1;
+    const group = `${name}-${shared[TABS]}`;
     const tabs = versions.map((v, k) => {
       const label = v.label || named(v.tokens) || String(k + 1);
       return { group, label, key: label.toLowerCase(), checked: k === 0 };

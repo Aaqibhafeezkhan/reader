@@ -77,7 +77,18 @@ export function scheduleRender() {
   renderTimer = setTimeout(renderNow, RENDER_DELAY);
 }
 
-export async function renderNow({ resetScroll = false } = {}) {
+// The render last asked for, for what waits on its page (`rendered`).
+let latest = Promise.resolve();
+
+export function renderNow(options) {
+  latest = renderPage(options);
+  return latest;
+}
+
+/** Once the render last asked for is in the frame, or has come to nothing. */
+export const rendered = () => latest;
+
+async function renderPage({ resetScroll = false } = {}) {
   clearTimeout(renderTimer);
   if (state.current?.type !== 'md') return;
   const seq = ++state.renderSeq;
@@ -89,6 +100,8 @@ export async function renderNow({ resetScroll = false } = {}) {
     return toast(`render: ${err.message}`, true);
   }
   if (seq !== state.renderSeq) return;
+  // Where each heading's id is, for a link to one (goto.js).
+  state.anchors = { path, lines: out.anchors ?? {} };
   updatePresentable(out.deck);
   scheduleFitCheck(out.deck);
   // A deck being worked through shows the one page it's turned to.

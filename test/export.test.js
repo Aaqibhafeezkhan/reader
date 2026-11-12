@@ -47,6 +47,19 @@ test('a link to a document saved with this one goes to its page, and others stay
   assert.match(fs.readFileSync(path.join(root, 'deck', 'b.html'), 'utf8'), /href="\.\.\/a\.html">back</);
 });
 
+test('a link to a heading is an anchor on the exported page, in it or in another saved with it (gh-244)', async () => {
+  const root = dir({
+    'a.md': 'See [the plan](#the-plan) and [its budget](b.md#this-year).\n\n## The plan\n',
+    'b.md': '# Budget\n\n## This year\n',
+  });
+  await reader(root, 'a.md', 'b.md', '--no-draw');
+  const a = fs.readFileSync(path.join(root, 'a.html'), 'utf8');
+  assert.match(a, /href="#the-plan">the plan</);
+  assert.match(a, /<h2 id="the-plan">The plan<\/h2>/);
+  assert.match(a, /href="b\.html#this-year">its budget</);
+  assert.match(fs.readFileSync(path.join(root, 'b.html'), 'utf8'), /<h2 id="this-year">This year<\/h2>/);
+});
+
 test('export says which images it could not find', async () => {
   const root = dir({ 'a.md': '![](gone.png)\n![](https://example.com/x.png)\n' });
   const { stderr } = await reader(root, 'a.md', '--out', 'elsewhere.html', '--no-draw');

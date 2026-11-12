@@ -48,6 +48,7 @@ export const state = {
   saving: Promise.resolve(),
   previewReady: null,
   working: false,       // work mode: rendered full width, filled in but not edited
+  anchors: null,        // { path, lines }: the line of each heading's id, by the file's last render
 };
 
 // The slides being presented, if any. See "presenting" below.

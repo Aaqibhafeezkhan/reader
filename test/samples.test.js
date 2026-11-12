@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { pages, isDeck } from '../src/slides.js';
 import { render } from '../src/render.js';
 import { createContent } from '../src/content.js';
+import { Window } from 'happy-dom';
 import { app, globals, preview, settle } from './dom.js';
 
 // What Work counts done is read in the app, from the pages it's sent.
@@ -20,8 +21,14 @@ const documents = fs.readdirSync(SAMPLES, { recursive: true })
   .filter((rel) => rel.endsWith('.md') && !rel.split(path.sep).some((part) => part.startsWith('.')))
   .sort();
 
-// What a page shows as text, its code and what it says how to write left out.
-const shown = (body) => body.replace(/<(pre|code)[\s\S]*?<\/\1>/g, '').replace(/<[^>]+>/g, '');
+// What a page shows as text, as a browser parses it, its code and what it
+// says how to write left out.
+function shown(body) {
+  const div = new Window().document.createElement('div');
+  div.innerHTML = body;
+  for (const code of div.querySelectorAll('pre, code')) code.remove();
+  return div.textContent;
+}
 
 test('there are samples, each a folder of its own, and the README naming each one', () => {
   assert.ok(documents.includes(path.join('daily-journal', '2026-11-02.md')));
@@ -54,10 +61,10 @@ const count = (text, now) => tally(drawn(text, now).map((p, i) => mark(p.body, i
 test('the daily journal is a workbook of nine pages, which opens in Work', () => {
   assert.equal(isDeck(JOURNAL), true);
   assert.match(JOURNAL, /^type: workbook$/m);
-  const titles = drawn(JOURNAL, EVENING).map((p) => p.body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<[^>]+>/g, '').trim());
+  const titles = drawn(JOURNAL, EVENING).map((p) => shown(p.body.match(/<h1[^>]*>[\s\S]*?<\/h1>/)?.[0] ?? '').trim());
   assert.deepEqual(titles, [
     'Daily Exercise', 'Meditation', 'Gratitude Practice', 'Body Check-In', 'Social Connection',
-    'Learning &amp; Reading', 'Body Scan &amp; Stretch', 'Singing Warmup', 'How are you feeling?',
+    'Learning & Reading', 'Body Scan & Stretch', 'Singing Warmup', 'How are you feeling?',
   ]);
 });
 

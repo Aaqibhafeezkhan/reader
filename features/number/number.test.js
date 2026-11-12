@@ -19,7 +19,7 @@ test('a number fence is a box: the figure, and its caption', () => {
 
 test('both lines are prose: a span styles one, and markup is shown, not run', () => {
   const { body } = render(fence('[15%]{seagreen}\n*daily* <b>change</b>'));
-  assert.match(body, /<p class="number-figure" style="--chars: 3"><span style="color: seagreen">15%<\/span><\/p>/);
+  assert.match(body, /<p class="number-figure" style="--chars: 3"><span class="gm-own" style="--own: seagreen; color: var\(--gm-own\)">15%<\/span><\/p>/);
   assert.match(body, /<p class="number-caption"><em>daily<\/em> &lt;b&gt;change&lt;\/b&gt;<\/p>/);
 });
 

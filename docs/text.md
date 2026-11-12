@@ -11,6 +11,10 @@ after it. A CSS color name (`red`, `slategray`, `rebeccapurple`, ...) sets
 the color; any other name is a font, with hyphens for spaces. A font you
 don't have falls back to the page's own.
 
+A color is kept readable as text, in light and in dark.
+A common name is drawn in reader's own shade of it, as a reviewer's or a topic's is (see [Asides](asides.md)): `gold` is reader's amber, deep on a light page and bright on a dark one.
+Any other keeps its hue, made as dark as a light page needs, or as light as a dark one does.
+
 ::: tabs
 +++ Source
 ```markdown

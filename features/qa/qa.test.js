@@ -15,8 +15,8 @@ test('Q: and A: lines become an exchange', () => {
 
 test('an exchange inside ::: is styled too', () => {
   const { body } = render('::: slategray\nQ: Styled?\nA: Yes.\n:::\n');
-  assert.match(body, /<li class="qa qa-q" style="color: slategray"><span class="qa-label">Q<\/span>Styled\?<\/li>/);
-  assert.match(body, /<li class="qa qa-a" style="color: slategray"><span class="qa-label">A<\/span>Yes\.<\/li>/);
+  assert.match(body, /<li class="gm-own qa qa-q" style="--own: slategray; color: var\(--gm-own\)"><span class="qa-label">Q<\/span>Styled\?<\/li>/);
+  assert.match(body, /<li class="gm-own qa qa-a" style="--own: slategray; color: var\(--gm-own\)"><span class="qa-label">A<\/span>Yes\.<\/li>/);
 });
 
 test('a second A: or Q: in a row continues the one before', () => {

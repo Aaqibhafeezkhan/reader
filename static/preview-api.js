@@ -13,8 +13,9 @@
  *     microtask) and go up together, those with the same options as one
  *     edit and one undo. So features that answer the same click (a step
  *     done, the ingredient it uses up) needn't know of each other. Nor
- *     when they write the same line, each from the line as it was drawn
- *     (a blank in a choice's line filled, and the choice picked by it):
+ *     when they write the same line, each from the line as it knew it,
+ *     as drawn or as it last wrote it (a blank in a choice's line filled,
+ *     and the choice picked by it):
  *     the edits become one, both changes made where they change different
  *     parts of it, the later one's where they don't, and go up with the
  *     options of the first asked. Likewise an edit of a line that an
@@ -151,7 +152,9 @@
       if (into) into.edits.push(...ask.edits);
       else out.push({ edits: [...ask.edits], opts: ask.opts });
     }
-    for (const o of out) o.edits = o.edits.reduce(combine, []);
+    // Each made on what's been written first, so that two features that
+    // each know the line as it was last written by one of them still make one edit of it.
+    for (const o of out) o.edits = o.edits.map(onWritten).reduce(combine, []);
     return out;
   }
   /** `edits` and `e`, an edit of the same lines from what they read made one with it. */

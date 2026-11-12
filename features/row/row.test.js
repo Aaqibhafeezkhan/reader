@@ -36,7 +36,7 @@ test('with +++ lines, what is before the first is the first block, and the rest 
   assert.equal(speaker('::: row\n![](me.jpg)\n\n*me*\n+++\n### Bio\nwords\n+++\nmore\n:::\n'), [
     '<div class="row">',
     '<div class="row-lead">\n<figure><img src="me.jpg" alt=""></figure>\n<p><em>me</em></p>\n</div>',
-    '<div class="row-rest">\n<h3>Bio</h3>\n<p>words</p>\n<p>more</p>\n</div>',
+    '<div class="row-rest">\n<h3 id="bio">Bio</h3>\n<p>words</p>\n<p>more</p>\n</div>',
     '</div>\n',
   ].join('\n'));
 });

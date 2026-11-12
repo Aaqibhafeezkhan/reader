@@ -18,8 +18,8 @@ test('each block in a columns block is a column', () => {
 test('with +++ lines, what is between two is a column', () => {
   assert.equal(speaker('::: columns\n### Before\n* slow\n+++\n### After\n\nfast\n+++\n:::\n'), [
     '<div class="columns">',
-    '<div class="column">\n<h3>Before</h3>\n<ul>\n<li>slow</li>\n</ul>\n</div>',
-    '<div class="column">\n<h3>After</h3>\n<p>fast</p>\n</div>',
+    '<div class="column">\n<h3 id="before">Before</h3>\n<ul>\n<li>slow</li>\n</ul>\n</div>',
+    '<div class="column">\n<h3 id="after">After</h3>\n<p>fast</p>\n</div>',
     '</div>\n',
   ].join('\n'));
 });

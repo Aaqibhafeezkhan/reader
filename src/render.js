@@ -1,5 +1,5 @@
 /**
- * Markdown (with `~` asides) -> { css, body, title } for the preview pane.
+ * Markdown (with `~` asides) -> { css, body, title, anchors } for the preview pane.
  *
  * One markdown-it parses every document, its front matter and comments
  * taken off first (page.js), then with each feature's plugin (features/),
@@ -16,6 +16,7 @@ import { fontCss } from './fonts.js';
 import { accentCss } from './accent.js';
 import { FEATURES, checkRequires } from '../features/index.js';
 import { page as pageRule } from './page.js';
+import { headingIds, anchors } from './anchors.js';
 
 /** The markdown-it that parses a document, built from `features`. */
 function markdown(features) {
@@ -28,6 +29,8 @@ function markdown(features) {
   // A `late` plugin, which reads what all of them leave as text (the words an
   // aside chooses), goes after.
   for (const f of features.filter((f) => f.late)) md.use(f.late);
+  // Every heading's id, from its words (anchors.js).
+  md.use(headingIds);
   md.core.ruler.push('reader_lines', (state) => {
     if (state.env.lines && !state.inlineMode && !state.env.nested) markLines(state.tokens, state.env);
   });
@@ -108,6 +111,8 @@ function renderWith(md, features, src, { file, read, line = 0, shared = {}, entr
     // How many notes are in the margin, asides or any other feature's.
     notes: notes.length,
     title,
+    // Each heading's id, to the line of the file it's on.
+    anchors: anchors(env),
   };
 }
 

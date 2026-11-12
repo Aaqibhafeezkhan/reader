@@ -120,7 +120,7 @@ test('a Done pill takes a click 24px tall, past what it draws', () => {
 
 test('a box at the head of a heading is a Done button at the end of its line, and knows its line', () => {
   const { body } = render('# [ ] Gratitude\n\n# [x] Ways\n');
-  assert.match(body, /<h1 class="task-heading" aria-labelledby="section-0"><span class="section-title" id="section-0">Gratitude<\/span><button type="button" class="section-done" data-line="0" data-done="false" data-own="false" data-full="false" data-on="# \[x\] Gratitude" data-off="# \[ \] Gratitude" aria-label="Done: Gratitude" aria-pressed="false"><\/button><\/h1>/);
+  assert.match(body, /<h1 class="task-heading" id="gratitude" aria-labelledby="section-0"><span class="section-title" id="section-0">Gratitude<\/span><button type="button" class="section-done" data-line="0" data-done="false" data-own="false" data-full="false" data-on="# \[x\] Gratitude" data-off="# \[ \] Gratitude" aria-label="Done: Gratitude" aria-pressed="false"><\/button><\/h1>/);
   assert.match(body, /<h1 class="task-heading"[^>]*><span class="section-title" id="section-2">Ways<\/span><button [^>]*data-line="2" data-done="true" data-own="true" [^>]*aria-pressed="true"><\/button><\/h1>/);
   assert.doesNotMatch(body, /<input/, 'no box before its title');
 });

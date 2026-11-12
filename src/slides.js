@@ -72,13 +72,14 @@ export function slides(src, { file, read, now } = {}) {
 
 /**
  * A deck as a workbook's pages: each slide drawn as a document is, not as a
- * stage, with nothing of the slide's notes. `line` is where the page starts
+ * stage, with nothing of the slide's notes, and `anchors`, the line each
+ * heading's id is on, through all of them. `line` is where the page starts
  * in the file, and, unless `lines` is false, its blocks carry theirs
  * (`data-line`). `drawn`, `exported` and `now` are as render() takes them.
  */
 export function pages(src, { file, read, lines = true, drawn, exported, now } = {}) {
-  const { css, title, meta, parts } = draw(src, (lifted) => lifted.body.trim(), () => 'part', { file, read, lines, drawn, exported, now });
-  return { css, title, meta, pages: parts.map(({ body, line }) => ({ body, line })) };
+  const { css, title, meta, parts, anchors } = draw(src, (lifted) => lifted.body.trim(), () => 'part', { file, read, lines, drawn, exported, now });
+  return { css, title, meta, anchors, pages: parts.map(({ body, line }) => ({ body, line })) };
 }
 
 /**
@@ -93,15 +94,18 @@ function draw(src, worth, layout, options) {
   const behind = readBackground(meta.background);
   let css = '';
   const parts = [];
+  // Each heading's id, through every part (src/anchors.js).
+  const anchors = {};
   for (const { text, line } of chunks) {
     const lifted = lift(text);
     if (!worth(lifted)) continue;
     const own = liftBackground(lifted.notes);
     const r = render(lifted.body, { ...options, line, shared, entries, background: own.background ?? behind, fonts: meta, matter: meta, layout: layout(lifted.body) });
     css ||= r.css;
+    Object.assign(anchors, r.anchors);
     parts.push({ body: r.body, line, notes: own.notes });
   }
-  return { css, title: titleOf(meta, options.file), meta, parts };
+  return { css, title: titleOf(meta, options.file), meta, parts, anchors };
 }
 
 /**

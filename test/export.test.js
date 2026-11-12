@@ -83,8 +83,8 @@ test('a deck is saved as its pages, without its notes, each a numbered sheet on 
   const pages = [...html.matchAll(/<div class="gm-page">\n([\s\S]*?)\n<\/div>\n(?=<div class="gm-page">|<script|<\/body>)/g)].map((m) => m[1]);
   assert.equal(pages.length, 2);
   // The --- under a line of text ends the page; it doesn't underline it.
-  assert.match(pages[0], /^<div class="gm-bg" style="background-color: navy"><\/div>\n<div class="gm-doc">[\s\S]*<h1>One<\/h1>\n<p>text\n<em>Page 1<\/em><\/p>/);
-  assert.match(pages[1], /^<div class="gm-doc">[\s\S]*<h1>Two<\/h1>/);
+  assert.match(pages[0], /^<div class="gm-bg" style="background-color: navy"><\/div>\n<div class="gm-doc">[\s\S]*<h1 id="one">One<\/h1>\n<p>text\n<em>Page 1<\/em><\/p>/);
+  assert.match(pages[1], /^<div class="gm-doc">[\s\S]*<h1 id="two">Two<\/h1>/);
   assert.doesNotMatch(html.slice(html.indexOf('<body>')), /a note|gm-masthead|data-line/);
   assert.match(html, /@media print \{\n {2}\.gm-page \{ page: numbered; \}\n {2}\.gm-page \+ \.gm-page \{ border-top: none; break-before: page; \}/);
   // A dark deck prints in the light colours, and the bounds that keep an

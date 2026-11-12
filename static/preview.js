@@ -355,6 +355,8 @@
     Preview.running = Boolean(m.deck || m.working);
     // How the page is set to be seen, as the address says.
     Preview.address = m.address && typeof m.address === 'object' ? m.address : {};
+    // When the day starts, by the server (`--day-starts`).
+    Preview.dayStarts = Number(m.dayStarts) || 0;
     // What features and puzzles were in the middle of carries over.
     Preview.replace(document.body, () => {
       // Put together out of the page first, so no image is asked for

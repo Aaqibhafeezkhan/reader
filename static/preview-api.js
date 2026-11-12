@@ -212,6 +212,20 @@
     fromApp: (e) => e.source === window.parent && APP.includes(e.origin),
     deck: false,
     address: {},
+    // Minutes after midnight that the day starts, as the server's
+    // `--day-starts` says, sent with each page.
+    dayStarts: 0,
+    /**
+     * The date it is, `YYYY-MM-DD`, by this computer's clock: before the
+     * day starts, it's still the day before, as the files list's Today goes
+     * (src/dates.js's `today`). For whatever on the page writes today (gh-269).
+     */
+    today(now = new Date()) {
+      const at = new Date(now);
+      if (at.getHours() * 60 + at.getMinutes() < this.dayStarts) at.setDate(at.getDate() - 1);
+      const two = (n) => String(n).padStart(2, '0');
+      return `${String(at.getFullYear()).padStart(4, '0')}-${two(at.getMonth() + 1)}-${two(at.getDate())}`;
+    },
     setAddress(params) {
       this.address = { ...params };
       window.parent.postMessage({ type: 'address', params: this.address }, '*');

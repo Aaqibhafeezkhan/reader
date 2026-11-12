@@ -36,6 +36,7 @@ async function init() {
   const info = await api('GET', '/api/info');
   state.rootName = info.name;
   state.root = info.root;
+  state.dayStarts = Number(info.dayStarts) || 0;
   el.rootName.textContent = info.name;
   el.rootName.title = info.root;
   showVersion(info.version);

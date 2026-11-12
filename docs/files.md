@@ -58,6 +58,7 @@ The date is the server's, in its own time zone.
 
 A day starts at midnight, unless you start reader with `--day-starts`.
 With `reader --day-starts 04:00`, **Today** still lists yesterday's files until 04:00, so a journal written at 1am goes in the day it belongs to.
+So does what a page writes for today: a date's calendar's **Today**, and a log's **Log today**.
 
 ### Starting today's
 

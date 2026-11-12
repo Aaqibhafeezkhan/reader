@@ -1,7 +1,7 @@
 /**
  * HTTP API and static files.
  *
- *   GET  /api/info             content root and name, and reader's version: { label, url, release }
+ *   GET  /api/info             content root and name, reader's version: { label, url, release }, and when its day starts, in minutes after midnight (`--day-starts`)
  *   GET  /api/tree             listable files, newest first, each with its date; today's date; and the folders today's file could be started in
  *   GET  /api/start-day?dir=   { from, to, mtime, css, body }: the folder's latest file, drawn whole and open, to clear its answers
  *   POST /api/start-day        { dir, from, mtime, edits } -> { path, from, mtime }: today's file, made from it with `edits` made
@@ -317,7 +317,7 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
 
     if (req.method === 'GET' || req.method === 'HEAD') {
       if (route === '/api/info') {
-        return sendJson(res, { root: content.root, name: path.basename(content.root), version: await known });
+        return sendJson(res, { root: content.root, name: path.basename(content.root), version: await known, dayStarts });
       }
       if (route === '/api/tree') {
         const day = today(now, dayStarts);

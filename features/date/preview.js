@@ -30,10 +30,8 @@
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
     return m && { year: Number(m[1]), month: Number(m[2]), day: Number(m[3]) };
   };
-  const today = () => {
-    const now = new Date();
-    return { year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() };
-  };
+  // Today as reader goes by it, the day starting at `--day-starts` (gh-269).
+  const today = () => parse(Preview.today());
   const inRange = (d) => d.year >= 1 && d.year <= 9999;
   const addDays = (d, n) => day(utc({ ...d, day: d.day + n }));
   const addMonths = (d, n) => {

@@ -83,3 +83,12 @@ test('once the page stops being workable, nothing answered picks an answer\'s ch
   assert.deepEqual(await p.sent(), []);
   assert.deepEqual(p.boxes().map((b) => b.disabled), [true, true]);
 });
+
+test('a nested answer\'s choices pick and start over on its own line, indented as written', async () => {
+  const line = '  A: ( ) Now ( ) [@ Something else]';
+  const p = page(`## Proposals\nreset:[]\n\nQ: Top?\nA: Split it.\n  Q: Part A?\n${line}\n`);
+  assert.deepEqual(await p.fill('an issue'), [[[line, '  A: ( ) Now (x) [@ Something else: an issue]']]]);
+  p.document.querySelector('.task-reset').click();
+  assert.deepEqual(await p.sent(), [[['  A: ( ) Now (x) [@ Something else: an issue]', line]]]);
+  assert.equal(p.row().dataset.answered, 'false');
+});

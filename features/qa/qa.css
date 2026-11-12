@@ -95,3 +95,9 @@ li.qa-try.qa-done { color: inherit; }
 .qa-choice-box { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; cursor: pointer; }
 /* Where the page can't be worked, as on a slide, they only say what's picked. */
 .unworkable :is(.qa-choice, .qa-choice-box, .qa-box) { cursor: default; }
+/* An exchange nested under another's (index.js): a list in its item, so
+ * it's heard as nested too, its labels hung where the item's text starts.
+ * The same size as the one it's in, and upright under a question. */
+li.qa ul:has(> li.qa) { margin: var(--gm-space-2) 0 var(--gm-space-3); }
+li.qa li.qa { font-size: 1em; }
+li.qa-q li.qa:not(.qa-q) { font-style: normal; color: var(--gm-ink); }

@@ -197,3 +197,55 @@ test('an answer\'s choices show what\'s picked and can\'t be changed on a slide,
   assert.match(deck, /data-on="A: \( \) Yes \(x\) No" checked disabled>/);
   assert.match(deck, /role="radiogroup" aria-label="Answer"/);
 });
+
+const NESTED = [
+  'Q (Claude): Fix the tracks bug now?',
+  'A: Now, or file an issue.',
+  '  Q (Claude): Fix part A now?',
+  '  A: File an issue.',
+  '  Q (Claude): Fix part B now?',
+  '  A: Now.',
+  'Q (Claude): Fix this other part?',
+  'A: File an issue.',
+].join('\n');
+
+test('a Q: or A: indented under an exchange is an exchange of its own, a list in its item', () => {
+  const { body } = render(`${NESTED}\n`);
+  assert.match(body, /<li class="qa qa-a"><span class="qa-label">A<\/span>Now, or file an issue\.\n<ul>\n<li class="qa qa-q"><span class="qa-label">Q<\/span><span class="qa-name">Claude<\/span>Fix part A now\?<\/li>\n<li class="qa qa-a"><span class="qa-label">A<\/span>File an issue\.<\/li>\n<li class="qa qa-q">[^\n]*Fix part B now\?<\/li>\n<li class="qa qa-a"><span class="qa-label">A<\/span>Now\.<\/li>\n<\/ul>\n<\/li>\n<li class="qa qa-q">[^\n]*Fix this other part\?<\/li>/);
+  assert.doesNotMatch(body, /Q \(Claude\)|A: /);
+});
+
+test('exchanges nest as deep as they\'re indented, and back out to the depth a line is indented to', () => {
+  const md = 'Q: Top?\nA: Split it.\n  Q: Part?\n  A: Yes.\n    Q: Deeper?\n    A: Deeper yet.\n  A: Another thought.\nBad (Josh): A card\n  Try: nested\n  +1 (Rob)\nQ: Next\n';
+  const { body } = render(md);
+  assert.equal(body.match(/<ul>/g).length, 4);
+  // Back from a deeper exchange, an answer is another, not the one before carried on.
+  assert.match(body, /Deeper yet\.<\/li>\n<\/ul>\n<\/li>\n<li class="qa qa-a"><span class="qa-label">A<\/span>Another thought\.<\/li>/);
+  // A card's under a card, and a vote for the one at its depth.
+  assert.match(body, /data-on=" {2}Try \[x\]: nested"[^>]*>T<\/span><span class="qa-tally">\+1<\/span>nested<\/li>\n<li class="qa qa-vote qa-bare">/);
+  assert.match(body, /<\/ul>\n<\/li>\n<li class="qa qa-q"><span class="qa-label">Q<\/span>Next<\/li>/);
+});
+
+test('an indented Q: with no exchange above it, or after the exchange ended, stays as typed', () => {
+  for (const md of ['Some text\n  Q: not nested\n', '  A: alone\n', 'Q: Why?\nA: So.\nText ends it.\n  Q: as typed\n']) {
+    const { body } = render(md);
+    assert.match(body, /Q: not nested|A: alone|Q: as typed/, md);
+  }
+});
+
+test('a nested answer\'s choices are named by its own question and write its line as indented', () => {
+  const { body } = render('Q: Top?\nA: Split it.\n  Q: Part A?\n  A: ( ) Now ( ) [@ Something else]\n');
+  assert.match(body, /<span class="qa-choices" role="radiogroup" aria-label="Part A\?" data-line="3" data-text=" {2}A: \( \) Now \( \) \[@ Something else\]"/);
+  assert.match(body, /data-on=" {2}A: \(x\) Now \( \) \[@ Something else\]"> Now<\/label>/);
+});
+
+test('an aside under a nested line goes beside it, at any depth', () => {
+  const md = '---\nreviewer #: Josh\n---\n\nQ: Top?\nA: Split it.\n  ~# split in two\n  Q: Part A?\n  A: Now.\n    ~# it\'s small\n  Q: Part B?\n';
+  const { body } = render(md);
+  const pairs = body.split('<section class="gm-pair">').slice(1);
+  const beside = (words) => pairs.find((p) => p.includes(words));
+  assert.match(beside('split in two'), /Split it\./);
+  assert.doesNotMatch(beside('split in two'), /Part A\?/);
+  assert.match(beside('it’s small'), /<span class="qa-label">A<\/span>Now\./);
+  assert.doesNotMatch(body, /~#/);
+});

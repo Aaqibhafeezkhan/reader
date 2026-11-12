@@ -190,6 +190,7 @@
     const code = pre.querySelector(':scope > code');
     return code && SCROLLS.has(getComputedStyle(code).overflowX) ? code : pre;
   };
+  let codeWatch = null;
   function reachableCode() {
     for (const pre of document.querySelectorAll('.gm-doc pre')) {
       const el = scroller(pre);
@@ -206,6 +207,13 @@
         for (const a of REACHED) el.removeAttribute(a);
       }
     }
+    // A block hidden when the page was drawn (a folded section, an unpicked
+    // tab) has no size, so the draw passed it over; shown, the size it takes
+    // is the tell. Watching each pre keeps one that shows later within
+    // reach, whether or not the page is drawn again.
+    if (!codeWatch) codeWatch = new ResizeObserver(() => reachableCode());
+    codeWatch.disconnect();
+    for (const pre of document.querySelectorAll('.gm-doc pre')) codeWatch.observe(pre);
   }
 
   // Images, fonts and what features draw change a slide's size as they

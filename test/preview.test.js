@@ -681,3 +681,25 @@ test('a block that fits is no Tab stop, and one with no language is just "Code"'
   p.show(render('```\nplain\n```\n').body);
   assert.equal(p.document.querySelector('pre').getAttribute('aria-label'), 'Code');
 });
+
+test('a block hidden when the page was drawn takes the keyboard once it is shown', () => {
+  const p = preview();
+  const watchers = [];
+  // The page under test lays nothing out, so the test says when a block's
+  // size changes, as showing a folded section or a picked tab would.
+  p.window.ResizeObserver = class {
+    constructor(run) { watchers.push(run); }
+    observe() {}
+    disconnect() {}
+    unobserve() {}
+  };
+  sized(p, 0, 0);
+  p.show(render('```js\nconst aVeryLongLine = 1;\n```\n').body);
+  const pre = p.document.querySelector('pre');
+  assert.equal(pre.hasAttribute('tabindex'), false);
+  sized(p, 600, 400);
+  for (const run of watchers) run();
+  assert.equal(pre.getAttribute('tabindex'), '0');
+  assert.equal(pre.getAttribute('role'), 'region');
+  assert.equal(pre.getAttribute('aria-label'), 'Code, js');
+});

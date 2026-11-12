@@ -206,8 +206,8 @@
     const log = e.target.closest?.('.task-log');
     if (log) {
       const at = Number(log.dataset.at);
-      const d = new Date();
-      const today = [d.getFullYear(), d.getMonth() + 1, d.getDate()].map((n) => String(n).padStart(2, '0')).join('-');
+      // Today as reader goes by it, the day starting at `--day-starts` (gh-269).
+      const today = Preview.today();
       const multiplier = log.dataset.multiplier && document.querySelector(`.multiplier[data-multiplier="${log.dataset.multiplier}"]`);
       const by = multiplier?.querySelector('.multiply[aria-pressed="true"]:not([data-by="1"])')?.textContent;
       const heading = `${'#'.repeat(Number(log.dataset.level))} date:${today}[]${by ? ` · ${by}` : ''}`;

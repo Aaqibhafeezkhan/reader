@@ -103,6 +103,8 @@ export async function renderNow({ resetScroll = false } = {}) {
     resetScroll,
     lines: el.editor.value.split('\n').length,
     working: state.working,
+    // when the day starts, for what the page says today is
+    dayStarts: state.dayStarts,
     // drawn in the app's theme, unless its own background says otherwise
     dark: Theme.dark(),
     // how the page is set to be seen, as the address says (address.js)

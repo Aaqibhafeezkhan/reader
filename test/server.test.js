@@ -534,6 +534,9 @@ test('the tree\'s today goes by when the day was said to start', async () => {
     assert.equal((await tree()).today, '2026-10-31');
     clock = new Date(2026, 10, 1, 4).getTime();
     assert.equal((await tree()).today, '2026-11-01');
+    // The page is told too, for its own Today (gh-269).
+    const info = await (await fetch(`http://127.0.0.1:${at.address().port}/api/info`)).json();
+    assert.equal(info.dayStarts, 240);
   } finally {
     at.close();
   }

@@ -9,13 +9,13 @@ import { preview, settle } from '../../test/dom.js';
  * be written since last asked, by the end of the turn, each ask an array of
  * edits.
  */
-async function page(markdown) {
+async function page(markdown, { hour = 12, dayStarts } = {}) {
   const p = preview();
-  // Today, as far as the page knows.
+  // Today, as far as the page knows: noon on 4 March 2026, unless said.
   p.window.Date = class extends Date {
-    constructor(...at) { super(...(at.length ? at : [2026, 2, 4, 12])); }
+    constructor(...at) { super(...(at.length ? at : [2026, 2, 4, hour])); }
   };
-  p.show(render(markdown).body);
+  p.show(render(markdown).body, { dayStarts });
   const edits = async () => {
     await settle();
     return p.posted.splice(0).filter((m) => m.type === 'edit').map((m) => {
@@ -189,6 +189,17 @@ test('Log today adds a heading for today after the log\'s last entry, with the m
   await edits();
   click($('.task-log'));
   assert.deepEqual(await edits(), [[[8, '', '\n#### date:2026-03-04[]']]]);
+});
+
+test('Log today goes by the day reader says it is, which starts at --day-starts (gh-269)', async () => {
+  // 1am on the 4th, the day starting at 4am: it's still the 3rd.
+  const early = await page(LOGGED, { hour: 1, dayStarts: 240 });
+  early.click(early.$('.task-log'));
+  assert.deepEqual(await early.edits(), [[[8, '', '\n#### date:2026-03-03[]']]]);
+  // From 4am, it's the 4th.
+  const later = await page(LOGGED, { hour: 4, dayStarts: 240 });
+  later.click(later.$('.task-log'));
+  assert.deepEqual(await later.edits(), [[[8, '', '\n#### date:2026-03-04[]']]]);
 });
 
 const BOXES = [

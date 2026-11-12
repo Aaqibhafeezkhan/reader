@@ -64,3 +64,15 @@ test('a file whose type leaves Work doesn\'t take the keyboard into the editor',
   assert.equal(working(), false);
   assertNotElement(document.activeElement, el.editor, 'the editor took the keyboard');
 });
+
+test('a workbook opened from the files list gives the page the keyboard, not the body, as the list goes (gh-273)', async () => {
+  await open('talk.md');
+  assert.equal(working(), false);
+  const row = el.files.querySelector('.file');
+  assert.ok(row, 'no row in the files list');
+  row.focus();
+  assert.equal(document.activeElement, row);
+  await open('journal.md');
+  assert.equal(working(), true);
+  assert.equal(document.activeElement, el.preview);
+});

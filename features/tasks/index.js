@@ -42,6 +42,10 @@ const TASK = /^([ \t]*(?:>[ \t]*|~(?![^\s~])[ \t]*|~[^\s~]+[ \t]+)*(?:[-*+]|\d{1
 const NAMED = new Set(['field_inline', 'count', 'ingredient_key', 'ingredient_use', 'pitch', 'timer', 'scheme_shown']);
 const HEADING = /^( {0,3}#{1,6}[ \t]+)\[([ xX])\](?=[ \t]|$)/;
 const [OPEN, CLOSE] = MARKS.tasks;
+// The boxes found, by placeholder, kept on `env` under a key no other feature can name, so that
+// one reads this one's tokens instead (gh-282); an aside's parse, a copy of
+// `env`, keeps it.
+const BOXES = Symbol('boxes');
 const PLACED = new RegExp(`${OPEN}(\\d+)${CLOSE}`, 'g');
 const AT_HEAD = new RegExp(`^${OPEN}(\\d+)${CLOSE}[ \\t]?`);
 
@@ -75,11 +79,11 @@ export function tasks(md) {
       });
     });
     // Shared with the asides' own parses.
-    if (boxes.length) state.env.tasks = { boxes };
+    if (boxes.length) state.env[BOXES] = { boxes };
   });
 
   md.core.ruler.push('task_tokens', (state) => {
-    const tasks = state.env.tasks;
+    const tasks = state.env[BOXES];
     if (!tasks) return;
     const tokens = state.tokens;
     // Lists are counted through the whole document, a deck's slides and
@@ -219,7 +223,7 @@ function doneButton({ line, on, off, checked, done = checked, full = false, name
  */
 function sectionsDone(md) {
   md.core.ruler.push('task_sections', (state) => {
-    if (state.inlineMode || state.env.nested || !state.env.tasks) return;
+    if (state.inlineMode || state.env.nested || !state.env[BOXES]) return;
     const { of } = sections(state);
     // Each section with a box, by its box's token, and the parts it holds.
     const boxes = new Map();

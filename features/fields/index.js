@@ -66,6 +66,10 @@ const FIELD = new RegExp(`^([ \\t]*)@[ \\t]+(${LABEL})[ \\t]*(:+)[ \\t]*(.*?)[ \
 const HEAD = new RegExp(`^[ \\t]*@[ \\t]+${LABEL}[ \\t]*:+`);
 const HINT = /^(.*?[^\s])[ \t]*(?<!\\)\{[ \t]*([^}\n]*?[^\s])[ \t]*(?<!\\)\}$/;
 const [OPEN, CLOSE] = MARKS.fields;
+// The fields found, by placeholder, kept on `env` under a key no other feature can name, so that
+// one reads this one's tokens instead (gh-282); an aside's parse, a copy of
+// `env`, keeps it.
+const FIELDS = Symbol('fields');
 const PLACED = new RegExp(`${OPEN}(\\d+)${CLOSE}`, 'g');
 const MARK = /\(([ xX])\)/g;
 // A value that's a date, as the date feature reads one, valid or not; and
@@ -168,11 +172,11 @@ export function fields(md) {
         return indent + placeholder(OPEN, CLOSE, found.length - 2) + value + placeholder(OPEN, CLOSE, found.length - 1);
       });
     });
-    if (found.length) state.env.fields = found;
+    if (found.length) state.env[FIELDS] = found;
   });
 
   md.core.ruler.push('field_tokens', (state) => {
-    const found = state.env.fields;
+    const found = state.env[FIELDS];
     if (!found) return;
     splitText(state, PLACED, (k) => {
       if (!found[k]) return null;

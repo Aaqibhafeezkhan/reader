@@ -32,6 +32,10 @@ import { typable } from '../blank.js';
 // A name may hold a link, whose address is in parentheses of its own.
 const DEF = /^\\?![ \t]*([^\s[!:()][^:()\n]*?)[ \t]*(?:\(((?:[^()\n]|\([^()\n]*\))*)\)[ \t]*)?:(?:[ \t]+(.*?))?[ \t]*$/;
 const [OPEN, CLOSE] = MARKS.definitions;
+// The definitions found, by placeholder, kept on `env` under a key no other feature can name, so that
+// one reads this one's tokens instead (gh-282); an aside's parse, a copy of
+// `env`, keeps it.
+const DEFINITIONS = Symbol('definitions');
 // A `:::` block's marker (features/styles) may come before the placeholder.
 const STYLED = `${MARKS.styles[0]}[^${MARKS.styles[1]}]*${MARKS.styles[1]}`;
 const PLACED = new RegExp(`^(${STYLED})?${OPEN}(\\d+)${CLOSE}`);
@@ -104,7 +108,7 @@ function lines(state) {
     return `${OPEN}${found.length - 1}${CLOSE}${meaning ? ` ${meaning}` : ''}`;
   });
   if (!found.length) return;
-  state.env.definitions = found;
+  state.env[DEFINITIONS] = found;
   // A deck's later slides know the terms its earlier ones defined.
   const shared = state.env.shared ?? (state.env.shared = {});
   const known = shared.definitions ?? (shared.definitions = new Map());
@@ -117,7 +121,7 @@ function lines(state) {
 
 /** Definitions on lines in a row: a glossary, a term's senses together. */
 function block(state, startLine, endLine, silent) {
-  const found = state.env.definitions;
+  const found = state.env[DEFINITIONS];
   if (!found || state.sCount[startLine] - state.blkIndent >= 4) return false;
   const at = (n) => {
     const m = PLACED.exec(state.src.slice(state.bMarks[n] + state.tShift[n], state.eMarks[n]));

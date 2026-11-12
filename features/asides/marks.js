@@ -30,13 +30,14 @@
 import { lastBlockBefore } from '../rows.js';
 import { markSpan } from '../mark.js';
 import { ownClass } from './key.js';
+import { ASIDES } from './preprocess.js';
 import { escapeHtml, textToken } from '../source.js';
 
 export function marks(md) {
   md.core.ruler.push('marks', (state) => {
     if (state.inlineMode || state.env.nested) return;
     const shared = state.env.shared ?? state.env;
-    const chosen = choose(state, state.env.asides || []);
+    const chosen = choose(state, state.env[ASIDES] || []);
     for (const block of state.tokens) {
       if (block.type !== 'inline' || !block.children) continue;
       for (const c of block.children) {

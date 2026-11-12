@@ -8,7 +8,8 @@
  *
  * Once the page's front matter and comments are off (src/page.js), the
  * asides are lifted out of the source before block parsing, so they cannot
- * disturb the document's structure, and kept on `env.asides`. Each is a
+ * disturb the document's structure, and kept on `env` under the feature's
+ * own key (`ASIDES`, preprocess.js). Each is a
  * note in the page's margin (`env.margin`, src/columns.js), which wants the
  * speaker's stream unbroken so it can choose its own cut points; the
  * feature draws its cell (`cell`). The aliases they may use,
@@ -30,7 +31,7 @@
 
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { preprocess } from './preprocess.js';
+import { preprocess, ASIDES } from './preprocess.js';
 import { readEntry, makeKey, ownClass } from './key.js';
 import { marks, about } from './marks.js';
 import { escapeHtml, escapeAttr } from '../source.js';
@@ -56,7 +57,7 @@ export function asides(md) {
       for (const r of t.replies ?? []) if (r.by && !r.by.topics.length && t.by?.topics.length) r.about = t.by.topics;
     }
     state.env.sourceLines = lines.map((k) => page[k] ?? k);
-    state.env.asides = asides;
+    state.env[ASIDES] = asides;
     // The key's topics, for a mark in braces to be in (`[words]{c}`).
     state.env.topics = new Map([...key].filter(([, e]) => e.kind === 'topic'));
     // Each one a note in the margin, its cell drawn as the page is laid
@@ -152,7 +153,7 @@ export function asideTokens(md, aside, env) {
   // Parse the aside body as markdown in its own right, so **emphasis**,
   // `code`, links and even nested lists work inside a thought. Link reference
   // definitions carry over; the aside bookkeeping deliberately does not.
-  return md.parse(aside.text, { ...env, asides: null, nested: true });
+  return md.parse(aside.text, { ...env, [ASIDES]: null, nested: true });
 }
 
 // A chip's or a pill's class, and whether it's in an author's own colour.

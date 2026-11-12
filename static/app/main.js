@@ -97,6 +97,8 @@ function wire() {
       else if (e.data?.type === 'edit') applyEdit(e.data, { fromStage: true });
       else if (e.data?.type === 'untab') el.deck.focus();
       else if (e.data?.type === 'revealed') revealed(e.data);
+      // A link to a heading on another slide; one to another file stays put, on stage.
+      else if (e.data?.type === 'follow' && typeof e.data.href === 'string' && e.data.href.startsWith('#')) follow(e.data.href);
       return;
     }
     if (e.source !== el.preview.contentWindow) return;

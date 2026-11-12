@@ -13,7 +13,7 @@ test('::: styles every block until the closing :::', () => {
   const src = '::: red georgia\n# H\n\ntext\n- [ ] task\n\n| a | b |\n|---|--:|\n| 1 | 2 |\n\n---\n\n    [c]{red}\n\n~ aside\n:::\n\nafter\n\n:::\n';
   const { body } = render(src);
   const style = `class="font" style="color: var\\(--gm-red\\); --font: 'georgia'"`;
-  assert.match(body, new RegExp(`<h1 ${style}>H</h1>`));
+  assert.match(body, new RegExp(`<h1 class="font" id="h" style="color: var\\(--gm-red\\); --font: 'georgia'">H</h1>`));
   assert.match(body, new RegExp(`<p ${style}>text</p>`));
   assert.match(body, /<li class="font task" style="[^"]*"><input type="checkbox" class="task-box" data-line="4" [^>]*> task<\/li>/);
   assert.match(body, /<td class="font" style="text-align:right; color: var\(--gm-red\); --font: 'georgia'">2<\/td>/);
@@ -147,15 +147,15 @@ test('uppercase sets a span, a ::: block, a list item and a heading in capitals,
   assert.match(body, /<span class="uppercase">Today’s prompt<\/span>: why\?/);
   assert.match(body, /<p class="uppercase" style="color: var\(--gm-red\)">label<\/p>/);
   assert.match(body, /<li class="uppercase task"><input type="checkbox"[^>]* data-on="- \[x\] \{uppercase\} Walk"[^>]*> Walk<\/li>/);
-  assert.match(body, /<h2 class="uppercase">Ways to embrace today<\/h2>/);
-  assert.match(body, /<h2 class="uppercase task-heading" style="color: var\(--gm-blue\)" aria-labelledby="section-\d+"><span class="section-title" id="section-\d+">Done<\/span><button type="button" class="section-done"[^>]* aria-label="Done: Done"[^>]*><\/button><\/h2>/);
+  assert.match(body, /<h2 class="uppercase" id="ways-to-embrace-today">Ways to embrace today<\/h2>/);
+  assert.match(body, /<h2 class="uppercase task-heading" id="done" style="color: var\(--gm-blue\)" aria-labelledby="section-\d+"><span class="section-title" id="section-\d+">Done<\/span><button type="button" class="section-done"[^>]* aria-label="Done: Done"[^>]*><\/button><\/h2>/);
   assert.doesNotMatch(body, /\{uppercase\}<|>\{|--font: 'uppercase'/i);
 });
 
 test('braces after a heading\'s #s that aren\'t all style names stay as typed', () => {
   const { body } = render('## {foo} bar\n\n## a {uppercase} b\n');
-  assert.match(body, /<h2>\{foo\} bar<\/h2>/);
-  assert.match(body, /<h2>a \{uppercase\} b<\/h2>/);
+  assert.match(body, /<h2 id="foo-bar">\{foo\} bar<\/h2>/);
+  assert.match(body, /<h2 id="a-uppercase-b">a \{uppercase\} b<\/h2>/);
 });
 
 test('a color named on text reads as text, light or dark: a common name in the family\'s hue, any other held as light or dark as the page needs (gh-173)', () => {

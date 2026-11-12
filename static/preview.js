@@ -471,17 +471,29 @@
     }
   });
 
-  // In-page anchors scroll here rather than opening a new tab.
+  // In-page anchors scroll here rather than opening a new tab. One the page
+  // doesn't hold, a heading on another of a workbook's pages or a deck's
+  // slides, the app goes to (gh-244).
   document.addEventListener('click', (e) => {
     const a = e.target.closest && e.target.closest('a[href^="#"]');
     if (!a) return;
     e.preventDefault();
-    const t = document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
-    if (!t) return;
+    const href = a.getAttribute('href');
+    let id;
+    try { id = decodeURIComponent(href.slice(1)); } catch { return; }
+    if (!id) return;
+    const t = inPage(id);
+    if (!t) return window.parent.postMessage({ type: 'follow', href }, '*');
     window.dispatchEvent(new CustomEvent('preview:open-to', { detail: { target: t } }));
     marks = null;
     t.scrollIntoView({ behavior: 'smooth' });
   });
+
+  /** What on the page has the id `id`: a heading first, then anything else, and never the frame's own. */
+  function inPage(id) {
+    const all = [...document.body.querySelectorAll('[id]')].filter((n) => n.id === id);
+    return all.find((n) => /^H[1-6]$/.test(n.tagName)) ?? all[0] ?? null;
+  }
 
   // A link to another markdown file being served opens it in the app, and
   // not as text in a new tab; ⌘ or ⇧ still asks for the tab, and so does a

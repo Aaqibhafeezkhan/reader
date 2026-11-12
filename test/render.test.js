@@ -20,7 +20,7 @@ test('tables render', () => {
 test('with lines, each block names the line of the file it came from', () => {
   const src = '-----\ntitle: T\n-----\n# Head\n\n~ an aside\n\npara\n\n- one\n- two\n';
   const { body } = render(src, { lines: true });
-  assert.match(body, /<h1 data-line="3">Head<\/h1>/);
+  assert.match(body, /<h1 id="head" data-line="3">Head<\/h1>/);
   assert.match(body, /<p data-line="7">para<\/p>/);
   assert.match(body, /<ul data-line="9">\n<li data-line="9">one<\/li>\n<li data-line="10">two<\/li>/);
   assert.match(body, /<div class="gm-aside-cell" role="note">\n<details class="gm-thread" open>\n<summary[^>]*><span class="gm-mark" aria-hidden="true">~<\/span>an aside<\/summary>/);

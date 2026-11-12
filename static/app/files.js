@@ -21,6 +21,7 @@ import { branch, rename, trash, promote } from './manage.js';
 import { drawOutline, entryKey, pickKey } from './outline.js';
 import { startToday } from './starting.js';
 import { drawCopy } from './copying.js';
+import { goToHeading } from './goto.js';
 import { ICONS, icon } from './icons.js';
 
 const LONG_PRESS = 500;
@@ -457,17 +458,26 @@ export function reveal(p) {
   go(dirOf(p), group && group.opens.path !== p ? group.name : null, { focus: false });
 }
 
-/** A link the preview was asked to follow, to a markdown file: opened here if it's one of ours. */
-export function follow(href) {
-  const url = new URL(href);
+/**
+ * A link the preview was asked to follow, to a markdown file: opened here if
+ * it's one of ours, at the heading its `#` names, if it names one (gh-244).
+ * `href` is the link's address, or `#id` alone for the open file's own.
+ */
+export async function follow(href) {
   const root = new URL(contentUrl(''), location.href);
+  const url = new URL(href, state.current ? new URL(contentUrl(state.current.path), root) : root);
   const p = url.origin === root.origin && url.pathname.startsWith(root.pathname)
     ? url.pathname.slice(root.pathname.length).split('/').map(decodeURIComponent).join('/')
     : null;
   if (!p || !state.files.some((f) => f.path === p && f.type === 'md')) return toast(`no file ${p ?? url.pathname} here`, true);
-  if (p === state.current?.path) return;
-  reveal(p);
-  open(p);
+  let id = '';
+  try { id = decodeURIComponent(url.hash.slice(1)); } catch { /* not a heading's */ }
+  if (p !== state.current?.path) {
+    reveal(p);
+    await open(p);
+    if (p !== state.current?.path) return;
+  }
+  if (id) goToHeading(id);
 }
 
 const rowsIn = (list) => [...list.querySelectorAll('.file, .folder, .entry')];

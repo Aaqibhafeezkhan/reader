@@ -24,8 +24,8 @@ test('otherwise each block in it is a cell, or what is between +++ lines', () =>
   ].join('\n'));
   assert.equal(speaker('::: grid\n### A\none\n+++\n### B\ntwo\n:::\n'), [
     '<div class="grid">',
-    '<div class="grid-cell">\n<h3>A</h3>\n<p>one</p>\n</div>',
-    '<div class="grid-cell">\n<h3>B</h3>\n<p>two</p>\n</div>',
+    '<div class="grid-cell">\n<h3 id="a">A</h3>\n<p>one</p>\n</div>',
+    '<div class="grid-cell">\n<h3 id="b">B</h3>\n<p>two</p>\n</div>',
     '</div>\n',
   ].join('\n'));
 });

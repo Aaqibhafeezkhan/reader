@@ -365,8 +365,8 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
     if (route === '/api/render' && req.method === 'POST') {
       // A deck being worked through is drawn a page to a slide.
       if (body.pages && isDeck(body.text)) {
-        const { css, title, pages: list } = pages(body.text, { file: body.path, read });
-        if (list.length) return sendJson(res, { css, title, pages: list, deck: true });
+        const { css, title, anchors, pages: list } = pages(body.text, { file: body.path, read });
+        if (list.length) return sendJson(res, { css, title, anchors, pages: list, deck: true });
       }
       return sendJson(res, { ...render(body.text, { file: body.path, read, lines: true }), deck: isDeck(body.text) });
     }

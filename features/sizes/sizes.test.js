@@ -4,7 +4,7 @@ import { render } from '../../src/render.js';
 
 test('=WxH after an image sets its size, either side optional', () => {
   const { body } = render('## Hi ![](a.svg =100x200)\n\n![logo](b.svg =x80)\n\n![cat](c.jpg "Ginger" =120x)\n');
-  assert.match(body, /<h2>Hi <img src="a.svg" alt="" style="width: 100px; height: 200px"><\/h2>/);
+  assert.match(body, /<h2 id="hi">Hi <img src="a.svg" alt="" style="width: 100px; height: 200px"><\/h2>/);
   assert.match(body, /<img src="b.svg" alt="logo" style="height: 80px"><figcaption>logo</);
   assert.match(body, /<img src="c.jpg" alt="cat" title="Ginger" style="width: 120px"><figcaption>Ginger</);
   assert.doesNotMatch(body, /\uE00E|\uE00F|=\d/);

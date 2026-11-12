@@ -73,6 +73,43 @@ test('on a slide, a link isn\'t followed: the deck shouldn\'t give way to anothe
   assert.deepEqual(click(p, p.link('next')).followed, []);
 });
 
+/** Clicks the link `text` in `p`, its target's scrollIntoView watched: what was scrolled to, and what the app was asked. */
+function clickToHeading(p, text) {
+  let scrolled = null;
+  for (const n of p.document.querySelectorAll('[id]')) n.scrollIntoView = function () { scrolled = this; };
+  const { taken, followed } = click(p, p.link(text));
+  return { taken, followed, scrolled };
+}
+
+test('a link to a heading on the page scrolls to it, there, and the app is asked nothing (gh-244)', () => {
+  const p = showing('See [the plan](#the-plan) and [its base](#base).\n\n## The plan\n\n## Base\n');
+  const { taken, followed, scrolled } = clickToHeading(p, 'the plan');
+  assert.deepEqual({ taken, followed }, { taken: true, followed: [] });
+  assertElement(scrolled, p.document.querySelector('h2'));
+  // A heading by the name of the frame's own <base> is the heading.
+  assertElement(clickToHeading(p, 'its base').scrolled, p.document.querySelectorAll('h2')[1]);
+});
+
+test('a link to a heading the page doesn\'t hold, on another page or slide, asks the app to go there', () => {
+  const p = showing('See [the end](#the-end).\n');
+  assert.deepEqual(clickToHeading(p, 'the end'), { taken: true, followed: ['#the-end'], scrolled: null });
+  const q = showing('See [the end](#the-end).\n', { deck: true });
+  assert.deepEqual(clickToHeading(q, 'the end').followed, ['#the-end']);
+});
+
+test('a link to a heading in another file is followed with its heading', () => {
+  const p = showing('[its budget](budget.md#this-year)');
+  assert.deepEqual(click(p, p.link('its budget')), { taken: true, followed: ['http://localhost:8734/content/notes/budget.md#this-year'] });
+});
+
+test('a link to a heading in a folded section opens it first', () => {
+  const p = showing('[more](#more)\n\n# [x] Done\n\n## More\n\nMore.\n');
+  const more = p.document.querySelectorAll('h2')[0];
+  assert.ok(more.classList.contains('fold-hidden'));
+  assertElement(clickToHeading(p, 'more').scrolled, more);
+  assert.equal(more.classList.contains('fold-hidden'), false);
+});
+
 test('the document is the frame\'s main part, and its title the frame\'s', () => {
   const { document, show } = preview();
   assert.equal(document.title, 'Rendered document');

@@ -34,5 +34,5 @@ test('the box takes the block\'s line', () => {
 
 test('on a slide, a number under the title is the slide\'s body', () => {
   const { body } = slides(`# T\n\n${fence('15%')}\n---\n\n# Two\n`).slides[0];
-  assert.match(body, /<header class="slide-title">\n<h1>T<\/h1>\n<\/header>\n<div class="slide-body">\n<section class="gm-pair">\n<div class="gm-speaker">\n<div class="number">/);
+  assert.match(body, /<header class="slide-title">\n<h1 id="t">T<\/h1>\n<\/header>\n<div class="slide-body">\n<section class="gm-pair">\n<div class="gm-speaker">\n<div class="number">/);
 });

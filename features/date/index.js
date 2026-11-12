@@ -21,6 +21,10 @@ import { workable } from '../blank.js';
 
 const DATE = /(?<![\w\\])date:(\d{4}-\d{2}-\d{2})?\[([^\]\n]*)\]/g;
 const [OPEN, CLOSE] = MARKS.date;
+// The dates found, by placeholder, kept on `env` under a key no other feature can name, so that
+// one reads this one's tokens instead (gh-282); an aside's parse, a copy of
+// `env`, keeps it.
+const DATES = Symbol('dates');
 const PLACED = new RegExp(`${OPEN}(\\d+)${CLOSE}`, 'g');
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -62,11 +66,11 @@ export function dates(md) {
       found.push(...placed);
       return out;
     });
-    if (found.length) state.env.dates = found;
+    if (found.length) state.env[DATES] = found;
   });
 
   md.core.ruler.push('date_tokens', (state) => {
-    const found = state.env.dates;
+    const found = state.env[DATES];
     if (!found) return;
     splitText(state, PLACED, (k) => {
       if (!found[k]) return null;

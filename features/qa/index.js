@@ -29,7 +29,7 @@
  * that an aside ends where an exchange's line begins -- each such line
  * becomes a `+` list item (so it never joins a `-` or `*` list above it), and
  * one that carries on the item before it is indented into that item. Who
- * spoke is kept, by line, in `env.qa`; once the text is parsed, the items on
+ * spoke is kept, by line, on `env` under the feature's own key; once the text is parsed, the items on
  * those lines are labelled, finding their lines through the asides feature's
  * `env.sourceLines`.
  */
@@ -38,6 +38,11 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { beforeExtract, keepWritten, addClass, escapeAttr, fenced } from '../source.js';
 import { workable } from '../blank.js';
+
+// The speaker of each exchange's line, kept on `env` under a key no other feature can name, so that
+// one reads this one's tokens instead (gh-282); an aside's parse, a copy of
+// `env`, keeps it.
+const SAID = Symbol('said');
 
 // A name may hold a link, whose address is in parentheses of its own.
 const QA = /^\\?(Q|A|Good|Bad|Try)(?:[ \t]+\[([ xX])\])?(?:[ \t]*\(((?:[^()\n]|\([^()\n]*\))*)\))?:[ \t]+(?=\S)/;
@@ -138,7 +143,7 @@ function lines(state) {
   });
   // An escaped `\A:` loses its backslash even when nothing else changed.
   state.src = out.join('\n');
-  if (said.size) state.env.qa = said;
+  if (said.size) state.env[SAID] = said;
 }
 
 /**
@@ -146,10 +151,10 @@ function lines(state) {
  * paragraph where an item carries on from the line before.
  */
 function items(state) {
-  if (!state.env.qa || state.env.nested) return;
+  if (!state.env[SAID] || state.env.nested) return;
   // Lines the parser saw -> lines as written, before asides were taken out.
   const source = state.env.sourceLines;
-  const said = { get: (n) => state.env.qa.get(source?.[n] ?? n) };
+  const said = { get: (n) => state.env[SAID].get(source?.[n] ?? n) };
   const tokens = state.tokens;
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];

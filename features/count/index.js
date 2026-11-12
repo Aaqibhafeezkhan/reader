@@ -29,6 +29,10 @@ import { schemeRule } from '../scheme.js';
 import { sections, multipliers, escapeHtml, escapeAttr } from '../source.js';
 import { AMOUNT, multiply, readChoices } from './amount.js';
 
+// What this feature keeps across a deck's slides, on `env.shared`, under a key
+// no other feature can name (gh-282).
+const COUNTS = Symbol('multipliers');
+
 const BEFORE = /[\w\\]/;
 
 export function counts(md) {
@@ -70,7 +74,7 @@ export function counts(md) {
     const shared = state.env.shared ?? state.env;
     const { bySection, nearest } = multipliers(state, of);
     for (const [section, meta] of bySection) {
-      meta.id = shared.multipliers = (shared.multipliers ?? 0) + 1;
+      meta.id = shared[COUNTS] = (shared[COUNTS] ?? 0) + 1;
       meta.key = `${state.env.file ?? ''}#${section.title}`;
     }
     state.tokens.forEach((block, i) => {

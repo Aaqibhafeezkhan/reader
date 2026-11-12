@@ -136,6 +136,9 @@ export function setWorking(on, { chosen = true } = {}) {
   }
   if (on) {
     if (document.activeElement === el.editor) el.editor.blur();
+    // The keyboard isn't left in a list that's gone: a workbook opened from
+    // it with Enter is the page to go on with, so Tab finds its first box (gh-273).
+    else if (!listSeen() && el.sidebar.contains(document.activeElement)) el.preview.focus({ preventScroll: true });
     if (dirty()) save();
   } else if (chosen && state.current?.type === 'md' && !deck.open) {
     el.editor.focus({ preventScroll: true });

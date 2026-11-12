@@ -153,3 +153,47 @@ test('a Try card\'s label is a box, ticked once it\'s been tried', () => {
   assert.match(body, /<span class="qa-label qa-toggle qa-tried" role="checkbox" tabindex="0" aria-label="Try, tried" aria-checked="false" title="Mark it tried"[^>]*>T<\/span>/);
   assert.match(body, /<li class="qa qa-card qa-try qa-done">\n<p><span class="qa-label qa-toggle qa-tried" role="checkbox"[^>]*aria-checked="true" title="Not tried yet"/);
 });
+
+test('( ) on an answer\'s line is radio buttons in a row, a group named by the question, each knowing its line with only it picked', () => {
+  const md = 'Q (Claude): Put the *page bar* fix in 0.0.4?\nA (Josh): ( ) Yes (x) No ( ) **Later**\nA: ( ) Sat ( ) Sun\n';
+  const { body } = render(md);
+  assert.match(body, /<span class="qa-name">Josh<\/span><span class="qa-choices" role="radiogroup" aria-label="Put the page bar fix in 0\.0\.4\?" data-line="1" data-text="A \(Josh\): \( \) Yes \(x\) No \( \) \*\*Later\*\*" data-off="A \(Josh\): \( \) Yes \( \) No \( \) \*\*Later\*\*" data-answered="true">/);
+  const radios = [...body.matchAll(/<label class="qa-choice"><input type="radio" class="qa-box" name="qa-(\d)" data-on="([^"]*)"( checked)?> (.*?)<\/label>/g)]
+    .map((m) => [m[1], m[2], Boolean(m[3]), m[4]]);
+  assert.deepEqual(radios, [
+    ['1', 'A (Josh): (x) Yes ( ) No ( ) **Later**', false, 'Yes'],
+    ['1', 'A (Josh): ( ) Yes (x) No ( ) **Later**', true, 'No'],
+    ['1', 'A (Josh): ( ) Yes ( ) No (x) **Later**', false, '<strong>Later</strong>'],
+    ['2', 'A: (x) Sat ( ) Sun', false, 'Sat'],
+    ['2', 'A: ( ) Sat (x) Sun', false, 'Sun'],
+  ]);
+  // One set to a line, the second a paragraph of the same answer.
+  assert.equal(body.match(/class="qa qa-a"/g).length, 1);
+  assert.match(body, /data-line="2"[^>]*data-answered="false"/);
+  assert.doesNotMatch(body, /[\uE000-\uF8FF]/);
+});
+
+test('a blank as one of an answer\'s choices is a blank, beside a button of its own named by it', () => {
+  const { body } = render('Q: Ship it?\nA: ( ) Yes ( ) [@ Something else: (x) maybe]\n');
+  assert.match(body, /<span class="qa-choice qa-choice-blank"><label class="qa-choice-box"><input type="radio" class="qa-box" name="qa-1" data-on="A: \( \) Yes \(x\) \[@ Something else: \(x\) maybe\]" aria-label="Something else"><\/label><span class="field field-inline" data-line="1"[^>]*>/);
+  assert.match(body, /data-answered="false"/, 'a mark in the blank\'s answer is the answer\'s');
+});
+
+test('an answer\'s line that isn\'t all choices stays as typed', () => {
+  for (const line of ['A: I said ( ) once', 'A: ( ) Yes ( )', 'A: ( ) **a ( ) b**', 'A: [( ) a](https://example.com) ( ) b', '\\A: ( ) a ( ) b', 'Q: ( ) a ( ) b', 'A: \\( ) a ( ) b']) {
+    const { body } = render(`${line}\n`);
+    assert.doesNotMatch(body, /qa-choices|type="radio"/, line);
+    assert.doesNotMatch(body, /[\uE000-\uF8FF]/, line);
+  }
+  // A mark in code is the code's.
+  const { body } = render('A: ( ) `( )` empty ( ) `(x)` full\n');
+  assert.equal(body.match(/type="radio"/g).length, 2);
+  assert.match(body, /data-on="A: \( \) `\( \)` empty \(x\) `\(x\)` full"/);
+});
+
+test('an answer\'s choices show what\'s picked and can\'t be changed on a slide, and are named for the answer with no question', () => {
+  const deck = slides('A: ( ) Yes (x) No\n\n---\n\nNext\n').slides[0].body;
+  assert.equal(deck.match(/class="qa-box"[^>]* disabled>/g).length, 2);
+  assert.match(deck, /data-on="A: \( \) Yes \(x\) No" checked disabled>/);
+  assert.match(deck, /role="radiogroup" aria-label="Answer"/);
+});

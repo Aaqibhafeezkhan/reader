@@ -47,6 +47,18 @@ test('a field of ( ) choices is radio buttons in a row, each knowing its line wi
   ]);
 });
 
+test('a blank as one of a field\'s choices is a blank, beside a button of its own named by what\'s in it or what goes there', () => {
+  const line = '@ Milestone: ( ) 0.0.5 ( ) Other: [@ Something else]';
+  const { body } = render(`${line}\n`);
+  assert.match(body, /<label class="field-choice"><input type="radio" class="choice-box" name="field-0" data-on="@ Milestone: \(x\) 0\.0\.5 \( \) Other: \[@ Something else\]"> 0\.0\.5<\/label>/);
+  assert.match(body, /<span class="field-choice field-choice-blank"><label class="field-choice-box"><input type="radio" class="choice-box" name="field-0" data-on="@ Milestone: \( \) 0\.0\.5 \(x\) Other: \[@ Something else\]" aria-label="Other: Something else"><\/label>Other: <span class="field field-inline" data-line="0" data-text="@ Milestone: \( \) 0\.0\.5 \( \) Other: \[@ Something else\]" data-head="\[@ Something else" data-start="34" data-end="52">/);
+  // Filled in, it's named by its answer; a mark in that is the answer's.
+  const filled = render('@ Milestone: ( ) 0.0.5 ( ) [@ Something else: (x) 0.0.6]\n').body;
+  assert.match(filled, /data-answered="false"/);
+  assert.match(filled, /aria-label="\(x\) 0\.0\.6"/);
+  assert.equal(filled.match(/type="radio"/g).length, 2);
+});
+
 test('a value that is only partly choices is written in, as typed', () => {
   for (const value of ['before ( ) A ( ) B', '( ) A ( )', '(y) A']) {
     const { body } = render(`@ Pick: ${value}\n`);

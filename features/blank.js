@@ -81,3 +81,30 @@ export function unfilled(value, env, hint = '') {
   if (closed(env)) return '<span class="field-blank vh">blank</span>';
   return `<span class="field-blank vh">blank${hint ? `, ${escapeHtml(hint)}` : ''}</span>`;
 }
+
+// A blank in a sentence, `[@ what goes here]` or `[@ what goes here: answer]`
+// (features/fields), not one followed by `(` or `[`, which is a link's text.
+const INLINE = /\[@[ \t]+([^\]:\n]*?[^\]:\s])[ \t]*(?::[ \t]*([^\]\n]*?))?[ \t]*\](?![([])/g;
+const CODE = /(`+)[\s\S]*?[^`]\1(?!`)|(`+)\2(?!`)/g;
+
+/** Where `line`'s code spans are: `[{ start, end }]`. */
+export const codeSpans = (line) => [...line.matchAll(CODE)].map((m) => ({ start: m.index, end: m.index + m[0].length }));
+
+/**
+ * The blanks written in a sentence on `line`, outside its code spans and not
+ * after a backslash: `[{ start, end, label, value }]`, where each starts and
+ * ends on the line, what goes there and the answer written in it. Whoever
+ * reads a line for its own syntax can leave these to the blank, as a
+ * choice's mark written in an answer is the answer's (features/choices.js).
+ */
+export function inlineBlanks(line) {
+  if (!line.includes('[@')) return [];
+  const code = codeSpans(line);
+  const found = [];
+  for (const m of line.matchAll(INLINE)) {
+    const start = m.index;
+    if (line[start - 1] === '\\' || code.some((c) => start >= c.start && start < c.end)) continue;
+    found.push({ start, end: start + m[0].length, label: m[1], value: m[2] ?? '' });
+  }
+  return found;
+}

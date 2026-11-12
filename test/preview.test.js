@@ -588,6 +588,22 @@ test('an edit of a line an earlier turn wrote, made from the line as its feature
   assert.deepEqual(await sent(['- (x) C [@ x]', '- ( ) C [@ x]']), [['- (x) C [@ x]', '- ( ) C [@ x]']]);
 });
 
+test('edits of the same line in a turn, one from the line as drawn and one from the line as an earlier turn wrote it, become one', async () => {
+  const { window, posted } = frame('');
+  run(window, 'static/preview-api.js');
+  const sent = async (...edits) => {
+    for (const [before, after] of edits) window.Preview.edit([{ from: 1, to: 2, before: [before], after: [after] }]);
+    await settle();
+    return posted.splice(0).map((m) => m.edits.map((x) => [x.before[0], x.after[0]]));
+  };
+  // A choice picked; then a blank in the line filled in, from the line as
+  // drawn, and the choice it's in picked, from the line as last written.
+  await sent(['A: ( ) Yes ( ) [@ x]', 'A: (x) Yes ( ) [@ x]']);
+  assert.deepEqual(await sent(['A: ( ) Yes ( ) [@ x]', 'A: ( ) Yes ( ) [@ x: run]'], ['A: (x) Yes ( ) [@ x]', 'A: ( ) Yes (x) [@ x]']), [
+    [['A: (x) Yes ( ) [@ x]', 'A: ( ) Yes (x) [@ x: run]']],
+  ]);
+});
+
 test('Preview.flush sends the edits held so far, and the end of the turn sends nothing again', async () => {
   const { window, posted } = frame('');
   run(window, 'static/preview-api.js');

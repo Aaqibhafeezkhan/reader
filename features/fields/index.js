@@ -22,6 +22,11 @@
  *
  *   @ Session: ( ) Sat AM (x) Sat PM ( ) Sun AM
  *
+ * A blank in a sentence (below) can be one of them, or in one's words: it's
+ * a blank, and only its button picks it, as filling it in does.
+ *
+ *   @ Milestone: ( ) 0.0.5 ( ) [@ Something else]
+ *
  * Each button carries the line as it reads with only it picked. Where the
  * page can't be worked, as on a slide, they show what's picked and can't
  * be changed, as a blank can't be filled in.
@@ -57,7 +62,8 @@
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { beforeExtract, readLines, placeholder, MARKS, splitText, escapeHtml, escapeAttr } from '../source.js';
-import { typable, hinted, unfilled, shut, workable } from '../blank.js';
+import { typable, hinted, unfilled, shut, workable, inlineBlanks } from '../blank.js';
+import { choicesIn, pickedAt } from '../choices.js';
 
 // A label is any but a colon, though one can be in its hint's braces.
 const BRACED = '\\{[^}\\n]*\\}';
@@ -71,12 +77,10 @@ const [OPEN, CLOSE] = MARKS.fields;
 // `env`, keeps it.
 const FIELDS = Symbol('fields');
 const PLACED = new RegExp(`${OPEN}(\\d+)${CLOSE}`, 'g');
-const MARK = /\(([ xX])\)/g;
 // A value that's a date, as the date feature reads one, valid or not; and
 // one that's a number, or a blank for one.
 const DATE = /^date:(?:\d{4}-\d{2}-\d{2})?\[[^\]\n]*\]$/;
 const NUMBER = /^number:(-?(?:\d+(?:\.\d+)?|\.\d+))?\[([^\]\n]*)\]$/;
-const INLINE = /\[@[ \t]+([^\]:\n]*?[^\]:\s])[ \t]*(?::[ \t]*([^\]\n]*?))?[ \t]*\](?![([])/g;
 /** `label` and its hint, in braces at its end: `{ label, hint }`, any `\{` and `\}` in it as braces. */
 function labelled(label) {
   const [, rest = label, hint = ''] = HINT.exec(label) ?? [];
@@ -94,25 +98,6 @@ function kindOf(value) {
   return n ? { kind: 'number', value: n[1] ?? '', shown: n[2].trim() || (n[1] ?? '') } : {};
 }
 
-const CODE = /(`+)[\s\S]*?[^`]\1(?!`)|(`+)\2(?!`)/g;
-
-/** The inline fields in `line`, outside its code spans: `[{ start, end, label, value }]`. */
-function inlineFields(line) {
-  if (!line.includes('[@')) return [];
-  const code = [...line.matchAll(CODE)].map((m) => [m.index, m.index + m[0].length]);
-  const found = [];
-  for (const m of line.matchAll(INLINE)) {
-    const start = m.index;
-    if (line[start - 1] === '\\' || code.some(([a, b]) => start >= a && start < b)) continue;
-    found.push({ start, end: start + m[0].length, label: m[1], value: m[2] ?? '' });
-  }
-  return found;
-}
-
-/**
- * The choices in `value`, if that's all it is: `[{ label, checked, on }]`,
- * `on` being `line` as it reads with only that one picked.
- */
 /**
  * Whether the line at `at` is where a field may start: at the line's start,
  * or indented into a list item, under the item's own text, as a line of it.
@@ -132,21 +117,49 @@ function inItem(lines, at) {
 /** A label's class: one that ends in its own stop, as a question does, takes no colon. */
 const labelClass = (label) => (/[?!.:…]$/.test(label) ? 'field-label field-label-stop' : 'field-label');
 
+/**
+ * The choices in `value`, if that's all it is (features/choices.js), each
+ * with `on`, `line` as it reads with only that one picked. A mark in a
+ * blank's answer is the answer's.
+ */
 function choices(line, head, value) {
   if (!value.startsWith('(')) return null;
-  const parts = value.split(MARK);
-  const found = [];
-  for (let i = 1; i < parts.length; i += 2) {
-    const label = parts[i + 1].trim();
-    if (!label) return null;
-    found.push({ label, checked: parts[i] !== ' ' });
+  const found = choicesIn(line, head.length, inlineBlanks(line));
+  return found?.map((c, k) => ({ ...c, on: pickedAt(line, found, k) })) ?? null;
+}
+
+/** A blank in a sentence, `{ line, text, start, end, label, value }`, drawn. The blank first, so the sentence lines up with what's written on it. */
+function inlineBlank({ line, text, start, end, label, value }, env) {
+  const v = escapeHtml(value);
+  return `<span class="field field-inline" data-line="${line}" data-text="${escapeAttr(text)}"`
+    + ` data-head="${escapeAttr(`[@ ${label}`)}" data-start="${start}" data-end="${end}">`
+    + `<span class="field-value" data-value="${v}"${typable(label, env)}>${v}</span>`
+    + `<span class="${labelClass(label)}">${escapeHtml(label)}</span>${unfilled(value, env)}</span>`;
+}
+
+/**
+ * Choice `c` of a field on `line` (`text` as written), drawn: its button and
+ * its words, which pick it. A blank in its words is a blank, to be filled
+ * in, not a click on the words: then only the button picks it, in a label
+ * of its own, as big as a finger, and named by its words, the blank's by
+ * what's in it or what goes there.
+ */
+function choiceHtml(c, line, text, env) {
+  const box = (named) => `<input type="radio" class="choice-box" name="field-${line}" data-on="${escapeAttr(c.on)}"${named}${c.checked ? ' checked' : ''}${shut(env)}>`;
+  const words = text.slice(c.label.start, c.label.end);
+  const blanks = inlineBlanks(text).filter((b) => b.start >= c.label.start && b.end <= c.label.end);
+  if (!blanks.length) return `<label class="field-choice">${box('')} ${escapeHtml(words)}</label>`;
+  let shown = '';
+  let name = '';
+  let at = c.label.start;
+  for (const b of blanks) {
+    shown += escapeHtml(text.slice(at, b.start)) + inlineBlank({ ...b, line, text }, env);
+    name += text.slice(at, b.start) + (b.value || b.label);
+    at = b.end;
   }
-  if (parts[0] !== '' || !found.length) return null;
-  const rest = line.slice(head.length);
-  return found.map((c, k) => {
-    let at = 0;
-    return { ...c, on: head + rest.replace(MARK, () => (at++ === k ? '(x)' : '( )')) };
-  });
+  shown += escapeHtml(text.slice(at, c.label.end));
+  name += text.slice(at, c.label.end);
+  return `<span class="field-choice field-choice-blank"><label class="field-choice-box">${box(` aria-label="${escapeAttr(name.trim())}"`)}</label>${shown}</span>`;
 }
 
 export function fields(md) {
@@ -155,7 +168,7 @@ export function fields(md) {
     readLines(state, (line, n, lines, at) => {
       if (!FIELD.test(line) || !inItem(lines, at)) {
         // Back to front, so each one's place on the line is still as written.
-        return inlineFields(line).reduceRight((out, f) => {
+        return inlineBlanks(line).reduceRight((out, f) => {
           found.push({ ...f, line: n, text: line, inline: true });
           return out.slice(0, f.start) + placeholder(OPEN, CLOSE, found.length - 1) + out.slice(f.end);
         }, line);
@@ -229,8 +242,7 @@ export function fields(md) {
     if (picks) {
       // Its buttons a group, named by its label, and a question.
       return `${open} data-choices data-answered="${picks.some((c) => c.checked)}" role="radiogroup" aria-labelledby="field-${line}"><span class="${labelClass(label)}" id="field-${line}">${escapeHtml(label)}</span><span class="field-choices">`
-        + picks.map((c) => `<label class="field-choice"><input type="radio" class="choice-box" name="field-${line}"`
-          + ` data-on="${escapeAttr(c.on)}"${c.checked ? ' checked' : ''}${shut(env)}> ${escapeHtml(c.label)}</label>`).join('')
+        + picks.map((c) => choiceHtml(c, line, text, env)).join('')
         + '</span></span>';
     }
     const v = escapeHtml(value);
@@ -242,15 +254,7 @@ export function fields(md) {
   };
   md.renderer.rules.field_end = () => '</span></span>';
 
-  // The blank first, so the sentence lines up with what's written on it.
-  md.renderer.rules.field_inline = (tokens, i, opts, env) => {
-    const { line, text, start, end, label, value } = tokens[i].meta;
-    const v = escapeHtml(value);
-    return `<span class="field field-inline" data-line="${line}" data-text="${escapeAttr(text)}"`
-      + ` data-head="${escapeAttr(`[@ ${label}`)}" data-start="${start}" data-end="${end}">`
-      + `<span class="field-value" data-value="${v}"${typable(label, env)}>${v}</span>`
-      + `<span class="${labelClass(label)}">${escapeHtml(label)}</span>${unfilled(value, env)}</span>`;
-  };
+  md.renderer.rules.field_inline = (tokens, i, opts, env) => inlineBlank(tokens[i].meta, env);
 }
 
 export default {

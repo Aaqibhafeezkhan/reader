@@ -6,7 +6,8 @@
  * file; Esc puts it back as it was, both leaving the keyboard on the blank,
  * where Enter opens it again; Tab and Shift-Tab write it and move to the
  * next field or the one before. A field of choices writes its line as it
- * reads with the one picked. A field in a sentence (`[@ what goes here:
+ * reads with the one picked, made from the line as it reads now; a blank
+ * in a choice's words, filled in, picks it in the same edit. A field in a sentence (`[@ what goes here:
  * answer]`) writes its answer into its place on the line, moving along the
  * others after it. A field that holds a number (`number:`) takes only a
  * number, and writes it back as `number:12[]`. A field given an answer, a value or a choice, says so
@@ -36,6 +37,32 @@
   const NUMBER = /^-?(?:\d+(?:\.\d+)?|\.\d+)$/;
   const numeric = (field) => field.dataset.kind === 'number';
 
+  // A choice's button, in a field of them: in its words, or beside a blank that's its words.
+  const CHOICE = '.field-choice input.choice-box';
+  const boxes = (field) => [...field.querySelectorAll(CHOICE)];
+  const MARK = /\(([ xX])\)/g;
+
+  /** Every field on `line` told it now reads `now`: a field of choices, and the blanks in them. */
+  const setText = (line, now) => {
+    for (const f of document.querySelectorAll(`.field[data-line="${line}"]`)) f.dataset.text = now;
+  };
+
+  /**
+   * Field of choices `field`'s line as it reads now, with only its `k`-th
+   * choice picked, or none. A mark in a blank's answer is the answer's
+   * (features/choices.js, as the page was drawn).
+   */
+  function picked(field, k = -1) {
+    const { text, head } = field.dataset;
+    const blanks = [...field.querySelectorAll('.field[data-start]')].map((f) => [Number(f.dataset.start), Number(f.dataset.end)]);
+    let n = 0;
+    return head + text.slice(head.length).replace(MARK, (m, x, at) => {
+      const p = head.length + at;
+      if (blanks.some(([a, b]) => p >= a && p < b)) return m;
+      return n++ === k ? '(x)' : '( )';
+    });
+  }
+
   /** `field`'s line as written with `value` in it, the fields beside it told where they are now. */
   function written(field, value) {
     if (numeric(field)) return `${field.dataset.head} number:${value}[]`;
@@ -53,17 +80,16 @@
         f.dataset.start = String(at + moved);
         f.dataset.end = String(Number(f.dataset.end) + moved);
       }
-      f.dataset.text = now;
     }
+    setText(field.dataset.line, now);
     return now;
   }
 
   /** `field`'s line with none of its choices picked, the page told so. */
   function unpicked(field) {
-    for (const i of field.querySelectorAll('.field-choice > input')) i.checked = false;
-    const head = field.dataset.head;
-    const now = head + field.dataset.text.slice(head.length).replace(/\([xX]\)/g, '( )');
-    field.dataset.text = now;
+    for (const i of boxes(field)) i.checked = false;
+    const now = picked(field);
+    setText(field.dataset.line, now);
     field.dataset.answered = 'false';
     return now;
   }
@@ -140,8 +166,17 @@
         // The line as written, with the new value after its colons.
         const line = Number(field.dataset.line);
         const was = field.dataset.text;
-        const now = written(field, after);
-        field.dataset.text = now;
+        let now = written(field, after);
+        // A blank that's a choice's words, filled in, picks it, in the same edit.
+        const choice = field.closest('.field-choice')?.querySelector(CHOICE);
+        const of = choice?.closest('.field[data-choices]');
+        setText(line, now);
+        if (after && of && !choice.checked) {
+          now = picked(of, boxes(of).indexOf(choice));
+          setText(line, now);
+          choice.checked = true;
+          of.dataset.answered = 'true';
+        }
         Preview.edit([{ from: line, to: line + 1, before: [was], after: [now] }]);
         if (after) answered(field);
       }
@@ -171,7 +206,7 @@
   // A choice where the page can't be worked: a click on it, which Space and
   // its label's are too, is called off before it picks, and so are the
   // keys that move along the choices.
-  const shut = (t) => !Preview.workable && t.matches?.('.field-choice > input');
+  const shut = (t) => !Preview.workable && t.matches?.(CHOICE);
   document.addEventListener('click', (e) => {
     if (shut(e.target)) e.preventDefault();
   }, true);
@@ -180,12 +215,13 @@
   });
 
   document.addEventListener('change', (e) => {
-    const field = e.target.matches?.('.field-choice > input') && e.target.closest('.field');
+    const field = e.target.matches?.(CHOICE) && e.target.closest('.field[data-choices]');
     if (!field) return;
     const line = Number(field.dataset.line);
     const was = field.dataset.text;
-    const now = e.target.dataset.on;
-    field.dataset.text = now;
+    // Made from the line as it reads now, a blank in it filled in or not.
+    const now = picked(field, boxes(field).indexOf(e.target));
+    setText(line, now);
     field.dataset.answered = 'true';
     if (now !== was) {
       Preview.edit([{ from: line, to: line + 1, before: [was], after: [now] }], { undo: true });
@@ -198,7 +234,7 @@
   // a blank in it stays: it's more to lose, and costs nothing to keep.
   document.addEventListener('preview:unpicked', (e) => {
     for (const field of e.target.querySelectorAll('.field[data-choices]')) {
-      if (![...field.querySelectorAll('.field-choice > input')].some((i) => i.checked)) continue;
+      if (!boxes(field).some((i) => i.checked)) continue;
       const line = Number(field.dataset.line);
       const was = field.dataset.text;
       const now = unpicked(field);
@@ -207,7 +243,9 @@
   }, true);
 
   // Starting over: every field on the lines is emptied, those of a line in
-  // one edit, since each is made from what the last one wrote. What's being
+  // one edit, since each is made from what the last one wrote (they share
+  // what the line reads, `setText`): a field of choices is let go of before
+  // the blanks in it, its marks the same length as they were. What's being
   // typed in one is let go of with the rest.
   document.addEventListener('preview:start-over', ({ detail: { within, edits } }) => {
     if (editing && within(Number(editing.field.dataset.line))) editing.close(false);
@@ -251,7 +289,7 @@
     for (const slot of document.querySelectorAll('.field-value[tabindex]')) {
       Preview.shut(slot, { tabindex: null, role: null, 'aria-label': null, 'aria-placeholder': null });
     }
-    for (const choice of document.querySelectorAll('.field-choice > input')) Preview.shut(choice, { disabled: '' });
+    for (const choice of document.querySelectorAll(CHOICE)) Preview.shut(choice, { disabled: '' });
   });
 
   // A field being filled in stays open through a re-render, with what's

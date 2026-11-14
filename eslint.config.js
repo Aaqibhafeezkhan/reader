@@ -55,24 +55,25 @@ function featureOf(file, dir) {
  * they mean (features/source.js); it keeps its own state under a Symbol of
  * its own, which no other can name.
  */
-const features = {
+const featureTangle = {
   meta: {
     type: 'problem',
     messages: {
-      private: "features/{{name}}/ is that feature's own: share what's needed from the top of features/, or go through features/index.js.",
-      env: "env.{{name}} isn't one of the names features share (SHARED_ENV, features/source.js): keep a feature's own state under a Symbol of its own, `state.env[KEY]`, or add the name there, saying what it means. See gh-282.",
-      placed: "MARKS.{{name}} is the {{name}} feature's placeholder: read the tokens it becomes, which carry their words in `content`, and run after them if need be (md.core.ruler.after). See gh-282.",
+      private: "{{who}} refers to features/{{name}}/, which is the {{name}} feature's own, so that every other feature works without it. Share what's needed from a file at the top of features/, or reach {{name}} through features/index.js. See \"Layout of the code\" in CONTRIBUTING.md.",
+      env: "{{own}} sets env.{{name}}, which isn't one of the names every feature shares (SHARED_ENV, features/source.js). Keep a feature's own state under a key only it can name, `const KEY = Symbol('{{own}}')`, then `state.env[KEY]`. A name for every feature to read goes in SHARED_ENV first, with what it means. See gh-282.",
+      placed: "{{who}} reads MARKS.{{name}}, the {{name}} feature's placeholder, which only holds {{name}}'s place in the text until the text is parsed; then {{name}} turns it into tokens of its own. To build on {{name}}, add '{{name}}' to the `requires` in {{where}} and read its tokens in a core rule (`md.core.ruler.push`), which runs after {{name}}'s. See gh-282.",
     },
   },
   create(context) {
     const from = context.filename;
+    const own = featureOf(from);
     const check = (node, specifier, relative) => {
       if (typeof specifier !== 'string' || !relative(specifier)) return;
       const to = path.resolve(path.dirname(from), specifier.replace(/[?#].*/, ''));
       const name = featureOf(to, /\/$/.test(specifier));
       if (!name || featureOf(from) === name) return;
       if (from === path.join(FEATURES, 'index.js') && to === path.join(FEATURES, name, 'index.js')) return;
-      context.report({ node, messageId: 'private', data: { name } });
+      context.report({ node, messageId: 'private', data: { name, who: own ? `features/${own}/` : 'This file' } });
     };
     // An import's specifier is relative only as ./ or ../; a URL's is
     // unless it has a scheme or starts at the root.
@@ -82,10 +83,9 @@ const features = {
       : node?.type === 'TemplateLiteral' && !node.expressions.length ? node.quasis[0].value.cooked : null;
     const source = (node) => node.source && check(node.source, literal(node.source), imported);
     // MARKS.date, MARKS['date'] or const { date } = MARKS, outside features/date/.
-    const own = featureOf(from);
     const placed = (node, name) => {
       if (!NAMES.has(name) || name === own || PLACED[own]?.includes(name)) return;
-      context.report({ node, messageId: 'placed', data: { name } });
+      context.report({ node, messageId: 'placed', data: { name, who: own ?? 'This file', where: own ? `features/${own}/index.js` : "a feature's index.js" } });
     };
     const isMarks = (node) => node?.type === 'Identifier' && node.name === 'MARKS';
     // env.x = ..., state.env.x ??= ..., in a feature's own files.
@@ -95,7 +95,7 @@ const features = {
       AssignmentExpression(node) {
         const to = node.left;
         if (!own || to.type !== 'MemberExpression' || to.computed || !isEnv(to.object)) return;
-        if (!SHARED_ENV.includes(to.property.name)) context.report({ node: to, messageId: 'env', data: { name: to.property.name } });
+        if (!SHARED_ENV.includes(to.property.name)) context.report({ node: to, messageId: 'env', data: { name: to.property.name, own } });
       },
       MemberExpression(node) {
         if (!isMarks(node.object)) return;
@@ -161,8 +161,8 @@ export default [
   // Each feature's files are its own, as a package's are in Java: see
   // `features` above.
   {
-    plugins: { reader: { rules: { features } } },
-    rules: { 'reader/features': 'error' },
+    plugins: { reader: { rules: { 'feature-tangle': featureTangle } } },
+    rules: { 'reader/feature-tangle': 'error' },
   },
   // The app and what it imports are modules; the preview frame's scripts
   // (its own, the puzzles' and the features') are classic scripts sharing

@@ -15,7 +15,7 @@ async function lint(code, filePath) {
 async function reaches(code, filePath, name) {
   const messages = await lint(code, filePath);
   assert.equal(messages.length, 1, messages.join('\n'));
-  assert.match(messages[0], new RegExp(`^features/${name}/ is that feature's own`));
+  assert.match(messages[0], new RegExp(`refers to features/${name}/, which is the ${name} feature's own`));
 }
 
 test('a feature importing another feature\'s files fails lint', async () => {
@@ -73,7 +73,7 @@ test('the list of features alone may import a feature\'s index.js, and nothing e
 async function readsPlaced(code, filePath, name) {
   const messages = await lint(code, filePath);
   assert.ok(messages.length >= 1, 'no message');
-  for (const m of messages) assert.match(m, new RegExp(`^MARKS\\.${name} is the ${name} feature's placeholder`));
+  for (const m of messages) assert.match(m, new RegExp(`reads MARKS\\.${name}, the ${name} feature's placeholder`));
 }
 
 test('a feature reading another feature\'s placeholder fails lint (gh-282)', async () => {
@@ -82,6 +82,14 @@ test('a feature reading another feature\'s placeholder fails lint (gh-282)', asy
   await readsPlaced(`${head}export const a = MARKS['date'][0];\n`, 'features/tasks/x.js', 'date');
   await readsPlaced(`${head}const { date } = MARKS;\nexport { date };\n`, 'features/tasks/x.js', 'date');
   await readsPlaced("import { MARKS } from '../features/source.js';\nexport const a = MARKS.tasks;\n", 'src/x.js', 'tasks');
+});
+
+test('lint says which rule a tangle breaks, who broke it and what to do instead (gh-282)', async () => {
+  const [result] = await eslint.lintText("import { MARKS } from '../source.js';\nexport const [a, b] = MARKS.date;\n", { filePath: 'features/tasks/x.js' });
+  const [m] = result.messages;
+  assert.equal(m.ruleId, 'reader/feature-tangle');
+  assert.match(m.message, /^tasks reads MARKS\.date, the date feature's placeholder/);
+  assert.match(m.message, /`requires`/);
 });
 
 test('a feature may read its own placeholder, what features share, and the few it must step past (gh-282)', async () => {
@@ -96,7 +104,7 @@ test('a feature setting a name on env that features don\'t share fails lint (gh-
   for (const code of ['export const f = (state) => { state.env.dates = []; };\n', 'export const f = (env) => { env.dates ??= []; };\n']) {
     const messages = await lint(code, 'features/date/x.js');
     assert.equal(messages.length, 1, messages.join('\n'));
-    assert.match(messages[0], /^env\.dates isn't one of the names features share/);
+    assert.match(messages[0], /^date sets env\.dates, which isn't one of the names every feature shares/);
   }
 });
 

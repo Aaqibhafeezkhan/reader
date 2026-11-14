@@ -375,7 +375,7 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
     }
     if (route === '/api/file' && req.method === 'PUT') {
       if (body.worked) {
-        const closes = closesAt(extract(body.text ?? '').entries);
+        const closes = closesAt(extract(body.text ?? '').meta);
         if (closes != null && now() >= closes + GRACE) {
           throw Object.assign(new Error(`${body.path} is a record: what's filled in on its page closed over a day ago`), { status: 423 });
         }

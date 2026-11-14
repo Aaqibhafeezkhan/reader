@@ -287,7 +287,7 @@ function logEnd(state, log) {
  * slide's deck's; null when it gives none.
  */
 function stagesOf(env) {
-  const named = env.frontMatter?.multibox?.stages || env.matter?.multibox?.stages;
+  const named = env.frontMatter?.multibox?.stages;
   return typeof named === 'string' && named.trim() ? named.split(',').map((p) => p.trim()) : null;
 }
 

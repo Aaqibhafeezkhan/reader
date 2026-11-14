@@ -60,9 +60,10 @@ export function titleOf(meta, file) {
  * `file` is the document's path, and `read(path)` reads another file from
  * the content directory, for features that may (a puzzle's board). `shared`
  * is kept by features across the renders of one document's parts (a deck's
- * slides), to number things through the whole of it. `entries` are the
- * front matter lines features claimed (page.js), for when `src` has none
- * of its own (a deck's, for one slide of it). `lines` marks each block with the line of the file
+ * slides), to number things through the whole of it. `frontMatter` is
+ * the front matter of the file `src` is a part of, for when it has none of
+ * its own (a deck's, for one slide of it), for the settings a part takes
+ * from its file (the names of a staged box's stages, features/tasks). `lines` marks each block with the line of the file
  * it was drawn from, `data-line`, for scrolling in step with the editor.
  * `for` is what the page is drawn for, `'preview'` unless given:
  * `'present'`, a slide being presented, where the deck keeps the page's
@@ -72,9 +73,7 @@ export function titleOf(meta, file) {
  * `background` is what's behind the page (see background.js) when it isn't
  * the front matter's to say: a slide's own, or its deck's, or null for none.
  * `fonts` is likewise the front matter that names the fonts (see fonts.js)
- * and the accent (see accent.js): a slide's deck's. `matter` is the front matter of the document `src` is
- * a part of, for the settings a slide takes from its deck (the names of a
- * staged box's stages, features/tasks). `drawn` is what the preview frame
+ * and the accent (see accent.js): a slide's deck's. `drawn` is what the preview frame
  * drew of the page, by feature (`{ mermaid: { text: svg } }`), to set into
  * it where the page will have nothing to draw it (export.js). `now` is the
  * time, in ms, that the page is drawn as of (now, if not given): a page past
@@ -96,11 +95,11 @@ export function makeRenderer(features) {
 }
 
 /** render(), by `md`, built from `features`. */
-function renderWith(md, features, src, { file, read, line = 0, shared = {}, entries, lines = false, background, fonts, matter, drawn, for: purpose = 'preview', now, layout } = {}) {
+function renderWith(md, features, src, { file, read, line = 0, shared = {}, frontMatter, lines = false, background, fonts, drawn, for: purpose = 'preview', now, layout } = {}) {
   if (!PURPOSES.includes(purpose)) throw new Error(`A page is drawn for one of ${PURPOSES.join(', ')}, not ${purpose}`);
   const text = src || '';
   const drawing = { for: purpose, what: layout && layout !== 'page' ? 'part' : 'file' };
-  const env = { lineBase: line, file, read, shared, entries, matter, drawn, drawing, now, [LINES]: lines };
+  const env = { lineBase: line, file, read, shared, frontMatter, drawn, drawing, now, [LINES]: lines };
   const tokens = md.parse(text, env);
   const meta = env.frontMatter || {};
   // The notes in the page's margin (src/columns.js), its asides among them.
@@ -108,7 +107,7 @@ function renderWith(md, features, src, { file, read, line = 0, shared = {}, entr
 
   // Column headings ("Speaker" / "Listener") only help when the document
   // names its voices; a journal entry doesn't need them.
-  const headings = Boolean(notes.length && (meta.speaker || meta.listener));
+  const headings = Boolean(drawing.what === 'file' && notes.length && (meta.speaker || meta.listener));
   const title = titleOf(meta, file);
 
   const page = columns(md, tokens, env, { headings, title, layout });

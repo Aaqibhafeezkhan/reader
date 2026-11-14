@@ -12,9 +12,9 @@
  * (`splitText`).
  */
 
-import { frontMatter, fenced } from '../static/markdown.js';
+import { frontMatter, fenced, withEntries } from '../static/markdown.js';
 
-export { frontMatter, fenced };
+export { frontMatter, fenced, withEntries };
 
 /**
  * Adds `rule` to read the source as written, before the page's front matter
@@ -83,14 +83,16 @@ export const MARKS = {
  * one that sets any other name (eslint.config.js).
  *
  * What the page is drawn with, from `render()`'s options (src/render.js):
- * `lineBase`, `file`, `read`, `entries`, `matter`, `drawn`, `now`;
+ * `lineBase`, `file`, `read`, `drawn`, `now`;
  * `drawing`, what it's drawn for and how much of the file it is,
  * `{ for: 'preview' | 'present' | 'export', what: 'file' | 'part' }`; and
  * `shared`, what a deck's slides share, where each feature keeps its own
  * under a Symbol, too.
  *
  * What the core reads off the page first (src/page.js): `frontMatter`,
- * `closed` (whether it's past its `open-until:`), and `sourceLines`, each
+ * its keys, with `entry(...keys)` for every line as written, a part's being
+ * its file's; `closes`, when it closes, in ms, or null; `closed` (whether
+ * it's past its `open-until:`); and `sourceLines`, each
  * line the parser sees -> its line as written, which asides adds to as it
  * takes its lines out.
  *
@@ -111,8 +113,8 @@ export const MARKS = {
  *   legend).
  * - `byline`: what goes at the end of the byline (when the page closes).
  */
-export const SHARED_ENV = ['lineBase', 'file', 'read', 'entries', 'matter', 'drawn', 'drawing', 'now', 'shared',
-  'frontMatter', 'closed', 'sourceLines', 'nested', 'topics', 'written', 'margin', 'masthead', 'byline'];
+export const SHARED_ENV = ['lineBase', 'file', 'read', 'drawn', 'drawing', 'now', 'shared',
+  'frontMatter', 'closes', 'closed', 'sourceLines', 'nested', 'topics', 'written', 'margin', 'masthead', 'byline'];
 
 /**
  * The tags a feature may leave on a token's `meta` for the others to read,

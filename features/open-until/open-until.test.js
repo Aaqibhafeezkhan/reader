@@ -26,8 +26,9 @@ test('the byline says until when it can be edited, in place of the line as writt
   assert.match(body, /<div class="gm-byline"><span class="open-until" data-until="2026-10-28 04:00" data-closed="Closed at 4:00 on 28 October 2026">Editable Until 4:00 on 28 October 2026<span class="open-until-away"><\/span><\/span><\/div>/);
   assert.doesNotMatch(body, /open-until: /);
   assert.match(render('---\nopen-until: "2026-10-27"\n---\n\nx\n', { now: at(2026, 9, 27, 12) }).body, />Editable Until the End of 27 October 2026</);
-  // One it can't read is shown as written, so whoever wrote it sees it wasn't.
-  assert.match(render('---\nopen-until: Friday\n---\n\nx\n').body, /<span>open-until: Friday<\/span>/);
+  // One it can't read says so, with what was written, so whoever wrote it
+  // sees it wasn't read (gh-283).
+  assert.match(render('---\nopen-until: Friday\n---\n\nx\n').body, /<span class="open-until open-until-unread" role="note"><span class="open-until-sign" aria-hidden="true">⚠<\/span> Can't Read open-until: <span class="open-until-value">Friday<\/span><\/span>/);
 });
 
 test('until then the page is worked as any is', () => {

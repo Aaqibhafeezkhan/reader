@@ -56,7 +56,7 @@ export function isDeck(src) {
 export function slides(src, { file, read, now } = {}) {
   const worth = (lifted) => lifted.body.trim() || lifted.notes;
   const layout = (source) => (isCover(source) ? 'cover' : 'slide');
-  const { css, title, meta, parts } = draw(src, worth, layout, { file, read, deck: true, now });
+  const { css, title, meta, parts } = draw(src, worth, layout, { file, read, for: 'present', now });
   const leaving = readTransition(meta.transition) ?? 'none';
   const out = parts.map(({ body, line, notes: own }) => {
     const moved = liftTransition(own);
@@ -77,8 +77,8 @@ export function slides(src, { file, read, now } = {}) {
  * in the file, and, unless `lines` is false, its blocks carry theirs
  * (`data-line`). `drawn`, `exported` and `now` are as render() takes them.
  */
-export function pages(src, { file, read, lines = true, drawn, exported, now } = {}) {
-  const { css, title, meta, parts, anchors } = draw(src, (lifted) => lifted.body.trim(), () => 'part', { file, read, lines, drawn, exported, now });
+export function pages(src, { file, read, lines = true, drawn, for: purpose, now } = {}) {
+  const { css, title, meta, parts, anchors } = draw(src, (lifted) => lifted.body.trim(), () => 'part', { file, read, lines, drawn, for: purpose, now });
   return { css, title, meta, anchors, pages: parts.map(({ body, line }) => ({ body, line })) };
 }
 

@@ -39,7 +39,7 @@ test('the chosen card takes the accent, keeping a background of its own; a done 
 
 test('where it can\'t be picked, the chosen card still shows, its radio disabled', () => {
   const src = '::: cards\n- ( ) A\n- (x) B\n:::\n';
-  for (const opts of [{ deck: true }, { now: Date.parse('2030-01-01') }]) {
+  for (const opts of [{ for: 'present' }, { now: Date.parse('2030-01-01') }]) {
     const doc = opts.now ? `---\nopen-until: 2026-01-01\n---\n\n${src}` : src;
     const html = speaker(doc, opts);
     assert.match(html, /<input type="radio" class="choice-box"[^>]* checked disabled>/, JSON.stringify(opts));

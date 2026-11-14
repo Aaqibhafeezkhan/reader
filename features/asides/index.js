@@ -200,7 +200,7 @@ export function legend(asides, key, env = {}) {
   // Where the page is read in the app, each chip toggles a filter of the
   // asides by it, and a last button clears it (preview.js, gh-21); not in
   // an export, nor on a slide.
-  const filters = !env.exported && !env.deck;
+  const filters = (env.drawing?.for ?? 'preview') === 'preview';
   const tag = filters ? 'button' : 'span';
   const chip = (e) => {
     const by = e.kind === 'reviewer';

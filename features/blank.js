@@ -35,7 +35,7 @@ export const closed = (env) => Boolean(env.closed);
  * picked? Not on a slide, which the deck keeps shut, nor on an exported
  * page, which has no script to do it with, nor once it's a record.
  */
-export const workable = (env) => !env.exported && !env.deck && !closed(env);
+export const workable = (env) => (env.drawing?.for ?? 'preview') === 'preview' && !closed(env);
 
 /**
  * A box's or a choice's attribute where the page can't be worked, as on a
@@ -44,7 +44,7 @@ export const workable = (env) => !env.exported && !env.deck && !closed(env);
  * its boxes as they are, unless it's a record: one ticks there without a
  * script, for whoever has the page, though nothing is saved.
  */
-export const shut = (env) => (workable(env) || (env.exported && !closed(env)) ? '' : ' disabled');
+export const shut = (env) => (workable(env) || (env.drawing?.for === 'export' && !closed(env)) ? '' : ' disabled');
 
 /**
  * A blank's attributes, so it can be reached by the keyboard and is read as

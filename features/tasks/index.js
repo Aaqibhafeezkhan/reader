@@ -189,7 +189,7 @@ export function tasks(md) {
     if (tokens[i].meta.staged) return stageBox({ ...tokens[i].meta, stages: stagesOf(env), pictured: !workable(env) });
     const { line, radio, checked, on, off, group, name, notExported } = tokens[i].meta;
     // A box another feature shows in its own way (see source.js's tags).
-    if (notExported && env.exported) return '';
+    if (notExported && env.drawing?.for === 'export') return '';
     const lines = ` data-on="${escapeAttr(on)}" data-off="${escapeAttr(off)}"${name ? ` aria-label="${escapeAttr(name)}"` : ''}${checked ? ' checked' : ''}${shut(env)}`;
     return radio
       ? `<input type="radio" class="choice-box" name="choice-${group}" data-line="${line}"${lines}> `

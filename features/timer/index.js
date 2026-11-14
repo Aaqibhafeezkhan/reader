@@ -108,7 +108,7 @@ export function timer(md) {
   md.renderer.rules.timer = (tokens, i, opts, env) => {
     const { seconds, shown, spoken: said, key = '' } = tokens[i].meta;
     // An exported page has nothing to count down with.
-    if (env.exported) return `<span class="timer">${escapeHtml(said)}</span>`;
+    if (env.drawing?.for === 'export') return `<span class="timer">${escapeHtml(said)}</span>`;
     // Its time isn't live, or it would be read out each second; a timer
     // run out says so once (preview.js).
     return `<span class="timer" role="group" aria-label="${escapeAttr(`Timer, ${said}`)}" data-seconds="${seconds}" data-key="${escapeAttr(key)}">`

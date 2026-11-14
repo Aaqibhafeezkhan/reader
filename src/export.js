@@ -87,7 +87,7 @@ const CSP = [
 export function exportHtml(content, file, drawn, linked = new Set()) {
   const read = (rel) => content.read(rel).text;
   const text = content.read(file).text;
-  const out = (isDeck(text) && deck(text, { file, read, drawn })) || render(text, { file, read, drawn, exported: true });
+  const out = (isDeck(text) && deck(text, { file, read, drawn })) || render(text, { file, read, drawn, for: 'export' });
   const missing = [];
   const inline = (m, before, src, after) => `${before}${dataUrl(content, file, src, missing) ?? src}${after}`;
   const page = (m, before, href, after) => `${before}${pageOf(file, href, linked) ?? href}${after}`;
@@ -127,7 +127,7 @@ function orientation(meta) {
  * of each of its pages in turn; or null, when it has none.
  */
 function deck(text, { file, read, drawn }) {
-  const { css, meta, pages: list } = pages(text, { file, read, drawn, lines: false, exported: true });
+  const { css, meta, pages: list } = pages(text, { file, read, drawn, lines: false, for: 'export' });
   if (!list.length) return null;
   return {
     css: `${css}${PAGES_CSS}@page numbered { size: ${orientation(meta)}; }\n`,

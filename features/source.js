@@ -83,9 +83,11 @@ export const MARKS = {
  * one that sets any other name (eslint.config.js).
  *
  * What the page is drawn with, from `render()`'s options (src/render.js):
- * `lineBase`, `file`, `read`, `entries`, `lines`, `matter`, `drawn`,
- * `exported`, `deck`, `now`; and `shared`, what a deck's slides share,
- * where each feature keeps its own under a Symbol, too.
+ * `lineBase`, `file`, `read`, `entries`, `matter`, `drawn`, `now`;
+ * `drawing`, what it's drawn for and how much of the file it is,
+ * `{ for: 'preview' | 'present' | 'export', what: 'file' | 'part' }`; and
+ * `shared`, what a deck's slides share, where each feature keeps its own
+ * under a Symbol, too.
  *
  * What the core reads off the page first (src/page.js): `frontMatter`,
  * `closed` (whether it's past its `open-until:`), and `sourceLines`, each
@@ -109,7 +111,7 @@ export const MARKS = {
  *   legend).
  * - `byline`: what goes at the end of the byline (when the page closes).
  */
-export const SHARED_ENV = ['lineBase', 'file', 'read', 'entries', 'lines', 'matter', 'drawn', 'exported', 'deck', 'now', 'shared',
+export const SHARED_ENV = ['lineBase', 'file', 'read', 'entries', 'matter', 'drawn', 'drawing', 'now', 'shared',
   'frontMatter', 'closed', 'sourceLines', 'nested', 'topics', 'written', 'margin', 'masthead', 'byline'];
 
 /**

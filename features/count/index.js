@@ -95,7 +95,7 @@ export function counts(md) {
     // Only a section's first: a second would have no counts of its own. An
     // exported page has no script to press it with, and its counts are as
     // written.
-    if (!id || env.exported) return '';
+    if (!id || env.drawing?.for === 'export') return '';
     const buttons = choices.map((c) => `<button type="button" class="multiply" data-by="${c.by}" aria-pressed="${c.by === 1}">${escapeHtml(c.label)}</button>`);
     return `<span class="multiplier" role="group" aria-label="Multiply the amounts" data-multiplier="${id}" data-key="${escapeAttr(key)}">${buttons.join('')}</span>`;
   };

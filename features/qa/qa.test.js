@@ -116,7 +116,7 @@ test('a card\'s label is a toggle named for its card, pressed once discussed; in
   const { body } = render(src);
   assert.match(body, /<span class="qa-label qa-toggle" role="button" tabindex="0" aria-label="Good, discussed" aria-pressed="true"[^>]*>G<\/span>/);
   assert.match(body, /<span class="qa-label qa-toggle" role="button" tabindex="0" aria-label="Bad, discussed" aria-pressed="false"[^>]*>B<\/span>/);
-  const exported = render(src, { exported: true }).body;
+  const exported = render(src, { for: 'export' }).body;
   assert.doesNotMatch(exported, /qa-toggle|role="button"|data-on=/);
   assert.match(exported, /<li class="qa qa-card qa-good qa-done">\n<p><span class="qa-label">G<\/span>/);
 });
@@ -126,7 +126,7 @@ test('a tried Try shows a check in place of its T, however it is set', () => {
   assert.match(body, /aria-label="Try, tried" aria-checked="true"[^>]*>✓<\/span><span class="qa-name">Josh<\/span>one/);
   assert.match(body, /aria-checked="true"[^>]*>✓<\/span>two/);
   assert.match(body, /aria-checked="false"[^>]*>T<\/span>three/);
-  assert.match(render('Try [x]: one\n', { exported: true }).body, /<span class="qa-label">✓<\/span>one/);
+  assert.match(render('Try [x]: one\n', { for: 'export' }).body, /<span class="qa-label">✓<\/span>one/);
 });
 
 test('on a slide, a card\'s label says whether it\'s done, but can\'t be reached or pressed', () => {

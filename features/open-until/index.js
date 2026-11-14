@@ -93,8 +93,8 @@ function openUntil(md) {
   md.core.ruler.push('open_until', (state) => {
     if (state.inlineMode || state.env.nested) return;
     const until = untilOf(state.env);
-    if (!until || state.env.deck) return;
-    if (!state.env.matter) {
+    if (!until || state.env.drawing?.for === 'present') return;
+    if (state.env.drawing?.what !== 'part') {
       state.env.byline = [...(state.env.byline ?? []), notice(until, state.env.closed)];
       return;
     }

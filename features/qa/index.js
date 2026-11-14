@@ -91,7 +91,7 @@ export function qa(md) {
     const state = tried
       ? `role="checkbox" ${reach} aria-label="Try, tried" aria-checked="${toggle?.done}"${hint(toggle?.done ? 'Not tried yet' : 'Mark it tried')}`
       : `role="button" ${reach} aria-label="${who}, discussed" aria-pressed="${toggle?.done}"${hint(toggle?.done ? 'Reopen the discussion' : 'Mark the discussion done')}`;
-    const label = toggle && !env.exported
+    const label = toggle && env.drawing?.for !== 'export'
       ? `<span class="qa-label qa-toggle${tried ? ' qa-tried' : ''}" ${state} data-line="${toggle.line}" data-on="${escapeAttr(toggle.on)}" data-off="${escapeAttr(toggle.off)}">`
       : '<span class="qa-label">';
     // A Try that's been tried shows a check in place of its T.

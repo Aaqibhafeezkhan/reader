@@ -8,10 +8,11 @@
  *   ---
  *
  * A day and a time, as a clock on the wall says it, wherever the page is
- * read; a day alone (`2026-10-27`) is open to the end of that day. The line
- * is claimed (`matter`), so it isn't shown as written in the byline: a
+ * read; a day alone (`2026-10-27`) is open to the end of that day. The key
+ * is this feature's (`keys`), so it isn't shown as written in the byline: a
  * notice there says until when the page can be edited, or that it can't
- * be. Each page of a workbook says so at its top, having no byline.
+ * be, or, for a time it can't read, that it can't, with what was written.
+ * Each page of a workbook says so at its top, having no byline.
  *
  * When the page closes (`closes`) is read by src/page.js, which says on
  * `env.closed` whether it has; everything drawn to fill in asks that
@@ -82,20 +83,31 @@ export function notice(until, closed, tag = 'span') {
   return `<${tag} class="open-until"${data}>Editable Until ${escapeHtml(capital(deadline(u)))}<span class="open-until-away"></span></${tag}>`;
 }
 
-/** The claimed line's time as written, if the page has one. */
-const untilOf = (env) => (env.entries ?? []).find((e) => e.feature === 'open-until')?.until;
+/**
+ * What's shown for a time that can't be read: a warning, with the time as
+ * written, so that it can be put right rather than going unseen.
+ */
+export function unread(until, tag = 'span') {
+  return `<${tag} class="open-until open-until-unread" role="note"><span class="open-until-sign" aria-hidden="true">⚠</span> Can't Read open-until: <span class="open-until-value">${escapeHtml(until)}</span></${tag}>`;
+}
+
+/** The notice for `until`, or its warning if it can't be read. */
+const shown = (until, closed, tag) => (readUntil(until) ? notice(until, closed, tag) : unread(until, tag));
+
+/** The front matter's time as written, if it has one. */
+const untilOf = (meta) => meta?.entry?.('open-until')[0]?.value;
 
 function openUntil(md) {
-  // Once the page's front matter is off, and its entries and whether it's
+  // Once the page's front matter is off, and whether it's
   // closed are known (src/page.js): the notice, in the byline, or at the
   // top of a workbook's page, which has none. Not on a slide being shown,
   // which can't be worked anyway.
   md.core.ruler.push('open_until', (state) => {
     if (state.inlineMode || state.env.nested) return;
-    const until = untilOf(state.env);
-    if (!until || state.env.deck) return;
-    if (!state.env.matter) {
-      state.env.byline = [...(state.env.byline ?? []), notice(until, state.env.closed)];
+    const until = untilOf(state.env.frontMatter);
+    if (!until || state.env.drawing?.for === 'present') return;
+    if (state.env.drawing?.what !== 'part') {
+      state.env.byline = [...(state.env.byline ?? []), shown(until, state.env.closed)];
       return;
     }
     const t = new state.Token('open_until', 'p', 0);
@@ -103,17 +115,17 @@ function openUntil(md) {
     t.meta = { until, closed: state.env.closed };
     state.tokens.unshift(t);
   });
-  md.renderer.rules.open_until = (tokens, i) => `${notice(tokens[i].meta.until, tokens[i].meta.closed, 'p')}\n`;
+  md.renderer.rules.open_until = (tokens, i) => `${shown(tokens[i].meta.until, tokens[i].meta.closed, 'p')}\n`;
 }
 
 export default {
   name: 'open-until',
   plugin: openUntil,
-  matter(line) {
-    const m = LINE.exec(line);
-    return m && readUntil(m[2]) ? { until: m[2].trim() } : null;
+  keys: ['open-until'],
+  closes(meta) {
+    const u = readUntil(untilOf(meta) ?? '');
+    return u ? closingTime(u) : null;
   },
-  closes: (entry) => closingTime(readUntil(entry.until)),
   // Its day moved, by the calendar, and any time after it left as it's written.
   moved(line, days) {
     const m = LINE.exec(line);

@@ -7,7 +7,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import MarkdownIt from 'markdown-it';
-import { extract, matterEntry, page } from '../src/page.js';
+import { extract, keysOf, page } from '../src/page.js';
 import { render } from '../src/render.js';
 
 // --- front matter ---------------------------------------------------------
@@ -26,27 +26,29 @@ test('reads --- front matter too', () => {
 });
 
 test('a leading rule that is not front matter is left alone', () => {
-  const { meta, entries, source } = extract('---\n\nbody\n');
+  const { meta, own, source } = extract('---\n\nbody\n');
   assert.deepEqual(meta, {});
-  assert.deepEqual(entries, []);
+  assert.equal(own, false);
+  assert.deepEqual(meta.entry('title'), []);
   assert.match(source, /^---/);
 });
 
-test('a line a feature claims is its entry, not the meta', () => {
-  const { meta, entries } = extract('---\nTitle: B\nreviewer #: Josh\ntopic c: Coherence\n---\n\nbody\n');
+test('a key a feature declares is read by entry(), not one of the meta\'s (gh-283)', () => {
+  const { meta } = extract('---\nTitle: B\nreviewer #: Josh\ntopic c: Coherence\nopen-until: 2026-11-20\n---\n\nbody\n');
   assert.deepEqual(meta, { title: 'B' });
-  assert.deepEqual(entries.map((e) => [e.feature, e.kind, e.name]), [['asides', 'reviewer', 'Josh'], ['asides', 'topic', 'Coherence']]);
-  assert.equal(matterEntry('title: B'), null);
+  assert.deepEqual(meta.entry('reviewer', 'topic').map((e) => e.value), ['Josh', 'Coherence']);
+  assert.deepEqual(meta.entry('open-until').map((e) => e.value), ['2026-11-20']);
+  assert.deepEqual(keysOf(), ['open-until', 'reviewer', 'topic']);
 });
 
-test('a page with no front matter of its own keeps the entries it was given, a deck\'s', () => {
+test('a part with no front matter of its own keeps its file\'s, and one with its own reads that (gh-283)', () => {
   const md = new MarkdownIt().use(page);
-  const deck = [matterEntry('reviewer #: Josh')];
-  const env = { entries: deck };
+  const deck = extract('---\nreviewer #: Josh\n---\n').meta;
+  const env = { frontMatter: deck };
   md.parse('body\n', env);
-  assert.equal(env.entries, deck);
+  assert.equal(env.frontMatter, deck);
   md.parse('---\nreviewer m: Maria\n---\n\nbody\n', env);
-  assert.deepEqual(env.entries.map((e) => e.name), ['Maria']);
+  assert.deepEqual(env.frontMatter.entry('reviewer').map((e) => e.value), ['Maria']);
 });
 
 // --- comments -------------------------------------------------------------

@@ -27,7 +27,7 @@ test('on a slide, a step\'s box under its badge can\'t be ticked or reached', ()
 });
 
 test('an exported page\'s steps have no box hidden over the badge, which says whether each is done', () => {
-  const { body } = render('1) [x] chop\n2) [ ] fry\n', { exported: true });
+  const { body } = render('1) [x] chop\n2) [ ] fry\n', { for: 'export' });
   assert.doesNotMatch(body, /<input/);
   assert.match(body, /class="task step step-done"/);
 });

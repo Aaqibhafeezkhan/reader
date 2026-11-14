@@ -2,7 +2,7 @@
  * The features the renderer is built from, in the order their markdown-it
  * plugins are applied. Each is a directory here holding what it needs:
  *
- *   { name, requires?, plugin?, html?, css?, raw?, late?, matter?, closes?, preview?, lazy? }
+ *   { name, requires?, plugin?, html?, css?, raw?, late?, keys?, moved?, closes?, preview?, lazy? }
  *
  * - `requires`: the names of the features this one is built on, whose
  *   tokens, classes or events it reads, as steps reads tasks' boxes and
@@ -18,16 +18,18 @@
  * - `late`: a markdown-it plugin applied after every feature's `plugin`,
  *   for a rule that reads what all of them leave as text: the words an
  *   aside chooses.
- * - `matter`: `(line) => entry or null`, claiming a line of the front
- *   matter as the feature's own, not the page's meta: asides' aliases,
- *   `reviewer #: Josh`. What it returns goes on `env.entries`, with the
- *   feature's `name` (src/page.js).
+ * - `keys`: the front matter keys that are the feature's own, as asides'
+ *   `['reviewer', 'topic']` are for `reviewer #: Josh`: they aren't keys of
+ *   `env.frontMatter`, nor shown in the byline as written, and the feature
+ *   reads them with `env.frontMatter.entry(...keys)` (static/markdown.js).
+ *   One it can't read is still its to show, saying so (open-until's
+ *   warning), rather than disappearing.
  * - `moved`: `(line, days) => line or null`, for a front matter line that
  *   says a date: the line as it's written for a copy of the page dated
  *   `days` later, so the date keeps its distance from the page's, as
  *   open-until moves its day (src/page.js's `movedLine`). Null for a line
  *   that isn't the feature's.
- * - `closes`: `(entry) => ms`, for an entry the feature claimed that says
+ * - `closes`: `(frontMatter) => ms or null`, for a feature whose keys say
  *   when the page closes, becoming a record that can't be worked: the
  *   page is drawn `closed` past the earliest (src/page.js), and the server
  *   refuses what the page's inputs write long after it.

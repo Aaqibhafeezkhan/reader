@@ -79,7 +79,7 @@ test('the filter is drawn again when only the address changes, as when it\'s edi
 });
 
 test('exported, the legend is words, with nothing to click', () => {
-  const { body } = render(DOC, { exported: true });
+  const { body } = render(DOC, { for: 'export' });
   assert.match(body, /<div class="gm-legend"><span class="gm-who" style="--by: var\(--gm-key-1\)">Josh <b>2<\/b><span class="gm-unresolved"/);
   assert.doesNotMatch(body, /gm-legend-clear|data-filter/);
 });

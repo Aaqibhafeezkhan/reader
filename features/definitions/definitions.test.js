@@ -44,7 +44,7 @@ test('a term with no meaning yet is a blank to fill in', () => {
 });
 
 test('on an exported page, a term with no meaning yet is a blank but not a box', () => {
-  const { body } = render('# Notes\n\n!REPL (Venkat):\n', { exported: true });
+  const { body } = render('# Notes\n\n!REPL (Venkat):\n', { for: 'export' });
   assert.match(body, /<span class="field def-blank"[^>]*><span class="field-value" data-value="" data-empty="not yet defined"><\/span><\/span>/);
   assert.doesNotMatch(body, /tabindex|role="textbox"|aria-label/);
 });

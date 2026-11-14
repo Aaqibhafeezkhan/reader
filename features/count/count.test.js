@@ -53,7 +53,7 @@ test('count: without an amount, after a word, or in code is left as typed', () =
 });
 
 test('an exported page has no multiplier or reset to press, its counts as written', () => {
-  const { body } = render('## Akara\nmultiplier:[]\nreset:[]\n\n* count:2 cups peas\n', { exported: true });
+  const { body } = render('## Akara\nmultiplier:[]\nreset:[]\n\n* count:2 cups peas\n', { for: 'export' });
   assert.doesNotMatch(body, /class="multiplier"|task-reset|task-log/);
   assert.match(body, /<span class="count"[^>]*>2<\/span> cups peas/);
 });

@@ -37,13 +37,18 @@ import { marks, about } from './marks.js';
 import { escapeHtml, escapeAttr } from '../source.js';
 import { shut } from '../blank.js';
 
+// The front matter keys that are this feature's: a reviewer's or a topic's
+// alias, `reviewer #: Josh`, `topic c: Coherence` (key.js).
+const KEYS = ['reviewer', 'topic'];
+
 export function asides(md) {
   const rule = (state) => {
     // An aside's own body is parsed nested (`env.nested`, features/source.js);
     // it has already been stripped of its markers and must not be re-processed.
     if (state.inlineMode || state.env.nested) return;
     // The aliases the front matter declares, or a deck's, for one slide of it.
-    const key = makeKey((state.env.entries ?? []).filter((e) => e.feature === 'asides'));
+    const declared = state.env.frontMatter?.entry?.(...KEYS) ?? [];
+    const key = makeKey(declared.map((e) => readEntry(e.line)).filter(Boolean));
     const { source, asides, lines } = preprocess(state.src, key);
     state.src = source.endsWith('\n') ? source : source + '\n';
     // Each aside's line, and each line left, traced back to the file
@@ -200,7 +205,7 @@ export function legend(asides, key, env = {}) {
   // Where the page is read in the app, each chip toggles a filter of the
   // asides by it, and a last button clears it (preview.js, gh-21); not in
   // an export, nor on a slide.
-  const filters = !env.exported && !env.deck;
+  const filters = (env.drawing?.for ?? 'preview') === 'preview';
   const tag = filters ? 'button' : 'span';
   const chip = (e) => {
     const by = e.kind === 'reviewer';
@@ -215,8 +220,8 @@ export default {
   name: 'asides',
   // reader lays the asides out in columns of their own.
   plugin: asides,
-  // Claims the front matter's `reviewer #: Josh` and `topic c: Coherence`.
-  matter: readEntry,
+  // The front matter's `reviewer #: Josh` and `topic c: Coherence` are its own.
+  keys: KEYS,
   // Last of all: the words an aside chooses are found in what the others
   // leave as text, tabs' among them (marks.js).
   late: marks,

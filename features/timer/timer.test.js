@@ -67,7 +67,7 @@ test('it runs on a slide and in a record, where nothing can be worked, but an ex
   const closed = render(record, { now: new Date(2026, 9, 29).getTime() }).body;
   assert.match(closed, / disabled/, 'the record is shut');
   assert.match(closed, start);
-  assert.equal(para('timer:[2m] then timer:[1m30s]', { exported: true }), '<span class="timer">2 minutes</span> then <span class="timer">1 minute 30 seconds</span>');
+  assert.equal(para('timer:[2m] then timer:[1m30s]', { for: 'export' }), '<span class="timer">2 minutes</span> then <span class="timer">1 minute 30 seconds</span>');
 });
 
 // The frame's clock and its timeouts, moved on by hand; and what's played.

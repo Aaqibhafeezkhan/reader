@@ -97,13 +97,13 @@ test('a blank is reached by the keyboard and read as a box named by its label, b
   const { body } = render(md);
   assert.match(body, /<span class="field-value" data-value="Josh" tabindex="0" role="textbox" aria-label="Name">/);
   assert.match(body, /<span class="field-value" data-value="" tabindex="0" role="textbox" aria-label="age">/);
-  assert.doesNotMatch(render(md, { exported: true }).body, /tabindex|role="textbox"/);
+  assert.doesNotMatch(render(md, { for: 'export' }).body, /tabindex|role="textbox"/);
 });
 
 test('on a slide or an exported page, no field is a box: it reads as its label and its value, or says it\'s blank', () => {
   const md = '@ Name: Josh\n@ Thoughts:\n\nI am [@ age] and [@ a place: home].\n\n@ Session: ( ) Sat AM (x) Sat PM\n';
   const deck = `# One\n\n${md}\n---\n\n# Two\n`;
-  for (const [where, body] of [['a slide', slides(deck).slides[0].body], ['an exported page', render(md, { exported: true }).body]]) {
+  for (const [where, body] of [['a slide', slides(deck).slides[0].body], ['an exported page', render(md, { for: 'export' }).body]]) {
     assert.doesNotMatch(body, /class="field-value"[^>]*(tabindex|role=)/, `on ${where}`);
     assert.match(body, /<span class="field-label">Name<\/span><span class="field-value" data-value="Josh">Josh<\/span><\/span>/, `on ${where}`);
     assert.match(body, /<span class="field-label">Thoughts<\/span><span class="field-value" data-value=""><\/span><span class="field-blank vh">blank<\/span><\/span>/, `on ${where}`);
@@ -117,7 +117,7 @@ test('on a slide or an exported page, no field is a box: it reads as its label a
   // On a slide they can't be changed; on an exported page they can be
   // clicked, though nothing is saved.
   assert.equal(slides(deck).slides[0].body.match(/class="choice-box"[^>]* disabled>/g).length, 2);
-  assert.doesNotMatch(render(md, { exported: true }).body, /disabled/);
+  assert.doesNotMatch(render(md, { for: 'export' }).body, /disabled/);
   assert.doesNotMatch(render(md).body, /disabled/);
   assert.doesNotMatch(render(md).body, /field-blank/, 'in the editor, a blank is a box to fill in');
 });
@@ -146,7 +146,7 @@ test('a hinted field of choices is named by its label alone', () => {
 test('on a slide or an exported page, an empty field still shows its hint, and says it after "blank"', () => {
   const md = '@ Hours {e.g. 7.5}:\n@ Name {first}: Josh\n';
   const deck = `# One\n\n${md}\n---\n\n# Two\n`;
-  for (const [where, body] of [['a slide', slides(deck).slides[0].body], ['an exported page', render(md, { exported: true }).body]]) {
+  for (const [where, body] of [['a slide', slides(deck).slides[0].body], ['an exported page', render(md, { for: 'export' }).body]]) {
     assert.match(body, /<span class="field-value" data-value="" data-hint="e.g. 7.5"><\/span><span class="field-blank vh">blank, e.g. 7.5<\/span>/, `on ${where}`);
     assert.match(body, /<span class="field-value" data-value="Josh" data-hint="first">Josh<\/span><\/span>/, `on ${where}`);
     assert.doesNotMatch(body, /aria-placeholder/, `on ${where}, it isn't a box`);

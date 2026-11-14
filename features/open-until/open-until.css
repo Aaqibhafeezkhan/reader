@@ -17,3 +17,10 @@ p.open-until { font-size: 0.82rem; color: var(--gm-ink-soft); letter-spacing: 0.
   .open-until-closed:is(:hover, :focus)::after { color: CanvasText; background: Canvas; border: 1px solid CanvasText; }
 }
 @media print { .open-until-closed::after { display: none; } }
+
+/* A time that can't be read: a warning sign, and the time as written, in
+   the family's yellow, which reads at 3 to 1 or more on the paper in
+   light and dark alike (src/columns.css's --gm-warning). In the system's
+   colours, the sign and the weight say it. */
+.open-until-unread { font-weight: 600; }
+.open-until-sign, .open-until-value { color: var(--gm-warning); }

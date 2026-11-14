@@ -22,7 +22,7 @@ test('alone in its paragraph, it\'s the paragraph\'s width; in words, a list or 
   const alone = (src, opts) => (render(src, opts).body.match(/class="video[ "][^"]*/g) ?? []).map((c) => c.includes('video-alone'));
   assert.deepEqual(alone('![Body scan](yt:v/FcWl8WgKP8E)\n'), [true]);
   assert.deepEqual(alone('::: tabs\n+++ Meditate\n![Body scan](yt:v/FcWl8WgKP8E)\n:::\n'), [true]);
-  assert.deepEqual(alone('![Body scan](yt:v/FcWl8WgKP8E)\n', { exported: true }), [true]);
+  assert.deepEqual(alone('![Body scan](yt:v/FcWl8WgKP8E)\n', { for: 'export' }), [true]);
   assert.deepEqual(alone('Watch ![Body scan](yt:v/FcWl8WgKP8E) now.\n'), [false]);
   assert.deepEqual(alone('![Body scan](yt:v/FcWl8WgKP8E) then.\n'), [false]);
   assert.deepEqual(alone('![a](yt:v/FcWl8WgKP8E) ![b](yt:v/w6iG0mNHK28)\n'), [false, false]);
@@ -58,7 +58,7 @@ test('it plays on a slide and in a record, which can\'t be worked', () => {
 });
 
 test('exported, it\'s the thumbnail as a link to the video, which plays it on YouTube', () => {
-  const { body } = render('- ( ) ![Body scan](yt:v/FcWl8WgKP8E)\n\n![](yt:v/w6iG0mNHK28)\n', { exported: true });
+  const { body } = render('- ( ) ![Body scan](yt:v/FcWl8WgKP8E)\n\n![](yt:v/w6iG0mNHK28)\n', { for: 'export' });
   assert.match(body, /<a class="video" href="https:\/\/www\.youtube\.com\/watch\?v=FcWl8WgKP8E"><span class="video-screen"><img class="video-thumb" src="https:\/\/img\.youtube\.com\/vi\/FcWl8WgKP8E\/hqdefault\.jpg" alt=""><\/span><span class="video-caption">Body scan<\/span><span class="video-site vh"> on YouTube<\/span><\/a>/);
   assert.match(body, /<span class="video-site vh">A video on YouTube<\/span>/);
   assert.doesNotMatch(body, /<button[^>]*video|youtube-nocookie/);

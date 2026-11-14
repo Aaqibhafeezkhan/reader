@@ -208,7 +208,7 @@ test('an empty log is added to under its heading', () => {
 
 test('an exported page\'s staged box is a picture of how far it\'s got, not a control', () => {
   const md = '---\nmultibox:\n  stages: have, prepped, used\n---\n\n* [x][ ][ ] onion\n* [ ] salt\n';
-  const { body } = render(md, { exported: true });
+  const { body } = render(md, { for: 'export' });
   assert.match(body, /<span class="stage-box" role="img" aria-label="onion: have \(1 of 3\)" title="have" data-done="false"><i class="on"><\/i><i><\/i><i><\/i><\/span> <span class="stage-name">have<\/span>/);
   assert.doesNotMatch(body, /<button/);
   assert.match(body, /<input type="checkbox" class="task-box"[^>]*> salt/, 'a plain box can still be ticked, on paper or on screen');
@@ -220,7 +220,7 @@ test('an exported page draws no box another feature has tagged notExported, whic
   md.core.ruler.push('elsewhere', (state) => {
     for (const t of state.tokens) for (const c of t.children ?? []) if (c.type === 'task_box' && c.meta.checked) c.meta.notExported = true;
   });
-  const exported = md.render('- [x] shown elsewhere\n- [ ] still a box\n', { exported: true });
+  const exported = md.render('- [x] shown elsewhere\n- [ ] still a box\n', { drawing: { for: 'export' } });
   assert.equal(exported.match(/<input/g).length, 1);
   assert.match(exported, /<input type="checkbox" class="task-box"[^>]*> still a box/);
   assert.equal(md.render('- [x] shown elsewhere\n', {}).match(/<input/g).length, 1, 'only an export leaves it out');

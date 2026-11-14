@@ -189,7 +189,7 @@ export function tasks(md) {
     if (tokens[i].meta.staged) return stageBox({ ...tokens[i].meta, stages: stagesOf(env), pictured: !workable(env) });
     const { line, radio, checked, on, off, group, name, notExported } = tokens[i].meta;
     // A box another feature shows in its own way (see source.js's tags).
-    if (notExported && env.exported) return '';
+    if (notExported && env.drawing?.for === 'export') return '';
     const lines = ` data-on="${escapeAttr(on)}" data-off="${escapeAttr(off)}"${name ? ` aria-label="${escapeAttr(name)}"` : ''}${checked ? ' checked' : ''}${shut(env)}`;
     return radio
       ? `<input type="radio" class="choice-box" name="choice-${group}" data-line="${line}"${lines}> `
@@ -287,7 +287,7 @@ function logEnd(state, log) {
  * slide's deck's; null when it gives none.
  */
 function stagesOf(env) {
-  const named = env.frontMatter?.multibox?.stages || env.matter?.multibox?.stages;
+  const named = env.frontMatter?.multibox?.stages;
   return typeof named === 'string' && named.trim() ? named.split(',').map((p) => p.trim()) : null;
 }
 

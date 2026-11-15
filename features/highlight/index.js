@@ -22,9 +22,12 @@
  * an `output` fence after code, are in callouts.js; a fence with callouts
  * is a fence with its lines picked out. Output of more than a dozen lines
  * is cut short, with a checkbox to show the rest.
+ *
+ * In the preview, each fence has a button to copy its code (preview.js).
  */
 
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import hljs from 'highlight.js';
 import { escapeHtml, escapeAttr } from '../source.js';
 import { callouts, renderNote, renderNoteClose, hoverCss } from './callouts.js';
@@ -146,4 +149,5 @@ export default {
   name: 'highlight',
   plugin: highlighting,
   css: fs.readFileSync(new URL('./highlight.css', import.meta.url), 'utf8') + hoverCss(),
+  preview: fileURLToPath(new URL('./preview.js', import.meta.url)),
 };

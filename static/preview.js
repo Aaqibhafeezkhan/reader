@@ -379,6 +379,8 @@
     Preview.workable = !m.deck;
     // Run, in Work or on a slide, rather than written, in Edit.
     Preview.running = Boolean(m.deck || m.working);
+    // Whether it's a slide, known to the features as they put back what they kept.
+    Preview.deck = Boolean(m.deck);
     // How the page is set to be seen, as the address says.
     Preview.address = m.address && typeof m.address === 'object' ? m.address : {};
     // When the day starts, by the server (`--day-starts`).
@@ -403,7 +405,6 @@
     });
     refocus(had);
     hidePeek();
-    Preview.deck = Boolean(m.deck);
     document.documentElement.classList.toggle('deck', Preview.deck);
     scaleTo(m.scale);
     fit();

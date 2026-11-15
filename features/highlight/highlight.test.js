@@ -149,11 +149,16 @@ test('a fence\'s Copy button, last in it, copies its code as typed and says it d
   const [b] = p.buttons();
   assert.equal(b.tagName, 'BUTTON');
   assert.equal(b.type, 'button');
-  assert.equal(b.textContent, 'Copy');
+  assert.equal(b.getAttribute('aria-label'), 'Copy code');
+  assert.equal(b.textContent, '', 'an icon, no words');
+  assert.ok(b.querySelector('svg[aria-hidden="true"]'));
+  const icon = b.innerHTML;
   assert.equal(b.parentElement.lastElementChild, b);
   await p.click(b);
   assert.deepEqual(p.written, ['const a = 1;\nlog(a);']);
-  assert.equal(b.textContent, 'Copied');
+  assert.notEqual(b.innerHTML, icon, 'a tick in its place');
+  assert.equal(b.getAttribute('aria-label'), 'Copy code');
+  assert.equal(b.title, 'Copied');
 });
 
 test('the code is copied without its line numbers or its callouts\' marks', async () => {
@@ -177,7 +182,7 @@ test('with no clipboard API, the code is copied as a selection is', async () => 
   const [b] = p.buttons();
   await p.click(b);
   assert.deepEqual(selected, ['copy', 'x']);
-  assert.equal(b.textContent, 'Copied');
+  assert.equal(b.title, 'Copied');
   assert.equal(p.document.querySelector('textarea'), null);
 });
 

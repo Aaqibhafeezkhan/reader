@@ -4,7 +4,8 @@
  * badges, which are only drawn, and without the `<n>` marks they were
  * written as, which the fence no longer holds. An `output` fence has none;
  * under versions of the code in tabs, each version has its own. The button
- * says "Copied" for a moment after. Not on a slide; an exported or printed
+ * is the app's copy icon (static/app/icons.js, `copy-file`), named "Copy
+ * code"; a tick takes its place for a moment after, and "Copied" is said. Not on a slide; an exported or printed
  * page has no script, and so no button.
  *
  * The frame is another origin than the app's, so the clipboard is written
@@ -14,6 +15,12 @@
  */
 (() => {
   const SAID = 1500;
+  // The app's own copy icon, and a tick for once it's done; the frame is
+  // another origin, so they're drawn here as the app draws them.
+  const svg = (paths) => `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+  const COPY = svg('<path d="M8 5.5H3.3a.8.8 0 0 0-.8.8v7a.8.8 0 0 0 .8.8h6.4a.8.8 0 0 0 .8-.8V8zM8 5.5V8h2.5M5.5 5.5V2.8a.8.8 0 0 1 .8-.8H11l2.5 2.5v6.2a.8.8 0 0 1-.8.8h-2.2M11 2v2.5h2.5"/>');
+  const DONE = svg('<path d="M3.5 8.5l3 3 6-7"/>');
+  const NAME = 'Copy code';
 
   function dress(root) {
     if (Preview.deck) return;
@@ -23,7 +30,9 @@
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'code-copy';
-      b.textContent = 'Copy';
+      b.setAttribute('aria-label', NAME);
+      b.title = NAME;
+      b.innerHTML = COPY;
       pre.append(b);
     }
   }
@@ -54,10 +63,11 @@
     if (!button || Preview.deck) return;
     const ok = await copy(codeOf(button.parentElement), button);
     const said = ok ? 'Copied' : 'Couldn\'t copy';
-    button.textContent = said;
+    if (ok) button.innerHTML = DONE;
+    button.title = said;
     Preview.say(said);
     clearTimeout(button.copied);
-    button.copied = setTimeout(() => { button.textContent = 'Copy'; }, SAID);
+    button.copied = setTimeout(() => { button.innerHTML = COPY; button.title = NAME; }, SAID);
   });
 
   Preview.register({ restore: (root) => dress(root) });

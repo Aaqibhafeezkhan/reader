@@ -32,6 +32,7 @@ export const state = {
   root: '',
   files: [],
   today: null,          // the date it is, by the server: which files Today lists
+  dayStarts: 0,         // when the server's day starts, in minutes after midnight (`--day-starts`), for the page's Today (gh-269)
   starts: new Map(),    // the folders with a series of dated files, by the server, each by its folder: where today's is, or how to start it
   dir: '',              // the folder the file list shows
   group: null,          // or the versions of this file in it, by name
@@ -47,6 +48,7 @@ export const state = {
   saving: Promise.resolve(),
   previewReady: null,
   working: false,       // work mode: rendered full width, filled in but not edited
+  anchors: null,        // { path, lines }: the line of each heading's id, by the file's last render
 };
 
 // The slides being presented, if any. See "presenting" below.

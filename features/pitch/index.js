@@ -61,7 +61,7 @@ export function pitch(md) {
     const { name, spoken, hz, label } = tokens[i].meta;
     const shown = escapeHtml(label || name);
     // An exported page has no script to play it with.
-    if (env.exported) return `<span class="pitch">${shown}</span>`;
+    if (env.drawing?.for === 'export') return `<span class="pitch">${shown}</span>`;
     // Its name says what it does, with the words it shows in it.
     const said = label ? `Play ${label} (${spoken})` : `Play ${spoken}`;
     return `<button type="button" class="pitch" data-hz="${hz}" aria-label="${escapeAttr(said)}">${shown}</button>`;

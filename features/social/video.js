@@ -24,7 +24,7 @@ export function videoCard(found, alt, env) {
   const words = alt.replace(/\s+/g, ' ').trim();
   const thumb = `<img class="video-thumb" src="https://img.youtube.com/vi/${id}/hqdefault.jpg" alt="">`;
   const caption = words ? `<span class="video-caption">${escapeHtml(words)}</span>` : '';
-  if (env.exported) {
+  if (env.drawing?.for === 'export') {
     return `<a class="video" href="${escapeAttr(found.href)}"><span class="video-screen">${thumb}</span>${caption}`
       + `<span class="video-site vh">${words ? ' on YouTube' : 'A video on YouTube'}</span></a>`;
   }

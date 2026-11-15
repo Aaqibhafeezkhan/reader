@@ -1,7 +1,8 @@
 /**
  * Going to a place in the file: from the outline, or by Ctrl+G, which asks
  * where. `12` is page 12 (slide 12 of a talk, or while presenting), `:340`
- * is line 340, and anything else finds a heading by its title.
+ * is line 340, and anything else finds a heading by its title. A link to a
+ * heading by its id, `#the-plan`, goes there too (gh-244).
  *
  * Wherever it's asked from, the place is shown the way the file is being
  * looked at: in the editor, with the page beside it following; on its page
@@ -11,11 +12,12 @@
 import { el, state, deck } from './state.js';
 import { measure, lead } from './sync.js';
 import { scheduleGutter } from './lines.js';
-import { updateCursor } from './status.js';
+import { updateCursor, toast } from './status.js';
 import { paged, turnTo, turnToLine } from './pages.js';
 import { go as goToSlide, closeOverview } from './deck.js';
 import { current, setAt } from './outline.js';
 import { find, flatten } from './sections.js';
+import { rendered } from './render.js';
 
 /** Shows line `line` (from 0) at the top, the caret at its start. */
 export function goToLine(line, { focus = true } = {}) {
@@ -38,6 +40,30 @@ export function goToLine(line, { focus = true } = {}) {
   t.scrollTop = Math.max(0, measure()[n] - 6);
   scheduleGutter();
   updateCursor();
+}
+
+/**
+ * Goes to the heading the open file's page gives the id `id` (src/anchors.js),
+ * once its render is in, as goToLine goes to its line, but leaving the
+ * keyboard where it is: on the link that asked. On a workbook's page, turned
+ * to, the page is scrolled to it too, once it's drawn. Says whether it was
+ * there to go to.
+ */
+export async function goToHeading(id) {
+  const path = state.current?.path;
+  await rendered();
+  if (!path || state.current?.path !== path) return;
+  const line = state.anchors?.path === path ? state.anchors.lines[id] : undefined;
+  if (line == null) {
+    toast(`no heading #${id} in ${path}`, true);
+    return false;
+  }
+  goToLine(line, { focus: false });
+  if (!paged() || deck.open) return true;
+  await rendered();
+  Frames.post(el.preview, { type: 'open-to', line });
+  Frames.post(el.preview, { type: 'scroll', line });
+  return true;
 }
 
 /** Is this Ctrl+G? (⌘G stays the browser's find again.) */

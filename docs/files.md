@@ -58,6 +58,7 @@ The date is the server's, in its own time zone.
 
 A day starts at midnight, unless you start reader with `--day-starts`.
 With `reader --day-starts 04:00`, **Today** still lists yesterday's files until 04:00, so a journal written at 1am goes in the day it belongs to.
+So does what a page writes for today: a date's calendar's **Today**, and a log's **Log today**.
 
 ### Starting today's
 
@@ -180,8 +181,13 @@ To say where something is (to Claude, say, or in a message), copy it:
 - ⧉ by the file's name copies just its path.
 
 From another device (`--host`), a path on the server is no use, so what's
-copied is the file's address instead, `http://nas:8734/#notes/talk.md:13`.
+copied is the file's address instead, `http://nas:8734/read/notes/talk.md:13`.
 Opening that address opens the file at those lines.
+
+The address always names the open file, under `/read/`, so a file can be
+bookmarked, reloaded or sent: `http://127.0.0.1:8734/read/notes/talk.md`.
+An address in the old form, the file after a `#`, `/#notes/talk.md:13`,
+still opens it.
 
 ## Versions
 

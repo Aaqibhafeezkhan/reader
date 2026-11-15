@@ -10,7 +10,8 @@ const { el } = await import('../static/app/state.js');
 const { setPages, fit } = await import('../static/app/pages.js');
 
 const style = readFileSync(new URL('../static/style.css', import.meta.url), 'utf8');
-const rule = (selector) => style.match(new RegExp(`^${selector.replace(/[.()[\]]/g, '\\$&')} \\{([^}]*)\\}`, 'm'))?.[1] ?? '';
+// The selector spelled out, every character a pattern reads escaped.
+const rule = (selector) => style.match(new RegExp(`^${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} \\{([^}]*)\\}`, 'm'))?.[1] ?? '';
 
 const TWELVE = Array.from({ length: 12 }, (_, i) => `# [ ] Page ${i + 1}`).join('\n\n---\n\n');
 

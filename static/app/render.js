@@ -77,7 +77,18 @@ export function scheduleRender() {
   renderTimer = setTimeout(renderNow, RENDER_DELAY);
 }
 
-export async function renderNow({ resetScroll = false } = {}) {
+// The render last asked for, for what waits on its page (`rendered`).
+let latest = Promise.resolve();
+
+export function renderNow(options) {
+  latest = renderPage(options);
+  return latest;
+}
+
+/** Once the render last asked for is in the frame, or has come to nothing. */
+export const rendered = () => latest;
+
+async function renderPage({ resetScroll = false } = {}) {
   clearTimeout(renderTimer);
   if (state.current?.type !== 'md') return;
   const seq = ++state.renderSeq;
@@ -89,6 +100,8 @@ export async function renderNow({ resetScroll = false } = {}) {
     return toast(`render: ${err.message}`, true);
   }
   if (seq !== state.renderSeq) return;
+  // Where each heading's id is, for a link to one (goto.js).
+  state.anchors = { path, lines: out.anchors ?? {} };
   updatePresentable(out.deck);
   scheduleFitCheck(out.deck);
   // A deck being worked through shows the one page it's turned to.
@@ -103,6 +116,8 @@ export async function renderNow({ resetScroll = false } = {}) {
     resetScroll,
     lines: el.editor.value.split('\n').length,
     working: state.working,
+    // when the day starts, for what the page says today is
+    dayStarts: state.dayStarts,
     // drawn in the app's theme, unless its own background says otherwise
     dark: Theme.dark(),
     // how the page is set to be seen, as the address says (address.js)
@@ -112,10 +127,13 @@ export async function renderNow({ resetScroll = false } = {}) {
   if (!resetScroll) sendScroll();
 }
 
-/** Where a note's relative links and images resolve. */
+/**
+ * Where a note's relative links and images resolve: the note itself, so
+ * that a link to one of its headings, `#the-plan`, names it, and not only
+ * its folder, when it's hovered, copied or opened in a tab of its own.
+ */
 export function baseFor(path) {
-  const dir = path.includes('/') ? path.slice(0, path.lastIndexOf('/') + 1) : '';
-  return new URL(contentUrl(dir), location.href).href;
+  return new URL(contentUrl(path), location.href).href;
 }
 
 export function showPreview() {

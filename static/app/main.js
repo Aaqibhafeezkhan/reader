@@ -19,9 +19,9 @@ import { wireFit } from './fit.js';
 import { wireSync } from './sync.js';
 import { printDocument } from './exporting.js';
 import { wireLines, copyLines, goToLines } from './lines.js';
-import { readAddress, writeAddress } from './address.js';
+import { readAddress, writeAddress, writeHeading } from './address.js';
 import { wireOutline } from './outline.js';
-import { wireGoTo, openGoTo, isGoTo } from './goto.js';
+import { wireGoTo, openGoTo, isGoTo, goToHeading } from './goto.js';
 import { wireTheme } from './theme.js';
 import { makeCopy, setUpCopy } from './copying.js';
 
@@ -36,6 +36,7 @@ async function init() {
   const info = await api('GET', '/api/info');
   state.rootName = info.name;
   state.root = info.root;
+  state.dayStarts = Number(info.dayStarts) || 0;
   el.rootName.textContent = info.name;
   el.rootName.title = info.root;
   showVersion(info.version);
@@ -43,16 +44,18 @@ async function init() {
   go(rememberedDir(), null, { focus: false });
 
   // The file in the address, or the one last changed in the folder last shown.
-  const { wanted, line, last } = readAddress();
+  const { wanted, line, last, heading } = readAddress();
   const under = state.files.filter((f) => dirOf(f.path) === state.dir);
   const first = state.files.find((f) => f.path === wanted)
     || under.find((f) => f.type === 'md') || state.files.find((f) => f.type === 'md') || state.files[0];
   if (first) {
     reveal(first.path);
     await open(first.path);
-    if (first.path === wanted && line) goToLines(line, last);
+    if (first.path === wanted && heading) goToHeading(heading);
+    else if (first.path === wanted && line) goToLines(line, last);
   } else showEmpty('No markdown files here yet. Press New to start one.');
-  window.addEventListener('hashchange', followHash);
+  // Back or Forward, or a heading's hash typed in (address.js).
+  window.addEventListener('popstate', followAddress);
 }
 
 /**
@@ -73,14 +76,16 @@ function showVersion({ label, url, release } = {}) {
 }
 
 /** An address changed after loading, by a link or by hand: open what it names. */
-async function followHash() {
-  const { wanted, line, last, params } = readAddress();
+async function followAddress() {
+  const { wanted, line, last, params, heading } = readAddress();
   if (!state.files.some((f) => f.path === wanted)) return;
   if (wanted !== state.current?.path) {
     reveal(wanted);
     await open(wanted);
   } else Frames.post(el.preview, { type: 'address', params });
-  if (wanted === state.current?.path && line) goToLines(line, last);
+  if (wanted !== state.current?.path) return;
+  if (heading) goToHeading(heading);
+  else if (line) goToLines(line, last);
 }
 
 function wire() {
@@ -96,12 +101,15 @@ function wire() {
       else if (e.data?.type === 'edit') applyEdit(e.data, { fromStage: true });
       else if (e.data?.type === 'untab') el.deck.focus();
       else if (e.data?.type === 'revealed') revealed(e.data);
+      // A link to a heading on another slide; one to another file stays put, on stage.
+      else if (e.data?.type === 'follow' && typeof e.data.href === 'string' && e.data.href.startsWith('#')) follow(e.data.href);
       return;
     }
     if (e.source !== el.preview.contentWindow) return;
     if (e.data?.type === 'edit') applyEdit(e.data);
     else if (e.data?.type === 'swipe') turn(e.data.by);
     else if (e.data?.type === 'follow') follow(e.data.href);
+    else if (e.data?.type === 'heading' && typeof e.data.id === 'string' && state.current) writeHeading(e.data.id);
     else if (e.data?.type === 'key') onKey({ ...e.data, preventDefault() {} });
     // How the page is set to be seen, kept in the address (address.js).
     else if (e.data?.type === 'address' && state.current && e.data.params && typeof e.data.params === 'object') writeAddress(state.current.path, e.data.params);

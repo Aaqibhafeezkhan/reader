@@ -85,7 +85,7 @@ test('in braces: a topic, a style, or both; a color is the mark\'s; a lone lette
   assert.match(page('[x]{circle red}'), /<span class="mk mk-circle" role="mark" style="--mk: var\(--gm-red\)" data-mark="mk-1">x<\/span>/);
   assert.match(page('[x]{underline georgia}'), /<span class="font mk mk-underline" role="mark" style="--font: 'georgia'" data-mark="mk-1">/);
   assert.match(render('[x]{a}\n').body, /<span class="font" style="--font: 'a'">x<\/span>/);
-  assert.match(render('[x]{red}\n').body, /<span style="color: red">x<\/span>/);
+  assert.match(render('[x]{red}\n').body, /<span style="color: var\(--gm-red\)">x<\/span>/);
 });
 
 test("the words an aside chose are marked for the page to keep readable only in a colour an author wrote that isn't the family's", () => {

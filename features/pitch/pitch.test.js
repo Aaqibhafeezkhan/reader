@@ -49,7 +49,7 @@ test('it\'s a button on a slide and in a record, where nothing can be worked, bu
   const closed = render(record, { now: new Date(2026, 9, 29).getTime() }).body;
   assert.match(closed, / disabled/, 'the record is shut');
   assert.match(closed, button);
-  assert.equal(para('pitch:[A4] and pitch:C4[middle C]', { exported: true }), '<span class="pitch">A4</span> and <span class="pitch">middle C</span>');
+  assert.equal(para('pitch:[A4] and pitch:C4[middle C]', { for: 'export' }), '<span class="pitch">A4</span> and <span class="pitch">middle C</span>');
 });
 
 // Web Audio as far as a tone needs it, keeping what's played.

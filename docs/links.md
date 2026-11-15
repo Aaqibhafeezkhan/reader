@@ -202,6 +202,34 @@ another file. Images and links in a note resolve relative to that note, so
 → [Spring Security 7](spring-security-7.md)
 ```
 
+## Headings
+
+Each heading has an id made from its words, the way GitHub makes them, so a link to it works there and in reader alike.
+The words are lower-cased, what isn't a letter, a number, `-` or `_` is dropped, and each space becomes a `-`: `## What's next?` is `#whats-next`.
+A heading said again is `-1` after the first, then `-2`.
+A heading's box, its styles in braces and its marks aren't its words, so `## [x] {uppercase} The plan` is still `#the-plan`.
+
+| You write | Goes to |
+| --- | --- |
+| `[the plan](#the-plan)` | `## The plan`, in this file |
+| `[this year](budget.md#this-year)` | `## This year`, in `budget.md` |
+
+A link to a heading in the same file scrolls to it, and one to another file opens that file at the heading.
+A heading folded away opens first, and in Work, or on a slide, the page or slide that holds it is turned to.
+A link to a heading the file hasn't got opens the file at its top, and says so.
+An exported page keeps them as anchors, and one to a file exported with it goes to its page, at the heading.
+The address names the heading too, `/read/budget.md#this-year`, as GitHub's does, so it can be sent or reloaded and open there.
+Hovered, copied, or opened in a tab of its own (`⌘`-click), a link to a markdown file or a heading is that same address, so it opens in reader, at the heading, and not as the file's text.
+
+::: tabs
++++ Source
+```markdown
+Links to [other files](#other-files) open them, and [asides](asides.md#your-own-voice) are your own voice.
+```
++++ Rendered
+Links to [other files](#other-files) open them, and [asides](asides.md#your-own-voice) are your own voice.
+:::
+
 ## Images, on hover
 
 A link to an image (`.png`, `.jpg`, `.gif`, `.webp`, `.svg`, `.avif`) shows

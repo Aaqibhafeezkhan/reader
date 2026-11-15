@@ -4,9 +4,9 @@ import { render } from '../src/render.js';
 import { slides } from '../src/slides.js';
 import { APP, preview, app, globals, frame, run, settle, assertElement } from './dom.js';
 
-const BASE = 'http://localhost:8734/content/notes/';
+const BASE = 'http://localhost:8734/content/notes/plan.md';
 
-/** The preview frame showing `markdown`, from a file in notes/. */
+/** The preview frame showing `markdown`, from notes/plan.md. */
 function showing(markdown, m = {}) {
   const p = preview();
   p.show(render(markdown).body, { base: BASE, ...m });
@@ -30,13 +30,23 @@ test('a relative link or image is to the file in the content directory, and no f
     '[next](next.md) [up](../top.md?x#y) [past](../../../../etc/passwd.md) [here](#a) [abs](/api/files)',
     '[away](https://example.com/a.md) ![pic](img/pic.png)',
   ].join('\n'));
-  assert.equal(link('next').href, 'http://localhost:8734/content/notes/next.md');
-  assert.equal(link('up').href, 'http://localhost:8734/content/top.md?x#y');
-  assert.equal(link('past').href, 'http://localhost:8734/content/etc/passwd.md');
-  assert.equal(link('here').getAttribute('href'), '#a');
+  assert.equal(link('next').dataset.content, 'http://localhost:8734/content/notes/next.md');
+  assert.equal(link('up').dataset.content, 'http://localhost:8734/content/top.md?x#y');
+  assert.equal(link('past').dataset.content, 'http://localhost:8734/content/etc/passwd.md');
+  assert.equal(link('here').dataset.anchor, '#a');
   assert.equal(link('abs').getAttribute('href'), '/api/files');
   assert.equal(link('away').href, 'https://example.com/a.md');
   assert.equal(document.querySelector('img').src, 'http://localhost:8734/content/notes/img/pic.png');
+});
+
+test('a link to a markdown file or a heading shows its address in reader, so a copy or a tab of its own opens there (gh-244)', () => {
+  const { link } = showing('[next](next.md) [up](../top.md?x#y) [here](#the-plan) [pdf](paper.pdf) [away](https://example.com/a.md) [abs](/api/files)');
+  assert.equal(link('next').href, 'http://localhost:8734/read/notes/next.md');
+  assert.equal(link('up').href, 'http://localhost:8734/read/top.md?x#y');
+  assert.equal(link('here').href, 'http://localhost:8734/read/notes/plan.md#the-plan');
+  assert.equal(link('pdf').href, 'http://localhost:8734/content/notes/paper.pdf', 'anything else is its file');
+  assert.equal(link('away').href, 'https://example.com/a.md');
+  assert.equal(link('abs').getAttribute('href'), '/api/files');
 });
 
 test('a page not from the content directory keeps its links as written', () => {
@@ -49,6 +59,8 @@ function click(p, a, keys = {}) {
   const e = new p.window.MouseEvent('click', { bubbles: true, cancelable: true, button: 0, ...keys });
   a.dispatchEvent(e);
   const followed = p.posted.filter((m) => m.type === 'follow').map((m) => m.href);
+  // All the frame asked, for a test that wants more than what it followed.
+  p.told = [...p.posted];
   p.posted.length = 0;
   return { taken: e.defaultPrevented, followed };
 }
@@ -71,6 +83,44 @@ test('a link to anything else, or clicked with a key held, is left to open its t
 test('on a slide, a link isn\'t followed: the deck shouldn\'t give way to another file', () => {
   const p = showing('[next](next.md)', { deck: true });
   assert.deepEqual(click(p, p.link('next')).followed, []);
+});
+
+/** Clicks the link `text` in `p`, its target's scrollIntoView watched: what was scrolled to, and what the app was asked. */
+function clickToHeading(p, text) {
+  let scrolled = null;
+  for (const n of p.document.querySelectorAll('[id]')) n.scrollIntoView = function () { scrolled = this; };
+  const { taken, followed } = click(p, p.link(text));
+  return { taken, followed, scrolled };
+}
+
+test('a link to a heading on the page scrolls to it, there, and the app is asked nothing (gh-244)', () => {
+  const p = showing('See [the plan](#the-plan) and [its base](#base).\n\n## The plan\n\n## Base\n');
+  const { taken, followed, scrolled } = clickToHeading(p, 'the plan');
+  assert.deepEqual({ taken, followed }, { taken: true, followed: [] });
+  assertElement(scrolled, p.document.querySelector('h2'));
+  assert.deepEqual(p.told, [{ type: 'heading', id: 'the-plan' }], 'the app is told only to name it in the address');
+  // A heading by the name of the frame's own <base> is the heading.
+  assertElement(clickToHeading(p, 'its base').scrolled, p.document.querySelectorAll('h2')[1]);
+});
+
+test('a link to a heading the page doesn\'t hold, on another page or slide, asks the app to go there', () => {
+  const p = showing('See [the end](#the-end).\n');
+  assert.deepEqual(clickToHeading(p, 'the end'), { taken: true, followed: ['#the-end'], scrolled: null });
+  const q = showing('See [the end](#the-end).\n', { deck: true });
+  assert.deepEqual(clickToHeading(q, 'the end').followed, ['#the-end']);
+});
+
+test('a link to a heading in another file is followed with its heading', () => {
+  const p = showing('[its budget](budget.md#this-year)');
+  assert.deepEqual(click(p, p.link('its budget')), { taken: true, followed: ['http://localhost:8734/content/notes/budget.md#this-year'] });
+});
+
+test('a link to a heading in a folded section opens it first', () => {
+  const p = showing('[more](#more)\n\n# [x] Done\n\n## More\n\nMore.\n');
+  const more = p.document.querySelectorAll('h2')[0];
+  assert.ok(more.classList.contains('fold-hidden'));
+  assertElement(clickToHeading(p, 'more').scrolled, more);
+  assert.equal(more.classList.contains('fold-hidden'), false);
 });
 
 test('the document is the frame\'s main part, and its title the frame\'s', () => {
@@ -549,6 +599,22 @@ test('an edit of a line an earlier turn wrote, made from the line as its feature
   assert.deepEqual(await sent(['- ( ) C [@ x: run]', '- ( ) C [@ x: ran]']), [['- ( ) C [@ x: run]', '- ( ) C [@ x: ran]']]);
   window.Preview.replace(window.document.body, () => {});
   assert.deepEqual(await sent(['- (x) C [@ x]', '- ( ) C [@ x]']), [['- (x) C [@ x]', '- ( ) C [@ x]']]);
+});
+
+test('edits of the same line in a turn, one from the line as drawn and one from the line as an earlier turn wrote it, become one', async () => {
+  const { window, posted } = frame('');
+  run(window, 'static/preview-api.js');
+  const sent = async (...edits) => {
+    for (const [before, after] of edits) window.Preview.edit([{ from: 1, to: 2, before: [before], after: [after] }]);
+    await settle();
+    return posted.splice(0).map((m) => m.edits.map((x) => [x.before[0], x.after[0]]));
+  };
+  // A choice picked; then a blank in the line filled in, from the line as
+  // drawn, and the choice it's in picked, from the line as last written.
+  await sent(['A: ( ) Yes ( ) [@ x]', 'A: (x) Yes ( ) [@ x]']);
+  assert.deepEqual(await sent(['A: ( ) Yes ( ) [@ x]', 'A: ( ) Yes ( ) [@ x: run]'], ['A: (x) Yes ( ) [@ x]', 'A: ( ) Yes (x) [@ x]']), [
+    [['A: (x) Yes ( ) [@ x]', 'A: ( ) Yes (x) [@ x: run]']],
+  ]);
 });
 
 test('Preview.flush sends the edits held so far, and the end of the turn sends nothing again', async () => {

@@ -34,6 +34,62 @@ line starting at the margin that isn't `Q:` or `A:` ends the exchange.
 
 A backslash (`\A:`) keeps a line that happens to start that way as typed.
 
+A `Q:` or `A:` indented under an exchange is part of it: an exchange of its
+own, nested under the one above, as a list nests an item under another. It
+can go as deep as it's indented, and the next line at the margin starts a
+new exchange. So a proposal can show what it split into, with the talk about
+it in the margin, an aside going with the line it's under at any depth:
+
+::: tabs
++++ Source
+```markdown
+Q (Claude): Fix the tracks bug now?
+A: Now, or file an issue.
+  ~ This needs to be split into two
+  Q (Claude): Fix part A now?
+  A: File an issue.
+  Q (Claude): Fix part B now?
+  A: Now.
+Q (Claude): Fix this other part?
+A: File an issue.
+```
++++ Rendered
+Q (Claude): Fix the tracks bug now?
+A: Now, or file an issue.
+  ~ This needs to be split into two
+  Q (Claude): Fix part A now?
+  A: File an issue.
+  Q (Claude): Fix part B now?
+  A: Now.
+Q (Claude): Fix this other part?
+A: File an issue.
+:::
+
+Indenting only nests an exchange in another: an indented `Q:` with no
+exchange above it stays as typed. Under a heading, the heading's level
+already says what it belongs to.
+
+An answer can be a pick from choices, `( )` in front of each, as a
+[field's](forms.md#fields) are: they're radio buttons in a row, one set to
+each `A:` line. Clicking one writes `(x)` in front of it, and `( )` in front of
+the rest. A [blank](forms.md#blanks-in-a-sentence) as one of them is a blank,
+and filling it in picks it, the answer and the `(x)` written together:
+
+::: tabs
++++ Source
+```markdown
+Q (Claude): Put the page bar fix in 0.0.4?
+A: ( ) Yes ( ) No ( ) [@ Something else]
+```
++++ Rendered
+Q (Claude): Put the page bar fix in 0.0.4?
+A: ( ) Yes ( ) No ( ) [@ Something else]
+:::
+
+The line has to start with a choice, each with words after it, or it's read
+as typed: `A: I'd say (x) marks the spot` is only an answer. [Start
+over](forms.md#starting-over) clears the choice picked, and the blank.
+
 ## Retro cards and votes
 
 A retro's cards work the same way: `Good:`, `Bad:` and `Try:` each start a

@@ -15,7 +15,7 @@ async function lint(code, filePath) {
 async function reaches(code, filePath, name) {
   const messages = await lint(code, filePath);
   assert.equal(messages.length, 1, messages.join('\n'));
-  assert.match(messages[0], new RegExp(`^features/${name}/ is that feature's own`));
+  assert.match(messages[0], new RegExp(`refers to features/${name}/, which is the ${name} feature's own`));
 }
 
 test('a feature importing another feature\'s files fails lint', async () => {
@@ -67,4 +67,67 @@ test('the list of features alone may import a feature\'s index.js, and nothing e
   assert.deepEqual(await lint("import tasks from './tasks/index.js';\nexport { tasks };\n", 'features/index.js'), []);
   await reaches("import { css } from './tasks/tasks.js';\nexport { css };\n", 'features/index.js', 'tasks');
   await reaches("import tasks from './tasks/index.js';\nexport { tasks };\n", 'features/names.js', 'tasks');
+});
+
+/** Asserts that `code`, at `filePath`, fails lint for reading features/`name`/'s placeholder. */
+async function readsPlaced(code, filePath, name) {
+  const messages = await lint(code, filePath);
+  assert.ok(messages.length >= 1, 'no message');
+  for (const m of messages) assert.match(m, new RegExp(`reads MARKS\\.${name}, the ${name} feature's placeholder`));
+}
+
+test('a feature reading another feature\'s placeholder fails lint (gh-282)', async () => {
+  const head = "import { MARKS } from '../source.js';\n";
+  await readsPlaced(`${head}export const [a, b] = MARKS.date;\n`, 'features/tasks/x.js', 'date');
+  await readsPlaced(`${head}export const a = MARKS['date'][0];\n`, 'features/tasks/x.js', 'date');
+  await readsPlaced(`${head}const { date } = MARKS;\nexport { date };\n`, 'features/tasks/x.js', 'date');
+  await readsPlaced("import { MARKS } from '../features/source.js';\nexport const a = MARKS.tasks;\n", 'src/x.js', 'tasks');
+});
+
+test('lint says which rule a tangle breaks, who broke it and what to do instead (gh-282)', async () => {
+  const [result] = await eslint.lintText("import { MARKS } from '../source.js';\nexport const [a, b] = MARKS.date;\n", { filePath: 'features/tasks/x.js' });
+  const [m] = result.messages;
+  assert.equal(m.ruleId, 'reader/feature-tangle');
+  assert.match(m.message, /^tasks reads MARKS\.date, the date feature's placeholder/);
+  assert.match(m.message, /`requires`/);
+});
+
+test('a feature may read its own placeholder, what features share, and the few it must step past (gh-282)', async () => {
+  const head = "import { MARKS } from '../source.js';\n";
+  assert.deepEqual(await lint(`${head}export const [a, b] = MARKS.date;\n`, 'features/date/x.js'), []);
+  assert.deepEqual(await lint(`${head}export const [a, b, c] = MARKS.layout;\n`, 'features/tabs/x.js'), []);
+  assert.deepEqual(await lint(`${head}export const [a, b] = MARKS.tasks;\n`, 'features/styles/x.js'), []);
+  assert.deepEqual(await lint(`${head}export const [a, b] = MARKS.styles;\n`, 'features/definitions/x.js'), []);
+});
+
+test('a feature setting a name on env that features don\'t share fails lint (gh-282)', async () => {
+  for (const code of ['export const f = (state) => { state.env.dates = []; };\n', 'export const f = (env) => { env.dates ??= []; };\n']) {
+    const messages = await lint(code, 'features/date/x.js');
+    assert.equal(messages.length, 1, messages.join('\n'));
+    assert.match(messages[0], /^date sets env\.dates, which isn't one of the names every feature shares/);
+  }
+});
+
+test('a feature may set a shared name on env, and its own state under a Symbol (gh-282)', async () => {
+  const code = "const DATES = Symbol('dates');\nexport const f = (state) => { state.env[DATES] = []; state.env.margin = []; };\n";
+  assert.deepEqual(await lint(code, 'features/date/x.js'), []);
+});
+
+test('a feature setting a name features may only read fails lint, saying so (gh-282)', async () => {
+  for (const code of ['export const f = (state) => { state.env.lineBase = 1; };\n', 'export const f = (env) => { env.frontMatter = {}; };\n']) {
+    const messages = await lint(code, 'features/date/x.js');
+    assert.equal(messages.length, 1, messages.join('\n'));
+    assert.match(messages[0], /^date sets env\.(lineBase|frontMatter), which features may read but not write/);
+  }
+});
+
+test('each name features share says its type, what it holds, and how to read and write it (gh-282)', async () => {
+  const { SHARED_ENV } = await import('../features/source.js');
+  const names = SHARED_ENV.map((e) => e.name);
+  assert.equal(new Set(names).size, names.length, 'a name twice');
+  for (const e of SHARED_ENV) {
+    assert.deepEqual(Object.keys(e), ['name', 'type', 'description', 'read', 'write'], e.name);
+    for (const k of ['name', 'type', 'description', 'read']) assert.ok(typeof e[k] === 'string' && e[k].trim(), `${e.name}: ${k}`);
+    assert.ok(e.write === null || (typeof e.write === 'string' && e.write.trim()), `${e.name}: write`);
+  }
 });

@@ -1,7 +1,7 @@
 /**
  * HTTP API and static files.
  *
- *   GET  /api/info             content root and name, and reader's version: { label, url, release }
+ *   GET  /api/info             content root and name, reader's version: { label, url, release }, and when its day starts, in minutes after midnight (`--day-starts`)
  *   GET  /api/tree             listable files, newest first, each with its date; today's date; and the folders today's file could be started in
  *   GET  /api/start-day?dir=   { from, to, mtime, css, body }: the folder's latest file, drawn whole and open, to clear its answers
  *   POST /api/start-day        { dir, from, mtime, edits } -> { path, from, mtime }: today's file, made from it with `edits` made
@@ -72,6 +72,7 @@ import { slides, pages, isDeck } from './slides.js';
 import { exportHtml } from './export.js';
 import { version } from './version.js';
 import { FEATURES } from '../features/index.js';
+import { READ } from '../static/app/address.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const STATIC_DIR = path.join(HERE, '..', 'static');
@@ -317,7 +318,7 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
 
     if (req.method === 'GET' || req.method === 'HEAD') {
       if (route === '/api/info') {
-        return sendJson(res, { root: content.root, name: path.basename(content.root), version: await known });
+        return sendJson(res, { root: content.root, name: path.basename(content.root), version: await known, dayStarts });
       }
       if (route === '/api/tree') {
         const day = today(now, dayStarts);
@@ -350,6 +351,8 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
         if (type.startsWith('image/')) open(res);
         return send(res, 200, fs.readFileSync(abs), type, ext === '.pdf' ? {} : CONTENT_SANDBOX);
       }
+      // A file's address is the app's, which opens the file it names (static/app/address.js).
+      if (route.startsWith(READ)) return serveStatic(res, '/');
       return serveStatic(res, route);
     }
 
@@ -365,8 +368,8 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
     if (route === '/api/render' && req.method === 'POST') {
       // A deck being worked through is drawn a page to a slide.
       if (body.pages && isDeck(body.text)) {
-        const { css, title, pages: list } = pages(body.text, { file: body.path, read });
-        if (list.length) return sendJson(res, { css, title, pages: list, deck: true });
+        const { css, title, anchors, pages: list } = pages(body.text, { file: body.path, read });
+        if (list.length) return sendJson(res, { css, title, anchors, pages: list, deck: true });
       }
       return sendJson(res, { ...render(body.text, { file: body.path, read, lines: true }), deck: isDeck(body.text) });
     }
@@ -375,7 +378,7 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
     }
     if (route === '/api/file' && req.method === 'PUT') {
       if (body.worked) {
-        const closes = closesAt(extract(body.text ?? '').entries);
+        const closes = closesAt(extract(body.text ?? '').meta);
         if (closes != null && now() >= closes + GRACE) {
           throw Object.assign(new Error(`${body.path} is a record: what's filled in on its page closed over a day ago`), { status: 423 });
         }

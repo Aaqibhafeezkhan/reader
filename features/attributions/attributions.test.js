@@ -13,7 +13,7 @@ test('a blockquote closing with -- gets an attribution', () => {
 
 test('an attribution split off a styled paragraph keeps its style; in an aside the line stays as typed', () => {
   const { body } = render('::: red georgia\n> quoted\n> -- Author\n:::\n\ntext\n\n~ > thought\n~ > -- Me\n');
-  assert.match(body, /<p class="font" style="color: red; --font: 'georgia'">quoted<\/p>\n<p class="font quote-by" style="color: red; --font: 'georgia'">Author<\/p>/);
+  assert.match(body, /<p class="font" style="color: var\(--gm-red\); --font: 'georgia'">quoted<\/p>\n<p class="font quote-by" style="color: var\(--gm-red\); --font: 'georgia'">Author<\/p>/);
   assert.match(body, /<summary><span class="gm-mark" aria-hidden="true">~<\/span><\/summary>\n<blockquote>\n<p>-- Me<\/p>/);
 });
 

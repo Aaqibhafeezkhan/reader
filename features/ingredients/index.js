@@ -112,7 +112,7 @@ export function ingredients(md) {
     const { key, recipe } = tokens[i].meta;
     // A button that shows its item (preview.js); an exported page has no
     // script to show it with.
-    const reach = env.exported ? '' : ' tabindex="0" role="button"';
+    const reach = env.drawing?.for === 'export' ? '' : ' tabindex="0" role="button"';
     return `<span class="ingredient-use"${reach} data-ingredient="${escapeAttr(key)}" data-recipe="${recipe}">${escapeHtml(tokens[i].content)}</span>`;
   };
 }

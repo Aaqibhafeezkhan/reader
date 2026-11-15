@@ -20,6 +20,7 @@ function text(html, stand = {}) {
   return div.textContent.replace(/\s+/g, ' ');
 }
 import { splitPairs } from '../rows.js';
+import { ASIDES } from './preprocess.js';
 import { render } from '../../src/render.js';
 import { slides } from '../../src/slides.js';
 
@@ -28,7 +29,7 @@ function parse(src) {
   const md = new MarkdownIt({ html: false, linkify: true, typographer: true, breaks: false }).use(page).use(asides);
   const env = {};
   const tokens = md.parse(src, env);
-  const found = env.asides || [];
+  const found = env[ASIDES] || [];
   return { meta: env.frontMatter || {}, asides: found, pairs: splitPairs(tokens, found), md, env, tokens };
 }
 

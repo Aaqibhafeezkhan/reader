@@ -45,7 +45,7 @@ test('a defined term keeps its !, and \\! is as typed', () => {
 });
 
 test('an exported page\'s word isn\'t a button: it has no script to show its item with', () => {
-  const { body } = render(RECIPE, { exported: true });
+  const { body } = render(RECIPE, { for: 'export' });
   assert.match(body, /Add the <span class="ingredient-use" data-ingredient="onion"/);
   assert.doesNotMatch(body, /tabindex|role="button"/);
 });

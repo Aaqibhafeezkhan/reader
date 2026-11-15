@@ -43,7 +43,7 @@ import { readNotes, plan, planEnd, duration } from './pacing.js';
 import { readBackground, liftBackground } from './background.js';
 import { readTransition, liftTransition } from './transition.js';
 import { frontMatter, fenced, typeOf } from '../static/markdown.js';
-import { matterEntry } from './page.js';
+import { keysOf } from './page.js';
 
 const SEPARATOR = /^---[ \t]*$/;
 const NOTE = /<!--([\s\S]*?)-->/g;
@@ -56,7 +56,7 @@ export function isDeck(src) {
 export function slides(src, { file, read, now } = {}) {
   const worth = (lifted) => lifted.body.trim() || lifted.notes;
   const layout = (source) => (isCover(source) ? 'cover' : 'slide');
-  const { css, title, meta, parts } = draw(src, worth, layout, { file, read, deck: true, now });
+  const { css, title, meta, parts } = draw(src, worth, layout, { file, read, for: 'present', now });
   const leaving = readTransition(meta.transition) ?? 'none';
   const out = parts.map(({ body, line, notes: own }) => {
     const moved = liftTransition(own);
@@ -72,13 +72,14 @@ export function slides(src, { file, read, now } = {}) {
 
 /**
  * A deck as a workbook's pages: each slide drawn as a document is, not as a
- * stage, with nothing of the slide's notes. `line` is where the page starts
+ * stage, with nothing of the slide's notes, and `anchors`, the line each
+ * heading's id is on, through all of them. `line` is where the page starts
  * in the file, and, unless `lines` is false, its blocks carry theirs
  * (`data-line`). `drawn`, `exported` and `now` are as render() takes them.
  */
-export function pages(src, { file, read, lines = true, drawn, exported, now } = {}) {
-  const { css, title, meta, parts } = draw(src, (lifted) => lifted.body.trim(), () => 'part', { file, read, lines, drawn, exported, now });
-  return { css, title, meta, pages: parts.map(({ body, line }) => ({ body, line })) };
+export function pages(src, { file, read, lines = true, drawn, for: purpose, now } = {}) {
+  const { css, title, meta, parts, anchors } = draw(src, (lifted) => lifted.body.trim(), () => 'part', { file, read, lines, drawn, for: purpose, now });
+  return { css, title, meta, anchors, pages: parts.map(({ body, line }) => ({ body, line })) };
 }
 
 /**
@@ -88,30 +89,33 @@ export function pages(src, { file, read, lines = true, drawn, exported, now } = 
  * its line and the notes left to read.
  */
 function draw(src, worth, layout, options) {
-  const { meta, entries, slides: chunks } = split(src);
+  const { meta, slides: chunks } = split(src);
   const shared = {};
   const behind = readBackground(meta.background);
   let css = '';
   const parts = [];
+  // Each heading's id, through every part (src/anchors.js).
+  const anchors = {};
   for (const { text, line } of chunks) {
     const lifted = lift(text);
     if (!worth(lifted)) continue;
     const own = liftBackground(lifted.notes);
-    const r = render(lifted.body, { ...options, line, shared, entries, background: own.background ?? behind, fonts: meta, matter: meta, layout: layout(lifted.body) });
+    const r = render(lifted.body, { ...options, line, shared, frontMatter: meta, background: own.background ?? behind, fonts: meta, layout: layout(lifted.body) });
     css ||= r.css;
+    Object.assign(anchors, r.anchors);
     parts.push({ body: r.body, line, notes: own.notes });
   }
-  return { css, title: titleOf(meta, options.file), meta, parts };
+  return { css, title: titleOf(meta, options.file), meta, parts, anchors };
 }
 
 /**
  * Cuts `src` into slides, each with the 0-based line it starts on, after
- * its front matter (static/markdown.js). Lines a feature claims there
- * (`reviewer #: Josh`, page.js) are the deck's `entries`, not its meta.
+ * its front matter (static/markdown.js), whose keys a feature declares
+ * (`reviewer #: Josh`, page.js) are read by `meta.entry(...)`, not as keys.
  */
 export function split(src) {
   const lines = String(src || '').replace(/\r\n?/g, '\n').split('\n');
-  const matter = frontMatter(lines, { entry: matterEntry });
+  const matter = frontMatter(lines, { keys: keysOf() });
   const out = [];
   const code = fenced();
   let start = matter?.end ?? 0;
@@ -121,7 +125,7 @@ export function split(src) {
       start = i + 1;
     }
   }
-  return { meta: matter?.meta ?? {}, entries: matter?.entries ?? [], slides: out.filter((s) => s.text.trim()) };
+  return { meta: matter?.meta ?? {}, slides: out.filter((s) => s.text.trim()) };
 }
 
 /**

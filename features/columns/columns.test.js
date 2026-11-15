@@ -18,8 +18,8 @@ test('each block in a columns block is a column', () => {
 test('with +++ lines, what is between two is a column', () => {
   assert.equal(speaker('::: columns\n### Before\n* slow\n+++\n### After\n\nfast\n+++\n:::\n'), [
     '<div class="columns">',
-    '<div class="column">\n<h3>Before</h3>\n<ul>\n<li>slow</li>\n</ul>\n</div>',
-    '<div class="column">\n<h3>After</h3>\n<p>fast</p>\n</div>',
+    '<div class="column">\n<h3 id="before">Before</h3>\n<ul>\n<li>slow</li>\n</ul>\n</div>',
+    '<div class="column">\n<h3 id="after">After</h3>\n<p>fast</p>\n</div>',
     '</div>\n',
   ].join('\n'));
 });
@@ -32,7 +32,7 @@ test('a fence is a column, and what is in it is left alone', () => {
 test('the other names on the fence are styles, and style blocks nest in it', () => {
   const html = speaker('::: columns georgia\none\n\n::: red\ntwo\n:::\n:::\n\nafter\n');
   assert.match(html, /<div class="column">\n<p class="font" style="--font: 'georgia'">one<\/p>\n<\/div>/);
-  assert.match(html, /<div class="column">\n<p class="font" style="color: red; --font: 'georgia'">two<\/p>\n<\/div>\n<\/div>\n<p>after<\/p>/);
+  assert.match(html, /<div class="column">\n<p class="font" style="color: var\(--gm-red\); --font: 'georgia'">two<\/p>\n<\/div>\n<\/div>\n<p>after<\/p>/);
 });
 
 test('columns nest, and +++ belongs to the innermost', () => {
@@ -46,7 +46,7 @@ test('columns nest, and +++ belongs to the innermost', () => {
 });
 
 test('+++ is only a divider in a columns block, and one never closed runs to the end', () => {
-  assert.equal(speaker('a\n\n+++\n\n::: red\n+++\n:::\n'), '<p>a</p>\n<p>+++</p>\n<p style="color: red">+++</p>\n');
+  assert.equal(speaker('a\n\n+++\n\n::: red\n+++\n:::\n'), '<p>a</p>\n<p>+++</p>\n<p style="color: var(--gm-red)">+++</p>\n');
   assert.match(speaker('::: columns\na\n\nb\n'), /<div class="columns">\n<div class="column">\n<p>a<\/p>\n<\/div>\n<div class="column">\n<p>b<\/p>\n<\/div>\n<\/div>\n$/);
 });
 
@@ -64,5 +64,5 @@ test('an aside in or after it sits beside all of it, and never cuts it', () => {
 
 test('columns in a list item stay in it', () => {
   const html = render('- item\n\n  ::: columns red\n  left\n  +++\n  right\n  :::\n- next\n').body;
-  assert.match(html, /<ul>\n<li>\n<p>item<\/p>\n<div class="columns"[^>]*>\n<div class="column">\n<p style="color: red">left<\/p>\n<\/div>\n<div class="column">\n<p style="color: red">right<\/p>\n<\/div>\n<\/div>\n<\/li>\n<li>\n<p>next<\/p>\n<\/li>\n<\/ul>/);
+  assert.match(html, /<ul>\n<li>\n<p>item<\/p>\n<div class="columns"[^>]*>\n<div class="column">\n<p style="color: var\(--gm-red\)">left<\/p>\n<\/div>\n<div class="column">\n<p style="color: var\(--gm-red\)">right<\/p>\n<\/div>\n<\/div>\n<\/li>\n<li>\n<p>next<\/p>\n<\/li>\n<\/ul>/);
 });

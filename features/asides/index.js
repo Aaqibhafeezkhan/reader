@@ -8,13 +8,15 @@
  *
  * Once the page's front matter and comments are off (src/page.js), the
  * asides are lifted out of the source before block parsing, so they cannot
- * disturb the document's structure, and kept on `env.asides`. Each is a
+ * disturb the document's structure, and kept on `env` under the feature's
+ * own key (`ASIDES`, preprocess.js). Each is a
  * note in the page's margin (`env.margin`, src/columns.js), which wants the
  * speaker's stream unbroken so it can choose its own cut points; the
  * feature draws its cell (`cell`). The aliases they may use,
- * `reviewer #: Josh` and `topic c: Coherence`, are the front matter lines
- * the feature claims (`matter`), and make its key, whose topics it offers
- * the page's marks on `env.topics` (features/source.js); who
+ * `reviewer #: Josh` and `topic c: Coherence`, are the front matter keys
+ * the feature declares (`keys`), and make the key (features/key.js), whose
+ * topics a mark in braces reads by `topicsOf`; one it can't read says so
+ * in the byline; who
  * and what the asides are from and about goes in the masthead
  * (`env.masthead`), as a legend.
  *
@@ -30,8 +32,9 @@
 
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { preprocess } from './preprocess.js';
-import { readEntry, makeKey, ownClass } from './key.js';
+import { preprocess, ASIDES } from './preprocess.js';
+import { ownClass } from './key.js';
+import { KEYS, keyOf, unreadOf } from '../key.js';
 import { marks, about } from './marks.js';
 import { escapeHtml, escapeAttr } from '../source.js';
 import { shut } from '../blank.js';
@@ -42,7 +45,7 @@ export function asides(md) {
     // it has already been stripped of its markers and must not be re-processed.
     if (state.inlineMode || state.env.nested) return;
     // The aliases the front matter declares, or a deck's, for one slide of it.
-    const key = makeKey((state.env.entries ?? []).filter((e) => e.feature === 'asides'));
+    const key = keyOf(state.env.frontMatter);
     const { source, asides, lines } = preprocess(state.src, key);
     state.src = source.endsWith('\n') ? source : source + '\n';
     // Each aside's line, and each line left, traced back to the file
@@ -56,9 +59,10 @@ export function asides(md) {
       for (const r of t.replies ?? []) if (r.by && !r.by.topics.length && t.by?.topics.length) r.about = t.by.topics;
     }
     state.env.sourceLines = lines.map((k) => page[k] ?? k);
-    state.env.asides = asides;
-    // The key's topics, for a mark in braces to be in (`[words]{c}`).
-    state.env.topics = new Map([...key].filter(([, e]) => e.kind === 'topic'));
+    state.env[ASIDES] = asides;
+    // An alias declared in a way that can't be read says so, in the byline,
+    // as written, rather than going unseen (gh-283).
+    for (const e of unreadOf(state.env.frontMatter)) state.env.byline = [...(state.env.byline ?? []), unread(e.line)];
     // Each one a note in the margin, its cell drawn as the page is laid
     // out, once every rule has run, so the words it chose are marked by then.
     const { md, env } = state;
@@ -152,7 +156,7 @@ export function asideTokens(md, aside, env) {
   // Parse the aside body as markdown in its own right, so **emphasis**,
   // `code`, links and even nested lists work inside a thought. Link reference
   // definitions carry over; the aside bookkeeping deliberately does not.
-  return md.parse(aside.text, { ...env, asides: null, nested: true });
+  return md.parse(aside.text, { ...env, [ASIDES]: null, nested: true });
 }
 
 // A chip's or a pill's class, and whether it's in an author's own colour.
@@ -199,7 +203,7 @@ export function legend(asides, key, env = {}) {
   // Where the page is read in the app, each chip toggles a filter of the
   // asides by it, and a last button clears it (preview.js, gh-21); not in
   // an export, nor on a slide.
-  const filters = !env.exported && !env.deck;
+  const filters = (env.drawing?.for ?? 'preview') === 'preview';
   const tag = filters ? 'button' : 'span';
   const chip = (e) => {
     const by = e.kind === 'reviewer';
@@ -210,12 +214,17 @@ export function legend(asides, key, env = {}) {
   return `<div class="gm-legend"${filters ? ' role="group" aria-label="Show the asides of"' : ''}>${used.map(chip).join('')}${clear}</div>`;
 }
 
+/** What's shown for a line declaring an alias that can't be read: a warning, with the line as written. */
+function unread(line) {
+  return `<span class="gm-key-unread" role="note"><span class="gm-key-sign" aria-hidden="true">⚠</span> Can't Read <span class="gm-key-line">${escapeHtml(line.trim())}</span></span>`;
+}
+
 export default {
   name: 'asides',
   // reader lays the asides out in columns of their own.
   plugin: asides,
-  // Claims the front matter's `reviewer #: Josh` and `topic c: Coherence`.
-  matter: readEntry,
+  // The front matter's `reviewer #: Josh` and `topic c: Coherence` are its own.
+  keys: KEYS,
   // Last of all: the words an aside chooses are found in what the others
   // leave as text, tabs' among them (marks.js).
   late: marks,

@@ -84,3 +84,20 @@ li.qa-try.qa-done { color: inherit; }
     forced-color-adjust: none; background: CanvasText; color: Canvas; border-color: CanvasText;
   }
 }
+/* An answer's choices: in a row, wrapping as they need to, as a field's do.
+ * Each choice is pressed by its button or its words, at least 24px tall;
+ * one whose words are a blank, which is typed in, only by its button, in a
+ * label of its own as big as a finger, level with the blank's line. */
+.qa-choices { display: inline-flex; flex-wrap: wrap; align-items: flex-start; gap: 0 var(--gm-space-6); vertical-align: top; }
+.qa-choice { display: inline-flex; align-items: center; gap: var(--gm-space-3); min-height: 24px; white-space: nowrap; cursor: pointer; }
+.qa-choice > .qa-box, .qa-choice-box > .qa-box { margin: 0; cursor: pointer; }
+.qa-choice-blank { align-items: flex-start; gap: var(--gm-space-1); cursor: default; }
+.qa-choice-box { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; cursor: pointer; }
+/* Where the page can't be worked, as on a slide, they only say what's picked. */
+.unworkable :is(.qa-choice, .qa-choice-box, .qa-box) { cursor: default; }
+/* An exchange nested under another's (index.js): a list in its item, so
+ * it's heard as nested too, its labels hung where the item's text starts.
+ * The same size as the one it's in, and upright under a question. */
+li.qa ul:has(> li.qa) { margin: var(--gm-space-2) 0 var(--gm-space-3); }
+li.qa li.qa { font-size: 1em; }
+li.qa-q li.qa:not(.qa-q) { font-style: normal; color: var(--gm-ink); }

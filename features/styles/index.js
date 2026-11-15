@@ -30,11 +30,13 @@
  * read here as a style.
  */
 
+import { topicsOf } from '../key.js';
 import fs from 'node:fs';
 import { beforeExtract, fenced, MARKS } from '../source.js';
 import { layoutsOf, owns, OPEN as LAYOUT_OPEN, DIVIDER, CLOSE as LAYOUT_CLOSE } from '../layout.js';
 import { marking, markSpan } from '../mark.js';
 import { COLORS, GENERIC } from '../names.js';
+import { inFamily, ownColor } from '../color.js';
 
 const DIV = /^[ \t]{0,3}:::(?:[ \t]+([\w-]+(?:[ \t]+[\w-]+)*))?[ \t]*$/;
 const NAMES = /^\{([\w-]+(?:[ \t]+[\w-]+)*)\}/;
@@ -292,7 +294,7 @@ function span(state, silent) {
   if (!names) return false;
   const open = state.push('style_span_open', 'span', 1);
   // A mark's colour is the mark's, not the text's (features/mark.js).
-  const marked = marking(names[1], state.env.topics);
+  const marked = marking(names[1], topicsOf(state.env.frontMatter));
   if (marked) {
     const color = marked.rest.find((n) => COLORS.has(n.toLowerCase()))?.toLowerCase();
     const rest = marked.rest.filter((n) => !COLORS.has(n.toLowerCase()));
@@ -313,7 +315,10 @@ function span(state, silent) {
 
 /**
  * Adds `names` to a token's attributes: a CSS color name sets the color (the
- * first one given wins), and `bg-` and one its background, `--bg` for the
+ * first one given wins), read as text in light and dark as an aside's is: a
+ * common name in the family's hue for it (`gold` -> reader's amber), any
+ * other kept in its hue and held as light or as dark as the page needs, as
+ * `--own`, marking the element `gm-own` (src/columns.css, gh-173); and `bg-` and one its background, `--bg` for the
  * stylesheet to keep readable, marking the element `bg`; `uppercase` marks
  * it for the stylesheet to set in capitals; every other name is a font,
  * tried in order before falling back to the page's own, and marks the
@@ -331,8 +336,11 @@ function apply(token, names) {
     else if (CASES.has(key)) upper = true;
     else fonts.push(GENERIC.has(key) ? key : `'${name.replace(/-/g, ' ')}'`);
   }
-  const css = [color && `color: ${color}`, bg && `--bg: ${bg}`, fonts.length && `--font: ${fonts.join(', ')}`].filter(Boolean).join('; ');
-  for (const [cls, on] of [['bg', bg], ['font', fonts.length], ['uppercase', upper]]) {
+  const fg = color && inFamily(color);
+  const own = Boolean(fg) && ownColor(fg);
+  const ink = own ? `--own: ${fg}; color: var(--gm-own)` : fg && `color: ${fg}`;
+  const css = [ink, bg && `--bg: ${bg}`, fonts.length && `--font: ${fonts.join(', ')}`].filter(Boolean).join('; ');
+  for (const [cls, on] of [['bg', bg], ['font', fonts.length], ['uppercase', upper], ['gm-own', own]]) {
     if (!on) continue;
     const had = token.attrGet('class');
     if (had) token.attrSet('class', `${cls} ${had}`);

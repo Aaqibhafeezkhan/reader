@@ -17,5 +17,5 @@ test('an escaped tag, or one in an aside, is an ordinary quote', () => {
 
 test('an aside after a callout sits beside the callout', () => {
   const { body } = render('- > [!NOTE]\n~ a thought\n> # next\n');
-  assert.match(body, /<blockquote class="alert alert-note">[\s\S]*?<\/ul>\n<\/div>\n<div class="gm-asides">[\s\S]*?a thought[\s\S]*?<\/section>\n<section class="gm-pair">\n<div class="gm-speaker">\n<blockquote>\n<h1>next/);
+  assert.match(body, /<blockquote class="alert alert-note">[\s\S]*?<\/ul>\n<\/div>\n<div class="gm-asides">[\s\S]*?a thought[\s\S]*?<\/section>\n<section class="gm-pair">\n<div class="gm-speaker">\n<blockquote>\n<h1 id="next">next/);
 });

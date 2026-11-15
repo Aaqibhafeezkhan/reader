@@ -1,7 +1,7 @@
 import { test, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { app, globals, assertNotElement } from './dom.js';
+import { app, globals, assertElement, assertNotElement } from './dom.js';
 
 // The mode a file opens in, by its `type:` (#57): a workbook in Work, slides
 // in Edit, a document in whichever was last chosen.
@@ -63,4 +63,16 @@ test('a file whose type leaves Work doesn\'t take the keyboard into the editor',
   await open('talk.md');
   assert.equal(working(), false);
   assertNotElement(document.activeElement, el.editor, 'the editor took the keyboard');
+});
+
+test('a workbook opened from the files list gives the page the keyboard, not the body, as the list goes (gh-273)', async () => {
+  await open('talk.md');
+  assert.equal(working(), false);
+  const row = el.files.querySelector('.file');
+  assert.ok(row, 'no row in the files list');
+  row.focus();
+  assertElement(document.activeElement, row);
+  await open('journal.md');
+  assert.equal(working(), true);
+  assertElement(document.activeElement, el.preview);
 });

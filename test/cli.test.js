@@ -144,7 +144,7 @@ test('an argument it doesn\'t know is refused, saying which', () => {
 test('--open puts the file in the address', async () => {
   const { url, stop } = await start('--port', '0', '--open', 'notes/a b.md');
   try {
-    assert.match(url, /^http:\/\/127\.0\.0\.1:\d+\/#notes%2Fa%20b\.md$/);
+    assert.match(url, /^http:\/\/127\.0\.0\.1:\d+\/read\/notes\/a%20b\.md$/);
   } finally {
     await stop();
   }

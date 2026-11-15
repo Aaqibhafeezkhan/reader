@@ -35,7 +35,7 @@ export const closed = (env) => Boolean(env.closed);
  * picked? Not on a slide, which the deck keeps shut, nor on an exported
  * page, which has no script to do it with, nor once it's a record.
  */
-export const workable = (env) => !env.exported && !env.deck && !closed(env);
+export const workable = (env) => (env.drawing?.for ?? 'preview') === 'preview' && !closed(env);
 
 /**
  * A box's or a choice's attribute where the page can't be worked, as on a
@@ -44,7 +44,7 @@ export const workable = (env) => !env.exported && !env.deck && !closed(env);
  * its boxes as they are, unless it's a record: one ticks there without a
  * script, for whoever has the page, though nothing is saved.
  */
-export const shut = (env) => (workable(env) || (env.exported && !closed(env)) ? '' : ' disabled');
+export const shut = (env) => (workable(env) || (env.drawing?.for === 'export' && !closed(env)) ? '' : ' disabled');
 
 /**
  * A blank's attributes, so it can be reached by the keyboard and is read as
@@ -80,4 +80,31 @@ export function unfilled(value, env, hint = '') {
   if (value || workable(env)) return '';
   if (closed(env)) return '<span class="field-blank vh">blank</span>';
   return `<span class="field-blank vh">blank${hint ? `, ${escapeHtml(hint)}` : ''}</span>`;
+}
+
+// A blank in a sentence, `[@ what goes here]` or `[@ what goes here: answer]`
+// (features/fields), not one followed by `(` or `[`, which is a link's text.
+const INLINE = /\[@[ \t]+([^\]:\n]*?[^\]:\s])[ \t]*(?::[ \t]*([^\]\n]*?))?[ \t]*\](?![([])/g;
+const CODE = /(`+)[\s\S]*?[^`]\1(?!`)|(`+)\2(?!`)/g;
+
+/** Where `line`'s code spans are: `[{ start, end }]`. */
+export const codeSpans = (line) => [...line.matchAll(CODE)].map((m) => ({ start: m.index, end: m.index + m[0].length }));
+
+/**
+ * The blanks written in a sentence on `line`, outside its code spans and not
+ * after a backslash: `[{ start, end, label, value }]`, where each starts and
+ * ends on the line, what goes there and the answer written in it. Whoever
+ * reads a line for its own syntax can leave these to the blank, as a
+ * choice's mark written in an answer is the answer's (features/choices.js).
+ */
+export function inlineBlanks(line) {
+  if (!line.includes('[@')) return [];
+  const code = codeSpans(line);
+  const found = [];
+  for (const m of line.matchAll(INLINE)) {
+    const start = m.index;
+    if (line[start - 1] === '\\' || code.some((c) => start >= c.start && start < c.end)) continue;
+    found.push({ start, end: start + m[0].length, label: m[1], value: m[2] ?? '' });
+  }
+  return found;
 }

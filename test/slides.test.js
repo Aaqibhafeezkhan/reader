@@ -102,9 +102,9 @@ test('a slide\'s opening heading is set apart from the rest; one that\'s all hea
     '## T\n\n~ about the title\n\n- a\n',
   ].join('\n---\n\n'));
   const [quote, cover, plain, noted] = out.slides;
-  assert.match(quote.body, /^<div class="gm-doc">\s*<header class="slide-title">\n<h1>Title<\/h1>\n<\/header>\n<div class="slide-body">\n<section class="gm-pair">\n<div class="gm-speaker">\n<blockquote>/);
+  assert.match(quote.body, /^<div class="gm-doc">\s*<header class="slide-title">\n<h1 id="title">Title<\/h1>\n<\/header>\n<div class="slide-body">\n<section class="gm-pair">\n<div class="gm-speaker">\n<blockquote>/);
   assert.match(quote.body, /<\/section>\n<\/div>\n<\/div>$/);
-  assert.equal(quote.body.match(/<h1>/g).length, 1);
+  assert.equal(quote.body.match(/<h1[ >]/g).length, 1);
   assert.doesNotMatch(cover.body, /slide-title|slide-body/);
   assert.match(cover.body, /^<div class="gm-doc slide-cover">/);
   assert.doesNotMatch(plain.body, /slide-title|slide-cover/);
@@ -183,7 +183,7 @@ test('a deck worked through is a page to a slide, drawn as a document, without i
   assert.equal(out.pages.length, 2);
   assert.deepEqual(out.pages.map((p) => p.line), [3, 12]);
   assert.match(out.pages[1].body, /class="task-box" data-line="15"/);
-  assert.match(out.pages[1].body, /<h1 data-line="13">Two<\/h1>/);
+  assert.match(out.pages[1].body, /<h1 id="two" data-line="13">Two<\/h1>/);
   assert.doesNotMatch(out.pages[0].body, /a note|gm-masthead|slide-title/);
   assert.doesNotMatch(out.css, /:root body \{ overflow: hidden; \}/);
 });

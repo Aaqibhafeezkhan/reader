@@ -52,13 +52,13 @@ test('what a scheme shows is told the render\'s env, and is its alt text to what
     link: (path, label) => ({ href: `https://pics.example/${path}`, label: label || path }),
     show: (found, alt, env) => {
       seen.push(env);
-      return env.exported ? null : '<span class="pic"></span>';
+      return env.drawing?.for === 'export' ? null : '<span class="pic"></span>';
     },
   });
   const tokens = md.parseInline('a ![the cat](pic:cat)', { mine: 1 })[0].children;
   assert.deepEqual(seen, [{ mine: 1 }]);
   assert.deepEqual(tokens.map((t) => [t.type, t.content]), [['text', 'a '], ['scheme_shown', 'the cat']]);
-  assert.equal(md.renderInline('![the cat](pic:cat)', { exported: true }), '<a href="https://pics.example/cat">the cat</a>');
+  assert.equal(md.renderInline('![the cat](pic:cat)', { drawing: { for: 'export' } }), '<a href="https://pics.example/cat">the cat</a>');
 });
 
 test('images, unknown schemes and URLs a scheme can\'t read are as they were', () => {

@@ -40,6 +40,11 @@ import { fileURLToPath } from 'node:url';
 import { escapeAttr } from '../source.js';
 import { closed } from '../blank.js';
 
+// What this feature keeps across a deck's slides, on `env.shared`, under a key
+// no other feature can name (gh-282).
+const STYLED = Symbol('puzzleStyles');
+const PUZZLES = Symbol('puzzles');
+
 const KINDS_DIR = new URL('./kinds/', import.meta.url);
 
 /** Every kind of puzzle: one for each script in kinds/. */
@@ -66,8 +71,8 @@ export function puzzles(md) {
     if (!puzzle) return html;
     // Numbered as drawn, which is document order.
     const shared = env.shared ?? (env.shared = {});
-    const n = shared.puzzles = (shared.puzzles ?? 0);
-    shared.puzzles++;
+    const n = shared[PUZZLES] = (shared[PUZZLES] ?? 0);
+    shared[PUZZLES]++;
     const { kind, from, to, prefix, source } = puzzle;
     const lines = from == null || closed(env) ? '' : ` data-from="${from}" data-to="${to}"${prefix ? ` data-prefix="${escapeAttr(prefix)}"` : ''}`;
     const board = !source ? ''
@@ -75,8 +80,8 @@ export function puzzles(md) {
         : ` data-source="${escapeAttr(source.text)}"`;
     const drawn = drawnBoard(puzzle, tokens[i].content, env);
     if (drawn != null) {
-      const style = shared.puzzleStyles ? '' : `<style>${env.drawn.puzzles.css ?? ''}</style>`;
-      shared.puzzleStyles = true;
+      const style = shared[STYLED] ? '' : `<style>${env.drawn.puzzles.css ?? ''}</style>`;
+      shared[STYLED] = true;
       return `<div class="puzzle drawn" data-kind="${kind}" data-puzzle="${n}">${style}${drawn}</div>\n`;
     }
     return `<div class="puzzle" data-kind="${kind}" data-puzzle="${n}"${lines}${board}>${html.replace(/\n$/, '')}</div>\n`;

@@ -290,7 +290,33 @@
         node.setAttribute(attr, new URL(CONTENT.slice(0, -1) + to.pathname + to.search + to.hash, at.origin).href);
       }
     }
+    for (const a of page.querySelectorAll('a[href]')) inReader(a, at);
   }
+
+  // A link to a markdown file, or to a heading in this one, shows the
+  // file's address in the app, `/read/notes/plan.md#the-plan`, so that
+  // hovered, copied, bookmarked or opened in a tab of its own it opens in
+  // reader, at the heading, rather than as the file's text (gh-244, gh-292).
+  // What it was is kept, for a press here to follow as before.
+  const READ = '/read/';
+  const MARKDOWN = /\.(md|markdown)$/i;
+  function inReader(a, at) {
+    const was = a.getAttribute('href');
+    if (was.startsWith('#')) {
+      if (!MARKDOWN.test(at.pathname)) return;
+      a.dataset.anchor = was;
+      a.setAttribute('href', new URL(READ + at.pathname.slice(CONTENT.length) + was, at.origin).href);
+      return;
+    }
+    let url;
+    try { url = new URL(was); } catch { return; }
+    if (url.origin !== at.origin || !url.pathname.startsWith(CONTENT) || !MARKDOWN.test(url.pathname)) return;
+    a.dataset.content = url.href;
+    a.setAttribute('href', new URL(READ + url.pathname.slice(CONTENT.length) + url.search + url.hash, at.origin).href);
+  }
+
+  /** Where a link goes, as written: a heading's `#id`, or the file's own address. */
+  const hrefOf = (a) => a.dataset.anchor ?? a.dataset.content ?? a.getAttribute('href');
 
   // What the keyboard can reach: the control that had it is found again,
   // once a render has replaced it, by its line (its own `data-line`, or that
@@ -355,6 +381,8 @@
     Preview.running = Boolean(m.deck || m.working);
     // How the page is set to be seen, as the address says.
     Preview.address = m.address && typeof m.address === 'object' ? m.address : {};
+    // When the day starts, by the server (`--day-starts`).
+    Preview.dayStarts = Number(m.dayStarts) || 0;
     // What features and puzzles were in the middle of carries over.
     Preview.replace(document.body, () => {
       // Put together out of the page first, so no image is asked for
@@ -469,17 +497,31 @@
     }
   });
 
-  // In-page anchors scroll here rather than opening a new tab.
+  // In-page anchors scroll here rather than opening a new tab. One the page
+  // doesn't hold, a heading on another of a workbook's pages or a deck's
+  // slides, the app goes to (gh-244).
   document.addEventListener('click', (e) => {
-    const a = e.target.closest && e.target.closest('a[href^="#"]');
+    const a = e.target.closest && e.target.closest('a[data-anchor], a[href^="#"]');
     if (!a) return;
     e.preventDefault();
-    const t = document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
-    if (!t) return;
+    const href = hrefOf(a);
+    let id;
+    try { id = decodeURIComponent(href.slice(1)); } catch { return; }
+    if (!id) return;
+    const t = inPage(id);
+    if (!t) return window.parent.postMessage({ type: 'follow', href }, '*');
+    // The app names it in the address, as it does a heading it goes to.
+    if (/^H[1-6]$/.test(t.tagName)) window.parent.postMessage({ type: 'heading', id }, '*');
     window.dispatchEvent(new CustomEvent('preview:open-to', { detail: { target: t } }));
     marks = null;
     t.scrollIntoView({ behavior: 'smooth' });
   });
+
+  /** What on the page has the id `id`: a heading first, then anything else, and never the frame's own. */
+  function inPage(id) {
+    const all = [...document.body.querySelectorAll('[id]')].filter((n) => n.id === id);
+    return all.find((n) => /^H[1-6]$/.test(n.tagName)) ?? all[0] ?? null;
+  }
 
   // A link to another markdown file being served opens it in the app, and
   // not as text in a new tab; ⌘ or ⇧ still asks for the tab, and so does a
@@ -488,8 +530,8 @@
     const a = e.target.closest && e.target.closest('a[href]');
     if (!a || Preview.deck || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     let url;
-    try { url = new URL(a.href); } catch { return; }
-    if (url.origin !== new URL(base.href).origin || !/\.(md|markdown)$/i.test(url.pathname)) return;
+    try { url = new URL(hrefOf(a), base.href); } catch { return; }
+    if (url.origin !== new URL(base.href).origin || !MARKDOWN.test(url.pathname)) return;
     e.preventDefault();
     window.parent.postMessage({ type: 'follow', href: url.href }, '*');
   });

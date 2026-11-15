@@ -12,9 +12,9 @@
  * (`splitText`).
  */
 
-import { frontMatter, fenced } from '../static/markdown.js';
+import { frontMatter, fenced, withEntries } from '../static/markdown.js';
 
-export { frontMatter, fenced };
+export { frontMatter, fenced, withEntries };
 
 /**
  * Adds `rule` to read the source as written, before the page's front matter
@@ -77,17 +77,164 @@ export const MARKS = {
 };
 
 /**
- * What a feature may find on `env`, named for what it means rather than for
- * the feature that set it:
+ * The names features share on `env`, which each of them may read and some
+ * may write: `state.env.sourceLines` in a parsing rule, `env.sourceLines` in
+ * a renderer rule. `env` is markdown-it's: the object passed to
+ * `md.render(src, env)`, which every rule of one render is handed.
  *
- * - `nested`: this is a parse of a note's own body, apart from the page's
- *   (an aside's), whose lines were read with the rest; a rule over the
- *   whole document skips it.
- * - `topics`: the topics a mark in braces can be in, by their one-character
- *   alias (`[words]{c}`), each `{ name, color, style }`, in a Map; the
- *   asides feature's key declares them. Without it, `{c}` is a font
- *   (features/mark.js).
+ * Words, as the code uses them: the page is what's drawn, the whole of it;
+ * a part is what's between two `---` (a slide, or one of a workbook's
+ * pages) when it's drawn on its own; and the file, or the source, is the
+ * markdown as written.
+ *
+ * Please take care to:
+ *
+ *   1. not add a name without strong justification: a name every feature
+ *      can read is one every feature can come to rely on;
+ *   2. keep your feature's own state on `env` under a key only it can
+ *      name, `const KEY = Symbol('<feature>')`, then `state.env[KEY]`;
+ *   3. read another feature's work by way of its tokens: add its name to
+ *      your descriptor's `requires` (features/index.js), which puts your
+ *      feature after it, and read its tokens in a core rule
+ *      (`md.core.ruler.push`), which then runs after its own.
+ *
+ * If you add a name, add it here, with its type, what it holds, and how to
+ * read and write it. Expect other features to write to it too, and don't
+ * expect it to hold anything yet when your rule runs, unless it says it's
+ * set before every rule.
+ *
+ * If you've come here to work with another feature's information, go to
+ * that feature's documentation instead, for the tokens it makes and what's
+ * in their `meta`. If you're using a name here to coordinate directly with
+ * one other feature, it's likely time to rethink what each one exposes, or
+ * what each reads, and why.
+ *
+ * Each name says how it's read, `read`, and how it's written, `write`, or
+ * null where features may only read it. Lint fails on a feature that sets
+ * a name not here, or one whose `write` is null (`reader/feature-tangle`,
+ * eslint.config.js).
  */
+export const SHARED_ENV = [
+
+  // --- Set by render() from its options, before every rule (src/render.js) ---
+
+  {
+    name: 'lineBase',
+    type: 'number',
+    description: 'the line of the file the source starts on, from 0; 0 unless the source is a part',
+    read: 'const fileLine = env.lineBase + (env.sourceLines?.[t.map[0]] ?? t.map[0]); // src/render.js',
+    write: null,
+  },
+  {
+    name: 'file',
+    type: 'string | undefined',
+    description: 'the file\'s path, from the folder reader was opened on, with `/` between folders; undefined with no file (a test)',
+    read: 'const folder = path.posix.dirname(env.file || \'\'); // features/puzzles',
+    write: null,
+  },
+  {
+    name: 'read',
+    type: '((path: string) => string) | undefined',
+    description: 'reads another file in the folder reader was opened on, by its path from there; undefined unless the server allows it, and throws for a file it can\'t read',
+    read: 'const text = env.read?.(path.posix.join(folder, \'mazes/one.maze\')); // features/puzzles',
+    write: null,
+  },
+  {
+    name: 'drawn',
+    type: '{ [feature: string]: unknown } | undefined',
+    description: 'what the preview frame drew, by feature, each in a shape of that feature\'s own, so that an export, which runs none of the app\'s scripts, can show it anyway (src/export.js)',
+    read: 'const svg = env.drawn?.mermaid?.[text]; // features/mermaid',
+    write: null,
+  },
+  {
+    name: 'drawing',
+    type: '{ for: \'preview\' | \'present\' | \'export\', what: \'file\' | \'part\' }',
+    description: 'what the page is drawn for (the app\'s preview, a slide presented, or an export, a file that runs none of the app\'s scripts), and whether it\'s the whole file or a part of it',
+    read: 'if (env.drawing.for === \'export\') return `<span class="timer">${said}</span>`; // features/timer',
+    write: null,
+  },
+  {
+    name: 'now',
+    type: 'number | undefined',
+    description: 'the time, in ms, that the page is drawn as of; undefined for now',
+    read: 'const at = env.now ?? Date.now();',
+    write: null,
+  },
+  {
+    name: 'shared',
+    type: 'object',
+    description: 'kept across the renders of one file\'s parts, a deck\'s slides, to number things through the whole file; each feature keeps its own entry in it under a Symbol of its own',
+    read: 'const seen = env.shared?.[KEY];',
+    write: 'only to make it, for a render given none, and then only under your own Symbol: '
+      + 'const shared = env.shared ?? (env.shared = {}); shared[KEY] ??= 0; // features/puzzles',
+  },
+
+  // --- Set by page_extract, the first rule after normalizing, before any feature reads the lines (src/page.js) ---
+
+  {
+    name: 'frontMatter',
+    type: '{ [key: string]: string | { [key: string]: string } }, with entry(...keys) => Array<{ key: string, value: string, line: string }>',
+    description: 'the front matter\'s keys, in lower case, to their values, quotes off, and indented keys a level deep (`multibox: stages:`); a part\'s is its file\'s. A key a feature declares (its descriptor\'s `keys`) isn\'t one of them: every line, declared or not, is read by entry(), in the order written',
+    read: 'const stages = env.frontMatter.multibox?.stages; // features/tasks\n'
+      + 'const aliases = env.frontMatter.entry(\'reviewer\', \'topic\'); // features/asides',
+    // The date feature puts back the dates it took out of its values, which is its own to undo.
+    write: null,
+  },
+  {
+    name: 'closed',
+    type: 'boolean',
+    description: 'whether the page is past the earliest time any feature\'s `closes(frontMatter)` says, by `now`: a record, which can\'t be worked',
+    read: 'if (closed(env)) return \'\'; // features/blank.js, which features call rather than read this',
+    write: null,
+  },
+  {
+    name: 'sourceLines',
+    type: 'number[]',
+    description: 'for each line of the text the parser sees, the line of the source it came from, both from 0, once the front matter, comments and asides are out',
+    read: 'const fileLine = env.lineBase + (env.sourceLines?.[n] ?? n);',
+    write: 'only by a feature that takes lines out of the text, to keep it in step: '
+      + 'const before = state.env.sourceLines ?? []; state.env.sourceLines = kept.map((k) => before[k] ?? k); // features/asides',
+  },
+
+  // --- Written by features, for the others and the core ---
+
+  {
+    name: 'nested',
+    type: 'boolean | undefined',
+    description: 'true while an aside\'s own text is parsed, apart from the file\'s; a rule over the whole file skips it',
+    read: 'if (state.inlineMode || state.env.nested) return;',
+    write: 'on a copy, never on env itself: md.parse(text, { ...env, nested: true }); // features/asides',
+  },
+  {
+    name: 'written',
+    type: 'string[] | undefined',
+    description: 'the file\'s lines as typed, before any feature changed them; there only if a feature asked for it with keepWritten(md) (features/source.js)',
+    read: 'const typed = state.env.written?.[i] ?? line; // features/date',
+    // keepWritten(md), at the top of features/, sets it; a feature calls that in its plugin.
+    write: null,
+  },
+  {
+    name: 'margin',
+    type: 'Array<{ anchor: number, render: (attrs: string) => string }> | undefined',
+    description: 'the notes set in the margin, each beside the line of the parsed text it comes before (`anchor`), its HTML given the attributes of the block it\'s beside (src/columns.js); asides\' are the only ones today',
+    read: 'const count = env.margin?.length ?? 0; // src/render.js',
+    write: 'env.margin = [...(env.margin ?? []), { anchor, render: (attrs) => html }];',
+  },
+  {
+    name: 'masthead',
+    type: 'string[] | undefined',
+    description: 'HTML set in the masthead, under the title, in order; a masthead is drawn only for a whole file',
+    read: 'none but the core\'s (src/columns.js)',
+    write: 'env.masthead = [...(env.masthead ?? []), html]; // features/asides, its legend',
+  },
+  {
+    name: 'byline',
+    type: 'string[] | undefined',
+    description: 'HTML put at the end of the byline, in order',
+    read: 'none but the core\'s (src/columns.js)',
+    write: 'env.byline = [...(env.byline ?? []), html]; // features/open-until, its notice',
+  },
+];
 
 /**
  * The tags a feature may leave on a token's `meta` for the others to read,

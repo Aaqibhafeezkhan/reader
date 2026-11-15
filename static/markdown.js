@@ -22,18 +22,26 @@ const ENTRY = /^[ \t]*([A-Za-z][\w -]*?(?:[ \t]+\S)?)[ \t]*:(.*)$/;
  *   multibox:
  *     stages: have, in place, used
  *
- * is `{ multibox: { stages: 'have, in place, used' } }`. A line `entry`
- * makes something of (an aside's alias; see features/asides/key.js) goes on
- * `entries` instead.
+ * is `{ multibox: { stages: 'have, in place, used' } }`.
+ *
+ * Every line is also kept as written, for `meta.entry(...names)`, which
+ * isn't one of its keys: each line with one of those keys, in the order
+ * written, as `{ key, value, line, declared }`, the key as written, the
+ * value with its quotes off, and whether a feature declared it. A kind names its aliases' keys, so `reviewer`
+ * names `reviewer #: Josh`. A key in `keys`, which the features declare
+ * as theirs (features/index.js), is read only that way, and isn't one of
+ * `meta`'s: `reviewer #` and `reviewer c` can't be told apart once lower
+ * cased, nor shown in the byline as written.
  */
-export function frontMatter(lines, { entry } = {}) {
+export function frontMatter(lines, { keys = [] } = {}) {
   if (!MATTER.test(lines[0] ?? '')) return null;
   const close = lines.findIndex((l, n) => n > 0 && MATTER.test(l));
   if (close < 0) return null;
   const inner = lines.slice(1, close);
   if (!inner.every((l) => !l.trim() || ENTRY.test(l))) return null;
   const meta = {};
-  const entries = [];
+  const all = [];
+  const declared = keys.map((k) => k.toLowerCase());
   // The key with no value that indented entries go under, if any.
   let parent = null;
   for (const l of inner) {
@@ -45,17 +53,35 @@ export function frontMatter(lines, { entry } = {}) {
       continue;
     }
     parent = null;
-    const e = entry?.(l);
-    if (e) {
-      entries.push(e);
-      continue;
-    }
     if (!m) continue;
-    const key = m[1].trim().toLowerCase();
+    const written = m[1].trim();
+    const own = named(written, declared);
+    all.push({ key: written, value: unquote(m[2].trim()), line: l, declared: own });
+    if (own) continue;
+    const key = written.toLowerCase();
     meta[key] = unquote(m[2].trim());
     if (!meta[key] && !/^[ \t]/.test(l)) parent = key;
   }
-  return { end: close + 1, meta, entries };
+  return { end: close + 1, meta: withEntries(meta, all) };
+}
+
+/**
+ * Whether the key `written` is one of `names`, in lower case: the whole
+ * key, or a kind with its one-character alias after it (`reviewer #`).
+ */
+function named(written, names) {
+  const k = written.toLowerCase();
+  return names.some((n) => k === n || (k.startsWith(n) && /^[ \t]+\S$/.test(k.slice(n.length))));
+}
+
+/**
+ * `meta`, with `entry(...names)` to read the front matter's lines `all`,
+ * as frontMatter's are; not one of its keys, so a spread or JSON of it
+ * has only those.
+ */
+export function withEntries(meta = {}, all = []) {
+  const entry = (...names) => all.filter((e) => named(e.key, names.map((n) => n.toLowerCase())));
+  return Object.defineProperty(meta, 'entry', { value: entry });
 }
 
 const TYPES = ['slides', 'workbook'];

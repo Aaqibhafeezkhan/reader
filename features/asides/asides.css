@@ -2,7 +2,7 @@
  * (src/columns.css), who it's from and what it's about, and the legend. */
 
 /* A key's colours, a reviewer's or a topic's in the order they're
- * declared (key.js): the family's. */
+ * declared (features/key.js): the family's. */
 :root {
   --gm-key-1: var(--gm-red);
   --gm-key-2: var(--gm-green);
@@ -218,3 +218,10 @@
   .gm-legend-clear { display: none; }
   .gm-legend:has(button[aria-pressed="true"]) button[data-filter] { opacity: 1; outline: none; }
 }
+
+/* An alias declared in a way that can't be read (gh-283): a warning sign,
+   and the line as written, in the family's yellow, which reads at 4.5 to 1
+   or more on the paper in light and dark (src/columns.css's --gm-warning).
+   In the system's colours, the sign and the weight say it. */
+.gm-key-unread { font-weight: 600; }
+.gm-key-sign, .gm-key-line { color: var(--gm-warning); }

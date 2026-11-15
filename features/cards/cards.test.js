@@ -18,7 +18,7 @@ test('a plain list is cards with nothing to pick, and without a list each block 
 
 test('it is a word of a grid too, the same class, and neither is a style', () => {
   const html = speaker('::: grid 2 cards red\n- [ ] a\n- [x] b\n:::\n');
-  assert.match(html, /^<div class="grid grid-items cards" style="--grid: 2">\n<ul>\n<li class="task" style="color: red">/);
+  assert.match(html, /^<div class="grid grid-items cards" style="--grid: 2">\n<ul>\n<li class="task" style="color: var\(--gm-red\)">/);
   assert.doesNotMatch(html + speaker('::: cards georgia\n- a\n:::\n'), /'cards'|'grid'/);
   assert.match(speaker('::: cards georgia\n- a\n:::\n'), /^<div class="cards">\n<ul>\n<li class="font" style="--font: 'georgia'">a<\/li>/);
 });
@@ -39,7 +39,7 @@ test('the chosen card takes the accent, keeping a background of its own; a done 
 
 test('where it can\'t be picked, the chosen card still shows, its radio disabled', () => {
   const src = '::: cards\n- ( ) A\n- (x) B\n:::\n';
-  for (const opts of [{ deck: true }, { now: Date.parse('2030-01-01') }]) {
+  for (const opts of [{ for: 'present' }, { now: Date.parse('2030-01-01') }]) {
     const doc = opts.now ? `---\nopen-until: 2026-01-01\n---\n\n${src}` : src;
     const html = speaker(doc, opts);
     assert.match(html, /<input type="radio" class="choice-box"[^>]* checked disabled>/, JSON.stringify(opts));

@@ -3,18 +3,20 @@
  * matter and its HTML comments. The rest of the source is left for markdown,
  * with, for each line of it, the line of the file it came from.
  *
- * A front matter line a feature claims (its `matter(line)`, features/index.js)
- * is that feature's entry, not the page's meta: `reviewer #: Josh` is an
- * alias for the asides feature, not a line of the byline. Only the features
- * the page is rendered with claim lines; one left out claims none, and its
+ * A front matter key a feature declares as its own (its `keys`,
+ * features/index.js) is that feature's to read and show, not one of the
+ * page's: `reviewer #: Josh` is an alias for the asides feature, not a line
+ * of the byline. Every line is still there to read, by
+ * `env.frontMatter.entry(...)` (static/markdown.js). Only the features the
+ * page is rendered with declare keys; one left out declares none, and its
  * lines are the page's (see src/columns.js for how they show).
  *
- * A line a feature claims may say when the page closes (its `closes`): when
+ * A feature may say when the page closes (its `closes(frontMatter)`): when
  * its inputs are done with and it becomes a record. The page is `closed`
  * once `env.now` is past the earliest such time (features/blank.js).
  */
 
-import { frontMatter, fenced } from '../features/source.js';
+import { frontMatter, fenced, withEntries } from '../features/source.js';
 import { FEATURES } from '../features/index.js';
 
 // An HTML comment on lines of its own. The renderer takes no HTML, so it would
@@ -22,17 +24,9 @@ import { FEATURES } from '../features/index.js';
 // the place for a note to whoever opens the file, such as how to review it.
 const COMMENT_START_RE = /^ {0,3}<!--/;
 
-/**
- * A front matter line -> the entry the first of `features` to claim it
- * makes of it, tagged with that feature's name (`{ feature: 'asides', ... }`),
- * or null when none does.
- */
-export function matterEntry(line, features = FEATURES) {
-  for (const f of features) {
-    const e = f.matter?.(line);
-    if (e) return { feature: f.name, ...e };
-  }
-  return null;
+/** The front matter keys `features` declare as theirs. */
+export function keysOf(features = FEATURES) {
+  return features.flatMap((f) => f.keys ?? []);
 }
 
 /**
@@ -49,23 +43,23 @@ export function movedLine(line, days, features = FEATURES) {
 }
 
 /**
- * When the page whose front matter claimed `entries` closes, in ms, by the
- * earliest that one of `features` says (its `closes(entry)`), or null if
+ * When the page with the front matter `meta` closes, in ms, by the
+ * earliest that one of `features` says (its `closes(meta)`), or null if
  * none says.
  */
-export function closesAt(entries, features = FEATURES) {
-  const times = entries
-    .map((e) => features.find((f) => f.name === e.feature)?.closes?.(e))
+export function closesAt(meta, features = FEATURES) {
+  const times = features
+    .map((f) => f.closes?.(meta))
     .filter((t) => Number.isFinite(t));
   return times.length ? Math.min(...times) : null;
 }
 
 /**
  * @param {string} src a page as written
- * @param {object[]} [features] the features that may claim its front matter's lines
- * @returns {{meta: object, entries: object[], source: string, lines: number[]}}
- *   `meta` is the front matter's (static/markdown.js), and `entries` the
- *   lines of it features claimed (`matterEntry`). `source` is `src` with
+ * @param {object[]} [features] the features that may declare its front matter's keys
+ * @returns {{meta: object, own: boolean, source: string, lines: number[]}}
+ *   `meta` is the front matter's (static/markdown.js), with `entry(...)`
+ *   for every line of it, and `own` whether `src` has any. `source` is `src` with
  *   the front matter and comments taken off, and `lines` has, for each line
  *   of `source`, the 0-based line of `src` it came from. A comment inside
  *   fenced code is code, and is kept.
@@ -73,7 +67,7 @@ export function closesAt(entries, features = FEATURES) {
 export function extract(src, features = FEATURES) {
   const all = String(src).replace(/\r\n?/g, '\n').split('\n');
   // Josh's convention uses `-----`, but `---` works too.
-  const matter = frontMatter(all, { entry: (line) => matterEntry(line, features) });
+  const matter = frontMatter(all, { keys: keysOf(features) });
   let i = matter?.end ?? 0;
   if (matter) while (i < all.length && !all[i].trim()) i++;
 
@@ -96,15 +90,15 @@ export function extract(src, features = FEATURES) {
     from.push(i);
     i++;
   }
-  return { meta: matter?.meta ?? {}, entries: matter?.entries ?? [], source: out.join('\n'), lines: from };
+  return { meta: matter?.meta ?? withEntries(), own: Boolean(matter), source: out.join('\n'), lines: from };
 }
 
 /**
  * Takes them off, as the first rule after normalizing (`page_extract`),
- * keeping the front matter on `env.frontMatter` and the entries features
- * claimed on `env.entries`. A part of a page with none of its own (a deck's
- * slide) keeps the `env.entries` it was given, its deck's. When the page
- * closes is `env.closes` (`closesAt`), and whether it's closed by `env.now`
+ * keeping the front matter on `env.frontMatter`. A part of a file, which
+ * has none of its own (a deck's slide), keeps the `env.frontMatter` it was
+ * given, its file's. When the page
+ * closes is asked of the features (`closesAt`), and whether it's closed by `env.now`
  * (now, if not given), `env.closed`. Token maps count
  * lines of what's left; `env.sourceLines[n]` is the line of the source that
  * line `n` of it came from. Features that read the file as written go before
@@ -115,12 +109,11 @@ export function page(md, features = FEATURES) {
   md.core.ruler.after('normalize', 'page_extract', (state) => {
     // A note's own body, parsed nested (`env.nested`), was read with the rest.
     if (state.inlineMode || state.env.nested) return;
-    const { meta, entries, source, lines } = extract(state.src, features);
+    const { meta, own, source, lines } = extract(state.src, features);
     state.src = source.endsWith('\n') ? source : `${source}\n`;
-    state.env.frontMatter = meta;
-    state.env.entries = entries.length ? entries : (state.env.entries ?? []);
+    state.env.frontMatter = own || !state.env.frontMatter ? meta : state.env.frontMatter;
     state.env.sourceLines = lines;
-    state.env.closes = closesAt(state.env.entries, features);
-    state.env.closed = state.env.closes != null && (state.env.now ?? Date.now()) >= state.env.closes;
+    const closes = closesAt(state.env.frontMatter, features);
+    state.env.closed = closes != null && (state.env.now ?? Date.now()) >= closes;
   });
 }

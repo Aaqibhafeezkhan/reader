@@ -1,11 +1,29 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import js from '@eslint/js';
+import { SHARED_ENV } from './features/source.js';
 import globals from 'globals';
 
 const FEATURES = fileURLToPath(new URL('./features/', import.meta.url));
 
 const FRAME = ['features/*/preview.js', 'features/puzzles/kinds/*.js'];
+
+// Each feature's name, by its directory.
+const NAMES = new Set(fs.readdirSync(FEATURES, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name));
+
+/**
+ * A feature that reads another's placeholder, by the one whose it is:
+ * where the other's is found at the start of a line, ahead of this one's
+ * own, and this one has to step past it. Anything else reads the other's
+ * tokens.
+ */
+const PLACED = {
+  // A `:::` block's marker may lead a definition's line.
+  definitions: ['styles'],
+  // A list item's or a heading's braces come after its box, as tasks has placed it.
+  styles: ['tasks'],
+};
 
 /**
  * The feature whose directory holds `file`, at any depth, or null for a
@@ -27,23 +45,36 @@ function featureOf(file, dir) {
  * default export of its index.js, and only features/index.js imports it.
  * A feature's own tests sit in its directory, and may reach ../../src/ and
  * ../../test/ as any file may.
+ *
+ * Nor does a feature read another's placeholders, `MARKS.<name>` in
+ * features/source.js, which it leaves in the text before the text is
+ * parsed: it reads the tokens they become, which carry their words in
+ * `content` (gh-282). PLACED lists the few that must.
+ *
+ * And a feature sets on `env` only the names in SHARED_ENV that say how to
+ * write them (features/source.js); it keeps its own state under a Symbol of
+ * its own, which no other can name.
  */
-const features = {
+const featureTangle = {
   meta: {
     type: 'problem',
     messages: {
-      private: "features/{{name}}/ is that feature's own: share what's needed from the top of features/, or go through features/index.js.",
+      private: "{{who}} refers to features/{{name}}/, which is the {{name}} feature's own, so that every other feature works without it. Share what's needed from a file at the top of features/, or reach {{name}} through features/index.js. See \"Layout of the code\" in CONTRIBUTING.md.",
+      env: "{{own}} sets env.{{name}}, which isn't one of the names every feature shares (SHARED_ENV, features/source.js). Keep a feature's own state under a key only it can name, `const KEY = Symbol('{{own}}')`, then `state.env[KEY]`. A name for every feature to read goes in SHARED_ENV first, with what it means. See gh-282.",
+      readonly: "{{own}} sets env.{{name}}, which features may read but not write (SHARED_ENV, features/source.js, says who sets it). Keep a feature's own state under a key only it can name, `const KEY = Symbol('{{own}}')`, then `state.env[KEY]`. See gh-282.",
+      placed: "{{who}} reads MARKS.{{name}}, the {{name}} feature's placeholder, which only holds {{name}}'s place in the text until the text is parsed; then {{name}} turns it into tokens of its own. To build on {{name}}, add '{{name}}' to the `requires` in {{where}} and read its tokens in a core rule (`md.core.ruler.push`), which runs after {{name}}'s. See gh-282.",
     },
   },
   create(context) {
     const from = context.filename;
+    const own = featureOf(from);
     const check = (node, specifier, relative) => {
       if (typeof specifier !== 'string' || !relative(specifier)) return;
       const to = path.resolve(path.dirname(from), specifier.replace(/[?#].*/, ''));
       const name = featureOf(to, /\/$/.test(specifier));
       if (!name || featureOf(from) === name) return;
       if (from === path.join(FEATURES, 'index.js') && to === path.join(FEATURES, name, 'index.js')) return;
-      context.report({ node, messageId: 'private', data: { name } });
+      context.report({ node, messageId: 'private', data: { name, who: own ? `features/${own}/` : 'This file' } });
     };
     // An import's specifier is relative only as ./ or ../; a URL's is
     // unless it has a scheme or starts at the root.
@@ -52,7 +83,36 @@ const features = {
     const literal = (node) => node?.type === 'Literal' ? node.value
       : node?.type === 'TemplateLiteral' && !node.expressions.length ? node.quasis[0].value.cooked : null;
     const source = (node) => node.source && check(node.source, literal(node.source), imported);
+    // MARKS.date, MARKS['date'] or const { date } = MARKS, outside features/date/.
+    const placed = (node, name) => {
+      if (!NAMES.has(name) || name === own || PLACED[own]?.includes(name)) return;
+      context.report({ node, messageId: 'placed', data: { name, who: own ?? 'This file', where: own ? `features/${own}/index.js` : "a feature's index.js" } });
+    };
+    const isMarks = (node) => node?.type === 'Identifier' && node.name === 'MARKS';
+    // env.x = ..., state.env.x ??= ..., in a feature's own files.
+    const isEnv = (node) => (node?.type === 'Identifier' && node.name === 'env')
+      || (node?.type === 'MemberExpression' && !node.computed && node.property.name === 'env');
     return {
+      AssignmentExpression(node) {
+        const to = node.left;
+        if (!own || to.type !== 'MemberExpression' || to.computed || !isEnv(to.object)) return;
+        const shared = SHARED_ENV.find((e) => e.name === to.property.name);
+        if (!shared) context.report({ node: to, messageId: 'env', data: { name: to.property.name, own } });
+        else if (!shared.write) context.report({ node: to, messageId: 'readonly', data: { name: to.property.name, own } });
+      },
+      MemberExpression(node) {
+        if (!isMarks(node.object)) return;
+        const name = node.computed ? literal(node.property) : node.property.name;
+        if (typeof name === 'string') placed(node, name);
+      },
+      VariableDeclarator(node) {
+        if (!isMarks(node.init) || node.id.type !== 'ObjectPattern') return;
+        for (const p of node.id.properties) {
+          if (p.type !== 'Property') continue;
+          const name = p.computed ? literal(p.key) : p.key.name ?? p.key.value;
+          if (typeof name === 'string') placed(p, name);
+        }
+      },
       ImportDeclaration: source,
       ExportNamedDeclaration: source,
       ExportAllDeclaration: source,
@@ -104,8 +164,8 @@ export default [
   // Each feature's files are its own, as a package's are in Java: see
   // `features` above.
   {
-    plugins: { reader: { rules: { features } } },
-    rules: { 'reader/features': 'error' },
+    plugins: { reader: { rules: { 'feature-tangle': featureTangle } } },
+    rules: { 'reader/feature-tangle': 'error' },
   },
   // The app and what it imports are modules; the preview frame's scripts
   // (its own, the puzzles' and the features') are classic scripts sharing

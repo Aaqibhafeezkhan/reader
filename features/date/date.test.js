@@ -33,7 +33,7 @@ test('date: on a slide, where no calendar is shown, is only read, not a button',
 });
 
 test('date: on an exported page, with no calendar to show, is only read, not a button', () => {
-  const { body } = render('Due date:2026-11-10[]\n', { exported: true });
+  const { body } = render('Due date:2026-11-10[]\n', { for: 'export' });
   assert.match(body, /<time class="date" datetime="2026-11-10"[^>]*>November 10, 2026<\/time>/);
   assert.doesNotMatch(body, /tabindex|role="button"|aria-haspopup/);
 });

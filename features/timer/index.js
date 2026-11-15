@@ -20,6 +20,10 @@ import { fileURLToPath } from 'node:url';
 import { schemeRule } from '../scheme.js';
 import { sections, escapeHtml, escapeAttr } from '../source.js';
 
+// What this feature keeps across a deck's slides, on `env.shared`, under a key
+// no other feature can name (gh-282).
+const TIMERS = Symbol('timerParts');
+
 const DURATION = /^(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?$/;
 
 /**
@@ -85,7 +89,7 @@ export function timer(md) {
     const seen = new Map();
     // A deck draws each slide on its own, and they share an env.shared.
     const shared = state.env.shared ?? {};
-    const slide = shared.timerParts = (shared.timerParts ?? -1) + 1;
+    const slide = shared[TIMERS] = (shared[TIMERS] ?? -1) + 1;
     const file = hash(state.env.file ?? '');
     let page = 0;
     state.tokens.forEach((block, i) => {
@@ -104,7 +108,7 @@ export function timer(md) {
   md.renderer.rules.timer = (tokens, i, opts, env) => {
     const { seconds, shown, spoken: said, key = '' } = tokens[i].meta;
     // An exported page has nothing to count down with.
-    if (env.exported) return `<span class="timer">${escapeHtml(said)}</span>`;
+    if (env.drawing?.for === 'export') return `<span class="timer">${escapeHtml(said)}</span>`;
     // Its time isn't live, or it would be read out each second; a timer
     // run out says so once (preview.js).
     return `<span class="timer" role="group" aria-label="${escapeAttr(`Timer, ${said}`)}" data-seconds="${seconds}" data-key="${escapeAttr(key)}">`

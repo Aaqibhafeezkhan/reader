@@ -24,8 +24,8 @@ test('otherwise each block in it is a cell, or what is between +++ lines', () =>
   ].join('\n'));
   assert.equal(speaker('::: grid\n### A\none\n+++\n### B\ntwo\n:::\n'), [
     '<div class="grid">',
-    '<div class="grid-cell">\n<h3>A</h3>\n<p>one</p>\n</div>',
-    '<div class="grid-cell">\n<h3>B</h3>\n<p>two</p>\n</div>',
+    '<div class="grid-cell">\n<h3 id="a">A</h3>\n<p>one</p>\n</div>',
+    '<div class="grid-cell">\n<h3 id="b">B</h3>\n<p>two</p>\n</div>',
     '</div>\n',
   ].join('\n'));
 });
@@ -51,11 +51,11 @@ test('a radio list in it is still one group, and a task list still ticks', () =>
 test('the other names on the line are styles, its count is not, and it nests in other ::: blocks', () => {
   const html = speaker('::: grid 2 red georgia\n- a\n- b\n:::\n');
   assert.match(html, /^<div class="grid grid-items" style="--grid: 2">/);
-  assert.match(html, /<li class="font" style="color: red; --font: 'georgia'">a<\/li>/);
+  assert.match(html, /<li class="font" style="color: var\(--gm-red\); --font: 'georgia'">a<\/li>/);
   assert.doesNotMatch(html, /'2'|'grid'/);
-  assert.match(speaker('::: grid 3 cards red\na\n:::\n'), /^<div class="grid cards" style="--grid: 3">\n<div class="grid-cell">\n<p style="color: red">a<\/p>/, 'its own words are classes');
+  assert.match(speaker('::: grid 3 cards red\na\n:::\n'), /^<div class="grid cards" style="--grid: 3">\n<div class="grid-cell">\n<p style="color: var\(--gm-red\)">a<\/p>/, 'its own words are classes');
   const nested = speaker('::: blue\n::: grid 2\none\n\ntwo\n:::\n:::\n');
-  assert.match(nested, /^<div class="grid" style="--grid: 2">\n<div class="grid-cell">\n<p style="color: blue">one<\/p>/);
+  assert.match(nested, /^<div class="grid" style="--grid: 2">\n<div class="grid-cell">\n<p style="color: var\(--gm-blue\)">one<\/p>/);
   const inColumns = speaker('::: columns\nleft\n+++\n::: grid 2\na\n\nb\n:::\n:::\n');
   assert.match(inColumns, /<div class="column">\n<div class="grid" style="--grid: 2">\n<div class="grid-cell">\n<p>a<\/p>\n<\/div>\n<div class="grid-cell">\n<p>b<\/p>\n<\/div>\n<\/div>\n<\/div>\n<\/div>\n$/);
 });

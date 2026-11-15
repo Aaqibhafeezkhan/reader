@@ -20,7 +20,7 @@ test('tables render', () => {
 test('with lines, each block names the line of the file it came from', () => {
   const src = '-----\ntitle: T\n-----\n# Head\n\n~ an aside\n\npara\n\n- one\n- two\n';
   const { body } = render(src, { lines: true });
-  assert.match(body, /<h1 data-line="3">Head<\/h1>/);
+  assert.match(body, /<h1 id="head" data-line="3">Head<\/h1>/);
   assert.match(body, /<p data-line="7">para<\/p>/);
   assert.match(body, /<ul data-line="9">\n<li data-line="9">one<\/li>\n<li data-line="10">two<\/li>/);
   assert.match(body, /<div class="gm-aside-cell" role="note">\n<details class="gm-thread" open>\n<summary[^>]*><span class="gm-mark" aria-hidden="true">~<\/span>an aside<\/summary>/);
@@ -127,7 +127,7 @@ test('without asides, every page of the docs renders, in one column', () => {
   assert.ok(files.length > 10);
   for (const file of files) {
     const src = readFileSync(new URL(file, dir), 'utf8');
-    for (const options of [{ lines: true }, { exported: true }, { deck: true }]) {
+    for (const options of [{ lines: true }, { for: 'export' }, { for: 'present' }]) {
       const { body } = page(src, { file, ...options });
       assert.doesNotMatch(body, /gm-asides/, file);
     }
@@ -165,4 +165,23 @@ test('with any one feature left out, and those built on it, every page of the do
       assert.doesNotMatch(body, MARK, `${file}, ${page === render ? 'every feature' : 'one left out'}`);
     }
   }
+});
+
+// --- what a page is drawn for (gh-283) ----------------------------------------
+
+/** What `env.drawing` says, and whether `env` has a `lines` name, when `src` is drawn with `options`. */
+function drawingOf(options) {
+  let seen;
+  const spy = { name: 'spy', plugin: (md) => md.core.ruler.push('spy', (s) => { seen = { drawing: s.env.drawing, lines: 'lines' in s.env }; }) };
+  makeRenderer([...FEATURES, spy])('Some text.\n', options);
+  return seen;
+}
+
+test('a page says on env.drawing what it is drawn for, and whether it is a whole file or a part (gh-283)', () => {
+  assert.deepEqual(drawingOf(), { drawing: { for: 'preview', what: 'file' }, lines: false });
+  assert.deepEqual(drawingOf({ lines: true }), { drawing: { for: 'preview', what: 'file' }, lines: false });
+  assert.deepEqual(drawingOf({ for: 'export' }).drawing, { for: 'export', what: 'file' });
+  assert.deepEqual(drawingOf({ for: 'present', layout: 'slide' }).drawing, { for: 'present', what: 'part' });
+  assert.deepEqual(drawingOf({ for: 'export', layout: 'part' }).drawing, { for: 'export', what: 'part' });
+  assert.throws(() => render('x\n', { for: 'print' }), /drawn for one of preview, present, export, not print/);
 });

@@ -15,11 +15,11 @@ test('an aside waits until the AI answers under it, or the contributor closes it
       '',
       'Two line.',
       '~# answered',
-      '~c here you go',
+      '~~c here you go',
       '',
       'Three line.',
       '~# closed in the end',
-      '~c an answer',
+      '~~c an answer',
       '~# [x] thanks',
       '',
       'Four line.',
@@ -35,6 +35,25 @@ test('an aside waits until the AI answers under it, or the contributor closes it
   assert.deepEqual(open(day, day, CLAUDE).map((a) => [a.at, a.text]), [
     ['review.md:2', '~# a question'],
     ['review.md:14', '~# asked'],
+  ]);
+});
+
+test('an answer written ~c, an aside of its own that closing the thread leaves open, waits to be made ~~c', (t) => {
+  const day = tree(scratch(t), {
+    'review.md': [
+      'One line.',
+      '~# a question',
+      '~c an answer, unthreaded',
+      '  carried on',
+      '~# [x] thanks',
+      '',
+      'Two line.',
+      '~# asked',
+      '~~c answered in the thread',
+    ].join('\n'),
+  });
+  assert.deepEqual(open(day, day, CLAUDE).map((a) => [a.at, a.text]), [
+    ['review.md:3', '~c an answer, unthreaded (a reply written ~c: make it ~~c)'],
   ]);
 });
 

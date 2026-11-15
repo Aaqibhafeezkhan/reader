@@ -6,7 +6,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { preprocess as asidesOf } from './preprocess.js';
-import { readEntry, makeKey, attribute } from './key.js';
+import { attribute } from './key.js';
+import { readEntry, makeKey, keyOf } from '../key.js';
 import { inFamily, ownColor } from '../color.js';
 import { extract } from '../../src/page.js';
 import { render } from '../../src/render.js';
@@ -15,7 +16,7 @@ import { slides } from '../../src/slides.js';
 /** `src` as the feature sees it: its front matter off, and the key it declares. */
 function preprocess(src) {
   const { meta, source } = extract(src);
-  return { meta, ...asidesOf(source, makeKey(meta.entry('reviewer', 'topic').map((e) => readEntry(e.line)))) };
+  return { meta, ...asidesOf(source, keyOf(meta)) };
 }
 
 const KEY = '-----\nreviewer #: Josh\nreviewer m: Maria, teal\ntopic c: Coherence\ntopic s: Style\n-----\n\n';
@@ -123,4 +124,11 @@ test('tasks, quotes and styles read through an alias run', () => {
   const { body } = render(`${KEY}One.\n\n~# - [ ] check it\n\n::: red\nTwo.\n\n~c Inside.\n:::\n`);
   assert.match(body, /<input type="checkbox"/);
   assert.match(body, /<span class="gm-topic"[^>]*>Coherence<\/span><\/span>Inside./);
+});
+
+test('an alias line asides can\'t read says so in the byline, with the line as written (gh-283)', () => {
+  const { body } = render('---\ntitle: T\nreviewer ~: Josh\nreviewer #: Ann\n---\n\nWords.\n\n~# a thought\n');
+  const byline = /<div class="gm-byline">([\s\S]*?)<\/div>/.exec(body)[1];
+  assert.equal(byline, '<span class="gm-key-unread" role="note"><span class="gm-key-sign" aria-hidden="true">⚠</span> Can\'t Read <span class="gm-key-line">reviewer ~: Josh</span></span>');
+  assert.match(body, /gm-legend[\s\S]*Ann/);
 });

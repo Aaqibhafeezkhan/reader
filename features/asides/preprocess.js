@@ -83,7 +83,7 @@ function indentOf(line) {
 /**
  * The page's asides, kept on `env` under a key no other feature can name
  * (gh-282). Another feature reads an aside's notes in the margin
- * (`env.margin`) and the topics (`env.topics`), not these.
+ * (`env.margin`) and the topics (`topicsOf`, features/key.js), not these.
  */
 export const ASIDES = Symbol('asides');
 

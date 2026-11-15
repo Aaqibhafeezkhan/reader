@@ -26,8 +26,8 @@ const ENTRY = /^[ \t]*([A-Za-z][\w -]*?(?:[ \t]+\S)?)[ \t]*:(.*)$/;
  *
  * Every line is also kept as written, for `meta.entry(...names)`, which
  * isn't one of its keys: each line with one of those keys, in the order
- * written, as `{ key, value, line }`, the key as written and the value
- * with its quotes off. A kind names its aliases' keys, so `reviewer`
+ * written, as `{ key, value, line, declared }`, the key as written, the
+ * value with its quotes off, and whether a feature declared it. A kind names its aliases' keys, so `reviewer`
  * names `reviewer #: Josh`. A key in `keys`, which the features declare
  * as theirs (features/index.js), is read only that way, and isn't one of
  * `meta`'s: `reviewer #` and `reviewer c` can't be told apart once lower
@@ -55,8 +55,9 @@ export function frontMatter(lines, { keys = [] } = {}) {
     parent = null;
     if (!m) continue;
     const written = m[1].trim();
-    all.push({ key: written, value: unquote(m[2].trim()), line: l });
-    if (named(written, declared)) continue;
+    const own = named(written, declared);
+    all.push({ key: written, value: unquote(m[2].trim()), line: l, declared: own });
+    if (own) continue;
     const key = written.toLowerCase();
     meta[key] = unquote(m[2].trim());
     if (!meta[key] && !/^[ \t]/.test(l)) parent = key;

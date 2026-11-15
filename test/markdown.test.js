@@ -31,11 +31,11 @@ test('a key a feature declares is read by entry(), not as one of the keys (gh-28
   const m = frontMatter(lines('---\nauthor: Josh\nreviewer #: Josh, teal\nTopic c: "Coherence"\nreviewer m: Maria\n---'), { keys });
   assert.deepEqual(m.meta, { author: 'Josh' });
   assert.deepEqual(m.meta.entry('reviewer', 'topic'), [
-    { key: 'reviewer #', value: 'Josh, teal', line: 'reviewer #: Josh, teal' },
-    { key: 'Topic c', value: 'Coherence', line: 'Topic c: "Coherence"' },
-    { key: 'reviewer m', value: 'Maria', line: 'reviewer m: Maria' },
+    { key: 'reviewer #', value: 'Josh, teal', line: 'reviewer #: Josh, teal', declared: true },
+    { key: 'Topic c', value: 'Coherence', line: 'Topic c: "Coherence"', declared: true },
+    { key: 'reviewer m', value: 'Maria', line: 'reviewer m: Maria', declared: true },
   ]);
-  assert.deepEqual(m.meta.entry('author'), [{ key: 'author', value: 'Josh', line: 'author: Josh' }]);
+  assert.deepEqual(m.meta.entry('author'), [{ key: 'author', value: 'Josh', line: 'author: Josh', declared: false }]);
   assert.deepEqual(m.meta.entry('nothing'), []);
 });
 

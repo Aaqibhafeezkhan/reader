@@ -4,7 +4,7 @@
  * `[quick]{a highlight}`), and a feature may draw one for words it picks
  * out, as asides does for the words an aside chooses (`~a[quick]`). A
  * topic's alias marks the text in the topic's colour and style, from the
- * page's topics (`env.topics`, features/source.js); a style names how
+ * page's topics (`topicsOf(env.frontMatter)`, features/key.js); a style names how
  * it's drawn.
  */
 
@@ -16,7 +16,7 @@ export const STYLES = ['circle', 'underline', 'dotted', 'wavy', 'highlight'];
 /**
  * The names in braces -> `{ style, topic, rest }`, the names that aren't
  * the mark's left in `rest`; or null when none of them is a mark's.
- * `topics` are the page's, by alias (`env.topics`): a topic is a declared
+ * `topics` are the page's, by alias (`topicsOf`, features/key.js): a topic is a declared
  * one's alias, one character, so `{a}` without one is a font, as it always
  * was.
  */

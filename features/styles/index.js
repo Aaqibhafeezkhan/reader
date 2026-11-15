@@ -30,6 +30,7 @@
  * read here as a style.
  */
 
+import { topicsOf } from '../key.js';
 import fs from 'node:fs';
 import { beforeExtract, fenced, MARKS } from '../source.js';
 import { layoutsOf, owns, OPEN as LAYOUT_OPEN, DIVIDER, CLOSE as LAYOUT_CLOSE } from '../layout.js';
@@ -293,7 +294,7 @@ function span(state, silent) {
   if (!names) return false;
   const open = state.push('style_span_open', 'span', 1);
   // A mark's colour is the mark's, not the text's (features/mark.js).
-  const marked = marking(names[1], state.env.topics);
+  const marked = marking(names[1], topicsOf(state.env.frontMatter));
   if (marked) {
     const color = marked.rest.find((n) => COLORS.has(n.toLowerCase()))?.toLowerCase();
     const rest = marked.rest.filter((n) => !COLORS.has(n.toLowerCase()));

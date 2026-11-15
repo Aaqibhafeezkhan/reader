@@ -206,13 +206,6 @@ export const SHARED_ENV = [
     write: 'on a copy, never on env itself: md.parse(text, { ...env, nested: true }); // features/asides',
   },
   {
-    name: 'topics',
-    type: 'Map<string, { kind: \'topic\', alias: string, name: string, color: string, style: string | null }> | undefined',
-    description: 'the topics the front matter declares, by their one-character alias; made by asides from its `topic c: Coherence` keys, and read by a mark in braces, `[words]{c}`',
-    read: 'const coherence = env.topics?.get(\'c\'); // features/styles, through features/mark.js',
-    write: 'by asides alone, until gh-283\'s question on topics is settled',
-  },
-  {
     name: 'written',
     type: 'string[] | undefined',
     description: 'the file\'s lines as typed, before any feature changed them; there only if a feature asked for it with keepWritten(md) (features/source.js)',

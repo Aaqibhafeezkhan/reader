@@ -4,9 +4,9 @@ import { render } from '../src/render.js';
 import { slides } from '../src/slides.js';
 import { APP, preview, app, globals, frame, run, settle, assertElement } from './dom.js';
 
-const BASE = 'http://localhost:8734/content/notes/';
+const BASE = 'http://localhost:8734/content/notes/plan.md';
 
-/** The preview frame showing `markdown`, from a file in notes/. */
+/** The preview frame showing `markdown`, from notes/plan.md. */
 function showing(markdown, m = {}) {
   const p = preview();
   p.show(render(markdown).body, { base: BASE, ...m });
@@ -30,13 +30,23 @@ test('a relative link or image is to the file in the content directory, and no f
     '[next](next.md) [up](../top.md?x#y) [past](../../../../etc/passwd.md) [here](#a) [abs](/api/files)',
     '[away](https://example.com/a.md) ![pic](img/pic.png)',
   ].join('\n'));
-  assert.equal(link('next').href, 'http://localhost:8734/content/notes/next.md');
-  assert.equal(link('up').href, 'http://localhost:8734/content/top.md?x#y');
-  assert.equal(link('past').href, 'http://localhost:8734/content/etc/passwd.md');
-  assert.equal(link('here').getAttribute('href'), '#a');
+  assert.equal(link('next').dataset.content, 'http://localhost:8734/content/notes/next.md');
+  assert.equal(link('up').dataset.content, 'http://localhost:8734/content/top.md?x#y');
+  assert.equal(link('past').dataset.content, 'http://localhost:8734/content/etc/passwd.md');
+  assert.equal(link('here').dataset.anchor, '#a');
   assert.equal(link('abs').getAttribute('href'), '/api/files');
   assert.equal(link('away').href, 'https://example.com/a.md');
   assert.equal(document.querySelector('img').src, 'http://localhost:8734/content/notes/img/pic.png');
+});
+
+test('a link to a markdown file or a heading shows its address in reader, so a copy or a tab of its own opens there (gh-244)', () => {
+  const { link } = showing('[next](next.md) [up](../top.md?x#y) [here](#the-plan) [pdf](paper.pdf) [away](https://example.com/a.md) [abs](/api/files)');
+  assert.equal(link('next').href, 'http://localhost:8734/read/notes/next.md');
+  assert.equal(link('up').href, 'http://localhost:8734/read/top.md?x#y');
+  assert.equal(link('here').href, 'http://localhost:8734/read/notes/plan.md#the-plan');
+  assert.equal(link('pdf').href, 'http://localhost:8734/content/notes/paper.pdf', 'anything else is its file');
+  assert.equal(link('away').href, 'https://example.com/a.md');
+  assert.equal(link('abs').getAttribute('href'), '/api/files');
 });
 
 test('a page not from the content directory keeps its links as written', () => {
@@ -49,6 +59,8 @@ function click(p, a, keys = {}) {
   const e = new p.window.MouseEvent('click', { bubbles: true, cancelable: true, button: 0, ...keys });
   a.dispatchEvent(e);
   const followed = p.posted.filter((m) => m.type === 'follow').map((m) => m.href);
+  // All the frame asked, for a test that wants more than what it followed.
+  p.told = [...p.posted];
   p.posted.length = 0;
   return { taken: e.defaultPrevented, followed };
 }
@@ -86,6 +98,7 @@ test('a link to a heading on the page scrolls to it, there, and the app is asked
   const { taken, followed, scrolled } = clickToHeading(p, 'the plan');
   assert.deepEqual({ taken, followed }, { taken: true, followed: [] });
   assertElement(scrolled, p.document.querySelector('h2'));
+  assert.deepEqual(p.told, [{ type: 'heading', id: 'the-plan' }], 'the app is told only to name it in the address');
   // A heading by the name of the frame's own <base> is the heading.
   assertElement(clickToHeading(p, 'its base').scrolled, p.document.querySelectorAll('h2')[1]);
 });

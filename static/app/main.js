@@ -19,7 +19,7 @@ import { wireFit } from './fit.js';
 import { wireSync } from './sync.js';
 import { printDocument } from './exporting.js';
 import { wireLines, copyLines, goToLines } from './lines.js';
-import { readAddress, writeAddress } from './address.js';
+import { readAddress, writeAddress, writeHeading } from './address.js';
 import { wireOutline } from './outline.js';
 import { wireGoTo, openGoTo, isGoTo, goToHeading } from './goto.js';
 import { wireTheme } from './theme.js';
@@ -109,6 +109,7 @@ function wire() {
     if (e.data?.type === 'edit') applyEdit(e.data);
     else if (e.data?.type === 'swipe') turn(e.data.by);
     else if (e.data?.type === 'follow') follow(e.data.href);
+    else if (e.data?.type === 'heading' && typeof e.data.id === 'string' && state.current) writeHeading(e.data.id);
     else if (e.data?.type === 'key') onKey({ ...e.data, preventDefault() {} });
     // How the page is set to be seen, kept in the address (address.js).
     else if (e.data?.type === 'address' && state.current && e.data.params && typeof e.data.params === 'object') writeAddress(state.current.path, e.data.params);

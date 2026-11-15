@@ -219,6 +219,7 @@ A heading folded away opens first, and in Work, or on a slide, the page or slide
 A link to a heading the file hasn't got opens the file at its top, and says so.
 An exported page keeps them as anchors, and one to a file exported with it goes to its page, at the heading.
 The address names the heading too, `/read/budget.md#this-year`, as GitHub's does, so it can be sent or reloaded and open there.
+Hovered, copied, or opened in a tab of its own (`⌘`-click), a link to a markdown file or a heading is that same address, so it opens in reader, at the heading, and not as the file's text.
 
 ::: tabs
 +++ Source

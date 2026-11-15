@@ -290,7 +290,33 @@
         node.setAttribute(attr, new URL(CONTENT.slice(0, -1) + to.pathname + to.search + to.hash, at.origin).href);
       }
     }
+    for (const a of page.querySelectorAll('a[href]')) inReader(a, at);
   }
+
+  // A link to a markdown file, or to a heading in this one, shows the
+  // file's address in the app, `/read/notes/plan.md#the-plan`, so that
+  // hovered, copied, bookmarked or opened in a tab of its own it opens in
+  // reader, at the heading, rather than as the file's text (gh-244, gh-292).
+  // What it was is kept, for a press here to follow as before.
+  const READ = '/read/';
+  const MARKDOWN = /\.(md|markdown)$/i;
+  function inReader(a, at) {
+    const was = a.getAttribute('href');
+    if (was.startsWith('#')) {
+      if (!MARKDOWN.test(at.pathname)) return;
+      a.dataset.anchor = was;
+      a.setAttribute('href', new URL(READ + at.pathname.slice(CONTENT.length) + was, at.origin).href);
+      return;
+    }
+    let url;
+    try { url = new URL(was); } catch { return; }
+    if (url.origin !== at.origin || !url.pathname.startsWith(CONTENT) || !MARKDOWN.test(url.pathname)) return;
+    a.dataset.content = url.href;
+    a.setAttribute('href', new URL(READ + url.pathname.slice(CONTENT.length) + url.search + url.hash, at.origin).href);
+  }
+
+  /** Where a link goes, as written: a heading's `#id`, or the file's own address. */
+  const hrefOf = (a) => a.dataset.anchor ?? a.dataset.content ?? a.getAttribute('href');
 
   // What the keyboard can reach: the control that had it is found again,
   // once a render has replaced it, by its line (its own `data-line`, or that
@@ -475,15 +501,17 @@
   // doesn't hold, a heading on another of a workbook's pages or a deck's
   // slides, the app goes to (gh-244).
   document.addEventListener('click', (e) => {
-    const a = e.target.closest && e.target.closest('a[href^="#"]');
+    const a = e.target.closest && e.target.closest('a[data-anchor], a[href^="#"]');
     if (!a) return;
     e.preventDefault();
-    const href = a.getAttribute('href');
+    const href = hrefOf(a);
     let id;
     try { id = decodeURIComponent(href.slice(1)); } catch { return; }
     if (!id) return;
     const t = inPage(id);
     if (!t) return window.parent.postMessage({ type: 'follow', href }, '*');
+    // The app names it in the address, as it does a heading it goes to.
+    if (/^H[1-6]$/.test(t.tagName)) window.parent.postMessage({ type: 'heading', id }, '*');
     window.dispatchEvent(new CustomEvent('preview:open-to', { detail: { target: t } }));
     marks = null;
     t.scrollIntoView({ behavior: 'smooth' });
@@ -502,8 +530,8 @@
     const a = e.target.closest && e.target.closest('a[href]');
     if (!a || Preview.deck || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     let url;
-    try { url = new URL(a.href); } catch { return; }
-    if (url.origin !== new URL(base.href).origin || !/\.(md|markdown)$/i.test(url.pathname)) return;
+    try { url = new URL(hrefOf(a), base.href); } catch { return; }
+    if (url.origin !== new URL(base.href).origin || !MARKDOWN.test(url.pathname)) return;
     e.preventDefault();
     window.parent.postMessage({ type: 'follow', href: url.href }, '*');
   });

@@ -348,6 +348,8 @@ test('a colour an author names reads as text, in light and dark, and at 7:1 with
   // the page is one, in the accent its front matter gives (src/accent.js),
   // and the accent is that, or the family's slate without it
   assert.ok(columns.includes('\n:root { --own: var(--own-accent); }'), "the document's accent");
+  // and the document's own alone, unset without it, for what's drawn in it only then (an arrow, a card)
+  assert.match(block(columns, ':root {\n  --gm-accent'), /\n {2}--gm-doc-accent: var\(--gm-own\);/);
   assert.match(block(columns, ':root {\n  --gm-accent'), /\n {2}--gm-accent: var\(--gm-own, var\(--gm-slate\)\);/);
   // the browser's own boxes and radios take it, and are the browser's without it
   assert.ok(columns.includes('\n:root { accent-color: var(--gm-own, auto); }'), "the boxes' accent");
@@ -358,7 +360,7 @@ test('a colour an author names reads as text, in light and dark, and at 7:1 with
   // only there: the family, and the colours dealt from it, are drawn exactly as they're defined
   for (const css of [columns, asides, marksCss]) {
     assert.equal(css.match(/oklch\(from var\(/g)?.length ?? 0, css === columns ? 1 : 0, 'the clamp is written once');
-    for (const [rule] of css.matchAll(/^.*var\(--gm-own\).*$/gm)) assert.match(rule, /^ *\.(?:gm-who|gm-topic|mk-about)\.gm-own \{/, rule);
+    for (const [rule] of css.matchAll(/^.*var\(--gm-own\).*$/gm)) assert.match(rule, /^ *(?:\.(?:gm-who|gm-topic|mk-about)\.gm-own \{|--gm-doc-accent: var\(--gm-own\);$)/, rule);
   }
   assert.match(asides, /\n\.gm-who \{ color: var\(--gm-paper\); background: var\(--by, var\(--gm-accent\)\); \}/);
   assert.match(asides, /\n\.gm-topic \{ color: var\(--topic, var\(--gm-accent\)\);/);
@@ -386,6 +388,12 @@ test('a colour an author names reads as text, in light and dark, and at 7:1 with
       const accent = capped(c, bounds);
       readable(accent, t['gm-paper'], `${theme}: the accent ${c} as ${accent}, on the paper`, least);
       readable(t['gm-paper'], accent, `${theme}: the paper on the accent ${c} as ${accent}`, least);
+      // a card's tint of it (features/cards): the inks, and the accent, read
+      // on it; with more contrast asked for, a card has none
+      if (least > 4.5) continue;
+      const tint = mix(accent, 0.05, t['gm-paper']);
+      for (const ink of ['gm-ink', 'gm-ink-soft', 'gm-aside-ink']) readable(t[ink], tint, `${theme}: --${ink} on a card tinted ${c}`, least);
+      readable(accent, tint, `${theme}: the accent ${c} on a card tinted by it`, least);
     }
   }
 });

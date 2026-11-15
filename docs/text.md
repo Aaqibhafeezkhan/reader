@@ -160,6 +160,8 @@ A `:::` block can also lay out what's in it; see [Layout](layout.md).
 
 `->`, `<-` and `<->` show as →, ← and ↔. A backslash (`\->`) keeps them as
 typed.
+With `accent:` in the front matter (see [Accent](page.md#accent)), they're
+drawn in the document's accent.
 
 ::: tabs
 +++ Source

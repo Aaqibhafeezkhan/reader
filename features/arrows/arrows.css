@@ -1,0 +1,3 @@
+/* arrows (features/arrows): in the document's accent when its front matter
+   gives one (`accent:`), and the text's own colour when it doesn't. */
+.arrow { color: var(--gm-doc-accent, currentcolor); }

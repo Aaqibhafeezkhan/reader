@@ -1,7 +1,13 @@
 /* cards: a list's items (or the blocks) in one column, each bordered, the
    chosen one in the accent (features/cards). An item's own background sets
-   --card-bg, which it keeps, chosen or not. */
-.cards { --card-gap: var(--gm-space-4); margin: var(--gm-space-5) 0; }
+   --card-bg, which it keeps, chosen or not. With a document's own accent
+   (`accent:`, --gm-doc-accent), every card is bordered in it, a light tint
+   of it behind; without one, --card-tint isn't set, and a card is as it is. */
+.cards {
+  --card-gap: var(--gm-space-4);
+  --card-tint: color-mix(in srgb, var(--gm-doc-accent) 5%, var(--gm-paper));
+  margin: var(--gm-space-5) 0;
+}
 .cards > :is(ul, ol) { display: grid; gap: var(--card-gap); margin: 0; padding: 0; list-style: none; }
 /* in a grid, the grid lays them out (features/grid); a card holds its own box, so needs no margin for it */
 .grid.grid-items.cards > :is(ul, ol) > li { margin: 0; }
@@ -11,9 +17,9 @@
   min-width: 0;
   margin: 0;
   padding: var(--gm-space-4) var(--gm-space-5);
-  border: 1px solid var(--gm-rule-strong);
+  border: 1px solid var(--gm-doc-accent, var(--gm-rule-strong));
   border-radius: 8px;
-  background: var(--card-bg, transparent);
+  background: var(--card-bg, var(--card-tint, transparent));
   list-style: none;
 }
 .cards > .card + .card { margin-top: var(--card-gap); }
@@ -75,6 +81,12 @@
   pointer-events: none;
 }
 .cards > :is(ul, ol) > li:has(> .task-box:checked)::after { background: var(--gm-ink-done); }
+
+/* with more contrast asked for, no tint: what's drawn in the accent on it
+   would fall short of 7:1 */
+@media (prefers-contrast: more) {
+  .cards { --card-tint: transparent; }
+}
 
 @media (forced-colors: active) {
   .cards > :is(ul, ol) > li, .cards > :is(.card, .grid-cell) { border-color: CanvasText; }

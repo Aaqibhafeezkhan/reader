@@ -98,7 +98,7 @@ export function extract(src, features = FEATURES) {
  * keeping the front matter on `env.frontMatter`. A part of a file, which
  * has none of its own (a deck's slide), keeps the `env.frontMatter` it was
  * given, its file's. When the page
- * closes is `env.closes` (`closesAt`), and whether it's closed by `env.now`
+ * closes is asked of the features (`closesAt`), and whether it's closed by `env.now`
  * (now, if not given), `env.closed`. Token maps count
  * lines of what's left; `env.sourceLines[n]` is the line of the source that
  * line `n` of it came from. Features that read the file as written go before
@@ -113,7 +113,7 @@ export function page(md, features = FEATURES) {
     state.src = source.endsWith('\n') ? source : `${source}\n`;
     state.env.frontMatter = own || !state.env.frontMatter ? meta : state.env.frontMatter;
     state.env.sourceLines = lines;
-    state.env.closes = closesAt(state.env.frontMatter, features);
-    state.env.closed = state.env.closes != null && (state.env.now ?? Date.now()) >= state.env.closes;
+    const closes = closesAt(state.env.frontMatter, features);
+    state.env.closed = closes != null && (state.env.now ?? Date.now()) >= closes;
   });
 }

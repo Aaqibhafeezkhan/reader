@@ -91,7 +91,7 @@ export const MARKS = {
  *
  * What the core reads off the page first (src/page.js): `frontMatter`,
  * its keys, with `entry(...keys)` for every line as written, a part's being
- * its file's; `closes`, when it closes, in ms, or null; `closed` (whether
+ * its file's; `closed` (whether
  * it's past its `open-until:`); and `sourceLines`, each
  * line the parser sees -> its line as written, which asides adds to as it
  * takes its lines out.
@@ -114,7 +114,7 @@ export const MARKS = {
  * - `byline`: what goes at the end of the byline (when the page closes).
  */
 export const SHARED_ENV = ['lineBase', 'file', 'read', 'drawn', 'drawing', 'now', 'shared',
-  'frontMatter', 'closes', 'closed', 'sourceLines', 'nested', 'topics', 'written', 'margin', 'masthead', 'byline'];
+  'frontMatter', 'closed', 'sourceLines', 'nested', 'topics', 'written', 'margin', 'masthead', 'byline'];
 
 /**
  * The tags a feature may leave on a token's `meta` for the others to read,

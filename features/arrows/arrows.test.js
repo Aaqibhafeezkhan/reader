@@ -42,8 +42,8 @@ test("in a colour an author gives, an arrow keeps it, not the accent", () => {
   assert.match(css, /^:is\(\[style\^="color:"\], \.gm-own\) \.arrow \{ color: inherit; \}$/m);
   // which is how a colour is set, on words, a block, a heading's words and a card
   const doc = '---\naccent: seagreen\n---\n\n';
-  assert.match(text(`${doc}[a -> b]{red}\n`), /<span style="color: red">a <span class="arrow">/);
-  assert.match(text(`${doc}::: red\na -> b\n:::\n`), /<p style="color: red">a <span class="arrow">/);
-  assert.match(text(`${doc}## [a -> b]{red}\n`), /<h2[^>]*><span style="color: red">a <span class="arrow">/);
-  assert.match(text(`${doc}::: cards red\n- a -> b\n:::\n`), /<li style="color: red">a <span class="arrow">/);
+  assert.match(text(`${doc}[a -> b]{red}\n`), /<span style="color: var\(--gm-red\)">a <span class="arrow">/);
+  assert.match(text(`${doc}::: red\na -> b\n:::\n`), /<p style="color: var\(--gm-red\)">a <span class="arrow">/);
+  assert.match(text(`${doc}## [a -> b]{red}\n`), /<h2[^>]*><span style="color: var\(--gm-red\)">a <span class="arrow">/);
+  assert.match(text(`${doc}::: cards red\n- a -> b\n:::\n`), /<li style="color: var\(--gm-red\)">a <span class="arrow">/);
 });

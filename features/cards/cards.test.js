@@ -37,6 +37,19 @@ test('the chosen card takes the accent, keeping a background of its own; a done 
   assert.match(css, /li:has\(> :is\(\.choice-box, \.task-box\):not\(:disabled\)\):hover/);
 });
 
+test("with a document's own accent every card is bordered in it, tinted by it, a background of its own kept; without one, as it was", () => {
+  // --gm-doc-accent is set only with `accent:` (src/columns.css); without it,
+  // the tint isn't set either, and the border and ground are the rule's and none
+  assert.match(css, /\.cards \{[^}]*--card-tint: color-mix\(in srgb, var\(--gm-doc-accent\) 5%, var\(--gm-paper\)\);/);
+  const card = /\.cards > :is\(ul, ol\) > li, \.cards > :is\(\.card, \.grid-cell\) \{[^}]*\}/.exec(css)[0];
+  assert.match(card, /border: 1px solid var\(--gm-doc-accent, var\(--gm-rule-strong\)\);/);
+  assert.match(card, /background: var\(--card-bg, var\(--card-tint, transparent\)\);/);
+  // with more contrast asked for, no tint (test/contrast.test.js)
+  assert.match(css, /@media \(prefers-contrast: more\) \{\n {2}\.cards \{ --card-tint: transparent; \}\n\}/);
+  // the chosen one's still heavier and fuller than the rest
+  assert.match(css, /background: var\(--card-bg, color-mix\(in srgb, var\(--gm-accent\) 10%/);
+});
+
 test('where it can\'t be picked, the chosen card still shows, its radio disabled', () => {
   const src = '::: cards\n- ( ) A\n- (x) B\n:::\n';
   for (const opts of [{ for: 'present' }, { now: Date.parse('2030-01-01') }]) {

@@ -2,14 +2,22 @@
  * `->`, `<-` and `<->` show as arrows. A backslash (`\->`) keeps them as
  * typed, and so does code.
  *
+ * Each arrow in the text is drawn in a span of its own, `.arrow`, which a
+ * document's `accent:` colours (arrows.css); without one it's the text's.
+ * An image's alt text has no spans, only the arrows.
+ *
  * Applied to the text once it's parsed, like markdown's own typographic
  * replacements, so what other syntax reads -- a search's query, a link's
  * address -- is still what was typed.
  */
 
+import fs from 'node:fs';
+
 const BOTH = /<->/g;
 const RIGHT = /(?<![-<])->/g;
 const LEFT = /<-(?![-<>])/g;
+
+const SHOWN = /[\u2190\u2192\u2194]/g;
 
 export function arrows(md) {
   // Before the typographer's own replacements, which make `--` a dash; and
@@ -26,9 +34,12 @@ export function arrows(md) {
       if (block.type === 'inline' && block.children) walk(block.children);
     }
   });
+  const text = md.renderer.rules.text;
+  md.renderer.rules.text = (...args) => text(...args).replace(SHOWN, '<span class="arrow">$&</span>');
 }
 
 export default {
   name: 'arrows',
   plugin: arrows,
+  css: fs.readFileSync(new URL('./arrows.css', import.meta.url), 'utf8'),
 };

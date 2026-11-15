@@ -234,9 +234,13 @@
  * the family. Good, Bad and Try are its green, red and blue. */
 /* The accent is the document's own (`accent:`, src/accent.js) when it gives
  * one, kept readable as any colour an author gives is (below), and the
- * family's slate when it doesn't. */
+ * family's slate when it doesn't. `--gm-doc-accent` is the document's own
+ * alone, and isn't set when it gives none: what's drawn in the accent only
+ * then (an arrow, a card) reads it with a fallback for that, and a document
+ * without one looks as it does without. */
 :root {
   --gm-accent: var(--gm-own, var(--gm-slate));
+  --gm-doc-accent: var(--gm-own);
   --gm-good: var(--gm-green);
   --gm-bad: var(--gm-red);
   --gm-try: var(--gm-blue);

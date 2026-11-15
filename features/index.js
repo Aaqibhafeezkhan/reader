@@ -63,6 +63,7 @@ import count from './count/index.js';
 import progress from './progress/index.js';
 import social from './social/index.js';
 import arrows from './arrows/index.js';
+import ordinals from './ordinals/index.js';
 import math from './math/index.js';
 import emoji from './emoji/index.js';
 import puzzles from './puzzles/index.js';
@@ -91,7 +92,7 @@ import fold from './fold/index.js';
 // words it compares are the ones the others leave as text; only the `late`
 // plugins, which find the words an aside chooses, come after it. fold
 // comes after it, marking a heading by its line as written, whoever draws it.
-export const FEATURES = checkRequires([openUntil, asides, fields, tasks, qa, definitions, sizes, alerts, attributions, styles, columns, row, grid, cards, date, scripture, scriptureLds, search, rfc, pitch, timer, count, progress, social, math, arrows, emoji, highlight, mermaid, headline, number, badges, steps, ingredients, puzzles, tabs, fold]);
+export const FEATURES = checkRequires([openUntil, asides, fields, tasks, qa, definitions, sizes, alerts, attributions, styles, columns, row, grid, cards, date, scripture, scriptureLds, search, rfc, pitch, timer, count, progress, social, math, arrows, ordinals, emoji, highlight, mermaid, headline, number, badges, steps, ingredients, puzzles, tabs, fold]);
 
 /**
  * Throws unless each feature's `requires` names features in the list that

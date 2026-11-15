@@ -218,7 +218,7 @@ A link to a heading in the same file scrolls to it, and one to another file open
 A heading folded away opens first, and in Work, or on a slide, the page or slide that holds it is turned to.
 A link to a heading the file hasn't got opens the file at its top, and says so.
 An exported page keeps them as anchors, and one to a file exported with it goes to its page, at the heading.
-The address names the file, not the heading, as it does whichever way the file was opened.
+The address names the heading too, `/read/budget.md#this-year`, as GitHub's does, so it can be sent or reloaded and open there.
 
 ::: tabs
 +++ Source

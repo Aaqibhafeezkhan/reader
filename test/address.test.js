@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { app, globals } from './dom.js';
 
 const page = globals(app());
-const { readAddress, paramsFor, writeAddress, clearAddress, addressOf } = await import('../static/app/address.js');
+const { readAddress, paramsFor, writeAddress, writeHeading, clearAddress, addressOf } = await import('../static/app/address.js');
 
 const at = (address) => page.history.replaceState(null, '', address);
 const shown = () => page.location.pathname + page.location.search + page.location.hash;
@@ -15,8 +15,8 @@ test('the address names a file in its path, its lines, and how it\'s set to be s
   assert.deepEqual(readAddress(), { wanted: 'review.md', line: undefined, last: NaN, params: {} });
   at('/read/a%3A1.md:2');
   assert.deepEqual(readAddress(), { wanted: 'a:1.md', line: 2, last: 2, params: {} }, 'a : in a name is the name\'s');
-  at('/read/plan.md#the-plan');
-  assert.equal(readAddress().wanted, 'plan.md', 'the hash is a heading\'s, not the file\'s');
+  at('/read/plan.md#learning--reading%20');
+  assert.deepEqual(readAddress(), { wanted: 'plan.md', line: undefined, last: NaN, params: {}, heading: 'learning--reading ' }, 'the hash is a heading\'s, not the file\'s (gh-244)');
   at('/read/%E0%A4%A');
   assert.deepEqual(readAddress(), { params: {} }, 'one that doesn\'t decode names nothing');
 });
@@ -59,4 +59,15 @@ test('a heading in the hash stays while the file does, and an old address is wri
   assert.equal(shown(), '/read/plan.md', 'the old form\'s hash was the file');
   clearAddress();
   assert.equal(shown(), '/');
+});
+
+test('a heading gone to is written in the hash, and only while a file is named (gh-244)', () => {
+  at('/read/plan.md?by=%23');
+  writeHeading('the plan');
+  assert.equal(shown(), '/read/plan.md?by=%23#the%20plan');
+  writeHeading('');
+  assert.equal(shown(), '/read/plan.md?by=%23');
+  at('/');
+  writeHeading('the-plan');
+  assert.equal(shown(), '/', 'no file, no heading');
 });

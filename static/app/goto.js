@@ -46,19 +46,24 @@ export function goToLine(line, { focus = true } = {}) {
  * Goes to the heading the open file's page gives the id `id` (src/anchors.js),
  * once its render is in, as goToLine goes to its line, but leaving the
  * keyboard where it is: on the link that asked. On a workbook's page, turned
- * to, the page is scrolled to it too, once it's drawn.
+ * to, the page is scrolled to it too, once it's drawn. Says whether it was
+ * there to go to.
  */
 export async function goToHeading(id) {
   const path = state.current?.path;
   await rendered();
   if (!path || state.current?.path !== path) return;
   const line = state.anchors?.path === path ? state.anchors.lines[id] : undefined;
-  if (line == null) return toast(`no heading #${id} in ${path}`, true);
+  if (line == null) {
+    toast(`no heading #${id} in ${path}`, true);
+    return false;
+  }
   goToLine(line, { focus: false });
-  if (!paged() || deck.open) return;
+  if (!paged() || deck.open) return true;
   await rendered();
   Frames.post(el.preview, { type: 'open-to', line });
   Frames.post(el.preview, { type: 'scroll', line });
+  return true;
 }
 
 /** Is this Ctrl+G? (⌘G stays the browser's find again.) */

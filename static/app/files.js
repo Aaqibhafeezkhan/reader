@@ -12,7 +12,7 @@ import { exportDocument } from './exporting.js';
 import { showPdf } from './pdf.js';
 import { renderNow, showPreview, showEmpty } from './render.js';
 import { scheduleGutter } from './lines.js';
-import { paramsFor, writeAddress, clearAddress } from './address.js';
+import { paramsFor, writeAddress, writeHeading, clearAddress } from './address.js';
 import { setSaveState, updateCounts, toast } from './status.js';
 import { updatePresentable } from './deck.js';
 import { openIn, listSeen, showList, toggleDrawer } from './modes.js';
@@ -477,7 +477,8 @@ export async function follow(href) {
     await open(p);
     if (p !== state.current?.path) return;
   }
-  if (id) goToHeading(id);
+  // The heading named in the address, as GitHub does, once it's gone to.
+  if (id && await goToHeading(id)) writeHeading(id);
 }
 
 const rowsIn = (list) => [...list.querySelectorAll('.file, .folder, .entry')];

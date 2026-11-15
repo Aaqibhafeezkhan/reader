@@ -21,7 +21,7 @@ export function addressOf(path, { line, last, params = {} } = {}) {
   return `${READ}${path.split('/').map(encodeURIComponent).join('/')}${at}${query ? `?${query}` : ''}`;
 }
 
-/** What the address names: `{ wanted, line, last, params, old }`; one that doesn't decode names nothing. */
+/** What the address names: `{ wanted, line, last, params, heading, old }`; one that doesn't decode names nothing. */
 export function readAddress() {
   const old = !location.pathname.startsWith(READ);
   // The old form had the whole of it in the hash, query and all.
@@ -36,7 +36,9 @@ export function readAddress() {
     return { params: {} };
   }
   const params = q < 0 ? {} : Object.fromEntries(new URLSearchParams(raw.slice(q + 1)));
-  return { wanted, line: line && Number(line), last: Number(last || line), params, ...(old && raw ? { old } : {}) };
+  let heading = '';
+  try { heading = old ? '' : decodeURIComponent(location.hash.slice(1)); } catch { /* not a heading's */ }
+  return { wanted, line: line && Number(line), last: Number(last || line), params, ...(heading ? { heading } : {}), ...(old && raw ? { old } : {}) };
 }
 
 /** How the address says `path` is to be seen, if it names that file, or nothing. */
@@ -52,6 +54,12 @@ export function paramsFor(path) {
 export function writeAddress(path, params = {}) {
   const same = !readAddress().old && readAddress().wanted === path;
   history.replaceState(null, '', `${addressOf(path, { params })}${same ? location.hash : ''}`);
+}
+
+/** The heading gone to, `#the-plan`, in the address, as on GitHub (gh-244); none with no `id`. */
+export function writeHeading(id) {
+  if (!location.pathname.startsWith(READ)) return;
+  history.replaceState(null, '', `${location.pathname}${location.search}${id ? `#${encodeURIComponent(id)}` : ''}`);
 }
 
 /** The address naming no file. */

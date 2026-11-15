@@ -7,7 +7,7 @@ import { pages, isDeck } from '../src/slides.js';
 // A toast hides itself a few seconds on; here it waits to be told.
 mock.timers.enable({ apis: ['setTimeout'] });
 
-globals(app());
+const page = globals(app());
 // The files the server has, and what it answers: each file's text, and a
 // render of it as the server's own would be.
 const FILES = {
@@ -48,6 +48,7 @@ async function opened(path, { working = false } = {}) {
   el.editor.disabled = false;
   el.editor.value = FILES[path];
   el.editor.setSelectionRange(0, 0);
+  page.history.replaceState(null, '', `/read/${path}`);
   await renderNow();
   framed.length = 0;
   asked.length = 0;
@@ -61,6 +62,7 @@ test('a link to a heading in the open file goes to its line, opening it if it\'s
   assert.equal(caret(), 4);
   assert.deepEqual(framed.filter((m) => m.type === 'open-to'), [{ type: 'open-to', line: 4 }]);
   assert.deepEqual(asked.filter((u) => u.startsWith('/api/file')), [], 'nothing opened');
+  assert.equal(page.location.pathname + page.location.hash, '/read/plan.md#the-plan', 'the address names the heading, as GitHub\'s does');
 });
 
 test('a link to a heading in another file opens it at that heading', async () => {
@@ -70,6 +72,7 @@ test('a link to a heading in another file opens it at that heading', async () =>
   assert.equal(state.current.path, 'notes/budget.md');
   assert.equal(caret(), 8);
   assert.deepEqual(framed.filter((m) => m.type === 'open-to').at(-1), { type: 'open-to', line: 8 });
+  assert.equal(page.location.pathname + page.location.hash, '/read/notes/budget.md#this-year');
 });
 
 test('a link naming the open file and a heading in it goes there, without opening it again', async () => {
@@ -87,6 +90,7 @@ test('a link to a heading the file hasn\'t got opens the file, and says so', asy
   assert.equal(state.current.path, 'notes/budget.md');
   assert.equal(caret(), 0);
   assert.equal(el.toast.textContent, 'no heading #next-year in notes/budget.md');
+  assert.equal(page.location.pathname + page.location.hash, '/read/notes/budget.md', 'no heading named that isn\'t there');
 });
 
 test('in Work, a link to a heading on another of a workbook\'s pages turns to it, and scrolls to the heading there', async () => {

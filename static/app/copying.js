@@ -44,17 +44,17 @@ function whyNotToday() {
   return null;
 }
 
-function draw(b, label, no, yes) {
+function draw(b, label, key, no, yes) {
   b.setAttribute('aria-disabled', String(Boolean(no)));
-  b.title = no ? `${label}, ${no}.` : yes;
+  b.title = `${no ? `${label}, ${no}` : yes} (${key}).`;
 }
 
 /** The two buttons beside the file's path, and what each would make. */
 export function drawCopy() {
-  draw(el.copyFile, 'Make a copy', whyNot(),
-    'Make a copy, a file of its own, answers and all.');
-  draw(el.copyToday, 'Copy for today', whyNotToday(),
-    `Copy for today, ${state.today}, with today's name and date and its answers cleared.`);
+  draw(el.copyFile, 'Make a copy', '⌘⌥Y', whyNot(),
+    'Make a copy, a file of its own, answers and all');
+  draw(el.copyToday, 'Copy for today', '⌘⌥⇧Y', whyNotToday(),
+    `Copy for today, ${state.today}, with today's name and date and its answers cleared`);
 }
 
 /** The buttons have only an icon to go by, so a finger held on one says what a tooltip would. */

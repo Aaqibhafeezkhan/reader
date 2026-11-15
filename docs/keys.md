@@ -23,6 +23,12 @@ title: Keys
 | `⌘`-click / `⇧`-click / `⌘A` | in the outline: choose entries to take out together |
 | `F2` / `⌘⌫` | in the file list: rename, or move to the trash |
 | `⌘\` | show / hide the file list |
+| `⌘⌥N` / `⌘⌥⇧N` | [New](files.md), or [Start today's](files.md#starting-todays) |
+| `⌘⌥T` | [Today](files.md#today) in the file list |
+| `⌘⌥Y` / `⌘⌥⇧Y` | [Make a copy](files.md#making-a-copy) of the open file, or Copy for today |
+| `⌘⌥⌫` | move the open file to the trash |
+
+`⌘N`, `⌘T` and `⌘⇧N` are the browser's, so these go by `⌘⌥`; on Windows and Linux it's `Ctrl+Alt`.
 
 ## Work and present
 

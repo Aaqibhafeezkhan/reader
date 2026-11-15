@@ -676,6 +676,10 @@
       || (meta && e.altKey && ['ArrowUp', 'ArrowDown'].includes(e.key))) e.preventDefault();
     // On a slide, ⌘+, ⌘− and ⌘0 size the slides' text, not the browser's zoom.
     if (Preview.deck && meta && !e.altKey && ['=', '+', '-', '0'].includes(e.key)) e.preventDefault();
+    // ⌘⌥ and N, T, Y or ⌫ press the app's buttons for files, not a box's ⌥⌫;
+    // but for AltGr, Ctrl+Alt on some layouts, typing a letter (ń).
+    const typed = !e.metaKey && e.key.length === 1 && e.key.toLowerCase() !== e.code.slice(3).toLowerCase();
+    if (meta && e.altKey && !typed && ['KeyN', 'KeyT', 'KeyY', 'Backspace'].includes(e.code)) e.preventDefault();
     const { key, code, metaKey, ctrlKey, altKey, shiftKey } = e;
     window.parent.postMessage({ type: 'key', key, code, metaKey, ctrlKey, altKey, shiftKey }, '*');
   });

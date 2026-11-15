@@ -120,7 +120,7 @@ test('an aside appears with the last step of the passage it sits beside', () => 
   const [body] = bodies('# Title\n\nFirst.\n\n- one\n- two\n~ about two\n\nLast.\n');
   const { steps: n, shown } = stepped(body);
   assert.equal(n, 4);
-  assert.deepEqual(shown.find(([, text]) => text.includes('about two')), [3, '~about two']);
+  assert.deepEqual(shown.find(([, text]) => text.includes('about two')), [3, 'about two']);
 });
 
 test('an aside beside a passage with no steps of its own gets none', () => {

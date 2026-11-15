@@ -9,7 +9,7 @@ const KEY = '-----\ntopic a: adjectives, circle\ntopic v: verbs, teal, highlight
 const marks = (body) => [...body.matchAll(/<span class="mk mk-(\w+)" role="mark"(?: title="[^"]*")?(?: style="--mk: ([^"]+)")? data-mark="([^"]+)">([^<]*)/g)]
   .map(([, style, color, id, text]) => ({ id, style, color, text }));
 /** Each aside about words: the mark it's tied to and the words it set at its start. */
-const tied = (body) => [...body.matchAll(/<div class="gm-aside-cell[^"]*" role="note"(?: style="[^"]*")?(?: data-mark="([^"]+)")?(?: data-by="[^"]*")?(?: data-about="[^"]*")?(?: data-in-tab="\d+")?>\n<details class="gm-thread" open>\n<summary[^>]*>(?:<span class="gm-by">.*?<\/span><\/span>|<span class="gm-mark" aria-hidden="true">~<\/span>)?<q class="mk-about[^"]*"[^>]*>([^<]*)<\/q>/g)]
+const tied = (body) => [...body.matchAll(/<div class="gm-aside-cell[^"]*" role="note"(?: style="[^"]*")?(?: data-mark="([^"]+)")?(?: data-by="[^"]*")?(?: data-about="[^"]*")?(?: data-in-tab="\d+")?>\n<details class="gm-thread" open>\n<summary[^>]*>(?:<span class="gm-by">.*?<\/span><\/span>)?<q class="mk-about[^"]*"[^>]*>([^<]*)<\/q>/g)]
   .map(([, id, words]) => ({ id, words }));
 
 test('an aside marks the words it names in the line above, in its topic\'s colour and style', () => {
@@ -103,7 +103,7 @@ test('an aside about words keeps its place in a ::: block', () => {
 test('the writer\'s own aside can name words too, and one with nothing to say just marks them', () => {
   const { body } = render(`${KEY}the quick brown fox\n~[quick] mine\n~a[fox]\n`);
   assert.deepEqual(marks(body).map((m) => [m.text, m.color]), [['quick', undefined], ['fox', 'var(--gm-key-8)']]);
-  assert.match(body, /<div class="gm-aside-cell" role="note" data-mark="mk-1">\n<details class="gm-thread" open>\n<summary><span class="gm-mark" aria-hidden="true">~<\/span><q class="mk-about">quick<\/q>mine<\/summary>/);
+  assert.match(body, /<div class="gm-aside-cell" role="note" data-mark="mk-1">\n<details class="gm-thread" open>\n<summary><q class="mk-about">quick<\/q>mine<\/summary>/);
 });
 
 test('a link\'s brackets after a ~ are not words to mark', () => {

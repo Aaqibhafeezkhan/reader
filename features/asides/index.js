@@ -86,7 +86,7 @@ export function asides(md) {
 function cell(md, aside, env, attrs = '') {
   const html = md.renderer.render(asideTokens(md, aside, env), md.options, env);
   // The words it's about, if it chose some (marks.js), follow who it's
-  // from and what it's about, or its `~`.
+  // from and what it's about, or open it.
   const words = about(aside.mark);
   const tied = aside.mark?.id;
   const style = [aside.by?.who && `--by: ${escapeHtml(aside.by.who.color)}`, tied && aside.mark.color && `--mk: ${escapeHtml(aside.mark.color)}`].filter(Boolean).join('; ');
@@ -112,10 +112,11 @@ function cell(md, aside, env, attrs = '') {
     const opened = /^<p\b/.test(html) ? html.replace(/^<p\b([^>]*)>/, `<p$1>${chips}`) : `<p>${chips}</p>\n${html}`;
     return `<div class="${classes}" role="note"${attrs}>\n${fold(opened)}</div>`;
   }
-  // Slip the `~` in front of the first line of prose so the mark survives into
-  // the printed page. It's seen, not read: the aside is a note.
-  const lead = `${check}<span class="gm-mark" aria-hidden="true">~</span>${words}`;
-  const marked = /^<p\b/.test(html) ? html.replace(/^<p\b([^>]*)>/, `<p$1>${lead}`) : `<p>${lead}</p>\n${html}`;
+  // An aside with no reviewer is the writer's own and shows only its words,
+  // no `~` (gh-288). One that doesn't open with prose folds to a line that
+  // names it, for its toggle to be read by.
+  const lead = `${check}${words}`;
+  const marked = /^<p\b/.test(html) ? html.replace(/^<p\b([^>]*)>/, `<p$1>${lead}`) : `<p>${lead || '<span class="vh">Aside</span>'}</p>\n${html}`;
   return `<div class="${classes}" role="note"${attrs}>\n${fold(marked)}</div>`;
 }
 
@@ -133,8 +134,9 @@ function resolveButton(aside, env) {
 /** A reply in a thread, opening with who it's from, as an aside does. */
 function reply(md, r, env) {
   const html = md.renderer.render(asideTokens(md, r, env), md.options, env);
-  const lead = r.by ? byChips(r.by) : '<span class="gm-mark" aria-hidden="true">~~</span>';
-  const opened = /^<p\b/.test(html) ? html.replace(/^<p\b([^>]*)>/, `<p$1>${lead}`) : `<p>${lead}</p>\n${html}`;
+  // One with no reviewer shows only its words, no `~~`, as an aside (gh-288).
+  const lead = r.by ? byChips(r.by) : '';
+  const opened = !lead ? html : /^<p\b/.test(html) ? html.replace(/^<p\b([^>]*)>/, `<p$1>${lead}`) : `<p>${lead}</p>\n${html}`;
   const style = r.by?.who ? ` style="--by: ${escapeHtml(r.by.who.color)}"` : '';
   return `<div class="gm-reply${r.by ? ' gm-attributed' : ''}"${style}${voice(r.by, r.about)}>\n${opened}</div>\n`;
 }

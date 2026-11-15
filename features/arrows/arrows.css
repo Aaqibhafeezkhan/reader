@@ -1,3 +1,6 @@
 /* arrows (features/arrows): in the document's accent when its front matter
-   gives one (`accent:`), and the text's own colour when it doesn't. */
+   gives one (`accent:`), and the text's own colour when it doesn't. In a
+   colour an author gives (`[words]{red}`, `::: red`, which set it inline,
+   first; a pill or chip in its own, .gm-own), the author's colour. */
 .arrow { color: var(--gm-doc-accent, currentcolor); }
+:is([style^="color:"], .gm-own) .arrow { color: inherit; }

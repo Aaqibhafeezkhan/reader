@@ -36,3 +36,14 @@ test("an arrow is drawn in the document's accent, and in the text's colour witho
   assert.match(text('a \u2192 b `\u2192`\n'), /a <span class="arrow">\u2192<\/span> b <code>\u2192<\/code>/);
   assert.match(render('a -> b\n').css, /\.arrow \{/);
 });
+
+test("in a colour an author gives, an arrow keeps it, not the accent", () => {
+  const css = readFileSync(new URL('./arrows.css', import.meta.url), 'utf8');
+  assert.match(css, /^:is\(\[style\^="color:"\], \.gm-own\) \.arrow \{ color: inherit; \}$/m);
+  // which is how a colour is set, on words, a block, a heading's words and a card
+  const doc = '---\naccent: seagreen\n---\n\n';
+  assert.match(text(`${doc}[a -> b]{red}\n`), /<span style="color: red">a <span class="arrow">/);
+  assert.match(text(`${doc}::: red\na -> b\n:::\n`), /<p style="color: red">a <span class="arrow">/);
+  assert.match(text(`${doc}## [a -> b]{red}\n`), /<h2[^>]*><span style="color: red">a <span class="arrow">/);
+  assert.match(text(`${doc}::: cards red\n- a -> b\n:::\n`), /<li style="color: red">a <span class="arrow">/);
+});

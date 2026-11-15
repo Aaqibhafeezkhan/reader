@@ -128,6 +128,7 @@ or `→` and `←`, open and fold one. The outline follows the open file, so
 
 In Edit and Work, any heading on the page can fold its section away, to read a long document a part at a time.
 Click the heading, or the `›` that shows before it, and what's under it goes, up to the next heading at its level or above, with the asides beside it; click again to bring it back.
+`⌘⌥[` folds every heading at once, to see the document's outline, and `⌘⌥]` opens every one again (`Ctrl+Alt` on Windows and Linux), from the editor or the page.
 A finished section, `## [x] Stretch` (see [Sections to finish](forms.md)), starts folded, and any other starts open.
 Going to a place in a folded section, from the outline, `⌃G` or a link, opens it first.
 Folding is a way of seeing the page, not part of it: nothing is written in the file, it lasts while the file is open, and a printed or exported page, or a slide, has every section showing.

@@ -254,6 +254,13 @@ function onKey(e) {
   // ⌘⌥, not ⌥ alone, which moves by a paragraph where there's typing.
   if (meta && e.altKey && !e.shiftKey && e.key === 'ArrowUp') { e.preventDefault(); step(-1); return; }
   if (meta && e.altKey && !e.shiftKey && e.key === 'ArrowDown') { e.preventDefault(); step(1); return; }
+  // ⌘⌥[ folds every heading on the page, ⌘⌥] opens every one (features/fold);
+  // by the key's place, since ⌥ makes another character of it.
+  if (meta && e.altKey && !e.shiftKey && ['BracketLeft', 'BracketRight'].includes(e.code)) {
+    e.preventDefault();
+    Frames.post(el.preview, { type: 'fold-all', folded: e.code === 'BracketLeft' });
+    return;
+  }
 
   if (document.activeElement !== el.editor) return;
   if (meta && !e.shiftKey && key === 'b') { e.preventDefault(); wrap('**', '**'); return; }

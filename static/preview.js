@@ -491,6 +491,10 @@
       // first (features/fold), and the page is measured again.
       window.dispatchEvent(new CustomEvent('preview:open-to', { detail: { line: Number(m.line) } }));
       marks = null;
+    } else if (m.type === 'fold-all') {
+      // ⌘⌥[ and ⌘⌥]: every heading folded, or every one opened (features/fold).
+      window.dispatchEvent(new CustomEvent('preview:fold-all', { detail: { folded: m.folded === true } }));
+      marks = null;
     } else if (m.type === 'address') {
       Preview.address = m.params && typeof m.params === 'object' ? m.params : {};
       window.dispatchEvent(new Event('preview:address'));
@@ -674,6 +678,7 @@
     if (turning) e.preventDefault();
     if ((meta && ['s', 'p', '\\'].includes(e.key.toLowerCase())) || (meta && e.code === 'Period') || (e.ctrlKey && e.key.toLowerCase() === 'g')
       || (meta && e.altKey && ['ArrowUp', 'ArrowDown'].includes(e.key))) e.preventDefault();
+    if (meta && e.altKey && ['BracketLeft', 'BracketRight'].includes(e.code)) e.preventDefault();
     // On a slide, ⌘+, ⌘− and ⌘0 size the slides' text, not the browser's zoom.
     if (Preview.deck && meta && !e.altKey && ['=', '+', '-', '0'].includes(e.key)) e.preventDefault();
     const { key, code, metaKey, ctrlKey, altKey, shiftKey } = e;

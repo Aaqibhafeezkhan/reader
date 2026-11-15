@@ -33,16 +33,6 @@
 .gm-aside-cell p:last-child { margin-bottom: 0; }
 .gm-aside-cell + .gm-aside-cell { margin-top: var(--gm-space-4); }
 
-/* The tilde is kept as a visible mark of authorship -- it is the notation the
- * document is written in, not just syntax to be compiled away. */
-.gm-aside-cell .gm-mark {
-  font-style: normal;
-  font-family: var(--gm-mono);
-  color: var(--gm-accent);
-  margin-right: var(--gm-space-2);
-  font-size: 0.95em;
-}
-
 .gm-aside-cell ul, .gm-aside-cell ol {
   margin: var(--gm-space-2) 0;
   padding-left: var(--gm-space-6);

@@ -170,6 +170,22 @@ draft -> review -> publish, and \-> as typed
 draft -> review -> publish, and \-> as typed
 :::
 
+## Ordinals
+
+The `st`, `nd`, `rd` or `th` right after a number is raised, as in print: 1st, 22nd, 3rd, 4th.
+Only the suffix the number takes is raised, so `11th`, `12th` and `13th` are, and `11st` or `2th` stays as typed.
+A number that's part of a word (`4thly`, `x1st`), code, and a link's address are left alone.
+A backslash (`1\st`) keeps it as typed.
+
+::: tabs
++++ Source
+```markdown
+The 1st, 2nd, 3rd and 21st of the month, the 11th, and 1\st as typed.
+```
++++ Rendered
+The 1st, 2nd, 3rd and 21st of the month, the 11th, and 1\st as typed.
+:::
+
 ## Math
 
 `math:[…]` sets relations between ideas as symbols, keeping the words

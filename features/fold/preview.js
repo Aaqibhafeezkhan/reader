@@ -4,7 +4,8 @@
  * does the same, though not on a box, a link or a button in it. A section
  * runs to the next heading of the same level or higher, across the page's
  * rows: a row wholly in it goes, its asides with it, and of a row it shares,
- * the blocks in it, and the asides beside the first of them. A heading the
+ * the blocks in it, and the asides beside the first of them; an aside
+ * right under the heading folds with its section too. A heading the
  * page marks (`data-fold="closed"`, a ticked one) opens folded; what's been
  * folded or opened since is kept, by the heading's level and words, while
  * the page is open, over every render, and written nowhere. Going to a place
@@ -41,13 +42,15 @@
       if (shut) open.push(level(b));
     }
     // A row with none of its text showing goes, asides and all; one with
-    // its first block folded away keeps no asides about it.
+    // its first block folded away keeps no asides about it, and nor does a
+    // folded heading: an aside under it is in its section.
     for (const pair of document.querySelectorAll('.gm-doc > .gm-pair')) {
       const said = [...pair.querySelectorAll(':scope > .gm-speaker > *')];
       const gone = said.length > 0 && said.every((b) => b.classList.contains('fold-hidden'));
       pair.classList.toggle('fold-hidden', gone);
+      const first = said[0]?.classList;
       const asides = pair.querySelector(':scope > .gm-asides');
-      asides?.classList.toggle('fold-hidden', !gone && Boolean(said[0]?.classList.contains('fold-hidden')));
+      asides?.classList.toggle('fold-hidden', !gone && Boolean(first?.contains('fold-hidden') || first?.contains('folded')));
     }
   }
 

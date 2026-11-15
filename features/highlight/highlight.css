@@ -149,3 +149,37 @@ pre.output.code-focus .line.hl { background: var(--gm-output-lit); }
   .output-long > pre { max-height: none; mask-image: none; }
   .output-more { display: none; }
 }
+
+/* a fence's Copy button (preview.js), in its bottom-right corner, seen
+ * when the fence is pointed at or the button's reached by the keyboard.
+ * The code scrolls across inside the fence, so the button stays put. */
+pre:has(> .code-copy) { position: relative; overflow-x: visible; padding-left: 0; padding-right: 0; }
+pre:has(> .code-copy) > code { overflow-x: auto; padding: 0 var(--gm-space-6); }
+pre:not(.code-lines):has(> .code-copy) > code { display: block; }
+.code-copy {
+  position: absolute;
+  right: var(--gm-space-2);
+  bottom: var(--gm-space-2);
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0 var(--gm-space-3);
+  border: 0.75px solid var(--gm-rule);
+  border-radius: 3px;
+  background: var(--gm-well);
+  color: var(--gm-ink-soft);
+  font: 600 .7rem/1 var(--gm-sans);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .15s;
+}
+pre:hover > .code-copy, .code-copy:focus-visible { opacity: 1; }
+.code-copy:hover { color: var(--gm-ink); }
+.code-copy:focus-visible { outline: 2px solid var(--gm-accent); outline-offset: 1px; }
+/* where nothing can point at a fence, it's always there */
+@media (hover: none) { .code-copy { opacity: 1; } }
+@media (forced-colors: active) {
+  .code-copy { border-color: ButtonText; background: ButtonFace; color: ButtonText; }
+  .code-copy:focus-visible { outline-color: Highlight; }
+}
+.deck .code-copy { display: none; }
+@media print { .code-copy { display: none; } }

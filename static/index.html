@@ -68,9 +68,10 @@
          storage, and messages to it go to that origin, not to any (frames.js).
          allow: a frame from another origin may autoplay only if each frame
          around it passes that down, so a card plays on its first press; `*`,
-         since the src is another origin, set once frames.js knows which. -->
+         since the src is another origin, set once frames.js knows which;
+         clipboard-write, for a code fence's Copy button (features/highlight). -->
     <iframe id="preview" data-preview title="Rendered document"
-      allow="autoplay *; encrypted-media *; picture-in-picture *"
+      allow="autoplay *; encrypted-media *; picture-in-picture *; clipboard-write *"
       sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
     <div class="pdf-view" id="pdfView" hidden></div>
     <div class="empty" id="empty" hidden></div>

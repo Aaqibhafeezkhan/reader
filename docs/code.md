@@ -10,6 +10,14 @@ A code fence is highlighted for its language (`c`, `bash`, `asciidoc`,
 `js`, and the rest highlight.js knows); a fence in a language it doesn't
 know, or none, is left plain.
 
+## Copying
+
+A Copy button in a fence's bottom-right corner, shown when the fence is
+pointed at or the button is reached by Tab, copies its code as typed:
+without line numbers or callouts' `<1>` marks. It says "Copied" for a
+moment after. An `output` fence has none, and there's none on a slide, on
+paper or in an exported page.
+
 ## Picking out lines
 
 Braces after the language pick out lines, counted from 1 inside the fence:

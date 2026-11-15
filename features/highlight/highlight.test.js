@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { render } from '../../src/render.js';
+import { slides } from '../../src/slides.js';
+import { preview, settle } from '../../test/dom.js';
 import { parseInfo, splitLines } from './index.js';
 
 const fence = (info, code) => render(`\`\`\`${info}\n${code}\n\`\`\`\n`).body;
@@ -123,4 +125,74 @@ test('long output is cut short, with a way to show the rest', () => {
   const html = render(`\`\`\`output\n${Array(13).fill('x').join('\n')}\n\`\`\`\n`).body;
   assert.match(html, /<div class="output-long">\n<pre class="output">[\s\S]*<\/pre>\n<label class="output-more"><input type="checkbox"><span>Show all 13 lines<\/span><\/label>\n<\/div>/);
   assert.doesNotMatch(render(`\`\`\`output\n${Array(12).fill('x').join('\n')}\n\`\`\`\n`).body, /output-long/);
+});
+
+/** The preview frame showing `markdown`, its clipboard what's written to it. */
+function copying(markdown, { clipboard = true } = {}) {
+  const p = preview();
+  const written = [];
+  Object.defineProperty(p.window.navigator, 'clipboard', {
+    configurable: true,
+    value: clipboard ? { writeText: async (text) => { written.push(text); } } : undefined,
+  });
+  p.show(render(markdown).body);
+  const buttons = () => [...p.document.querySelectorAll('.code-copy')];
+  const click = async (b) => {
+    b.dispatchEvent(new p.window.MouseEvent('click', { bubbles: true, cancelable: true }));
+    await settle();
+  };
+  return { ...p, written, buttons, click };
+}
+
+test('a fence\'s Copy button, last in it, copies its code as typed and says it did', async () => {
+  const p = copying('```js\nconst a = 1;\nlog(a);\n```\n');
+  const [b] = p.buttons();
+  assert.equal(b.tagName, 'BUTTON');
+  assert.equal(b.type, 'button');
+  assert.equal(b.textContent, 'Copy');
+  assert.equal(b.parentElement.lastElementChild, b);
+  await p.click(b);
+  assert.deepEqual(p.written, ['const a = 1;\nlog(a);']);
+  assert.equal(b.textContent, 'Copied');
+});
+
+test('the code is copied without its line numbers or its callouts\' marks', async () => {
+  const p = copying('```js {numbers}\nconst t = items.reduce((a, b) => a + b, 0); <1>\nlog(t); // <2>\n```\n<1> the sum\n<2> shown\n');
+  await p.click(p.buttons()[0]);
+  assert.deepEqual(p.written, ['const t = items.reduce((a, b) => a + b, 0);\nlog(t);']);
+});
+
+test('the button belongs to the code: none on its output, one on each version in tabs', async () => {
+  const p = copying('::: tabs\n```java\na()\n```\n\n```kotlin\nb()\n```\n:::\n```output\n1\n```\n');
+  assert.equal(p.buttons().length, 2);
+  assert.equal(p.document.querySelector('pre.output .code-copy'), null);
+  await p.click(p.buttons()[1]);
+  assert.deepEqual(p.written, ['b()']);
+});
+
+test('with no clipboard API, the code is copied as a selection is', async () => {
+  const p = copying('```\nx\n```\n', { clipboard: false });
+  let selected;
+  p.document.execCommand = (cmd) => { selected = [cmd, p.document.querySelector('textarea')?.value]; return true; };
+  const [b] = p.buttons();
+  await p.click(b);
+  assert.deepEqual(selected, ['copy', 'x']);
+  assert.equal(b.textContent, 'Copied');
+  assert.equal(p.document.querySelector('textarea'), null);
+});
+
+test('each render draws the buttons again, one to a fence', () => {
+  const p = copying('```\nx\n```\n');
+  p.show(render('```\nx\n```\n\n```\ny\n```\n').body);
+  assert.equal(p.buttons().length, 2);
+});
+
+test('on a slide, a fence has no Copy button', () => {
+  const p = preview();
+  p.show(slides('# Code\n\n```js\na()\n```\n').slides[0].body, { deck: true });
+  assert.equal(p.document.querySelector('.code-copy'), null);
+});
+
+test('an exported page has no Copy button, nor room made for one', () => {
+  assert.doesNotMatch(render('```\nx\n```\n', { exported: true }).body, /code-copy/);
 });

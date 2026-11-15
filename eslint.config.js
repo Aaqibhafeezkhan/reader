@@ -51,8 +51,8 @@ function featureOf(file, dir) {
  * parsed: it reads the tokens they become, which carry their words in
  * `content` (gh-282). PLACED lists the few that must.
  *
- * And a feature sets on `env` only the names in SHARED_ENV, which say what
- * they mean (features/source.js); it keeps its own state under a Symbol of
+ * And a feature sets on `env` only the names in SHARED_ENV that say how to
+ * write them (features/source.js); it keeps its own state under a Symbol of
  * its own, which no other can name.
  */
 const featureTangle = {
@@ -61,6 +61,7 @@ const featureTangle = {
     messages: {
       private: "{{who}} refers to features/{{name}}/, which is the {{name}} feature's own, so that every other feature works without it. Share what's needed from a file at the top of features/, or reach {{name}} through features/index.js. See \"Layout of the code\" in CONTRIBUTING.md.",
       env: "{{own}} sets env.{{name}}, which isn't one of the names every feature shares (SHARED_ENV, features/source.js). Keep a feature's own state under a key only it can name, `const KEY = Symbol('{{own}}')`, then `state.env[KEY]`. A name for every feature to read goes in SHARED_ENV first, with what it means. See gh-282.",
+      readonly: "{{own}} sets env.{{name}}, which features may read but not write (SHARED_ENV, features/source.js, says who sets it). Keep a feature's own state under a key only it can name, `const KEY = Symbol('{{own}}')`, then `state.env[KEY]`. See gh-282.",
       placed: "{{who}} reads MARKS.{{name}}, the {{name}} feature's placeholder, which only holds {{name}}'s place in the text until the text is parsed; then {{name}} turns it into tokens of its own. To build on {{name}}, add '{{name}}' to the `requires` in {{where}} and read its tokens in a core rule (`md.core.ruler.push`), which runs after {{name}}'s. See gh-282.",
     },
   },
@@ -95,7 +96,9 @@ const featureTangle = {
       AssignmentExpression(node) {
         const to = node.left;
         if (!own || to.type !== 'MemberExpression' || to.computed || !isEnv(to.object)) return;
-        if (!SHARED_ENV.includes(to.property.name)) context.report({ node: to, messageId: 'env', data: { name: to.property.name, own } });
+        const shared = SHARED_ENV.find((e) => e.name === to.property.name);
+        if (!shared) context.report({ node: to, messageId: 'env', data: { name: to.property.name, own } });
+        else if (!shared.write) context.report({ node: to, messageId: 'readonly', data: { name: to.property.name, own } });
       },
       MemberExpression(node) {
         if (!isMarks(node.object)) return;

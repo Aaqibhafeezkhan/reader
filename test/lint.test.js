@@ -112,3 +112,22 @@ test('a feature may set a shared name on env, and its own state under a Symbol (
   const code = "const DATES = Symbol('dates');\nexport const f = (state) => { state.env[DATES] = []; state.env.margin = []; };\n";
   assert.deepEqual(await lint(code, 'features/date/x.js'), []);
 });
+
+test('a feature setting a name features may only read fails lint, saying so (gh-282)', async () => {
+  for (const code of ['export const f = (state) => { state.env.lineBase = 1; };\n', 'export const f = (env) => { env.frontMatter = {}; };\n']) {
+    const messages = await lint(code, 'features/date/x.js');
+    assert.equal(messages.length, 1, messages.join('\n'));
+    assert.match(messages[0], /^date sets env\.(lineBase|frontMatter), which features may read but not write/);
+  }
+});
+
+test('each name features share says its type, what it holds, and how to read and write it (gh-282)', async () => {
+  const { SHARED_ENV } = await import('../features/source.js');
+  const names = SHARED_ENV.map((e) => e.name);
+  assert.equal(new Set(names).size, names.length, 'a name twice');
+  for (const e of SHARED_ENV) {
+    assert.deepEqual(Object.keys(e), ['name', 'type', 'description', 'read', 'write'], e.name);
+    for (const k of ['name', 'type', 'description', 'read']) assert.ok(typeof e[k] === 'string' && e[k].trim(), `${e.name}: ${k}`);
+    assert.ok(e.write === null || (typeof e.write === 'string' && e.write.trim()), `${e.name}: write`);
+  }
+});

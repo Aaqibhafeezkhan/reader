@@ -101,7 +101,7 @@ test('a retro card waits for the AI\'s answer, named as the config names it', (t
   assert.deepEqual(texts(open(day, day, CLAUDE)), ['Good (Ada): the watcher.', 'A (Codex): Agreed.', 'Bad (Ada): too long.', 'Try (Codex): my own card.']);
 });
 
-test('what waits on the contributor: boxes, criteria, untried Tries and unpicked choices, but not the Send box', (t) => {
+test('what waits on the contributor: boxes, criteria, untried Tries and unpicked choices, asides and their answers allowed between them, but not the Send box', (t) => {
   const day = tree(scratch(t), {
     'review.md': [
       '- [ ] Send to Claude',
@@ -123,6 +123,9 @@ test('what waits on the contributor: boxes, criteria, untried Tries and unpicked
       '',
       'Q (Claude): and?',
       '- (x) picked',
+      '~# why?',
+      '~~c Because,',
+      '   on a line of its own.',
       '- ( ) not',
       '',
       '@ Size: ( ) small ( ) large',
@@ -140,7 +143,7 @@ test('what waits on the contributor: boxes, criteria, untried Tries and unpicked
     ['review.md:7', '1) [ ] a criterion'],
     ['review.md:10', 'Try: something'],
     ['review.md:14', '- ( ) this'],
-    ['review.md:22', '@ Size: ( ) small ( ) large'],
+    ['review.md:25', '@ Size: ( ) small ( ) large'],
   ]);
   assert.deepEqual(texts(boxes(day, day, { ai: 'Codex' })).slice(0, 2), ['- [ ] Send to Claude', '- [ ] a plain box'],
     'the Send box left out is the configured AI\'s');

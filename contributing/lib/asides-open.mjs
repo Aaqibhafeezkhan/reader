@@ -89,9 +89,11 @@ export function boxes(root, dir = root, { ai } = config()) {
   const send = new RegExp(`Send to ${literal(ai)}\\b`);
   for (const f of files(dir).filter((p) => path.basename(p) === 'review.md' || path.basename(path.dirname(p)) === 'review')) {
     let fence = false;
-    // A run of `- ( )` choices, asides allowed between them, is one question; it waits
-    // until one is picked. So does a field of choices, `@ Label: ( ) a ( ) b`.
+    // A run of `- ( )` choices, asides allowed between them, an answer's indented lines
+    // included, is one question; it waits until one is picked. So does a field of
+    // choices, `@ Label: ( ) a ( ) b`.
     let group = null;
+    let aside = false;
     const endGroup = () => {
       if (group && !group.picked) found.push({ at: group.at, text: group.text });
       group = null;
@@ -101,9 +103,14 @@ export function boxes(root, dir = root, { ai } = config()) {
       if (!fence && /^\s*[-*+] \([ xX]\)/.test(l)) {
         if (!group) group = { at: where(root, f, i), text: l.trim(), picked: false };
         if (/^\s*[-*+] \([xX]\)/.test(l)) group.picked = true;
+        aside = false;
         return;
       }
-      if (!fence && /^\s*~/.test(l) && group) return;
+      if (!fence && group && (/^\s*~/.test(l) || (aside && /^\s+\S/.test(l)))) {
+        aside = true;
+        return;
+      }
+      aside = false;
       endGroup();
       if (!fence && /^\s*@ [^:]*:\s*\([ xX]\)/.test(l) && !/\([xX]\)/.test(l)) {
         found.push({ at: where(root, f, i), text: l.trim() });

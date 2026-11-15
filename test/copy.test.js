@@ -91,7 +91,7 @@ test('two icons beside the path\'s button, always there, gray where there\'s not
   }
   assert.equal(b().getAttribute('aria-label'), 'Make a copy');
   assert.equal(t().getAttribute('aria-label'), 'Copy for today');
-  assert.equal(b().title, 'Make a copy, once a file is open.');
+  assert.equal(b().title, 'Make a copy, once a file is open (⌘⌥Y).');
   assert.equal(b().previousElementSibling, el.copyPath);
   assert.equal(t().previousElementSibling, b());
   assert.notEqual(b().innerHTML, t().innerHTML);
@@ -116,7 +116,7 @@ test('Copy for today is there for a file dated another day; undated, or today\'s
   assert.match(t().title, /2026-11-03/);
   await fresh('notes.md');
   assert.ok(gray(t()));
-  assert.equal(t().title, 'Copy for today, once the file has a date.');
+  assert.equal(t().title, 'Copy for today, once the file has a date (⌘⌥⇧Y).');
   t().click();
   await settled();
   assert.deepEqual(asked, []);
@@ -158,7 +158,7 @@ test('from Work too, a copy keeps its answers, and opens in Work', async () => {
   assert.deepEqual(posts()[0].body, { path: 'notes.md', mtime: 7, edits: [], today: false });
   assert.equal(state.current.path, 'notes-copy.md');
   assert.equal(state.working, true);
-  assert.equal(b().title, 'Make a copy, a file of its own, answers and all.');
+  assert.equal(b().title, 'Make a copy, a file of its own, answers and all (⌘⌥Y).');
   setWorking(false);
 });
 

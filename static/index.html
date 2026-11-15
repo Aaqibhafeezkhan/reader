@@ -20,7 +20,7 @@
 <header class="bar" id="bar">
   <div class="bar-left">
     <button class="ghost icon" id="sidebarToggle" title="Toggle file list (⌘\)" aria-label="Toggle file list" aria-controls="sidebar" aria-expanded="true">☰</button>
-    <button class="ghost small" id="todayBtn" title="The files dated today" aria-controls="sidebar" aria-pressed="false">Today</button>
+    <button class="ghost small" id="todayBtn" title="The files dated today (⌘⌥T)" aria-controls="sidebar" aria-pressed="false">Today</button>
     <span class="mark" id="rootName">reader</span>
     <span class="crumb" id="crumb"></span>
     <button class="ghost icon copy-path" id="copyPath" title="Copy the file's path" aria-label="Copy the file's path" hidden>⧉</button>
@@ -42,7 +42,7 @@
   <nav class="sidebar" id="sidebar" aria-label="Files">
     <div class="side-head">
       <input id="filter" type="search" placeholder="Filter…" autocomplete="off" spellcheck="false">
-      <button class="ghost small side-icon" id="newBtn" title="New file" aria-label="New file"></button>
+      <button class="ghost small side-icon" id="newBtn" title="New file (⌘⌥N)" aria-label="New file"></button>
       <button class="ghost small side-icon start-today" id="startBtn" aria-label="Start today's" aria-disabled="true"></button>
     </div>
     <form class="new-form" id="newForm" hidden>
@@ -99,6 +99,7 @@
       <div class="keys">⌘. work, Esc to leave it · ⌥← ⌥→ a deck's page, at work · ⌘⇧. present</div>
       <div class="keys">On the page, in steps to follow: j k next, previous step · x step done or not</div>
       <div class="keys">In the files: ↑ ↓ move · → into a folder, versions or outline · ← ⌫ back out · F2 rename · ⌘⌫ trash</div>
+      <div class="keys">⌘⌥N new · ⌘⌥⇧N today's · ⌘⌥T Today · ⌘⌥Y copy · ⌘⌥⇧Y copy for today · ⌘⌥⌫ trash the open file · Ctrl+Alt for ⌘⌥ on Windows, Linux</div>
       <fieldset class="theme" id="theme">
         <legend>Theme</legend>
         <label><input type="radio" name="theme" value="light"> Light</label>

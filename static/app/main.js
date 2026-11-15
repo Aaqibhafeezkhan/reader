@@ -7,7 +7,7 @@
 import { el, state, deck, dirty, remember } from './state.js';
 import { api } from './api.js';
 import { dirOf } from './versions.js';
-import { loadTree, drawTree, visiblePaths, step, open, follow, createFile, showNewForm, pressStart, setUpSideIcons, go, reveal, pressToday, filterTyped, rememberedDir, onListKey, onListDoubleClick } from './files.js';
+import { loadTree, drawTree, visiblePaths, step, open, follow, createFile, pressNew, pressStart, setUpSideIcons, go, reveal, pressToday, filterTyped, rememberedDir, onListKey, onListDoubleClick } from './files.js';
 import { whenReady, showEmpty } from './render.js';
 import { save, saveFirst, saveOnLeave, reloadFromDisk, checkDisk } from './saving.js';
 import { toast, updateCursor } from './status.js';
@@ -24,6 +24,7 @@ import { wireOutline } from './outline.js';
 import { wireGoTo, openGoTo, isGoTo, goToHeading } from './goto.js';
 import { wireTheme } from './theme.js';
 import { makeCopy, setUpCopy } from './copying.js';
+import { fileKey } from './file-keys.js';
 
 state.previewReady = whenReady(el.preview);
 deck.stageReady = whenReady(el.stage);
@@ -162,10 +163,7 @@ function wire() {
     }
   });
 
-  el.newBtn.addEventListener('click', () => {
-    if (el.newForm.hidden) showNewForm();
-    else el.newForm.hidden = true;
-  });
+  el.newBtn.addEventListener('click', pressNew);
   el.startBtn.addEventListener('click', pressStart);
   el.copyFile.addEventListener('click', () => makeCopy(false));
   el.copyToday.addEventListener('click', () => makeCopy(true));
@@ -250,6 +248,7 @@ function onKey(e) {
   if (meta && !e.altKey && key === 's') { e.preventDefault(); save({ explicit: true }); return; }
   if (meta && !e.altKey && !e.shiftKey && key === 'p' && state.current?.type === 'md') { e.preventDefault(); print(); return; }
   if (meta && e.shiftKey && !e.altKey && key === 'c' && state.current?.type === 'md') { e.preventDefault(); copyLines(); return; }
+  if (fileKey(e)) { e.preventDefault(); return; }
   if (meta && e.key === '\\') { e.preventDefault(); toggleSidebar(); return; }
   // ⌘⌥, not ⌥ alone, which moves by a paragraph where there's typing.
   if (meta && e.altKey && !e.shiftKey && e.key === 'ArrowUp') { e.preventDefault(); step(-1); return; }

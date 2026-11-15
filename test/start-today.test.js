@@ -88,7 +88,7 @@ test('the icon is beside New, for the folder being shown, and not on a folder\'s
   assert.equal(gray(), false);
   assert.equal(el.startBtn.parentElement, el.newBtn.parentElement);
   assert.equal(el.startBtn.getAttribute('aria-label'), "Start today's");
-  assert.equal(el.startBtn.title, "Start today's from 2026-11-01.");
+  assert.equal(el.startBtn.title, "Start today's from 2026-11-01 (⌘⌥⇧N).");
   assert.ok(el.startBtn.querySelector('svg'));
   assert.equal(el.startBtn.textContent, '');
   assert.equal(el.files.querySelector('.start-today'), null);
@@ -143,7 +143,7 @@ test('in a file\'s outline the folder is still what it\'s of, so it starts', asy
   state.outline = true;
   drawTree();
   assert.equal(gray(), false);
-  assert.equal(el.startBtn.title, "Start today's from 2026-11-01.");
+  assert.equal(el.startBtn.title, "Start today's from 2026-11-01 (⌘⌥⇧N).");
   el.startBtn.click();
   await settled();
   assert.ok(hidden());
@@ -160,7 +160,7 @@ test('once today\'s is there it stays, and opens that', async () => {
   assert.equal(gray(), false);
   assert.notEqual(el.startBtn.innerHTML, before);
   assert.equal(el.startBtn.getAttribute('aria-label'), "Open today's");
-  assert.equal(el.startBtn.title, "Open today's, 2026-11-03.md.");
+  assert.equal(el.startBtn.title, "Open today's, 2026-11-03.md (⌘⌥⇧N).");
   el.startBtn.click();
   await settled();
   assert.equal(state.current.path, 'journal/2026-11-03.md');
@@ -240,7 +240,7 @@ test('a finger held on the icon says what it would, and doesn\'t press it; a tap
   mock.timers.tick(499);
   assert.equal(el.toast.textContent, '');
   mock.timers.tick(1);
-  assert.equal(el.toast.textContent, "Start today's from 2026-11-01.");
+  assert.equal(el.toast.textContent, "Start today's from 2026-11-01 (⌘⌥⇧N).");
   press('pointerup');
   offer().click();
   await settled();
@@ -250,7 +250,7 @@ test('a finger held on the icon says what it would, and doesn\'t press it; a tap
   press('pointerdown');
   await loadTree();
   mock.timers.tick(500);
-  assert.equal(el.toast.textContent, "Start today's from 2026-11-01.");
+  assert.equal(el.toast.textContent, "Start today's from 2026-11-01 (⌘⌥⇧N).");
   press('pointerup');
   offer().click();
   await settled();

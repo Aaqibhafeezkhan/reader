@@ -72,6 +72,7 @@ import { slides, pages, isDeck } from './slides.js';
 import { exportHtml } from './export.js';
 import { version } from './version.js';
 import { FEATURES } from '../features/index.js';
+import { READ } from '../static/app/address.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const STATIC_DIR = path.join(HERE, '..', 'static');
@@ -350,6 +351,8 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
         if (type.startsWith('image/')) open(res);
         return send(res, 200, fs.readFileSync(abs), type, ext === '.pdf' ? {} : CONTENT_SANDBOX);
       }
+      // A file's address is the app's, which opens the file it names (static/app/address.js).
+      if (route.startsWith(READ)) return serveStatic(res, '/');
       return serveStatic(res, route);
     }
 

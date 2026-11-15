@@ -12,7 +12,7 @@ import { exportDocument } from './exporting.js';
 import { showPdf } from './pdf.js';
 import { renderNow, showPreview, showEmpty } from './render.js';
 import { scheduleGutter } from './lines.js';
-import { paramsFor, writeAddress } from './address.js';
+import { paramsFor, writeAddress, clearAddress } from './address.js';
 import { setSaveState, updateCounts, toast } from './status.js';
 import { updatePresentable } from './deck.js';
 import { openIn, listSeen, showList, toggleDrawer } from './modes.js';
@@ -620,7 +620,7 @@ export function closeFile(msg) {
   state.saved = '';
   setConflict(false);
   el.editor.value = '';
-  history.replaceState(null, '', location.pathname + location.search);
+  clearAddress();
   document.title = 'reader';
   el.crumb.textContent = '';
   el.copyPath.hidden = true;

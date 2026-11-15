@@ -13,6 +13,7 @@
 import { el, state, remembered, remember } from './state.js';
 import { measure } from './sync.js';
 import { toast } from './status.js';
+import { addressOf } from './address.js';
 
 const LOCAL = new Set(['localhost', '127.0.0.1', '[::1]']);
 let drawing = 0;
@@ -67,9 +68,8 @@ function linesOf(start, end = start) {
 /** Where the open file is, and lines in it if given: a path here, an address from elsewhere. */
 function reference(first, last = first) {
   const p = state.current.path;
-  const at = first ? `:${first}${last > first ? `-${last}` : ''}` : '';
-  if (LOCAL.has(location.hostname)) return `${state.root}/${p}${at}`;
-  return `${location.origin}/#${encodeURIComponent(p).replace(/%2F/g, '/')}${at}`;
+  if (LOCAL.has(location.hostname)) return `${state.root}/${p}${first ? `:${first}${last > first ? `-${last}` : ''}` : ''}`;
+  return `${location.origin}${addressOf(p, { line: first, last })}`;
 }
 
 /** The file and the caret's line, or the lines selected. */

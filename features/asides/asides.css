@@ -151,9 +151,17 @@
   border-right: 1.5px solid var(--gm-control-ink);
   border-bottom: 1.5px solid var(--gm-control-ink);
   rotate: -45deg;
-  transition: rotate 0.15s;
+  transition: rotate 0.15s, opacity 0.15s;
 }
-.gm-thread[open] > summary::before { rotate: 45deg; }
+/* Open, its chevron is out of sight until the aside's pointed at or its
+ * line's reached by the keyboard, as a heading's is; folded, it's always
+ * seen. On a touch screen, with nothing to point, it's always seen. */
+.gm-thread[open] > summary::before { rotate: 45deg; opacity: 0; }
+.gm-thread[open]:hover > summary::before,
+.gm-thread[open] > summary:focus-visible::before { opacity: 1; }
+@media screen and (hover: none) {
+  .gm-thread[open] > summary::before { opacity: 1; }
+}
 .gm-thread.gm-one-line > summary { cursor: auto; }
 /* Measured as one line would be, to see whether it is. */
 .gm-thread.gm-measuring > summary { white-space: nowrap; overflow: hidden; }

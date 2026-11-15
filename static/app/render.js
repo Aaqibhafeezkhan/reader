@@ -127,10 +127,13 @@ async function renderPage({ resetScroll = false } = {}) {
   if (!resetScroll) sendScroll();
 }
 
-/** Where a note's relative links and images resolve. */
+/**
+ * Where a note's relative links and images resolve: the note itself, so
+ * that a link to one of its headings, `#the-plan`, names it, and not only
+ * its folder, when it's hovered, copied or opened in a tab of its own.
+ */
 export function baseFor(path) {
-  const dir = path.includes('/') ? path.slice(0, path.lastIndexOf('/') + 1) : '';
-  return new URL(contentUrl(dir), location.href).href;
+  return new URL(contentUrl(path), location.href).href;
 }
 
 export function showPreview() {

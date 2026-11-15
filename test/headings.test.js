@@ -65,6 +65,14 @@ test('a link to a heading in the open file goes to its line, opening it if it\'s
   assert.equal(page.location.pathname + page.location.hash, '/read/plan.md#the-plan', 'the address names the heading, as GitHub\'s does');
 });
 
+test('a link to a heading resolves against the file, not only its folder, so a copy of it names the file', async () => {
+  await opened('notes/budget.md');
+  const { baseFor } = await import('../static/app/render.js');
+  assert.equal(baseFor('notes/budget.md'), 'http://localhost:8734/content/notes/budget.md');
+  assert.equal(new URL('#this-year', baseFor('notes/budget.md')).href, 'http://localhost:8734/content/notes/budget.md#this-year');
+  assert.equal(new URL('other.md', baseFor('notes/budget.md')).href, 'http://localhost:8734/content/notes/other.md', 'a file beside it, as before');
+});
+
 test('a link to a heading in another file opens it at that heading', async () => {
   await opened('plan.md');
   await follow('http://localhost:8734/content/notes/budget.md#this-year');

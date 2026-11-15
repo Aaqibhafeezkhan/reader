@@ -15,6 +15,7 @@ import { createServer, listenFrames } from '../src/server.js';
 import { dayStart } from '../src/dates.js';
 import { version } from '../src/version.js';
 import { tailnetNames, serve, unserve } from '../src/tailscale.js';
+import { addressOf } from '../static/app/address.js';
 
 const USAGE = `usage: reader <dir> [--port 8734] [--frame-port 8735] [--no-browser]
                      [--open <file>] [--day-starts <time>]
@@ -203,15 +204,16 @@ server.on('listening', async () => {
       fail(err.message);
     }
   }
-  const hash = opts.open ? `#${encodeURIComponent(opts.open)}` : '';
-  const url = `http://${at}:${port}/${hash}`;
+  // The file's address, as the app writes it (static/app/address.js).
+  const address = opts.open ? addressOf(opts.open).slice(1) : '';
+  const url = `http://${at}:${port}/${address}`;
   const count = content.list().length;
   console.log(`\n  reader — ${content.root}`);
   console.log(`  ${count} file${count === 1 ? '' : 's'}`);
   console.log(`  ${url}`);
-  for (const name of opts.allowHosts) console.log(`  http://${name}:${port}/${hash}`);
+  for (const name of opts.allowHosts) console.log(`  http://${name}:${port}/${address}`);
   if (tailnet) {
-    console.log(`  http://${tailnet.dns}:${port}/${hash}`);
+    console.log(`  http://${tailnet.dns}:${port}/${address}`);
     console.log(`\n  shared on your tailnet with no sign-in: anyone on it can read and`);
     console.log('  write these files.');
   }

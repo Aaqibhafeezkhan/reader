@@ -34,6 +34,16 @@ test('serves the UI and the tree', async () => {
   assert.deepEqual(files.map((f) => f.path).sort(), ['doc.pdf', 'note.md']);
 });
 
+test('a file\'s address, under /read/, is the app, with its policy, which opens the file it names (gh-292)', async () => {
+  for (const url of ['/read/note.md', '/read/notes/a%20b.md:3?by=%23', '/read/']) {
+    const res = await fetch(base + url);
+    assert.equal(res.status, 200, url);
+    assert.match(await res.text(), /<textarea id="editor"/, url);
+    assert.match(res.headers.get('content-security-policy'), /frame-ancestors 'none'/, url);
+  }
+  assert.equal((await fetch(base + '/reader.html')).status, 404, 'only under /read/');
+});
+
 test("info says which reader this is, and where its notes are", async () => {
   const { version } = await (await fetch(base + '/api/info')).json();
   assert.match(version.label, /^v\d+\.\d+\.\d+(\+[0-9a-f]{7})?$/);
@@ -423,7 +433,7 @@ test('published on other ports, the frames\' port keeps its distance from the ap
 
 test('[::1] is sent on to 127.0.0.1, the same port and address, since a policy can\'t name it (gh-206)', async () => {
   const port = server.address().port;
-  for (const [path, method] of [['/', 'GET'], ['/#notes/a.md', 'GET'], ['/api/tree?x=1', 'GET'], ['/api/file', 'PUT']]) {
+  for (const [path, method] of [['/', 'GET'], ['/read/notes/a.md', 'GET'], ['/api/tree?x=1', 'GET'], ['/api/file', 'PUT']]) {
     const res = await asking(port, `[::1]:${port}`, path, { method });
     assert.equal(res.status, 307, path);
     assert.equal(res.headers.location, `http://127.0.0.1:${port}${path.replace(/#.*/, '')}`, path);

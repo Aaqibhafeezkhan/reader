@@ -95,8 +95,8 @@ test('seen from another device, it\'s the file\'s address here, at its lines', a
   window.happyDOM.setURL('http://192.168.1.5:8734/');
   try {
     editing(TEXT, { selected: [5, 10] });
-    assert.deepEqual(await copying(copyLines), ['http://192.168.1.5:8734/#notes/a%20b.md:2-3']);
-    assert.deepEqual(await copying(copyPath), ['http://192.168.1.5:8734/#notes/a%20b.md']);
+    assert.deepEqual(await copying(copyLines), ['http://192.168.1.5:8734/read/notes/a%20b.md:2-3']);
+    assert.deepEqual(await copying(copyPath), ['http://192.168.1.5:8734/read/notes/a%20b.md']);
   } finally {
     window.happyDOM.setURL('http://localhost:8734/');
   }

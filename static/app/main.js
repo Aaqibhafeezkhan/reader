@@ -53,7 +53,8 @@ async function init() {
     await open(first.path);
     if (first.path === wanted && line) goToLines(line, last);
   } else showEmpty('No markdown files here yet. Press New to start one.');
-  window.addEventListener('hashchange', followHash);
+  // Back or Forward, or a heading's hash typed in (address.js).
+  window.addEventListener('popstate', followAddress);
 }
 
 /**
@@ -74,7 +75,7 @@ function showVersion({ label, url, release } = {}) {
 }
 
 /** An address changed after loading, by a link or by hand: open what it names. */
-async function followHash() {
+async function followAddress() {
   const { wanted, line, last, params } = readAddress();
   if (!state.files.some((f) => f.path === wanted)) return;
   if (wanted !== state.current?.path) {

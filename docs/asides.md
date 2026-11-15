@@ -134,6 +134,7 @@ A reply counts towards its reviewer in the legend.
 `~~` only starts a reply before a space or a run of aliases, so `~~struck~~` text is struck through, as it always was.
 
 Any aside folds to its first line, and opens again, by its `›`; folding is a way of reading the page, so nothing is written.
+Folded, its `›` is always there; open, it shows when the aside's pointed at or reached by the keyboard, as a heading's does, so a page of open asides has no column of chevrons beside it.
 
 A box after the aliases, `~# [ ]`, as after a heading's hashes, makes a thread that can be **resolved**, with a grey check before who it's from.
 Press it, and its `[x]` is written into the file: the check turns green, the thread goes into the done ink, as a ticked task does, and it starts folded, out of the way but kept as the record of what was decided.

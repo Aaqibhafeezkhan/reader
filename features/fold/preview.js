@@ -9,7 +9,8 @@
  * folded or opened since is kept, by the heading's level and words, while
  * the page is open, over every render, and written nowhere. Going to a place
  * in a folded section, from the outline or by a link in the page, opens the
- * sections around it first (`preview:open-to`, preview.js). Not on a slide.
+ * sections around it first (`preview:open-to`, preview.js). ⌘⌥[ in the app
+ * folds every heading, and ⌘⌥] opens every one (`preview:fold-all`). Not on a slide.
  * Runs in the preview frame.
  */
 (() => {
@@ -94,6 +95,17 @@
       if (folded(h)) chosen.set(keyOf(h), false);
     }
     draw();
+  });
+
+  // Every heading folded, or every one opened, by ⌘⌥[ and ⌘⌥] in the app:
+  // as if each had been clicked, so it's kept over a render the same way.
+  window.addEventListener('preview:fold-all', (e) => {
+    const shut = e.detail?.folded === true;
+    const heads = blocks().filter((b) => HEADING.test(b.tagName));
+    if (!heads.length || Preview.deck) return;
+    for (const h of heads) chosen.set(keyOf(h), shut);
+    draw();
+    Preview.say(shut ? 'Folded every heading' : 'Opened every heading');
   });
 
   Preview.register({ restore: draw });

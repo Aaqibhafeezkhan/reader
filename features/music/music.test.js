@@ -22,6 +22,9 @@ test('bars are counted by their bar lines, but one that opens a line, and notes 
   assert.equal(barsOf('K:C\n|: AB | cd :|'), 2);
   assert.equal(barsOf('K:C\nAB | cd'), 2);
   assert.equal(barsOf('K:C\nAB || cd |]\nef |'), 3);
+  // Voices play together, so a treble and a bass staff count once.
+  assert.equal(barsOf('V:RH clef=treble\nV:LH clef=bass\nK:C\n[V:RH] AB | cd |]\n[V:LH] A,B, | C,D, |]'), 2);
+  assert.equal(barsOf('K:C\nV:1\nAB | cd |\nV:2\nA,B, | C,D, |\nV:1\nef |]\nV:2\nE,F, |]'), 3);
 });
 
 test('an export shows the staff the frame drew, named, with no button, and its ABC out of sight', () => {

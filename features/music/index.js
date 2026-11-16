@@ -57,13 +57,22 @@ function timeOf(m) {
 /**
  * How many bars the tune's music has: its bar lines, on the lines that
  * aren't a header field or a comment, but one that opens a line.
+ * A tune of more than one voice (`V:`, or `[V:]` opening a line), as a
+ * treble and a bass staff, counts the first voice's, as the others play
+ * alongside it.
  */
 export function barsOf(source) {
   let bars = 0;
+  let voice = '';
+  let first = null;
   for (const line of source.split('\n')) {
+    const named = /^(?:V:|\[V:)\s*([^\s\]]+)/.exec(line);
+    if (named) voice = named[1];
     if (/^[A-Za-z+]:/.test(line) || /^\s*%/.test(line)) continue;
-    const music = line.replace(/%.*$/, '').replace(/"[^"]*"|![^!]*!/g, '').trim();
+    const music = line.replace(/%.*$/, '').replace(/"[^"]*"|![^!]*!|\[[A-Za-z]:[^\]]*\]/g, '').trim();
     if (!music) continue;
+    first ??= voice;
+    if (voice !== first) continue;
     const lines = music.match(/:*\[?\|+[\]:]*|::/g) ?? [];
     bars += lines.length - (/^(:*\[?\|+[\]:]*|::)/.test(music) ? 1 : 0);
     // Notes after the last bar line are a bar still open.

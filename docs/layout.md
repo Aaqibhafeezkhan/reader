@@ -317,7 +317,8 @@ GitHub.
 
 A lettered list, `a)`, `b)` and on, has its letters drawn as badges too, at any depth, as the parts of an idea are.
 On GitHub its items are lines of text, so it reads as written.
-Like a numbered list, one starts under a line of text only at `a)`; `a\)` stays as typed.
+Like a numbered list, one starts right under a line of text only at `a)`, but in a list's item any letter does, to pick out one part: `1) Ideas` then `d) Today`.
+`a\)` stays as typed.
 
 ::: tabs
 +++ Source

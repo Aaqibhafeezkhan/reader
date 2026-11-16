@@ -12,7 +12,8 @@
  * Puzrin, Alex Kocharin), with its marker read as one of these and the
  * bullets left out: a list goes on while its items have the same kind of
  * marker, and like a numbered list, it breaks into a paragraph only at its
- * first, `a)`. Each list says which kind it is (`meta.marker`), and each
+ * first, `a)`, except in a list's item, where the line above is the item's
+ * and any letter goes on from it: `1) Ideas` then `d) Today`. Each list says which kind it is (`meta.marker`), and each
  * item its letter (`meta.label`), for badges to draw.
  */
 
@@ -54,7 +55,7 @@ function list(state, startLine, endLine, silent) {
   const isTerminatingParagraph = silent && state.parentType === 'paragraph' && state.sCount[nextLine] >= state.blkIndent;
   let found = marker(state, nextLine);
   if (!found) return false;
-  if (isTerminatingParagraph && found.value !== 1) return false;
+  if (isTerminatingParagraph && found.value !== 1 && state.listIndent < 0) return false;
   if (isTerminatingParagraph && state.skipSpaces(found.pos) >= state.eMarks[nextLine]) return false;
   if (silent) return true;
 

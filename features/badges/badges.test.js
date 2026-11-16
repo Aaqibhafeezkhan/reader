@@ -41,6 +41,12 @@ test('a letter in a line of text, a letter after a line of text but a), and an e
   assert.match(render('See:\na) a list\n').body, /<p>See:<\/p>\n<ol class="badges" type="a">/);
 });
 
+test('in a list\'s item, any letter starts a lettered list under its line', () => {
+  const { body } = render('1) Favor icons over words:\n   d) Today should be an icon\n2) Remove\n   b) Today as a chip\n');
+  assert.match(body, /<li data-n="1">Favor icons over words:\n<ol class="badges" type="a" start="4">\n<li data-n="d">Today should be an icon<\/li>/);
+  assert.match(body, /<ol class="badges" type="a" start="2">\n<li data-n="b">Today as a chip<\/li>/);
+});
+
 test('a lettered list goes on only while its items are lettered, and a numbered one only while they\'re numbered', () => {
   const { body } = render('a) one\nb) two\n1) three\n');
   assert.match(body, /<ol class="badges" type="a">\n<li data-n="a">one<\/li>\n<li data-n="b">two<\/li>\n<\/ol>\n<ol class="badges">\n<li data-n="1">three<\/li>/);

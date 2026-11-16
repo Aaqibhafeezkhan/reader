@@ -297,6 +297,42 @@ test('a section shows it\'s done once everything in it is, and undone once one i
   assert.deepEqual(said, ['true', 'false']);
 });
 
+test('the edit that does the last of a section writes its heading done, up to the sections it\'s in, and undoing one takes them back', async () => {
+  const { $$, click, edits } = await page(DAY);
+  const [read, watch] = $$('.task-box');
+  click(read);
+  assert.deepEqual(await edits(), [[[7, '- [ ] Read', '- [x] Read']]]);
+  click(watch);
+  assert.deepEqual(await edits(), [[[8, '- [ ] Watch', '- [x] Watch'], [5, '## [ ] Ways', '## [x] Ways']]], 'one edit, so one undo');
+  click($$('.choice-box')[0]);
+  assert.deepEqual(await edits(), [[[2, '- ( ) Navy Day', '- (x) Navy Day'], [0, '# [ ] Today', '# [x] Today']]]);
+  click(read);
+  assert.deepEqual(await edits(), [[[7, '- [x] Read', '- [ ] Read'], [5, '## [x] Ways', '## [ ] Ways'], [0, '# [x] Today', '# [ ] Today']]]);
+  const [today, ways] = $$('.section-done');
+  assert.equal(ways.getAttribute('aria-pressed'), 'false');
+  assert.equal(today.getAttribute('aria-pressed'), 'false');
+});
+
+test('a section pressed done is left done as its last part is done, and a heading already done is not written again', async () => {
+  const { $$, click, edits } = await page(DAY.replace('## [ ] Ways', '## [x] Ways'));
+  const [read, watch] = $$('.task-box');
+  click(read);
+  click(watch);
+  assert.deepEqual(await edits(), [[[7, '- [ ] Read', '- [x] Read'], [8, '- [ ] Watch', '- [x] Watch']]]);
+  assert.equal($$('.section-done')[1].getAttribute('aria-pressed'), 'true');
+});
+
+test('a field\'s choice that does the last of a section goes up with its heading, as one undo', async () => {
+  const { $, edits } = await page('## [ ] Mood\n\n@ Closest word: ( ) Calm ( ) Content\n');
+  const calm = $('.field input');
+  assert.ok(calm, 'a field of choices');
+  calm.checked = true;
+  calm.dispatchEvent(new calm.ownerDocument.defaultView.Event('change', { bubbles: true }));
+  const sent = await edits();
+  assert.equal(sent.length, 1, 'one edit');
+  assert.deepEqual(sent[0].at(-1), [0, '## [ ] Mood', '## [x] Mood']);
+});
+
 test('as the page changes, a section with nothing to do stays done only by its button, and one after a done sibling still counts', async () => {
   const { $$, click, edits } = await page('# [ ] Day\n\n## [ ] Empty\n\nWords.\n\n## [x] Ticked\n\n## [ ] Ways\n\n- [ ] Read\n- [ ] Watch\n');
   const [day, empty, , ways] = $$('.section-done');

@@ -92,12 +92,17 @@ test('lint says which rule a tangle breaks, who broke it and what to do instead 
   assert.match(m.message, /`requires`/);
 });
 
-test('a feature may read its own placeholder, what features share, and the few it must step past (gh-282)', async () => {
+test('a feature may read its own placeholder, what features share, and any feature\'s placeholder, not knowing whose (gh-282, gh-291)', async () => {
   const head = "import { MARKS } from '../source.js';\n";
   assert.deepEqual(await lint(`${head}export const [a, b] = MARKS.date;\n`, 'features/date/x.js'), []);
   assert.deepEqual(await lint(`${head}export const [a, b, c] = MARKS.layout;\n`, 'features/tabs/x.js'), []);
-  assert.deepEqual(await lint(`${head}export const [a, b] = MARKS.tasks;\n`, 'features/styles/x.js'), []);
-  assert.deepEqual(await lint(`${head}export const [a, b] = MARKS.styles;\n`, 'features/definitions/x.js'), []);
+  assert.deepEqual(await lint("import { PLACEHOLDER } from '../source.js';\nexport const any = new RegExp(PLACEHOLDER);\n", 'features/styles/x.js'), []);
+  // No feature is let through to read one other's (PLACED is gone).
+  for (const [name, file] of [['tasks', 'features/styles/x.js'], ['styles', 'features/definitions/x.js']]) {
+    const [said, ...more] = await lint(`${head}export const [a, b] = MARKS.${name};\n`, file);
+    assert.match(said, new RegExp(`reads MARKS\\.${name}, the ${name} feature's placeholder`));
+    assert.deepEqual(more, []);
+  }
 });
 
 test('a feature setting a name on env that features don\'t share fails lint (gh-282)', async () => {

@@ -25,7 +25,7 @@
 
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { beforeExtract, readLines, MARKS, escapeHtml, escapeAttr, textToken, split, eachText, escapeRegExp, wordForms } from '../source.js';
+import { beforeExtract, readLines, MARKS, PLACEHOLDER, escapeHtml, escapeAttr, textToken, split, eachText, escapeRegExp, wordForms } from '../source.js';
 import { typable } from '../blank.js';
 
 // What this feature keeps across a deck's slides, on `env.shared`, under a key
@@ -41,9 +41,8 @@ const [OPEN, CLOSE] = MARKS.definitions;
 // one reads this one's tokens instead (gh-282); an aside's parse, a copy of
 // `env`, keeps it.
 const DEFINITIONS = Symbol('definitions');
-// A `:::` block's marker (features/styles) may come before the placeholder.
-const STYLED = `${MARKS.styles[0]}[^${MARKS.styles[1]}]*${MARKS.styles[1]}`;
-const PLACED = new RegExp(`^(${STYLED})?${OPEN}(\\d+)${CLOSE}`);
+// Another feature's placeholder may come before ours, as a `:::` block's marker does.
+const PLACED = new RegExp(`^((?:${PLACEHOLDER})*?)${OPEN}(\\d+)${CLOSE}`);
 
 // What an empty meaning says, in the entry and where the term is used.
 const UNDEFINED = 'not yet defined';

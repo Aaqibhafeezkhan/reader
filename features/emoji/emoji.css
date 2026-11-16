@@ -1,0 +1,15 @@
+/* a browser's mark for :chrome: and the like, in line with the text and in
+ * its colour (index.js adds each one's drawing). */
+.emoji-mark {
+  display: inline-block;
+  width: 1em; height: 1em;
+  vertical-align: -0.14em;
+  background-color: currentColor;
+  -webkit-mask: var(--mark) center / contain no-repeat;
+  mask: var(--mark) center / contain no-repeat;
+}
+/* Where colours are forced, a background is the page's, so the mark is
+ * drawn in the system's text colour instead. */
+@media (forced-colors: active) {
+  .emoji-mark { forced-color-adjust: none; background-color: CanvasText; }
+}

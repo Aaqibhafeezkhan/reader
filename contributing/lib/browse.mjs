@@ -337,7 +337,16 @@ async function playwright(url) {
     },
     async press(s) { await page.keyboard.press(s.press); },
     async wait(s) { await (await where(s)).waitForSelector(s.wait, { timeout: STEP_MS }); },
-    async until(s) { await (await where(s)).waitForFunction(s.until, null, { timeout: STEP_MS }); },
+    // Polled with evaluate, as waitForFunction makes a function of a string,
+    // which the page's policy refuses (no 'unsafe-eval'). A frame drawn again
+    // meanwhile, as a theme change does, is asked again.
+    async until(s) {
+      const by = Date.now() + (s.timeout ?? STEP_MS);
+      while (!await (await where(s)).evaluate(`!!(${s.until})`).catch(() => false)) {
+        if (Date.now() > by) throw new Error(`${s.until}: not true in time`);
+        await new Promise((r) => setTimeout(r, 150));
+      }
+    },
     async eval(s) { return JSON.stringify(await (await where(s)).evaluate(s.eval)); },
     async shot(name) {
       const to = path.join(opt.out, `${label}-${name}.png`);
@@ -434,7 +443,8 @@ async function safari(url) {
   };
   const poll = async (s, js) => {
     const until = Date.now() + (s.timeout ?? STEP_MS);
-    while (!await script(s, `return !!(${js})`)) {
+    // A frame drawn again meanwhile, as a theme change does, is asked again.
+    while (!await script(s, `return !!(${js})`).catch(() => false)) {
       if (Date.now() > until) throw new Error(`${js}: not true in time`);
       await new Promise((r) => setTimeout(r, 150));
     }

@@ -53,6 +53,11 @@ export function isDeck(src) {
   return typeOf(split(src).meta) !== 'document';
 }
 
+/** Is `src` `type: slides`, the one type that offers Present? */
+export function isSlides(src) {
+  return typeOf(split(src).meta) === 'slides';
+}
+
 export function slides(src, { file, read, now } = {}) {
   const worth = (lifted) => lifted.body.trim() || lifted.notes;
   const layout = (source) => (isCover(source) ? 'cover' : 'slide');

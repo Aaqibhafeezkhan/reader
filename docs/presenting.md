@@ -24,7 +24,8 @@ type: workbook
   It opens in Edit, with **Present** beside it, and prints across the sheet.
   Its outline lists its slides.
 
-A workbook and slides are both decks: either can be worked through in Work a page at a time, presented, and saved as its pages.
+A workbook and slides are both decks: either can be worked through in Work a page at a time and saved as its pages.
+Only slides offer **Present**, as a slide shuts what a workbook is for: its boxes, fields and Done buttons.
 A file opened in the mode its type picks doesn't change the mode you chose for documents.
 
 ## Work
@@ -58,8 +59,8 @@ be, with nothing of its notes. It opens on the page the cursor was on.
 ## Decks
 
 A file in the format of [slides](https://github.com/maaslalani/slides), with
-`type: slides` in its front matter, also gets **Present** (`⌘⇧.`), and so
-does a workbook. One file then works for both: `slides` in the terminal and
+`type: slides` in its front matter, also gets **Present** (`⌘⇧.`).
+One file then works for both: `slides` in the terminal and
 here in the browser.
 
 ```markdown

@@ -51,6 +51,19 @@ test("info says which reader this is, and where its notes are", async () => {
   assert.equal(version.release, !version.label.includes('+'));
 });
 
+test('render offers Present for slides, and not for a workbook or a document', async () => {
+  const said = async (text, pages) => (await (await json('POST', '/api/render', { text, path: 'deck.md', pages })).json());
+  const slides = await said('---\ntype: slides\n---\n\n# One\n\n---\n\n# Two\n');
+  assert.equal(slides.deck, true);
+  assert.equal(slides.present, true);
+  for (const pages of [false, true]) {
+    const workbook = await said('---\ntype: workbook\n---\n\n## [ ] Today\n\n@ What went well:\n', pages);
+    assert.equal(workbook.deck, true);
+    assert.equal(workbook.present, false, `a workbook offers no Present${pages ? ' in Work' : ''}`);
+  }
+  assert.equal((await said('# Notes\n\n---\n\n# More\n')).present, false);
+});
+
 test('render puts asides in the gutter column', async () => {
   const res = await json('POST', '/api/render', { text: '* a point\n\n~ my aside\n', path: 'note.md' });
   const out = await res.json();

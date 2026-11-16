@@ -626,3 +626,91 @@ test('Preview.flush sends the edits held so far, and the end of the turn sends n
   await settle();
   assert.equal(posted.length, 1);
 });
+
+/** The page lays nothing out: here a block is as wide as these two say. */
+function sized(p, scroll, client) {
+  Object.defineProperty(p.window.Element.prototype, 'scrollWidth', { configurable: true, get: () => scroll });
+  Object.defineProperty(p.window.HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => client });
+}
+
+test('a code block that scrolls sideways takes the keyboard, and is named', () => {
+  const p = preview();
+  sized(p, 600, 400);
+  p.show(render('```js\nconst aVeryLongLine = 1;\n```\n').body);
+  const pre = p.document.querySelector('pre');
+  assert.equal(pre.getAttribute('tabindex'), '0');
+  assert.equal(pre.getAttribute('role'), 'region');
+  assert.equal(pre.getAttribute('aria-label'), 'Code, js');
+});
+
+test('where the code in a block is what scrolls, as under a Copy button, the code takes the keyboard', () => {
+  const p = preview();
+  sized(p, 600, 400);
+  p.show(render('```js\nconst aVeryLongLine = 1;\n```\n').body);
+  const pre = p.document.querySelector('pre');
+  const code = pre.querySelector('code');
+  // As highlight.css has it once a fence has its Copy button.
+  pre.style.overflowX = 'visible';
+  code.style.overflowX = 'auto';
+  p.window.dispatchEvent(new p.window.Event('resize'));
+  assert.equal(code.getAttribute('tabindex'), '0');
+  assert.equal(code.getAttribute('role'), 'region');
+  assert.equal(code.getAttribute('aria-label'), 'Code, js');
+  assert.equal(pre.hasAttribute('tabindex'), false, 'only the part that scrolls is a Tab stop');
+});
+
+test('a block that no longer scrolls, as the window widens, gives the keyboard back', () => {
+  const p = preview();
+  sized(p, 600, 400);
+  p.show(render('```js\nconst aVeryLongLine = 1;\n```\n').body);
+  const pre = p.document.querySelector('pre');
+  assert.equal(pre.getAttribute('tabindex'), '0');
+  sized(p, 400, 400);
+  p.window.dispatchEvent(new p.window.Event('resize'));
+  assert.equal(pre.hasAttribute('tabindex'), false);
+  assert.equal(pre.hasAttribute('role'), false);
+  assert.equal(pre.hasAttribute('aria-label'), false);
+});
+
+test('a block that fits is no Tab stop, and one with no language is just "Code"', () => {
+  const p = preview();
+  sized(p, 300, 400);
+  p.show(render('```js\nshort\n```\n').body);
+  assert.equal(p.document.querySelector('pre').hasAttribute('tabindex'), false);
+  sized(p, 600, 400);
+  p.show(render('```\nplain\n```\n').body);
+  assert.equal(p.document.querySelector('pre').getAttribute('aria-label'), 'Code');
+});
+
+test('a block hidden when the page was drawn takes the keyboard once it is shown', () => {
+  const p = preview();
+  const watchers = [];
+  // The page under test lays nothing out, so the test says when a block's
+  // size changes, as showing a folded section or a picked tab would.
+  let watching = 0;
+  p.window.ResizeObserver = class {
+    constructor(run) { watchers.push(run); }
+    observe() { watching++; }
+    disconnect() {}
+    unobserve() {}
+  };
+  sized(p, 0, 0);
+  p.show(render('```js\nconst aVeryLongLine = 1;\n```\n').body);
+  const pre = p.document.querySelector('pre');
+  assert.equal(pre.hasAttribute('tabindex'), false);
+  sized(p, 600, 400);
+  const watched = watching;
+  for (const run of watchers) run([{ target: pre }]);
+  assert.equal(pre.getAttribute('tabindex'), '0');
+  assert.equal(pre.getAttribute('role'), 'region');
+  assert.equal(pre.getAttribute('aria-label'), 'Code, js');
+  // Measured again, it isn't watched anew, which would have it reported, and measured, every frame.
+  assert.equal(watching, watched);
+});
+
+test('an output block that scrolls sideways is named "Output"', () => {
+  const p = preview();
+  sized(p, 600, 400);
+  p.show(render('```output\n' + 'x'.repeat(200) + '\n```\n').body);
+  assert.equal(p.document.querySelector('pre').getAttribute('aria-label'), 'Output');
+});

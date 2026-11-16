@@ -190,30 +190,34 @@
     const code = pre.querySelector(':scope > code');
     return code && SCROLLS.has(getComputedStyle(code).overflowX) ? code : pre;
   };
+  function reach(pre) {
+    const el = scroller(pre);
+    const other = el === pre ? pre.querySelector(':scope > code') : pre;
+    if (other?.hasAttribute('tabindex')) for (const a of REACHED) other.removeAttribute(a);
+    const over = el.scrollWidth > el.clientWidth + 1;
+    if (over === el.hasAttribute('tabindex')) return;
+    if (over) {
+      const lang = CODE_LANG.exec(pre.querySelector('code')?.className || '');
+      el.setAttribute('tabindex', '0');
+      el.setAttribute('role', 'region');
+      el.setAttribute('aria-label', pre.classList.contains('output') ? 'Output' : lang ? `Code, ${lang[1]}` : 'Code');
+    } else {
+      for (const a of REACHED) el.removeAttribute(a);
+    }
+  }
+  // A block hidden when the page was drawn (a folded section, an unpicked
+  // tab) has no size, so the draw passed it over; shown, the size it takes
+  // is the tell. Each block is watched from when it's drawn, and only the
+  // one whose size changed is measured again: watching it anew would have
+  // it reported again, and so measured every frame.
   let codeWatch = null;
   function reachableCode() {
-    for (const pre of document.querySelectorAll('.gm-doc pre')) {
-      const el = scroller(pre);
-      const other = el === pre ? pre.querySelector(':scope > code') : pre;
-      if (other?.hasAttribute('tabindex')) for (const a of REACHED) other.removeAttribute(a);
-      const over = el.scrollWidth > el.clientWidth + 1;
-      if (over === el.hasAttribute('tabindex')) continue;
-      if (over) {
-        const lang = CODE_LANG.exec(pre.querySelector('code')?.className || '');
-        el.setAttribute('tabindex', '0');
-        el.setAttribute('role', 'region');
-        el.setAttribute('aria-label', lang ? `Code, ${lang[1]}` : 'Code');
-      } else {
-        for (const a of REACHED) el.removeAttribute(a);
-      }
-    }
-    // A block hidden when the page was drawn (a folded section, an unpicked
-    // tab) has no size, so the draw passed it over; shown, the size it takes
-    // is the tell. Watching each pre keeps one that shows later within
-    // reach, whether or not the page is drawn again.
-    if (!codeWatch) codeWatch = new ResizeObserver(() => reachableCode());
+    codeWatch ??= new ResizeObserver((changed) => { for (const c of changed) reach(c.target); });
     codeWatch.disconnect();
-    for (const pre of document.querySelectorAll('.gm-doc pre')) codeWatch.observe(pre);
+    for (const pre of document.querySelectorAll('.gm-doc pre')) {
+      reach(pre);
+      codeWatch.observe(pre);
+    }
   }
 
   // Images, fonts and what features draw change a slide's size as they

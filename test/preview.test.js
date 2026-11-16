@@ -687,9 +687,10 @@ test('a block hidden when the page was drawn takes the keyboard once it is shown
   const watchers = [];
   // The page under test lays nothing out, so the test says when a block's
   // size changes, as showing a folded section or a picked tab would.
+  let watching = 0;
   p.window.ResizeObserver = class {
     constructor(run) { watchers.push(run); }
-    observe() {}
+    observe() { watching++; }
     disconnect() {}
     unobserve() {}
   };
@@ -698,8 +699,18 @@ test('a block hidden when the page was drawn takes the keyboard once it is shown
   const pre = p.document.querySelector('pre');
   assert.equal(pre.hasAttribute('tabindex'), false);
   sized(p, 600, 400);
-  for (const run of watchers) run();
+  const watched = watching;
+  for (const run of watchers) run([{ target: pre }]);
   assert.equal(pre.getAttribute('tabindex'), '0');
   assert.equal(pre.getAttribute('role'), 'region');
   assert.equal(pre.getAttribute('aria-label'), 'Code, js');
+  // Measured again, it isn't watched anew, which would have it reported, and measured, every frame.
+  assert.equal(watching, watched);
+});
+
+test('an output block that scrolls sideways is named "Output"', () => {
+  const p = preview();
+  sized(p, 600, 400);
+  p.show(render('```output\n' + 'x'.repeat(200) + '\n```\n').body);
+  assert.equal(p.document.querySelector('pre').getAttribute('aria-label'), 'Output');
 });

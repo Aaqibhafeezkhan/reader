@@ -251,6 +251,8 @@ async function playwright(url) {
   const where = async (s) => (s.frame ? frame() : page);
   const box = async (s, sel, fx = 0.5, fy = 0.5) => {
     const el = await (await where(s)).waitForSelector(sel, { timeout: STEP_MS });
+    // A press lands where the element is on the screen, so it's brought there first, as a person would scroll to it.
+    await el.scrollIntoViewIfNeeded({ timeout: STEP_MS });
     const b = await el.boundingBox();
     if (!b) throw new Error(`${sel} isn't on the screen`);
     return [b.x + b.width * fx, b.y + b.height * fy];
@@ -456,6 +458,8 @@ async function safari(url) {
     if (Array.isArray(p)) return { x: Math.round(p[0]), y: Math.round(p[1]), origin: 'viewport' };
     const sel = typeof p === 'object' ? p.at : p;
     const ref = await find(sel, !!s.frame);
+    // An action's element must be in view, or the press lands on nothing, so it's brought there first.
+    await script(s, "arguments[0].scrollIntoView({ block: 'center', inline: 'nearest' })", [ref]);
     if (typeof p !== 'object') return { x: 0, y: 0, origin: ref };
     const r = await call('GET', `${s0}/element/${idOf(ref)}/rect`);
     return { x: Math.round(r.width * ((p.x ?? 0.5) - 0.5)), y: Math.round(r.height * ((p.y ?? 0.5) - 0.5)), origin: ref };

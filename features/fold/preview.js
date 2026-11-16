@@ -11,7 +11,8 @@
  * the page is open, over every render, and written nowhere. Going to a place
  * in a folded section, from the outline or by a link in the page, opens the
  * sections around it first (`preview:open-to`, preview.js). ⌘⌥[ in the app
- * folds every heading, and ⌘⌥] opens every one (`preview:fold-all`). Not on a slide.
+ * folds every heading, and ⌘⌥] opens every one (`preview:fold-all`, which
+ * asides answer too). Not on a slide.
  * Runs in the preview frame.
  */
 (() => {

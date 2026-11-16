@@ -157,6 +157,16 @@
   document.addEventListener('click', (e) => {
     if (e.target.closest?.('details.gm-one-line > summary') && !e.target.closest('a, button')) e.preventDefault();
   });
+  // ⌘⌥[ folds every aside to its first line, and ⌘⌥] opens every one, as
+  // they do every heading (`preview:fold-all`); kept as folding by hand is,
+  // so an aside stays folded when the section it's in is opened again.
+  window.addEventListener('preview:fold-all', (e) => {
+    const open = e.detail?.folded !== true;
+    for (const d of document.querySelectorAll('details.gm-thread:not(.gm-one-line)')) {
+      folds.set(firstLine(d), open);
+      d.open = open;
+    }
+  });
   new ResizeObserver(() => measure()).observe(document.documentElement);
 
   Preview.register({

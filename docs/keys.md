@@ -18,7 +18,7 @@ title: Keys
 | `⌃G` | go to a page, a slide, a line (`:340`) or a heading |
 | `Home` / `End` (`fn←` / `fn→`) | in the editor, the start / end of the line, as it wraps (`⇧` to select) |
 | `⌘⌥↑` / `⌘⌥↓` | previous / next file |
-| `⌘⌥[` / `⌘⌥]` | fold every heading on the page / open every one ([Folding the page](files.md#folding-the-page)) |
+| `⌘⌥[` / `⌘⌥]` | fold every heading and aside on the page / open every one ([Folding the page](files.md#folding-the-page)) |
 | `↑` `↓` `→` `←` | in the file list: move, go into a folder, a file's versions or the open file's outline, go back out (`⌫` too) |
 | `→` `←` | in the outline: open or fold an entry, or go back out |
 | `⌘`-click / `⇧`-click / `⌘A` | in the outline: choose entries to take out together |

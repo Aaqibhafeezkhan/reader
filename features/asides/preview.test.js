@@ -134,3 +134,15 @@ test('an aside of a line and no more, with no replies, has nothing to fold: no c
   claude.querySelector('summary').dispatchEvent(click);
   assert.equal(click.defaultPrevented, true, 'its line takes no click');
 });
+
+test('⌘⌥[ folds every aside that has more than its line, kept over a render, and ⌘⌥] opens every one', () => {
+  const p = page();
+  const threads = () => p.$$('details.gm-thread').map((d) => d.open);
+  const all = (folded) => p.window.dispatchEvent(new p.window.CustomEvent('preview:fold-all', { detail: { folded } }));
+  all(true);
+  assert.deepEqual(threads(), [false, true, true], 'a line and no more has nothing to fold');
+  p.show(render(DOC).body);
+  assert.deepEqual(threads(), [false, true, true], 'still folded once its section is drawn again');
+  all(false);
+  assert.deepEqual(threads(), [true, true, true]);
+});

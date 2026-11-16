@@ -5,16 +5,18 @@
  *   progress:[326/1007] pages        a bar a third full, "326 of 1007 pages"
  *   progress:[] reviewed             "3 of 11 reviewed"
  *
- * Empty brackets count the boxes in its section -- the heading it's under,
- * to the next at that level or above, or the slide it's on -- and how many
- * are done; the heading's own box, which says the whole section is done,
- * isn't one of them. A box is whatever a feature tags as a thing to be done
- * (`done`, see source.js's tags), so it counts any feature's, without
- * knowing which drew them. A choice isn't a thing to be done.
+ * Empty brackets count the things to be done in its section -- the heading
+ * it's under, to the next at that level or above, or the slide it's on --
+ * and how many are done; the heading's own box, which says the whole
+ * section is done, isn't one of them. A thing to be done is a box, whatever
+ * a feature tags as one (`done`, see source.js's tags), or a question, a
+ * set of choices, done once one's picked (`answered`), as a heading's Done
+ * counts them; so it counts any feature's, without knowing which drew them.
  *
  * Each bar that counts carries the lines of the boxes it counted
- * (`data-lines`), and the preview counts them again as they're ticked
- * (preview.js). Where the page can't be worked, as on a slide or in a
+ * (`data-lines`) and of the questions (`data-questions`), apart, as a list
+ * of choices starts on its first item's line, and the preview counts them
+ * again as they're ticked and picked (preview.js). Where the page can't be worked, as on a slide or in a
  * record, it's drawn as the file stands, as the boxes are.
  */
 
@@ -51,7 +53,8 @@ export function progress(md) {
       // A heading's own box is the heading's, not its section's.
       const heading = state.tokens[i - 1]?.type === 'heading_open' ? of[i] : null;
       for (const t of [block, ...(block.children ?? [])]) {
-        if (typeof t.meta?.done === 'boolean') boxes.push({ meta: t.meta, section: of[i], heading });
+        if (typeof t.meta?.done === 'boolean') boxes.push({ done: t.meta.done, line: t.meta.line, section: of[i], heading });
+        else if (typeof t.meta?.answered === 'boolean') boxes.push({ done: t.meta.answered, line: t.meta.line ?? t.map?.[0], question: true, section: of[i], heading });
       }
     });
     state.tokens.forEach((block, i) => {
@@ -61,18 +64,20 @@ export function progress(md) {
         if (!t.meta.counted) return;
         const section = of[i];
         const counted = boxes.filter((b) => b.heading !== section && within(b.section, section));
-        t.meta.done = counted.filter((b) => b.meta.done).length;
+        t.meta.done = counted.filter((b) => b.done).length;
         t.meta.of = counted.length;
-        t.meta.lines = counted.map((b) => b.meta.line).filter((n) => Number.isInteger(n));
+        const lines = (question) => counted.filter((b) => !b.question === !question).map((b) => b.line).filter((n) => Number.isInteger(n));
+        t.meta.lines = lines(false);
+        t.meta.questions = lines(true);
       });
     });
   });
 
   md.renderer.rules.progress = (tokens, i) => {
-    const { done, of, name, counted, lines } = tokens[i].meta;
+    const { done, of, name, counted, lines, questions } = tokens[i].meta;
     // What it counted, to count again on the page; a bar that's written
     // stays as it's written.
-    const attrs = counted ? ` data-lines="${lines.join(' ')}"` : '';
+    const attrs = counted ? ` data-lines="${lines.join(' ')}"${questions.length ? ` data-questions="${questions.join(' ')}"` : ''}` : '';
     return progressBar(done, of, { name: name || 'Progress', attrs });
   };
 }

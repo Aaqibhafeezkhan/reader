@@ -47,8 +47,8 @@ test('a list of choices is a question, and says whether one is picked', () => {
   assert.match(body, /<ul data-answered="true">\n<li class="task"><input type="radio"[^>]*> red/);
   assert.match(body, /<ul data-answered="false">\n<li class="task"><input type="radio"[^>]*> navy/);
   assert.equal(body.match(/data-answered/g).length, 2, 'a list of boxes is no question');
-  // A choice isn't a thing to be done, so a bar doesn't count it.
-  assert.match(render('progress:[] done\n\n- (x) red\n- [ ] trash\n').body, /0 of 1/);
+  // A question is one thing to be done, done once one's picked, so a bar counts it (gh-256).
+  assert.match(render('progress:[] done\n\n- (x) red\n- [ ] trash\n').body, /1 of 2/);
 });
 
 test('choice boxes not heading a list item are left as typed', () => {

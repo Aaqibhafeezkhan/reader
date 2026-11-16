@@ -102,7 +102,7 @@ async function renderPage({ resetScroll = false } = {}) {
   if (seq !== state.renderSeq) return;
   // Where each heading's id is, for a link to one (goto.js).
   state.anchors = { path, lines: out.anchors ?? {} };
-  updatePresentable(out.deck);
+  updatePresentable(out.present);
   scheduleFitCheck(out.deck);
   // A deck being worked through shows the one page it's turned to.
   const page = setPages(out.pages, path);

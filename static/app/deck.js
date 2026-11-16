@@ -32,9 +32,9 @@ import { mark, drawDone } from './done.js';
 // src/transition.js). Going on from it plays that, and coming back to it
 // plays it the other way round; a jump to any other slide is a cut.
 
-/** Present is offered for a file the server says is a deck when it renders it. */
-export function updatePresentable(isDeck = false) {
-  el.presentBtn.hidden = !(state.current?.type === 'md' && isDeck);
+/** Present is offered for a file the server says is slides when it renders it. */
+export function updatePresentable(isSlides = false) {
+  el.presentBtn.hidden = !(state.current?.type === 'md' && isSlides);
 }
 
 export async function present() {

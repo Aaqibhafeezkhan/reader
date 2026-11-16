@@ -68,7 +68,7 @@ import { createContent, DOC_EXTS, PathError } from './content.js';
 import { today } from './dates.js';
 import { render } from './render.js';
 import { extract, closesAt } from './page.js';
-import { slides, pages, isDeck } from './slides.js';
+import { slides, pages, isDeck, isSlides } from './slides.js';
 import { exportHtml } from './export.js';
 import { version } from './version.js';
 import { FEATURES } from '../features/index.js';
@@ -369,9 +369,9 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
       // A deck being worked through is drawn a page to a slide.
       if (body.pages && isDeck(body.text)) {
         const { css, title, anchors, pages: list } = pages(body.text, { file: body.path, read });
-        if (list.length) return sendJson(res, { css, title, anchors, pages: list, deck: true });
+        if (list.length) return sendJson(res, { css, title, anchors, pages: list, deck: true, present: isSlides(body.text) });
       }
-      return sendJson(res, { ...render(body.text, { file: body.path, read, lines: true }), deck: isDeck(body.text) });
+      return sendJson(res, { ...render(body.text, { file: body.path, read, lines: true }), deck: isDeck(body.text), present: isSlides(body.text) });
     }
     if (route === '/api/slides' && req.method === 'POST') {
       return sendJson(res, slides(body.text, { file: body.path, read }));

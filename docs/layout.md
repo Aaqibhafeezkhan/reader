@@ -315,6 +315,27 @@ GitHub.
 2) Run `npm install`
 :::
 
+A lettered list, `a)`, `b)` and on, has its letters drawn as badges too, at any depth, as the parts of an idea are.
+On GitHub its items are lines of text, so it reads as written.
+Like a numbered list, one starts under a line of text only at `a)`; `a\)` stays as typed.
+
+::: tabs
++++ Source
+```markdown
+1) Favor icons over words:
+   a) Formatting should be an icon
+   b) Work should be an icon
+2) Remove or consolidate
+   a) Formatting could move to the editor's footer
+```
++++ Rendered
+1) Favor icons over words:
+   a) Formatting should be an icon
+   b) Work should be an icon
+2) Remove or consolidate
+   a) Formatting could move to the editor's footer
+:::
+
 With boxes, a `1)` list is steps to follow; see [Recipes](recipes.md).
 
 ## Tables

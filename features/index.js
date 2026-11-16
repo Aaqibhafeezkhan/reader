@@ -87,12 +87,14 @@ import fold from './fold/index.js';
 // qa has made it a list item, and after an attribution's dash is marked, as
 // it does any other. highlight comes before puzzles, which wraps the fence
 // rule it finds, as mermaid, headline and number do. columns, row, grid and cards come after
-// styles, which leaves them the lines their blocks open and close on. date comes after fields and tasks, so the lines
-// they keep are as written, without its marks. tabs comes last, so the
+// styles, which leaves them the lines their blocks open and close on. date comes after fields, so the lines
+// it keeps are as written, without its marks. tasks comes after date, as a box
+// is named by the words beside it, a date's among them; the lines it writes
+// back are the file's as written (`env.written`), so date's marks aren't in them. tabs comes last, so the
 // words it compares are the ones the others leave as text; only the `late`
 // plugins, which find the words an aside chooses, come after it. fold
 // comes after it, marking a heading by its line as written, whoever draws it.
-export const FEATURES = checkRequires([openUntil, asides, fields, tasks, qa, definitions, sizes, alerts, attributions, styles, columns, row, grid, cards, date, scripture, scriptureLds, search, rfc, pitch, timer, count, progress, social, math, arrows, ordinals, emoji, highlight, mermaid, headline, number, badges, steps, ingredients, puzzles, tabs, fold]);
+export const FEATURES = checkRequires([openUntil, asides, fields, qa, definitions, sizes, alerts, attributions, styles, columns, row, grid, cards, date, tasks, scripture, scriptureLds, search, rfc, pitch, timer, count, progress, social, math, arrows, ordinals, emoji, highlight, mermaid, headline, number, badges, steps, ingredients, puzzles, tabs, fold]);
 
 /**
  * Throws unless each feature's `requires` names features in the list that

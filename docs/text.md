@@ -251,3 +251,16 @@ Shipped :tada: but `:tada:` in code stays.
 +++ Rendered
 Shipped :tada: but `:tada:` in code stays.
 :::
+
+A browser has no emoji, so `:chrome:`, `:safari:`, `:firefox:` and `:edge:` show its mark, in the text's colour, named for a screen reader and as a tooltip.
+
+::: tabs
++++ Source
+```markdown
+1) [x] :chrome: at desktop and phone sizes
+2) [ ] :safari: :firefox: :edge:
+```
++++ Rendered
+1) [x] :chrome: at desktop and phone sizes
+2) [ ] :safari: :firefox: :edge:
+:::

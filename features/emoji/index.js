@@ -4,9 +4,17 @@
  *
  * A pass over the finished page rather than its tokens, so a shortcode in
  * the masthead, a figure's caption or a filled-in field shows too.
+ *
+ * A browser has no emoji, so `:chrome:`, `:safari:`, `:firefox:` and
+ * `:edge:` show its mark instead (marks/), drawn in the text's colour and
+ * named for a screen reader and as a tooltip.
  */
 
+import fs from 'node:fs';
 import EMOJI from 'markdown-it-emoji/lib/data/full.mjs';
+
+// shortcode -> the browser's name, its drawing in marks/<shortcode>.svg.
+const MARKS = { chrome: 'Chrome', safari: 'Safari', firefox: 'Firefox', edge: 'Edge' };
 
 const SHORTCODE = /:([a-z0-9_+-]+):/gi;
 const RAW = new Set(['code', 'pre']);
@@ -26,11 +34,26 @@ export function emojify(html) {
       return tag;
     }
     if (raw) return text;
-    return text.replace(SHORTCODE, (code, name) => EMOJI[name.toLowerCase()] ?? code);
+    return text.replace(SHORTCODE, (code, name) => {
+      const key = name.toLowerCase();
+      if (Object.hasOwn(MARKS, key)) return `<span class="emoji-mark emoji-${key}" role="img" aria-label="${MARKS[key]}" title="${MARKS[key]}"></span>`;
+      return EMOJI[key] ?? code;
+    });
   });
 }
+
+/** A mark's file as a CSS `url()`, without its title. */
+function mask(name) {
+  const svg = fs.readFileSync(new URL(`./marks/${name}.svg`, import.meta.url), 'utf8')
+    .replace(/<title>.*?<\/title>/, '').replace(/ role="img"/, '').trim();
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
+const CSS = `${fs.readFileSync(new URL('./emoji.css', import.meta.url), 'utf8')}${
+  Object.keys(MARKS).map((name) => `.emoji-${name} { --mark: ${mask(name)}; }`).join('\n')}\n`;
 
 export default {
   name: 'emoji',
   html: emojify,
+  css: CSS,
 };

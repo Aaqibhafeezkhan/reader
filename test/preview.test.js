@@ -104,7 +104,7 @@ test('a link to a heading on the page scrolls to it, there, and the app is asked
 });
 
 test('a link to an item of a badged list scrolls to it, and the app is asked nothing (gh-262)', () => {
-  const p = showing('1) Ideas\n   d) Today\n2) See link:#1.d[]\n');
+  const p = showing('1) Ideas\n   d) Today\n2) See [1 d)](#1.d)\n');
   const { taken, followed, scrolled } = clickToHeading(p, '1 d)');
   assert.deepEqual({ taken, followed }, { taken: true, followed: [] });
   assertElement(scrolled, p.document.getElementById('1.d'));

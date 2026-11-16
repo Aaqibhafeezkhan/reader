@@ -57,7 +57,6 @@ import scripture from './scripture/index.js';
 import scriptureLds from './scripture-lds/index.js';
 import search from './search/index.js';
 import rfc from './rfc/index.js';
-import link from './link/index.js';
 import pitch from './pitch/index.js';
 import timer from './timer/index.js';
 import count from './count/index.js';
@@ -96,7 +95,7 @@ import fold from './fold/index.js';
 // words it compares are the ones the others leave as text; only the `late`
 // plugins, which find the words an aside chooses, come after it. fold
 // comes after it, marking a heading by its line as written, whoever draws it.
-export const FEATURES = checkRequires([openUntil, asides, fields, qa, definitions, sizes, alerts, attributions, styles, columns, row, grid, cards, date, tasks, scripture, scriptureLds, search, rfc, link, pitch, timer, count, progress, social, math, arrows, ordinals, emoji, highlight, mermaid, music, headline, number, badges, steps, ingredients, puzzles, tabs, fold]);
+export const FEATURES = checkRequires([openUntil, asides, fields, qa, definitions, sizes, alerts, attributions, styles, columns, row, grid, cards, date, tasks, scripture, scriptureLds, search, rfc, pitch, timer, count, progress, social, math, arrows, ordinals, emoji, highlight, mermaid, music, headline, number, badges, steps, ingredients, puzzles, tabs, fold]);
 
 /**
  * Throws unless each feature's `requires` names features in the list that

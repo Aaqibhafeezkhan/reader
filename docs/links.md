@@ -233,13 +233,12 @@ Links to [other files](#other-files) open them, and [asides](asides.md#your-own-
 ## Items in a list
 
 An item of a badged list, `1)` or `a)` (see [Number badges](layout.md#number-badges)), has its badges as its id, outermost first and joined by dots: item d) of item 1) is `#1.d`.
-So a discussion laid out as a numbered list can point from one idea to another.
-`link:#1.d[]` shows the item's own badges, "1 d)", and the brackets can name it otherwise, `link:#1.d[the icon idea]`; `[1 d)](#1.d)` goes there too, and is a link on GitHub, though it goes nowhere there.
-`link:` works for a heading's id too, `link:#the-plan[the plan]`, named by its id when the brackets are empty.
+So a discussion laid out as a numbered list can point from one idea to another, with an ordinary link to that id: `[1 d)](#1.d)`.
+It's a link on GitHub too, though it goes nowhere there.
 
 | You write | Goes to |
 | --- | --- |
-| `link:#1.d[]` | `d)` under `1)`, shown as "1 d)" |
+| `[1 d)](#1.d)` | `d)` under `1)` |
 | `[the chip](#2.b)` | `b)` under `2)` |
 
 A heading keeps its id, and if two lists number the same way, the first item to have an id keeps it, so number a second list on from the first.
@@ -251,13 +250,13 @@ An item in a list that isn't badged, as a `1)` list under a bullet, has none.
 1) Favor icons over words:
    d) Today should be an icon
 2) Remove or consolidate
-   b) Today as a chip under Filter, which would replace link:#1.d[]
+   b) Today as a chip under Filter, which would replace [1 d)](#1.d)
 ```
 +++ Rendered
 1) Favor icons over words:
    d) Today should be an icon
 2) Remove or consolidate
-   b) Today as a chip under Filter, which would replace link:#1.d[]
+   b) Today as a chip under Filter, which would replace [1 d)](#1.d)
 :::
 
 ## Images, on hover

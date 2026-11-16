@@ -32,7 +32,7 @@
 
 import { topicsOf } from '../key.js';
 import fs from 'node:fs';
-import { beforeExtract, fenced, MARKS } from '../source.js';
+import { beforeExtract, fenced, MARKS, PLACEHOLDER } from '../source.js';
 import { layoutsOf, owns, OPEN as LAYOUT_OPEN, DIVIDER, CLOSE as LAYOUT_CLOSE } from '../layout.js';
 import { marking, markSpan } from '../mark.js';
 import { COLORS, GENERIC } from '../names.js';
@@ -46,14 +46,14 @@ const MARK = new RegExp(`${OPEN}([^${CLOSE}]*)${CLOSE}`, 'g');
 const [ITEM_OPEN, ITEM_CLOSE] = MARKS.items;
 const ITEM_MARK = new RegExp(`${ITEM_OPEN}([^${ITEM_CLOSE}]*)${ITEM_CLOSE}`, 'g');
 const [BOX_OPEN, BOX_CLOSE] = MARKS.box;
-const [TASK_OPEN, TASK_CLOSE] = MARKS.tasks;
 // A list item's first line with braces where it's declared, after its
-// bullet and any box (as typed, or as tasks has placed it), and before its
+// bullet and any box (as typed, or as another feature has placed it, whose
+// placeholder this steps past without knowing whose it is), and before its
 // text: `- ( ) {bg-honeydew} **A**`. A heading's are the same, after its
 // `#`s and any box: `## [ ] {uppercase} Today`.
 const ITEM = new RegExp('^([ \\t]*(?:>[ \\t]*)*(?:(?:[-*+]|\\d{1,9}[.)])[ \\t]+'
-  + `(?:(?:${TASK_OPEN}\\d+${TASK_CLOSE}|(?:\\[[ xX]\\])+|\\([ xX]\\))[ \\t]+)?`
-  + `|#{1,6}[ \\t]+(?:(?:${TASK_OPEN}\\d+${TASK_CLOSE}|\\[[ xX]\\])[ \\t]+)?))`
+  + `(?:(?:${PLACEHOLDER}|(?:\\[[ xX]\\])+|\\([ xX]\\))[ \\t]+)*`
+  + `|#{1,6}[ \\t]+(?:(?:${PLACEHOLDER}|\\[[ xX]\\])[ \\t]+)*))`
   + '(\\{([\\w-]+(?:[ \\t]+[\\w-]+)*)\\}[ \\t]+)(?=\\S)');
 // Words that set how text is cased rather than its color or font.
 const CASES = new Set(['uppercase']);

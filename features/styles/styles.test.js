@@ -95,7 +95,7 @@ test('braces after a list item\'s bullet and box style the whole item, its box i
 });
 
 test('braces that aren\'t all style names, or aren\'t right after an item\'s bullet and box, stay as typed', () => {
-  const src = '- {placeholder} a\n- {red georgia} b\n- [c]{red} d\n- {red}e\n- f {red}\n- [ ] g {red}\n- h\n  {red} i\n- {red}\n\n{red} j\n\n    - {red} k\n\n- `{red} l`\n- [@ m] {red} n\n';
+  const src = '- {placeholder} a\n- {red georgia} b\n- [c]{red} d\n- {red}e\n- f {red}\n- [ ] g {red}\n- h\n  {red} i\n- {red}\n\n{red} j\n\n    - {red} k\n\n- `{red} l`\n';
   const { body } = render(src);
   assert.match(body, /<li>\{placeholder\} a<\/li>/);
   assert.match(body, /<li>\{red georgia\} b<\/li>/);
@@ -108,8 +108,13 @@ test('braces that aren\'t all style names, or aren\'t right after an item\'s bul
   assert.match(body, /<p>\{red\} j<\/p>/);
   assert.match(body, /<pre><code>- \{red\} k\n<\/code><\/pre>/);
   assert.match(body, /<li><code>\{red\} l<\/code><\/li>/);
-  assert.match(body, /<\/span> \{red\} n<\/li>/);
   assert.doesNotMatch(body, /<li [^>]*style=|[\uE000-\uE009]/);
+});
+
+test('braces after whatever leads an item, a box, a date, a blank, or more than one, style it, whichever feature drew them (gh-291)', () => {
+  const { body } = render('- date:2026-11-10[] {red} Buy milk\n- [ ] date:2026-11-10[] {red} Both\n- [@ m] {red} n\n- [x][ ] {red} staged\n');
+  assert.equal(body.match(/<li [^>]*style="color: var\(--gm-red\)"/g).length, 4);
+  assert.doesNotMatch(body.replace(/<[^>]*>/g, ''), /\{red\}|[\uE000-\uE009]/, 'none is left in the words');
 });
 
 test('an item\'s own color wins over its ::: block\'s, whose font still comes after', () => {

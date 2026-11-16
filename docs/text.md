@@ -66,6 +66,8 @@ until the closing line.
 A list item takes styles of its own from braces where it's declared:
 after its bullet, and its box if it has one, before its text. They style
 the whole item, its bullet or box included, and its cell in a grid.
+What leads the item before them can be anything reader draws, a date or a blank
+as well as a box: `- date:2026-11-10[] {red} Buy milk` is red.
 A heading takes them the same way, after its `#`s and any box: `## {navy} Today`.
 Braces naming anything but colors, backgrounds, the generic fonts
 (`serif`, `monospace`, ...) and `uppercase` stay as typed:

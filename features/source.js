@@ -77,6 +77,14 @@ export const MARKS = {
 };
 
 /**
+ * Any feature's placeholder, its pair of marks and what's between them, as
+ * a pattern, for a feature that looks for its own syntax after one to step
+ * past it without knowing whose it is (gh-291): a `:::` block's marker
+ * before a definition, a box before an item's braces.
+ */
+export const PLACEHOLDER = `(?:${Object.values(MARKS).filter((m) => m.length === 2).map(([open, close]) => `${open}[^${close}]*${close}`).join('|')})`;
+
+/**
  * The names features share on `env`, which each of them may read and some
  * may write: `state.env.sourceLines` in a parsing rule, `env.sourceLines` in
  * a renderer rule. `env` is markdown-it's: the object passed to

@@ -24,9 +24,10 @@ const { Token } = MarkdownIt;
 
 const CONT_CLASS = 'gm-cont';
 
+/** Container `t` again, to reopen it in the next row: its id stays with the first, as an id is one place. */
 function cloneToken(t) {
   const c = new Token(t.type, t.tag, t.nesting);
-  c.attrs = t.attrs ? t.attrs.map((a) => a.slice()) : null;
+  c.attrs = t.attrs ? t.attrs.filter(([name]) => name !== 'id').map((a) => a.slice()) : null;
   c.map = t.map ? t.map.slice() : null;
   c.block = t.block;
   c.markup = t.markup;

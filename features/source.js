@@ -248,6 +248,9 @@ export const SHARED_ENV = [
  *   `data-answered`. What says whether a page is done (Work's dots), or
  *   how far along a section is (`progress:[]`), counts these with the
  *   things to be done.
+ * - `anchor`: the id to link to the block by, `#1.d`, which it's given
+ *   unless a heading, or a block before it, has it (src/anchors.js); a
+ *   badged list's item says its badges.
  * - `notExported`: draw nothing for the token on an exported page, because
  *   another feature already shows there what it says, and nothing on that
  *   page could change it (a step's box, whose badge says whether it's done).

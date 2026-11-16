@@ -14,6 +14,10 @@
  * In the core rather than a feature, as every heading gets one whatever
  * features draw it, and render() says where each is (`anchors`), for the app
  * to go to one on a page it isn't showing, or in a file it's opening.
+ *
+ * A block a feature gives an id to (the `anchor` tag, features/source.js),
+ * as a list item its badges, `1.d`, gets it too, after every feature has
+ * run, unless a heading or a block before it has it already.
  */
 
 import EMOJI from 'markdown-it-emoji/lib/data/full.mjs';
@@ -69,6 +73,20 @@ export function headingIds(md) {
       t.attrSet('id', id);
       if (t.map) ids[id] = base + (env.sourceLines?.[t.map[0]] ?? t.map[0]);
     });
+  });
+  md.core.ruler.push('anchor_ids', (state) => {
+    if (state.inlineMode || state.env.nested) return;
+    const { env } = state;
+    const seen = ((env.shared ?? {})[IDS] ??= new Map());
+    const ids = (env[IDS] ??= {});
+    const base = env.lineBase ?? 0;
+    for (const t of state.tokens) {
+      const id = t.meta?.anchor;
+      if (typeof id !== 'string' || !id || seen.has(id)) continue;
+      seen.set(id, 0);
+      t.attrSet('id', id);
+      if (t.map) ids[id] = base + (env.sourceLines?.[t.map[0]] ?? t.map[0]);
+    }
   });
 }
 

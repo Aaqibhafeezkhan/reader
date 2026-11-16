@@ -103,6 +103,14 @@ test('a link to a heading on the page scrolls to it, there, and the app is asked
   assertElement(clickToHeading(p, 'its base').scrolled, p.document.querySelectorAll('h2')[1]);
 });
 
+test('a link to an item of a badged list scrolls to it, and the app is asked nothing (gh-262)', () => {
+  const p = showing('1) Ideas\n   d) Today\n2) See link:#1.d[]\n');
+  const { taken, followed, scrolled } = clickToHeading(p, '1 d)');
+  assert.deepEqual({ taken, followed }, { taken: true, followed: [] });
+  assertElement(scrolled, p.document.getElementById('1.d'));
+  assert.deepEqual(p.told, [], 'only a heading is named in the address');
+});
+
 test('a link to a heading the page doesn\'t hold, on another page or slide, asks the app to go there', () => {
   const p = showing('See [the end](#the-end).\n');
   assert.deepEqual(clickToHeading(p, 'the end'), { taken: true, followed: ['#the-end'], scrolled: null });

@@ -337,6 +337,8 @@ Like a numbered list, one starts right under a line of text only at `a)`, but in
    a) Formatting could move to the editor's footer
 :::
 
+Each item can be linked to by its badges, `link:#1.d[]`; see [Items in a list](links.md#items-in-a-list).
+
 With boxes, a `1)` list is steps to follow; see [Recipes](recipes.md).
 
 ## Tables

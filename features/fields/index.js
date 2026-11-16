@@ -61,7 +61,7 @@
 
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { beforeExtract, readLines, placeholder, MARKS, splitText, escapeHtml, escapeAttr } from '../source.js';
+import { beforeExtract, readLines, placeholder, MARKS, LIST_MARKER, splitText, escapeHtml, escapeAttr } from '../source.js';
 import { typable, hinted, unfilled, shut, workable, inlineBlanks } from '../blank.js';
 import { choicesIn, pickedAt } from '../choices.js';
 
@@ -108,7 +108,7 @@ function inItem(lines, at) {
   for (let k = at - 1; k >= 0; k--) {
     const before = lines[k].match(/^([ \t]*)(\S.*)?$/);
     if (!before?.[2] || before[1].length >= indent) continue;
-    const item = /^(?:[-*+]|\d+[.)])[ \t]+/.exec(before[2]);
+    const item = new RegExp(`^${LIST_MARKER}[ \\t]+`).exec(before[2]);
     return Boolean(item) && before[1].length + item[0].length <= indent;
   }
   return false;

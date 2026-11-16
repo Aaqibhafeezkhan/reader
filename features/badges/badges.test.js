@@ -63,3 +63,16 @@ test('printed, a list is indented as far as its badges reach, so none is cut off
   // The document has no padding in print, and the badge hung into it (gh-251).
   assert.match(css, /@media print \{\n {2}ol\.badges \{ padding-left: max\(var\(--gm-indent\), 2\.2em\); \}\n\}/);
 });
+
+test('a lettered item takes a box, a choice and braces as a numbered one does, as every feature reads the same list markers', () => {
+  const { body } = render('1) Ideas\n   a) [ ] Smaller\n   b) [x] {red} Darker\n   c) ( ) Either\n');
+  assert.match(body, /<li class="task step"[^>]*id="1\.a"><input type="checkbox" class="task-box"[^>]*data-done="false"/);
+  assert.match(body, /<li class="task step step-done" style="color: var\(--gm-red\)"[^>]*id="1\.b"><input type="checkbox"[^>]*checked/);
+  assert.match(body, /id="1\.c"><input type="radio"/);
+  assert.doesNotMatch(body.replace(/<[^>]*>/g, ''), /\[ \]|\{red\}|\( \)/, 'nothing left as typed in the text');
+});
+
+test('under a line of text, `b)` with a box stays text, as only `a)` starts a list there', () => {
+  const { body } = render('Pick one:\nb) [ ] stays text\n');
+  assert.match(body, /<p>Pick one:\nb\) \[ \] stays text<\/p>/);
+});

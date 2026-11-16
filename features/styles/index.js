@@ -32,7 +32,7 @@
 
 import { topicsOf } from '../key.js';
 import fs from 'node:fs';
-import { beforeExtract, fenced, MARKS, PLACEHOLDER } from '../source.js';
+import { beforeExtract, fenced, MARKS, PLACEHOLDER, LIST_MARKER } from '../source.js';
 import { layoutsOf, owns, OPEN as LAYOUT_OPEN, DIVIDER, CLOSE as LAYOUT_CLOSE } from '../layout.js';
 import { marking, markSpan } from '../mark.js';
 import { COLORS, GENERIC } from '../names.js';
@@ -51,7 +51,7 @@ const [BOX_OPEN, BOX_CLOSE] = MARKS.box;
 // placeholder this steps past without knowing whose it is), and before its
 // text: `- ( ) {bg-honeydew} **A**`. A heading's are the same, after its
 // `#`s and any box: `## [ ] {uppercase} Today`.
-const ITEM = new RegExp('^([ \\t]*(?:>[ \\t]*)*(?:(?:[-*+]|\\d{1,9}[.)])[ \\t]+'
+const ITEM = new RegExp(`^([ \\t]*(?:>[ \\t]*)*(?:${LIST_MARKER}[ \\t]+`
   + `(?:(?:${PLACEHOLDER}|(?:\\[[ xX]\\])+|\\([ xX]\\))[ \\t]+)*`
   + `|#{1,6}[ \\t]+(?:(?:${PLACEHOLDER}|\\[[ xX]\\])[ \\t]+)*))`
   + '(\\{([\\w-]+(?:[ \\t]+[\\w-]+)*)\\}[ \\t]+)(?=\\S)');
@@ -59,7 +59,7 @@ const ITEM = new RegExp('^([ \\t]*(?:>[ \\t]*)*(?:(?:[-*+]|\\d{1,9}[.)])[ \\t]+'
 const CASES = new Set(['uppercase']);
 // What opens a line's block, for the marker to go after.
 // An aside's `~` can carry aliases and the words it's about: `~c[the lazy dog] `.
-const PREFIX = /^[ \t]*(?:~[^\s~[]*(?:\[(?:[^\]\\\n]|\\.)+\](?:\{[a-z]+\})?)?[ \t]+|[>~][ \t]*)*(?:(?:[-*+]|\d{1,9}[.)])[ \t]+)?(?:#{1,6}[ \t]+)?/;
+const PREFIX = new RegExp(String.raw`^[ \t]*(?:~[^\s~[]*(?:\[(?:[^\]\\\n]|\\.)+\](?:\{[a-z]+\})?)?[ \t]+|[>~][ \t]*)*(?:${LIST_MARKER}[ \t]+)?(?:#{1,6}[ \t]+)?`);
 // Lines a marker would change the meaning of.
 const RULE = /^[ \t]*([-*_=])(?:[ \t]*\1)*[ \t]*$/;
 const DELIMITER_ROW = /^[ \t]*\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*$/;

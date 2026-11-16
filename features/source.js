@@ -85,6 +85,14 @@ export const MARKS = {
 export const PLACEHOLDER = `(?:${Object.values(MARKS).filter((m) => m.length === 2).map(([open, close]) => `${open}[^${close}]*${close}`).join('|')})`;
 
 /**
+ * What starts a list's item, as a pattern: a bullet, a number, `1.` or `1)`,
+ * or a letter, `a)`, which badges reads as a list (gh-261). A feature that
+ * finds its own syntax after an item's start uses it, so that a kind of
+ * list added later is found everywhere at once.
+ */
+export const LIST_MARKER = '(?:[-*+]|\\d{1,9}[.)]|[a-z]\\))';
+
+/**
  * The names features share on `env`, which each of them may read and some
  * may write: `state.env.sourceLines` in a parsing rule, `env.sourceLines` in
  * a renderer rule. `env` is markdown-it's: the object passed to

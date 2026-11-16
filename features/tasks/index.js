@@ -34,11 +34,11 @@
 
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { beforeExtract, keepWritten, readLines, placeholder, MARKS, unplaced, splitText, sections, multipliers, escapeHtml, escapeAttr, addClass } from '../source.js';
+import { beforeExtract, keepWritten, readLines, placeholder, MARKS, LIST_MARKER, unplaced, splitText, sections, multipliers, escapeHtml, escapeAttr, addClass } from '../source.js';
 import { schemeRule } from '../scheme.js';
 import { workable, shut } from '../blank.js';
 
-const TASK = /^([ \t]*(?:>[ \t]*|~(?![^\s~])[ \t]*|~[^\s~]+[ \t]+)*(?:[-*+]|\d{1,9}[.)])[ \t]+)(?:((?:\[[ xX]\]){1,9})|\(([ xX])\))(?=[ \t]|$)/;
+const TASK = new RegExp(`^([ \\t]*(?:>[ \\t]*|~(?![^\\s~])[ \\t]*|~[^\\s~]+[ \\t]+)*${LIST_MARKER}[ \\t]+)(?:((?:\\[[ xX]\\]){1,9})|\\(([ xX])\\))(?=[ \\t]|$)`);
 const NAMED = new Set(['field_inline', 'count', 'ingredient_key', 'ingredient_use', 'pitch', 'timer', 'scheme_shown']);
 const HEADING = /^( {0,3}#{1,6}[ \t]+)\[([ xX])\](?=[ \t]|$)/;
 const [OPEN, CLOSE] = MARKS.tasks;

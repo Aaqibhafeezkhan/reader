@@ -33,6 +33,41 @@ flowchart LR
 ```
 :::
 
+## Music
+
+A `music` fence is a tune in [ABC notation](https://abcnotation.com/), the plain-text way tunes are written down, drawn on a staff by [abcjs](https://abcjs.net/), with **Play** above it.
+Its header says its title (`T:`), time (`M:`), note length (`L:`) and key (`K:`), and the notes come after, a bar line `|` between bars.
+In a file opened anywhere else, the fence is still its text.
+
+::: tabs
++++ Source
+````markdown
+```music
+X:1
+T:Twinkle, Twinkle
+M:4/4
+L:1/4
+K:C
+C C G G | A A G2 | F F E E | D D C2 |]
+```
+````
++++ Rendered
+```music
+X:1
+T:Twinkle, Twinkle
+M:4/4
+L:1/4
+K:C
+C C G G | A A G2 | F F E E | D D C2 |]
+```
+:::
+
+- **Play** plays it on a piano, each note marked on the staff as it sounds; pressed again, it stops. It plays on a slide and in Work too.
+- The piano's notes come from abcjs's website the first time each is played, through reader, which keeps them in a cache folder of its own, outside your files (`~/Library/Caches/reader` on a Mac, `~/.cache/reader` on Linux, or wherever `READER_CACHE` says). So a tune plays offline once its notes have been played; one that hasn't says it needs the network.
+- A screen reader hears the staff as an image named by its title, key, time and bars, "Twinkle, Twinkle: C major, 4/4, 4 bars", and then its text.
+- ABC with something wrong in it shows its text, what's wrong under it, and what could be drawn of it, faded.
+- An exported page shows the staff as it was drawn, with no button.
+
 ## Headlines
 
 A `headline` fence is set like a clipping from the paper it ran in: the

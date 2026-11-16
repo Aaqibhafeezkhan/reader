@@ -71,6 +71,7 @@ import { extract, closesAt } from './page.js';
 import { slides, pages, isDeck, isSlides } from './slides.js';
 import { exportHtml } from './export.js';
 import { version } from './version.js';
+import { note, NOTE, NoteError } from './soundfont.js';
 import { FEATURES } from '../features/index.js';
 import { READ } from '../static/app/address.js';
 
@@ -186,6 +187,8 @@ const PAGE_POLICIES = {
     'img-src': '* data: blob:',
     'font-src': "'self' data:",
     'frame-src': 'https://www.youtube-nocookie.com',
+    // The notes a tune plays, from the frames' own server (src/soundfont.js).
+    'connect-src': "'self'",
     'frame-ancestors': "'none'",
   },
   'print.html': {
@@ -233,7 +236,7 @@ const CONTENT_SANDBOX = { 'Content-Security-Policy': 'sandbox' };
  * the preview frames' second port, listens once it does (`listenFrames`), and
  * closes with it.
  */
-export function createServer({ root, allowHosts = [], now = Date.now, dayStarts = 0 }) {
+export function createServer({ root, allowHosts = [], now = Date.now, dayStarts = 0, soundfont = {} }) {
   const content = createContent(root);
   // Which reader this is, worked out now, while nothing's waiting on it.
   const known = version();
@@ -295,7 +298,20 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
     }
     if (FEATURE_SCRIPTS.has(route)) return sendFile(res, FEATURE_SCRIPTS.get(route));
     if (FRAME_FILES.has(route)) return sendFile(res, path.join(STATIC_DIR, route.slice(1)));
+    if (NOTE.test(route)) return sendNote(res, route);
     return send(res, 404, 'not found', 'text/plain');
+  }
+
+  // A note a tune plays, kept once fetched, so the browser may keep it too
+  // (src/soundfont.js); what can't be fetched says why.
+  async function sendNote(res, route) {
+    try {
+      const bytes = await note(route, soundfont);
+      return send(res, 200, bytes, 'audio/mpeg', { 'Cache-Control': 'public, max-age=31536000, immutable' });
+    } catch (err) {
+      if (!(err instanceof NoteError)) throw err;
+      return send(res, err.status, err.message, 'text/plain');
+    }
   }
 
   // A puzzle's board kept in a file of its own, read from the content root.

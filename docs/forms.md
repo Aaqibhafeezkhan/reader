@@ -46,6 +46,9 @@ A section written done, `## [x] Stretch`, starts folded on the page, out of the 
 
 A section is done, too, once everything in it that can be done is: its boxes ticked, its choices made, and each section with a box under it done.
 It shows **✓ Done** on its own then, and stays done until one of them is undone.
+The click that does the last of them writes the heading's `[x]` too, in the same edit, so one undo takes back both, and undoing one of them writes `[ ]` back; that carries up to the sections it's in.
+So the file says what the page does, as where it's the record, such as a review's Acceptance Criteria.
+A section pressed done before its last part keeps its `[x]` as that's done, but if one is undone after that, the heading goes back to `[ ]` with it, as there's no telling which made it done.
 A section with nothing in it to tick or pick is done only by its button.
 `## \[ ] Stretch` keeps the brackets as typed.
 

@@ -18,7 +18,10 @@
  * the heading's `[x]` (`data-own`), and it's pressed while its section is
  * done, by that or by everything to be done in it being done
  * (`data-full`), counted again here as they're done and undone, a section
- * with a box under it as one of them. It sends `preview:done` too.
+ * with a box under it as one of them. It sends `preview:done` too. When
+ * the last of what's in it is done, its heading's `[x]` is written with
+ * that, as one undo, and when one is undone, taken back with it: the
+ * file is the record, as a review's Acceptance Criteria is.
  * Where the page can't be worked (`Preview.workable`), as on a slide, none
  * of them takes a click or a key; when it stops being workable while it's
  * showing, as a page past its time does, they're shut as the server would
@@ -81,6 +84,13 @@
         } else if (!inside) parts.push(n.dataset.done ?? n.dataset.answered);
       }
       const full = parts.length > 0 && parts.every((v) => v === 'true');
+      // Done or undone by what's in it just now, the file says so too.
+      if (Preview.workable && String(full) !== button.dataset.full && button.dataset.own === String(!full)) {
+        const line = Number(button.dataset.line);
+        const as = (on) => (on ? button.dataset.on : button.dataset.off);
+        Preview.edit([{ from: line, to: line + 1, before: [as(!full)], after: [as(full)] }], { undo: true });
+        button.dataset.own = String(full);
+      }
       button.dataset.full = String(full);
       if (full) button.setAttribute('aria-disabled', 'true');
       else button.removeAttribute('aria-disabled');
@@ -89,17 +99,21 @@
       markDone(button, done);
     }
   };
-  // Once a turn, after whatever changed on the page has said so.
+  // Once a turn, after whatever changed on the page has said so, and before
+  // the turn's edits go up, for a heading's to go with them.
   let settling = false;
+  const settleNow = () => {
+    if (!settling) return;
+    settleSections();
+    settling = false;
+  };
   const settle = () => {
     if (settling || !document.querySelector('.section-done')) return;
     settling = true;
-    queueMicrotask(() => {
-      settleSections();
-      settling = false;
-    });
+    queueMicrotask(settleNow);
   };
   for (const type of ['change', 'preview:done', 'preview:answered']) document.addEventListener(type, settle);
+  document.addEventListener('preview:sending', settleNow);
 
   // A box or a choice where the page can't be worked: a click on it, which
   // Space is too, is called off before it ticks, and so are the keys that

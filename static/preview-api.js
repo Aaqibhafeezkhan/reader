@@ -22,6 +22,9 @@
  *     earlier turn has written since the page was drawn, made from the line
  *     as its feature last knew it, is made on what that turn wrote.
  *
+ *     Just before they go up, `preview:sending` is sent to the document,
+ *     for edits that follow from the turn's others to join them.
+ *
  *   Preview.flush()
  *     Sends the edits held so far now, not at the end of the turn.
  *
@@ -116,6 +119,8 @@
   // The edits asked for in this turn, under their options, in the order asked.
   let held = null;
   const flush = () => {
+    // Last asks of the turn, as what's done counted again (tasks/preview.js).
+    if (held) document.dispatchEvent(new Event('preview:sending'));
     const sending = held;
     held = null;
     for (const { edits, opts } of joined([...sending?.values() ?? []])) {

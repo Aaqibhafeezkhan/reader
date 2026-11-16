@@ -35,7 +35,7 @@ flowchart LR
 
 ## Music
 
-A `music` fence is a tune in [ABC notation](https://abcnotation.com/), the plain-text way tunes are written down, drawn on a staff by [abcjs](https://abcjs.net/), with **Play** above it.
+A `music` fence is a tune in [ABC notation](https://abcnotation.com/), the plain-text way tunes are written down, drawn on a staff by [abcjs](https://abcjs.net/), with **Play** in its lower right.
 Its header says its title (`T:`), time (`M:`), note length (`L:`) and key (`K:`), and the notes come after, a bar line `|` between bars.
 In a file opened anywhere else, the fence is still its text.
 
@@ -62,7 +62,8 @@ C C G G | A A G2 | F F E E | D D C2 |]
 ```
 :::
 
-- **Play** plays it on a piano, each note marked on the staff as it sounds; pressed again, it stops. It plays on a slide and in Work too.
+- **Play** plays it on a piano, each note marked on the staff in the page's accent as it sounds, and turns to **Pause**, which waits where it is until Play carries on. It plays on a slide and in Work too.
+- Once it's begun, **Back to the start** is beside it: playing, it plays on from the start; paused, it waits there. At its end, it's as it was before it was played.
 - The piano's notes come from abcjs's website the first time each is played, through reader, which keeps them in a cache folder of its own, outside your files (`~/Library/Caches/reader` on a Mac, `~/.cache/reader` on Linux, or wherever `READER_CACHE` says). So a tune plays offline once its notes have been played; one that hasn't says it needs the network.
 - A screen reader hears the staff as an image named by its title, key, time and bars, "Twinkle, Twinkle: C major, 4/4, 4 bars", and then its text.
 - ABC with something wrong in it shows its text, what's wrong under it, and what could be drawn of it, faded.

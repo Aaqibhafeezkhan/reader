@@ -52,6 +52,7 @@ title-font: playfair-display georgia
 
 `accent:` in the front matter is the color of what reader draws in its accent.
 It's the document's own instead of reader's: links' underlines, checkboxes and radios, progress bars, a timer, a picked card, a field's outline when it has the keyboard, and the rest.
+With an accent, arrows (`->`) are drawn in it too, and every card is bordered in it with a light tint of it behind; without one they're as they always are.
 
 ::: tabs
 +++ Source

@@ -240,6 +240,15 @@ test('a ~~ line under an aside is a reply in its thread, flat, each with who wro
   assert.match(cell, /<details class="gm-thread" open>\n<summary><span class="gm-by"><span class="gm-who">Josh<\/span><\/span>Does it\?<\/summary>\n<div class="gm-replies">\n<div class="gm-reply gm-attributed" style="--by: var\(--gm-key-2\)" data-by="c">\n<p><span class="gm-by"><span class="gm-who">Claude<\/span><\/span>Yes\.<\/p>/);
 });
 
+test('an aside or a reply with no reviewer shows only its words, no tilde (gh-288)', () => {
+  const [cell] = cells(render('A line.\n~ My own note.\n~~ And mine.\n').body);
+  assert.match(cell, /<summary>My own note\.<\/summary>\n<div class="gm-replies">\n<div class="gm-reply">\n<p>And mine\.<\/p>\n<\/div>/);
+  assert.doesNotMatch(cell, /~/);
+  // One that opens with a quote folds to a line that names it.
+  const [quoted] = cells(render('A line.\n~ > quoted\n').body);
+  assert.match(quoted, /<summary><span class="vh">Aside<\/span><\/summary>\n<blockquote>/);
+});
+
 test('~~ is a reply only straight under an aside, and only before a space or an alias run: strikethrough is untouched', () => {
   const { source, asides } = preprocess('Text.\n~~ not a reply\n\n~~struck~~ and on\n\n~ an aside\n~~struck~~ too\n', new Map());
   assert.equal(asides.length, 1);

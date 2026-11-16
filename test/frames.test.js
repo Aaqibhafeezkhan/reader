@@ -130,6 +130,7 @@ test('the app\'s preview and stage have the frames\' origin, for a video, and ar
   }
   assert.deepEqual(sent, { preview: NAME, stage: NAME, measure: '*' });
   for (const id of ['preview', 'stage']) {
-    assert.match(window.document.getElementById(id).getAttribute('allow'), /^autoplay \*; encrypted-media \*; picture-in-picture \*$/, id);
+    assert.match(window.document.getElementById(id).getAttribute('allow'), /^autoplay \*; encrypted-media \*; picture-in-picture \*/, id);
   }
+  assert.match(window.document.getElementById('preview').getAttribute('allow'), /; clipboard-write \*$/, 'a code fence\'s Copy button writes the clipboard');
 });

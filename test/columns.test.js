@@ -24,12 +24,13 @@ function toHtml(src, opts = {}) {
 
 // --- rendering ------------------------------------------------------------
 
-test('column layout emits paired cells and the tilde mark', () => {
+test('column layout emits paired cells, the writer\'s own aside with no tilde', () => {
   const html = toHtml('a point\n\n~ a thought\n');
   assert.match(html, /gm-pair/);
   assert.match(html, /gm-speaker/);
   assert.match(html, /gm-aside-cell/);
-  assert.match(html, /class="gm-mark" aria-hidden="true">~</);
+  assert.match(html, /<summary>a thought<\/summary>/);
+  assert.doesNotMatch(html, /~/);
 });
 
 test('column headings come from front matter', () => {

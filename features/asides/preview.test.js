@@ -134,3 +134,35 @@ test('an aside of a line and no more, with no replies, has nothing to fold: no c
   claude.querySelector('summary').dispatchEvent(click);
   assert.equal(click.defaultPrevented, true, 'its line takes no click');
 });
+
+test('⌘⌥[ folds every aside that has more than its line, kept over a render, and ⌘⌥] opens every one', () => {
+  const p = page();
+  const threads = () => p.$$('details.gm-thread').map((d) => d.open);
+  const all = (folded) => p.window.dispatchEvent(new p.window.CustomEvent('preview:fold-all', { detail: { folded } }));
+  all(true);
+  assert.deepEqual(threads(), [false, true, true], 'a line and no more has nothing to fold');
+  p.show(render(DOC).body);
+  assert.deepEqual(threads(), [false, true, true], 'still folded once its section is drawn again');
+  all(false);
+  assert.deepEqual(threads(), [true, true, true]);
+});
+
+test('an aside out of sight, in a folded section, isn\'t taken for a line and no more: ⌘⌥[ folds it, and it\'s measured once it shows', () => {
+  const p = preview();
+  const proto = p.window.HTMLElement.prototype;
+  let seen = false;
+  proto.checkVisibility = () => seen;
+  const doc = 'Text.\n~ An aside alone, long in the margin.\n';
+  p.show(render(doc).body);
+  const thread = () => p.document.querySelector('details.gm-thread');
+  assert.equal(thread().classList.contains('gm-one-line'), false, 'not measured while it has no width');
+  p.window.dispatchEvent(new p.window.CustomEvent('preview:fold-all', { detail: { folded: true } }));
+  assert.equal(thread().open, false);
+  p.show(render(doc).body);
+  assert.equal(thread().open, false, 'kept folded over a render');
+  seen = true;
+  p.show(render(doc).body);
+  // The test page lays nothing out, so once it shows it measures as one line, and opens.
+  assert.equal(thread().classList.contains('gm-one-line'), true);
+  assert.equal(thread().open, true);
+});

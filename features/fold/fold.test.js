@@ -113,3 +113,34 @@ test('on a slide, nothing folds', () => {
   assert.equal(p.document.querySelector('.fold-toggle'), null);
   assert.equal(p.document.querySelector('.fold-hidden'), null);
 });
+
+test('⌘⌥[ in the app folds every heading, and ⌘⌥] opens every one, kept over a render and written nowhere', () => {
+  const p = page();
+  p.send({ type: 'fold-all', folded: true });
+  assert.deepEqual(p.seen(), ['Open to start', 'Done already', 'Last']);
+  p.show();
+  assert.deepEqual(p.seen(), ['Open to start', 'Done already', 'Last']);
+  p.send({ type: 'fold-all', folded: false });
+  assert.ok(p.seen().includes('Found by the outline.'), 'a ticked one opens too');
+  assert.ok(p.seen().includes('The end.'));
+  assert.equal(p.posted.filter((m) => m.type === 'edit').length, 0);
+});
+
+test('the page hands ⌘⌥[ and ⌘⌥] up by the key\'s place, whatever ⌥ makes of it', () => {
+  const p = page();
+  const e = new p.window.KeyboardEvent('keydown', { key: '“', code: 'BracketLeft', metaKey: true, altKey: true, bubbles: true, cancelable: true });
+  p.document.body.dispatchEvent(e);
+  assert.equal(e.defaultPrevented, true);
+  assert.deepEqual(p.posted.filter((m) => m.type === 'key').map((m) => m.code), ['BracketLeft']);
+});
+
+test('an aside right under a heading folds with its section, by hand or with every heading', () => {
+  const p = page('# One\n~ About one.\n\nIts text.\n~ About its text.\n\n# Two\n\nMore.\n');
+  assert.deepEqual(p.seen(), ['One', 'About one.', 'Its text.', 'About its text.', 'Two', 'More.']);
+  p.click(p.heading('One'));
+  assert.deepEqual(p.seen(), ['One', 'Two', 'More.']);
+  p.click(p.heading('One'));
+  assert.deepEqual(p.seen(), ['One', 'About one.', 'Its text.', 'About its text.', 'Two', 'More.']);
+  p.window.dispatchEvent(new p.window.CustomEvent('preview:fold-all', { detail: { folded: true } }));
+  assert.deepEqual(p.seen(), ['One', 'Two']);
+});

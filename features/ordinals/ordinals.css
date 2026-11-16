@@ -1,0 +1,6 @@
+/* Raised without spreading the lines apart. */
+.ordinal {
+  font-size: 0.7em;
+  line-height: 0;
+  vertical-align: 0.45em;
+}

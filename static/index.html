@@ -20,7 +20,7 @@
 <header class="bar" id="bar">
   <div class="bar-left">
     <button class="ghost icon" id="sidebarToggle" title="Toggle file list (⌘\)" aria-label="Toggle file list" aria-controls="sidebar" aria-expanded="true">☰</button>
-    <button class="ghost small" id="todayBtn" title="The files dated today" aria-controls="sidebar" aria-pressed="false">Today</button>
+    <button class="ghost small" id="todayBtn" title="The files dated today (⌘⌥T)" aria-controls="sidebar" aria-pressed="false">Today</button>
     <span class="mark" id="rootName">reader</span>
     <span class="crumb" id="crumb"></span>
     <button class="ghost icon copy-path" id="copyPath" title="Copy the file's path" aria-label="Copy the file's path" hidden>⧉</button>
@@ -42,7 +42,7 @@
   <nav class="sidebar" id="sidebar" aria-label="Files">
     <div class="side-head">
       <input id="filter" type="search" placeholder="Filter…" autocomplete="off" spellcheck="false">
-      <button class="ghost small side-icon" id="newBtn" title="New file" aria-label="New file"></button>
+      <button class="ghost small side-icon" id="newBtn" title="New file (⌘⌥N)" aria-label="New file"></button>
       <button class="ghost small side-icon start-today" id="startBtn" aria-label="Start today's" aria-disabled="true"></button>
     </div>
     <form class="new-form" id="newForm" hidden>
@@ -68,9 +68,10 @@
          storage, and messages to it go to that origin, not to any (frames.js).
          allow: a frame from another origin may autoplay only if each frame
          around it passes that down, so a card plays on its first press; `*`,
-         since the src is another origin, set once frames.js knows which. -->
+         since the src is another origin, set once frames.js knows which;
+         clipboard-write, for a code fence's Copy button (features/highlight). -->
     <iframe id="preview" data-preview title="Rendered document"
-      allow="autoplay *; encrypted-media *; picture-in-picture *"
+      allow="autoplay *; encrypted-media *; picture-in-picture *; clipboard-write *"
       sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
     <div class="pdf-view" id="pdfView" hidden></div>
     <div class="empty" id="empty" hidden></div>
@@ -95,10 +96,11 @@
       <div><code># Heading</code> <code>- list</code> <code>1. list</code> <code>&gt; quote</code> <code>---</code></div>
       <div><code>~ an aside</code> — your own voice, set beside the line above it</div>
       <div><code>---</code> alone on a line starts a new slide · <code>&lt;!-- notes --&gt;</code> are speaker notes</div>
-      <div class="keys">⌘S save · ⌘P print · ⌘B bold · ⌘I italic · ⌘K link · Home End line start, end · ⌘⌥↑ ⌘⌥↓ file · ⌘⇧C copy file:line · ⌃G go to · ⌘\ files · Tab indent · Esc Tab next</div>
+      <div class="keys">⌘S save · ⌘P print · ⌘B bold · ⌘I italic · ⌘K link · Home End line start, end · ⌘⌥↑ ⌘⌥↓ file · ⌘⌥[ ⌘⌥] fold, open every heading and aside · ⌘⇧C copy file:line · ⌃G go to · ⌘\ files · Tab indent · Esc Tab next</div>
       <div class="keys">⌘. work, Esc to leave it · ⌥← ⌥→ a deck's page, at work · ⌘⇧. present</div>
       <div class="keys">On the page, in steps to follow: j k next, previous step · x step done or not</div>
       <div class="keys">In the files: ↑ ↓ move · → into a folder, versions or outline · ← ⌫ back out · F2 rename · ⌘⌫ trash</div>
+      <div class="keys">⌘⌥N new · ⌘⌥⇧N today's · ⌘⌥T Today · ⌘⌥Y copy · ⌘⌥⇧Y copy for today · ⌘⌥⌫ trash the open file · Ctrl+Alt for ⌘⌥ on Windows, Linux</div>
       <fieldset class="theme" id="theme">
         <legend>Theme</legend>
         <label><input type="radio" name="theme" value="light"> Light</label>

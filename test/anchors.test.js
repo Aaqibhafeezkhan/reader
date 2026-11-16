@@ -29,7 +29,7 @@ test("a heading's box, its own styles and its marks are no part of its id", () =
 
 test('dashes and arrows count as written, before the typographer and the arrows turn them', () => {
   const { body } = render('## Before -- after -> then "quoted"\n');
-  assert.match(body, /<h2 id="before----after---then-quoted">Before – after → then “quoted”<\/h2>/);
+  assert.match(body, /<h2 id="before----after---then-quoted">Before – after <span class="arrow">→<\/span> then “quoted”<\/h2>/);
 });
 
 test('an emoji is dropped, as GitHub drops it, and an unknown shortcode is words', () => {

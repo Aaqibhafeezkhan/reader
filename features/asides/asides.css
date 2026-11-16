@@ -33,16 +33,6 @@
 .gm-aside-cell p:last-child { margin-bottom: 0; }
 .gm-aside-cell + .gm-aside-cell { margin-top: var(--gm-space-4); }
 
-/* The tilde is kept as a visible mark of authorship -- it is the notation the
- * document is written in, not just syntax to be compiled away. */
-.gm-aside-cell .gm-mark {
-  font-style: normal;
-  font-family: var(--gm-mono);
-  color: var(--gm-accent);
-  margin-right: var(--gm-space-2);
-  font-size: 0.95em;
-}
-
 .gm-aside-cell ul, .gm-aside-cell ol {
   margin: var(--gm-space-2) 0;
   padding-left: var(--gm-space-6);
@@ -151,9 +141,17 @@
   border-right: 1.5px solid var(--gm-control-ink);
   border-bottom: 1.5px solid var(--gm-control-ink);
   rotate: -45deg;
-  transition: rotate 0.15s;
+  transition: rotate 0.15s, opacity 0.15s;
 }
-.gm-thread[open] > summary::before { rotate: 45deg; }
+/* Open, its chevron is out of sight until the aside's pointed at or its
+ * line's reached by the keyboard, as a heading's is; folded, it's always
+ * seen. On a touch screen, with nothing to point, it's always seen. */
+.gm-thread[open] > summary::before { rotate: 45deg; opacity: 0; }
+.gm-thread[open]:hover > summary::before,
+.gm-thread[open] > summary:focus-visible::before { opacity: 1; }
+@media screen and (hover: none) {
+  .gm-thread[open] > summary::before { opacity: 1; }
+}
 .gm-thread.gm-one-line > summary { cursor: auto; }
 /* Measured as one line would be, to see whether it is. */
 .gm-thread.gm-measuring > summary { white-space: nowrap; overflow: hidden; }

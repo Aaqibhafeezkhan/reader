@@ -188,6 +188,10 @@ a border round it, to tap anywhere to choose it.
 - `::: grid 2 cards` lays the cards out in a grid (see [Grid](#grid)).
 - An item with a background of its own keeps it, and shows it's chosen by
   its border.
+- With `accent:` in the front matter (see [Accent](page.md#accent)), every
+  card is bordered in the accent, with a light tint of it behind, and an
+  item's own background still wins. With more contrast asked for, there's
+  no tint.
 - On a slide, or once the page is a record, the chosen card
   still shows, and none answers the pointer.
 - The other names on the line are styles, as on any `:::` block.

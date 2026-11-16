@@ -18,7 +18,7 @@ Open a file from what it found, and the `×` goes back to that file's folder ins
 `☰` (`⌘\`) shows and hides the list.
 In [Work](presenting.md#work), or on a narrow screen, it comes over the page, and pressing `☰` again, picking a file, or clicking away closes it, still in Work.
 
-**New**, the page with a plus beside **Filter…**, creates an empty file in the
+**New** (`⌘⌥N`), the page with a plus beside **Filter…**, creates an empty file in the
 folder you're in, named `untitled.md` unless you give it another name. If you
 name a file that already exists, it's opened instead. To begin a series of dated
 files, name the first one with its date, and [Start today's](#starting-todays)
@@ -26,7 +26,7 @@ makes the rest. PDFs open read-only in the left pane.
 
 ## Today
 
-The **Today** button, in the top bar, lists the files dated today in the file list, from every folder under the one reader was opened on, so that a daily file is one click away without knowing where it lives.
+The **Today** button (`⌘⌥T`), in the top bar, lists the files dated today in the file list, from every folder under the one reader was opened on, so that a daily file is one click away without knowing where it lives.
 They're listed as a search lists them, each with its folder, and typing in **Filter…** narrows them further.
 In place of the path above the list it says what it found, as `Today · 1 file, 2 to start`, or with a filter typed `Today · “walk” · 1 file`.
 A workbook opens from there in Work, as it does from anywhere.
@@ -62,7 +62,7 @@ So does what a page writes for today: a date's calendar's **Today**, and a log's
 
 ### Starting today's
 
-A folder with a dated file in it offers **Start today's**: a calendar with a plus, beside **New**, for the folder you're in.
+A folder with a dated file in it offers **Start today's** (`⌘⌥⇧N`): a calendar with a plus, beside **New**, for the folder you're in.
 Its tooltip says what it's from, or a long press does on a touch screen.
 In a folder with no dated file, under **Today**, or in a file's versions, it's there but gray.
 It makes today's file from the folder's latest, with the same headings and labels, every answer on every page cleared, as [Start over](forms.md#starting-over) clears them, and opens it, and **Today** lists it.
@@ -89,8 +89,8 @@ A date in a sentence and a definition stay as they were left.
 
 ### Making a copy
 
-**Make a copy**, the icon of two pages in the top bar beside ⧉, copies the open file to a file of its own and opens it, to carry on in with no thought of folding it back in, as a [version](#versions) is.
-Beside it, **Copy for today**, a calendar with a sheet behind it, makes today's from it.
+**Make a copy** (`⌘⌥Y`), the icon of two pages in the top bar beside ⧉, copies the open file to a file of its own and opens it, to carry on in with no thought of folding it back in, as a [version](#versions) is.
+Beside it, **Copy for today** (`⌘⌥⇧Y`), a calendar with a sheet behind it, makes today's from it.
 They're there in Edit and in Work alike, so they're how a workbook open in Work, with the file list out of sight, is copied.
 Where one doesn't apply it's gray, and its tooltip, or a finger held on it, says why: with no file open, or a PDF, both are; Copy for today is too on a file with no date, or one dated today.
 
@@ -128,6 +128,7 @@ or `→` and `←`, open and fold one. The outline follows the open file, so
 
 In Edit and Work, any heading on the page can fold its section away, to read a long document a part at a time.
 Click the heading, or the `›` that shows before it, and what's under it goes, up to the next heading at its level or above, with the asides beside it; click again to bring it back.
+`⌘⌥[` folds every heading at once, to see the document's outline, and every aside to its first line, and `⌘⌥]` opens every one again; open a heading after `⌘⌥[` and the asides in it are still folded (`Ctrl+Alt` on Windows and Linux), from the editor or the page.
 A finished section, `## [x] Stretch` (see [Sections to finish](forms.md)), starts folded, and any other starts open.
 Going to a place in a folded section, from the outline, `⌃G` or a link, opens it first.
 Folding is a way of seeing the page, not part of it: nothing is written in the file, it lasts while the file is open, and a printed or exported page, or a slide, has every section showing.
@@ -220,7 +221,7 @@ another. Renaming a file's row renames all its versions with it (`slides` to
 list, takes just the version's name. Typing a folder, `archive/slides`,
 moves it there.
 
-The red trash can, or `⌘⌫`, moves a file into `.reader/trash/`, and the
+The red trash can, or `⌘⌫` on its row, moves a file into `.reader/trash/`, as `⌘⌥⌫` does the open file from anywhere, and the
 message that says so has an **Undo**. Nothing there is deleted for good
 until you empty that folder yourself. A file's row with versions has no
 trash can, so one click can't take them all.

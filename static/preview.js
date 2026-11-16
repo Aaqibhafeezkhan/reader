@@ -379,6 +379,8 @@
     Preview.workable = !m.deck;
     // Run, in Work or on a slide, rather than written, in Edit.
     Preview.running = Boolean(m.deck || m.working);
+    // Whether it's a slide, known to the features as they put back what they kept.
+    Preview.deck = Boolean(m.deck);
     // How the page is set to be seen, as the address says.
     Preview.address = m.address && typeof m.address === 'object' ? m.address : {};
     // When the day starts, by the server (`--day-starts`).
@@ -403,7 +405,6 @@
     });
     refocus(had);
     hidePeek();
-    Preview.deck = Boolean(m.deck);
     document.documentElement.classList.toggle('deck', Preview.deck);
     scaleTo(m.scale);
     fit();
@@ -490,6 +491,10 @@
       // Gone to by the outline or Go to: whatever has it out of sight opens
       // first (features/fold), and the page is measured again.
       window.dispatchEvent(new CustomEvent('preview:open-to', { detail: { line: Number(m.line) } }));
+      marks = null;
+    } else if (m.type === 'fold-all') {
+      // ⌘⌥[ and ⌘⌥]: every heading folded, or every one opened (features/fold).
+      window.dispatchEvent(new CustomEvent('preview:fold-all', { detail: { folded: m.folded === true } }));
       marks = null;
     } else if (m.type === 'address') {
       Preview.address = m.params && typeof m.params === 'object' ? m.params : {};
@@ -674,8 +679,13 @@
     if (turning) e.preventDefault();
     if ((meta && ['s', 'p', '\\'].includes(e.key.toLowerCase())) || (meta && e.code === 'Period') || (e.ctrlKey && e.key.toLowerCase() === 'g')
       || (meta && e.altKey && ['ArrowUp', 'ArrowDown'].includes(e.key))) e.preventDefault();
+    if (meta && e.altKey && ['BracketLeft', 'BracketRight'].includes(e.code)) e.preventDefault();
     // On a slide, ⌘+, ⌘− and ⌘0 size the slides' text, not the browser's zoom.
     if (Preview.deck && meta && !e.altKey && ['=', '+', '-', '0'].includes(e.key)) e.preventDefault();
+    // ⌘⌥ and N, T, Y or ⌫ press the app's buttons for files, not a box's ⌥⌫;
+    // but for AltGr, Ctrl+Alt on some layouts, typing a letter (ń).
+    const typed = !e.metaKey && e.key.length === 1 && e.key.toLowerCase() !== e.code.slice(3).toLowerCase();
+    if (meta && e.altKey && !typed && ['KeyN', 'KeyT', 'KeyY', 'Backspace'].includes(e.code)) e.preventDefault();
     const { key, code, metaKey, ctrlKey, altKey, shiftKey } = e;
     window.parent.postMessage({ type: 'key', key, code, metaKey, ctrlKey, altKey, shiftKey }, '*');
   });

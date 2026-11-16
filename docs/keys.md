@@ -18,11 +18,18 @@ title: Keys
 | `⌃G` | go to a page, a slide, a line (`:340`) or a heading |
 | `Home` / `End` (`fn←` / `fn→`) | in the editor, the start / end of the line, as it wraps (`⇧` to select) |
 | `⌘⌥↑` / `⌘⌥↓` | previous / next file |
+| `⌘⌥[` / `⌘⌥]` | fold every heading and aside on the page / open every one ([Folding the page](files.md#folding-the-page)) |
 | `↑` `↓` `→` `←` | in the file list: move, go into a folder, a file's versions or the open file's outline, go back out (`⌫` too) |
 | `→` `←` | in the outline: open or fold an entry, or go back out |
 | `⌘`-click / `⇧`-click / `⌘A` | in the outline: choose entries to take out together |
 | `F2` / `⌘⌫` | in the file list: rename, or move to the trash |
 | `⌘\` | show / hide the file list |
+| `⌘⌥N` / `⌘⌥⇧N` | [New](files.md), or [Start today's](files.md#starting-todays) |
+| `⌘⌥T` | [Today](files.md#today) in the file list |
+| `⌘⌥Y` / `⌘⌥⇧Y` | [Make a copy](files.md#making-a-copy) of the open file, or Copy for today |
+| `⌘⌥⌫` | move the open file to the trash |
+
+`⌘N`, `⌘T` and `⌘⇧N` are the browser's, so these go by `⌘⌥`; on Windows and Linux it's `Ctrl+Alt`.
 
 ## Work and present
 

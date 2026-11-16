@@ -135,14 +135,22 @@
   // makes one, by the aside's first line; written nowhere.
   const folds = new Map();
   const firstLine = (d) => d.querySelector(':scope > summary')?.textContent.trim();
+  // Opened because it's a line and no more (measure) isn't opened by hand.
+  const opening = new WeakSet();
   document.addEventListener('toggle', (e) => {
-    if (e.target.matches?.('details.gm-thread')) folds.set(firstLine(e.target), e.target.open);
+    if (!e.target.matches?.('details.gm-thread')) return;
+    if (opening.has(e.target)) return void opening.delete(e.target);
+    folds.set(firstLine(e.target), e.target.open);
   }, true);
   // An aside that's a line and no more, no replies under it, has nothing to
   // fold: it's shown open, with no chevron, and its line takes no click.
-  // Whether it is depends on the margin's width, so it's measured each time.
+  // Whether it is depends on the margin's width, so it's measured each time,
+  // though not while it's out of sight, in a folded section, where it has
+  // no width: it's measured once it shows (the page grows, and is watched),
+  // and folded then if it was folded before.
   function measure() {
     for (const d of document.querySelectorAll('details.gm-thread')) {
+      if (d.checkVisibility && !d.checkVisibility()) continue;
       const summary = d.querySelector(':scope > summary');
       let one = d.children.length === 1;
       if (one) {
@@ -151,11 +159,25 @@
         d.classList.remove('gm-measuring');
       }
       d.classList.toggle('gm-one-line', one);
-      if (one && !d.open) d.open = true;
+      const open = one || (folds.get(firstLine(d)) ?? d.open);
+      if (open === d.open) continue;
+      if (one) opening.add(d);
+      d.open = open;
     }
   }
   document.addEventListener('click', (e) => {
     if (e.target.closest?.('details.gm-one-line > summary') && !e.target.closest('a, button')) e.preventDefault();
+  });
+  // ⌘⌥[ folds every aside to its first line, and ⌘⌥] opens every one, as
+  // they do every heading (`preview:fold-all`); kept as folding by hand is,
+  // so an aside stays folded when the section it's in is opened again.
+  window.addEventListener('preview:fold-all', (e) => {
+    const open = e.detail?.folded !== true;
+    // Every one, a line and no more or not: one out of sight may not be.
+    for (const d of document.querySelectorAll('details.gm-thread')) {
+      folds.set(firstLine(d), open);
+      if (!d.classList.contains('gm-one-line')) d.open = open;
+    }
   });
   new ResizeObserver(() => measure()).observe(document.documentElement);
 

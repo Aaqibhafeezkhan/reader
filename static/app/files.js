@@ -211,7 +211,7 @@ function rowItem(row, { dir = '' } = {}) {
     li.append(b, actions([
       f.type === 'md' && action('branch', 'Branch: copy as another version', () => branch(f.path)),
       f.type === 'md' && exportLink(f.path),
-      action('trash', 'Move to the trash', () => trash(f.path)),
+      trashAction(f.path),
     ]), outlineInto(f));
     return li;
   }
@@ -238,7 +238,7 @@ function versionItem(group, v) {
     md && v.variant && action('promote', `Make ${v.variant} the main version`, () => promote(v.file.path, group.name)),
     md && action('branch', 'Branch: copy as another version', () => branch(v.file.path)),
     md && exportLink(v.file.path),
-    action('trash', 'Move to the trash', () => trash(v.file.path)),
+    trashAction(v.file.path),
   ]), outlineInto(v.file));
   return li;
 }
@@ -291,9 +291,9 @@ function drawStart() {
   b.dataset.kind = kind;
   b.setAttribute('aria-disabled', String(!start));
   b.setAttribute('aria-label', start?.open ? "Open today's" : "Start today's");
-  if (start) b.title = start.open ? `Open today's, ${splitPath(start.open).name}.` : `Start today's from ${start.date}.`;
-  else if (state.starts.has(state.dir)) b.title = "Start today's, back in the folder.";
-  else b.title = "Start today's, once this folder has a file with a date in its name.";
+  if (start) b.title = start.open ? `Open today's, ${splitPath(start.open).name} (⌘⌥⇧N).` : `Start today's from ${start.date} (⌘⌥⇧N).`;
+  else if (state.starts.has(state.dir)) b.title = "Start today's, back in the folder (⌘⌥⇧N).";
+  else b.title = "Start today's, once this folder has a file with a date in its name (⌘⌥⇧N).";
 }
 
 /** Starts today's file in the folder being shown, or opens it if it's there. */
@@ -384,6 +384,13 @@ function action(cls, title, onClick) {
   b.title = title;
   b.setAttribute('aria-label', title);
   b.addEventListener('click', onClick);
+  return b;
+}
+
+/** A row's trash can; the open file's says its key. */
+function trashAction(p) {
+  const b = action('trash', 'Move to the trash', () => trash(p));
+  if (state.current?.path === p) b.title = 'Move to the trash (⌘⌥⌫)';
   return b;
 }
 
@@ -639,6 +646,17 @@ function untitled(prefix) {
   let name = 'untitled.md';
   for (let n = 2; taken.has(prefix + name); n++) name = `untitled-${n}.md`;
   return name;
+}
+
+/** The New button: its form, or, shown already, away again. A list that can't be seen is opened first, the form in it. */
+export function pressNew() {
+  const seen = listSeen();
+  if (!el.newForm.hidden && seen) {
+    el.newForm.hidden = true;
+    return;
+  }
+  if (!seen) showList();
+  showNewForm();
 }
 
 /** The New form, filled in for a new file in the folder being shown. */

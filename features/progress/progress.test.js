@@ -18,9 +18,21 @@ test('a bar written as a count is drawn as written, named by the words after it'
   assert.match(render('progress:[lots] and progress:[1/]\n').body, /<p>progress:\[lots\] and progress:\[1\/\]<\/p>/, 'what isn\'t a count stays as typed');
 });
 
-test('empty brackets count the boxes in its section and those done, not its heading\'s own box, nor a choice', () => {
-  const { body } = render('# [ ] Work\n\nprogress:[] reviewed\n\n- [x] a\n- [ ] b\n- ( ) c\n\n## [x] Sub\n- [x][x] d\n- [x][ ] e\n\n# Other\n- [x] f\n');
-  assert.deepEqual(bars(body), [{ attrs: ' data-lines="4 5 8 9 10"', value: '3', max: '5', name: 'reviewed', count: '3 of 5' }]);
+test('empty brackets count the boxes in its section and those done, not its heading\'s own box', () => {
+  const { body } = render('# [ ] Work\n\nprogress:[] reviewed\n\n- [x] a\n- [ ] b\n\n## [x] Sub\n- [x][x] d\n- [x][ ] e\n\n# Other\n- [x] f\n');
+  assert.deepEqual(bars(body), [{ attrs: ' data-lines="4 5 7 8 9"', value: '3', max: '5', name: 'reviewed', count: '3 of 5' }]);
+});
+
+test('each set of choices in its section is one thing to be done, once one\'s picked, as a heading\'s Done counts it', () => {
+  const md = [
+    '## [ ] What\'s left', 'progress:[]', '', '- [x] Chrome', '- [ ] Safari', '',
+    '- Q: Fix the tracks bug now?', '  - ( ) Yes', '  - ( ) Something else',
+    '- Q: Put the rest in 0.0.6?', '  - (x) Yes', '  - ( ) Something else', '',
+    '@ Mood: ( ) Calm (x) Content', '', '## Else', '', '- ( ) Not this one', '- ( ) Nor this',
+  ].join('\n');
+  assert.deepEqual(bars(render(md).body), [{ attrs: ' data-lines="3 4" data-questions="7 10 13"', value: '3', max: '5', name: 'Progress', count: '3 of 5' }]);
+  const mixed = render('progress:[]\n\n- [x] a\n- ( ) b\n').body;
+  assert.deepEqual(bars(mixed)[0].attrs, ' data-lines="2" data-questions="2"', 'a list of choices starts on its first item\'s line');
 });
 
 test('a bar with nothing to count is empty', () => {
@@ -61,6 +73,26 @@ test('in the preview, the bar fills as its boxes are ticked, before the page is 
   click($('input[data-line="10"]'));
   await settle();
   assert.deepEqual(shows(), [2, '2 of 3'], 'not a box in another section');
+});
+
+test('in the preview, the bar fills as a choice is picked, in a list or a field, and a box beside a list\'s choice counts as its own', async () => {
+  const p = preview();
+  p.show(render('## Left\n\nprogress:[] done\n\n- [ ] a\n- ( ) b\n- ( ) c\n\n@ Mood: ( ) Calm ( ) Content\n', { lines: true }).body);
+  const $ = (sel) => p.document.querySelector(sel);
+  const click = (node) => node.dispatchEvent(new p.window.MouseEvent('click', { bubbles: true, cancelable: true }));
+  const shows = () => [$('.progress progress').value, $('.progress-count').textContent];
+  assert.deepEqual(shows(), [0, '0 of 3']);
+  click($('input.choice-box'));
+  await settle();
+  assert.deepEqual(shows(), [1, '1 of 3'], 'a choice in the list');
+  click($('input.task-box'));
+  await settle();
+  assert.deepEqual(shows(), [2, '2 of 3'], 'the box on the list\'s first line');
+  const calm = $('.field input');
+  calm.checked = true;
+  calm.dispatchEvent(new p.window.Event('change', { bubbles: true }));
+  await settle();
+  assert.deepEqual(shows(), [3, '3 of 3'], 'a field\'s choice');
 });
 
 test('the bar is drawn in the page\'s colours, empty as empty in every browser, and the browser\'s own where colours are forced', () => {

@@ -307,8 +307,9 @@ progress:[326/1007] pages
 progress:[326/1007] pages
 :::
 
-Empty brackets count the boxes in its section (the heading it's under, to the next at that level or above, or the slide it's on), and how many are ticked.
-A staged box counts once it's full; a choice isn't a box, and neither is the heading's own Done button, which says the whole section is done.
+Empty brackets count what's to be done in its section (the heading it's under, to the next at that level or above, or the slide it's on), and how many are done.
+That's each box, ticked, and each set of choices, a list of them or a field's, once one is picked, as the heading's Done counts them.
+A staged box counts once it's full; the heading's own Done button doesn't, as it says the whole section is done.
 
 ::: tabs
 +++ Source
@@ -318,6 +319,8 @@ progress:[] packed
 - [x] Passport
 - [x] Charger
 - [ ] Rain jacket
+
+@ Bag: ( ) Backpack ( ) Suitcase
 ```
 +++ Rendered
 progress:[] packed
@@ -325,10 +328,12 @@ progress:[] packed
 - [x] Passport
 - [x] Charger
 - [ ] Rain jacket
+
+@ Bag: ( ) Backpack ( ) Suitcase
 :::
 
-The bar fills as the boxes are ticked, in Work too.
-On a slide, on an exported page, or once the page is a record (below), it shows the boxes as the file has them.
+The bar fills as the boxes are ticked and the choices picked, in Work too.
+On a slide, on an exported page, or once the page is a record (below), it shows them as the file has them.
 
 ## Timers
 

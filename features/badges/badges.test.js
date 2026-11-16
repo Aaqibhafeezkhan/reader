@@ -31,8 +31,8 @@ test('a list cut by an aside keeps counting in the next row', () => {
 test('a lettered list is drawn in badges at any depth, a lettered list to a screen reader too, and counts from its first letter', () => {
   const { body } = render('1) Favor icons over words:\n   a) Formatting\n   b) Work\n2) Remove\n   a) Move it\n      a) to the footer\n\nc) starts at c\nd) and goes on\n');
   assert.deepEqual([...body.matchAll(/<li[^>]*data-n="([^"]+)"/g)].map((m) => m[1]), ['1', 'a', 'b', '2', 'a', 'a', 'c', 'd']);
-  assert.match(body, /<ol class="badges" type="a">\n<li data-n="a">Formatting<\/li>/);
-  assert.match(body, /<ol class="badges" type="a" start="3">\n<li data-n="c">starts at c<\/li>/);
+  assert.match(body, /<ol class="badges" type="a">\n<li data-n="a"[^>]*>Formatting<\/li>/);
+  assert.match(body, /<ol class="badges" type="a" start="3">\n<li data-n="c"[^>]*>starts at c<\/li>/);
 });
 
 test('a letter in a line of text, a letter after a line of text but a), and an escaped one are text', () => {
@@ -43,19 +43,19 @@ test('a letter in a line of text, a letter after a line of text but a), and an e
 
 test('in a list\'s item, any letter starts a lettered list under its line', () => {
   const { body } = render('1) Favor icons over words:\n   d) Today should be an icon\n2) Remove\n   b) Today as a chip\n');
-  assert.match(body, /<li data-n="1">Favor icons over words:\n<ol class="badges" type="a" start="4">\n<li data-n="d">Today should be an icon<\/li>/);
-  assert.match(body, /<ol class="badges" type="a" start="2">\n<li data-n="b">Today as a chip<\/li>/);
+  assert.match(body, /<li data-n="1"[^>]*>Favor icons over words:\n<ol class="badges" type="a" start="4">\n<li data-n="d"[^>]*>Today should be an icon<\/li>/);
+  assert.match(body, /<ol class="badges" type="a" start="2">\n<li data-n="b"[^>]*>Today as a chip<\/li>/);
 });
 
 test('a lettered list goes on only while its items are lettered, and a numbered one only while they\'re numbered', () => {
   const { body } = render('a) one\nb) two\n1) three\n');
-  assert.match(body, /<ol class="badges" type="a">\n<li data-n="a">one<\/li>\n<li data-n="b">two<\/li>\n<\/ol>\n<ol class="badges">\n<li data-n="1">three<\/li>/);
+  assert.match(body, /<ol class="badges" type="a">\n<li data-n="a"[^>]*>one<\/li>\n<li data-n="b"[^>]*>two<\/li>\n<\/ol>\n<ol class="badges">\n<li data-n="1"[^>]*>three<\/li>/);
 });
 
 test('a lettered list cut by an aside keeps its letters in the next row', () => {
   const { body } = render('1) one\n   a) x\n   b) y\n\n      ~ a note\n\n      more of b\n   c) z\n');
   assert.match(body, /<ol class="badges gm-cont" type="a" start="2">\n<li data-n="b" class="gm-cont" value="2">/);
-  assert.match(body, /<li data-n="c">/);
+  assert.match(body, /<li data-n="c"[^>]*>/);
 });
 
 test('printed, a list is indented as far as its badges reach, so none is cut off at the sheet\'s margin', () => {

@@ -293,16 +293,7 @@ function span(state, silent) {
   const names = NAMES.exec(state.src.slice(end + 1));
   if (!names) return false;
   const open = state.push('style_span_open', 'span', 1);
-  // A mark's colour is the mark's, not the text's (features/mark.js).
-  const marked = marking(names[1], topicsOf(state.env.frontMatter));
-  if (marked) {
-    const color = marked.rest.find((n) => COLORS.has(n.toLowerCase()))?.toLowerCase();
-    const rest = marked.rest.filter((n) => !COLORS.has(n.toLowerCase()));
-    markSpan(open, { style: marked.style, color: color ?? marked.topic?.color, topic: marked.topic?.name });
-    if (rest.length) apply(open, rest.join(' '));
-  } else {
-    apply(open, names[1]);
-  }
+  styleWith(open, names[1], topicsOf(state.env.frontMatter));
   const max = state.posMax;
   state.pos = start + 1;
   state.posMax = end;
@@ -312,6 +303,68 @@ function span(state, silent) {
   state.pos = end + 1 + names[0].length;
   return true;
 }
+
+/** Span `open` styled by `names`, or marked by them: a mark's colour is the mark's, not the text's (features/mark.js). */
+function styleWith(open, names, topics) {
+  const marked = marking(names, topics);
+  if (!marked) return apply(open, names);
+  const color = marked.rest.find((n) => COLORS.has(n.toLowerCase()))?.toLowerCase();
+  const rest = marked.rest.filter((n) => !COLORS.has(n.toLowerCase()));
+  markSpan(open, { style: marked.style, color: color ?? marked.topic?.color, topic: marked.topic?.name });
+  if (rest.length) apply(open, rest.join(' '));
+}
+
+// What braces right after don't style: words, code, a picture, a break,
+// and emphasis or a span already styled, whose own braces would be wanted.
+const NOT_DRAWN = new Set(['text', 'code_inline', 'html_inline', 'image', 'softbreak', 'hardbreak', 'em_close', 'strong_close', 's_close', 'style_span_close']);
+
+/**
+ * Braces right after something drawn, with nothing between them, style
+ * only it, as `[words]{red}` does its words: a link, `[the plan](plan.md){red}`,
+ * and whatever another feature draws in its place, a date, a scheme's link,
+ * a blank (`date:2026-11-10[]{red}`, `[@ milk]{blue}`), without knowing
+ * whose it is. Only names styles knows, a color, a background, a generic
+ * font, a case or a mark, as a list item's braces are: any other word, and
+ * braces after a space, stay as typed. After every feature's rules, as
+ * some draw theirs only once the text is parsed.
+ */
+function after(state) {
+  const topics = topicsOf(state.env.frontMatter);
+  for (const block of state.tokens) {
+    const kids = block.type === 'inline' ? block.children : null;
+    for (let i = 1; kids && i < kids.length; i++) {
+      const t = kids[i];
+      const names = t.type === 'text' && NAMES.exec(t.content);
+      if (!names || !styleable(names[1], topics)) continue;
+      const from = drawn(kids, i - 1);
+      if (from < 0) continue;
+      const open = new state.Token('style_span_open', 'span', 1);
+      styleWith(open, names[1], topics);
+      t.content = t.content.slice(names[0].length);
+      kids.splice(i, 0, new state.Token('style_span_close', 'span', -1));
+      kids.splice(from, 0, open);
+      i += 2;
+    }
+  }
+}
+
+/** Where what's drawn ending at `kids[at]` starts, a closing token's opener; -1 for what isn't drawn. */
+function drawn(kids, at) {
+  const t = kids[at];
+  if (NOT_DRAWN.has(t.type) || t.nesting === 1) return -1;
+  if (t.nesting === 0) return at;
+  for (let depth = 0, j = at; j >= 0; j--) {
+    depth += kids[j].nesting;
+    if (depth === 0) return j;
+  }
+  return -1;
+}
+
+/** Whether `names` are all ones styles knows, or a mark with them. */
+const styleable = (names, topics) => {
+  const marked = marking(names, topics);
+  return (marked ? marked.rest : names.trim().split(/\s+/)).every(known);
+};
 
 /**
  * Adds `names` to a token's attributes: a CSS color name sets the color (the
@@ -354,5 +407,6 @@ function apply(token, names) {
 export default {
   name: 'styles',
   plugin: styles,
+  late: (md) => md.core.ruler.push('style_after', after),
   css: fs.readFileSync(new URL('./styles.css', import.meta.url), 'utf8'),
 };

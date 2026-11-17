@@ -170,3 +170,18 @@ test('a color named on text reads as text, light or dark: a common name in the f
   // Not in the family: its own hue, through --gm-own (src/columns.css).
   assert.match(body, /<span class="gm-own" style="--own: lightgreen; color: var\(--gm-own\)">light words<\/span>/);
 });
+
+test('braces right after a link, a date, a scheme\'s link or a blank style only it, whichever feature drew it (gh-303)', () => {
+  const { body } = render('Due date:2026-11-10[]{red}, rfc:2616[]{red}, [the plan](plan.md){red}, [@ milk: two]{blue} and [x](y.md){circle}.\n');
+  assert.match(body, /Due <span style="color: var\(--gm-red\)"><time class="date"[^>]*>November 10, 2026<\/time><\/span>, /);
+  assert.match(body, /<span style="color: var\(--gm-red\)"><a href="https:\/\/www.rfc-editor.org\/rfc\/rfc2616.html">RFC 2616<\/a><\/span>, /);
+  assert.match(body, /<span style="color: var\(--gm-red\)"><a href="plan.md">the plan<\/a><\/span>, /);
+  assert.match(body, /<span style="color: var\(--gm-blue\)"><span class="field field-inline"[^]*?<\/span><\/span><\/span> and /);
+  assert.match(body, /<span class="mk mk-circle" role="mark"><a href="y.md">x<\/a><\/span>\./);
+  assert.doesNotMatch(body.replace(/data-text="[^"]*"/g, ''), /\{(red|blue|circle)\}/, 'the braces gone, but from the line as written');
+});
+
+test('braces after a space, with a word styles doesn\'t know, or after words or code, stay as typed', () => {
+  const { body } = render('[a](a.md) {red}, [b](b.md){sic}, *c*{red}, `d`{red} and e{red}.\n');
+  assert.match(body, /<a href="a.md">a<\/a> \{red\}, <a href="b.md">b<\/a>\{sic\}, <em>c<\/em>\{red\}, <code>d<\/code>\{red\} and e\{red\}\./);
+});

@@ -13,8 +13,9 @@ globalThis.fetch = async (url) => {
   return { ok: true, json: async () => ({ text: '# A\n', mtime: 1 }) };
 };
 
-const { el, state } = await import('../static/app/state.js');
+const { el, state, dirty } = await import('../static/app/state.js');
 const { follow } = await import('../static/app/files.js');
+const { applyEdit } = await import('../static/app/editing.js');
 // The preview frame, which is drawn into once the file opens, isn't loaded.
 Object.defineProperty(el.preview, 'contentWindow', { value: { postMessage() {} } });
 
@@ -30,6 +31,19 @@ async function following(href) {
 
 test('a link to a markdown file in the content directory opens it', async () => {
   assert.deepEqual(await following('http://localhost:8734/content/notes/a%20b.md'), { asked: ['/api/file?path=notes%2Fa%20b.md'], says: '' });
+});
+
+test('a link to reader\'s own markdown, $reader/, opens it, unlisted and not to be edited; its other files aren\'t opened here (gh-263)', async () => {
+  assert.deepEqual(await following('http://localhost:8734/content/$reader/docs/links.md'), { asked: ['/api/file?path=%24reader%2Fdocs%2Flinks.md'], says: '' });
+  await new Promise(setImmediate);
+  assert.equal(state.current?.path, '$reader/docs/links.md');
+  assert.equal(el.editor.readOnly, true, 'read, not written');
+  // A box ticked on its page is put back, and nothing is waiting to be saved.
+  applyEdit({ edits: [{ from: 0, to: 1, before: ['# A'], after: ['# B'] }] });
+  assert.equal(el.editor.value, '# A\n');
+  assert.equal(dirty(), false);
+  assert.equal(el.toast.textContent, 'reader\'s own files are read here, not written');
+  assert.deepEqual(await following('http://localhost:8734/content/$reader/package.json'), { asked: [], says: 'no file $reader/package.json here' });
 });
 
 test('a link to a file that isn\'t one of ours, or isn\'t under the content directory, is refused', async () => {

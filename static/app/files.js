@@ -5,7 +5,7 @@
  * outline (outline.js).
  */
 
-import { el, state, remembered, remember } from './state.js';
+import { el, state, deck, remembered, remember, isSource } from './state.js';
 import { api, exportUrl, contentUrl } from './api.js';
 import { saveFirst, setConflict } from './saving.js';
 import { exportDocument } from './exporting.js';
@@ -476,11 +476,13 @@ export async function follow(href) {
   const p = url.origin === root.origin && url.pathname.startsWith(root.pathname)
     ? url.pathname.slice(root.pathname.length).split('/').map(decodeURIComponent).join('/')
     : null;
-  if (!p || !state.files.some((f) => f.path === p && f.type === 'md')) return toast(`no file ${p ?? url.pathname} here`, true);
+  // reader's own markdown, `$reader/…`, isn't listed, and the server says if it can't be read.
+  const ours = isSource(p) ? /\.(md|markdown)$/i.test(p) : state.files.some((f) => f.path === p && f.type === 'md');
+  if (!p || !ours) return toast(`no file ${p ?? url.pathname} here`, true);
   let id = '';
   try { id = decodeURIComponent(url.hash.slice(1)); } catch { /* not a heading's */ }
   if (p !== state.current?.path) {
-    reveal(p);
+    if (!isSource(p)) reveal(p);
     await open(p);
     if (p !== state.current?.path) return;
   }
@@ -594,6 +596,7 @@ export async function open(p) {
     state.worked = false;
     el.editor.value = file.text;
     el.editor.disabled = false;
+    el.editor.readOnly = state.working || deck.open || isSource(p);
     el.editor.scrollTop = 0;
     el.editor.setSelectionRange(0, 0);
     // A workbook opens in Work, slides in Edit, a document as last chosen.

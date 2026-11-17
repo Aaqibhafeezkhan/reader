@@ -46,7 +46,7 @@ tab. `--port` asks for one port exactly.
 
 ```console
 $ reader [dir] [--port 8734] [--frame-port 8735] [--no-browser] [--open <file>] [--day-starts 04:00]
-         [--host <address>] [--allow-host <name>]... [--tailscale]
+         [--host <address>] [--allow-host <name>]... [--tailscale] [--dev]
 $ reader export <file>... [--out <file>] [--no-draw]
 $ reader --version
 ```
@@ -55,6 +55,9 @@ $ reader --version
 only on `127.0.0.1` and rejects requests addressed to any other host name;
 `--host` and `--allow-host` open it to other devices (below). It rejects
 any path that would leave `dir`, including through symlinks.
+
+`--dev` is for working on reader itself: a link to `$reader/<path>` opens that file in reader's own folder, read-only ([Links](links.md#readers-own-files)).
+It's off by default, as it says where reader is.
 
 The page's preview is served apart from the app, so that what a document
 draws can't reach your files: at `frames.localhost` on the app's port, where

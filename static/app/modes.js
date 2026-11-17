@@ -2,7 +2,7 @@
  * The layout: the file list shown or hidden, and work mode.
  */
 
-import { el, state, deck, dirty, remembered, remember } from './state.js';
+import { el, state, deck, dirty, remembered, remember, isSource } from './state.js';
 import { save } from './saving.js';
 import { renderNow } from './render.js';
 import { openAt } from './pages.js';
@@ -127,7 +127,7 @@ export function setWorking(on, { chosen = true } = {}) {
   if (!on && !NARROW.matches) el.split.classList.remove('list-open');
   el.split.classList.toggle('work-mode', on);
   listShown();
-  el.editor.readOnly = on || deck.open;
+  el.editor.readOnly = on || deck.open || isSource(state.current?.path);
   el.workBtn.textContent = on ? 'Edit' : 'Work';
   el.workBtn.title = on ? 'Back to editing (⌘. or Esc)' : 'Work through it without editing (⌘.)';
   if (changed) {

@@ -635,3 +635,34 @@ test('a copy is named and drawn by the server, today\'s if asked and dated, and 
     at.close();
   }
 });
+
+test('in dev mode, $reader/ is reader\'s own folder: its files are read, never written, and without dev mode it isn\'t there (gh-263)', async (t) => {
+  const { server: dev } = createServer({ root, dev: true });
+  await new Promise((r) => dev.listen(0, '127.0.0.1', r));
+  t.after(() => dev.close());
+  const at = `http://127.0.0.1:${dev.address().port}`;
+  const own = fs.readFileSync(new URL('../docs/links.md', import.meta.url), 'utf8');
+
+  const file = await (await fetch(`${at}/api/file?path=${encodeURIComponent('$reader/docs/links.md')}`)).json();
+  assert.equal(file.text, own, 'markdown, to open in reader');
+  assert.equal(file.path, '$reader/docs/links.md', 'named as it was asked for');
+  const raw = await fetch(`${at}/content/$reader/package.json`);
+  assert.equal(raw.status, 200, 'any other file, as its text');
+  assert.equal(JSON.parse(await raw.text()).name, 'reader');
+
+  const put = await fetch(`${at}/api/file`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: '$reader/docs/links.md', text: 'gone' }) });
+  assert.equal(put.status, 403, 'never written');
+  assert.equal(fs.readFileSync(new URL('../docs/links.md', import.meta.url), 'utf8'), own);
+
+  for (const away of ['$reader/../package.json', '$reader/.git/config', '$reader/.claude/settings.json']) {
+    assert.notEqual((await fetch(`${at}/api/file?path=${encodeURIComponent(away)}`)).status, 200, `nothing outside it, or hidden: ${away}`);
+  }
+  // The content root is as it was.
+  assert.equal((await fetch(`${at}/api/file?path=note.md`)).status, 200);
+
+  // Without dev mode, it's nowhere, as it says where reader is.
+  const off = await fetch(`${base}/api/file?path=${encodeURIComponent('$reader/docs/links.md')}`);
+  assert.equal(off.status, 404);
+  assert.match((await off.json()).error, /dev mode only \(--dev\)/);
+  assert.equal((await fetch(`${base}/content/$reader/package.json`)).status, 404);
+});

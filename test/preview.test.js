@@ -49,6 +49,15 @@ test('a link to a markdown file or a heading shows its address in reader, so a c
   assert.equal(link('abs').getAttribute('href'), '/api/files');
 });
 
+test('a link to $reader/ is to reader\'s own folder, wherever the note is, a markdown file opening in reader (gh-263)', () => {
+  const p = showing('[docs]($reader/docs/links.md#other-files) [test]($reader/test/samples.test.js) ![logo]($reader/static/icon.png)');
+  assert.equal(p.link('docs').href, 'http://localhost:8734/read/$reader/docs/links.md#other-files');
+  assert.equal(p.link('docs').dataset.content, 'http://localhost:8734/content/$reader/docs/links.md#other-files');
+  assert.equal(p.link('test').href, 'http://localhost:8734/content/$reader/test/samples.test.js', 'anything else is its file');
+  assert.equal(p.document.querySelector('img').src, 'http://localhost:8734/content/$reader/static/icon.png');
+  assert.deepEqual(click(p, p.link('docs')), { taken: true, followed: ['http://localhost:8734/content/$reader/docs/links.md#other-files'] });
+});
+
 test('a page not from the content directory keeps its links as written', () => {
   const { link } = showing('[next](next.md)', { base: 'http://localhost:8734/export/' });
   assert.equal(link('next').getAttribute('href'), 'next.md');

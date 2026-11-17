@@ -319,6 +319,7 @@
   // out into the app's own addresses.
   const CONTENT = '/content/';
   const RELATIVE = /^(?![a-z][a-z\d+.-]*:|[/\\#?])/i;
+  const SOURCE = '$reader/';
 
   function withinContent(page) {
     const at = new URL(base.href);
@@ -329,6 +330,12 @@
       for (const node of page.querySelectorAll(selector)) {
         const was = node.getAttribute(attr);
         if (!was || !RELATIVE.test(was)) continue;
+        // reader's own folder, from wherever the note is, which the server
+        // gives only in dev mode (gh-263); elsewhere it goes nowhere.
+        if (was.startsWith(SOURCE)) {
+          node.setAttribute(attr, new URL(CONTENT + was, at.origin).href);
+          continue;
+        }
         const to = new URL(was, folder);
         node.setAttribute(attr, new URL(CONTENT.slice(0, -1) + to.pathname + to.search + to.hash, at.origin).href);
       }

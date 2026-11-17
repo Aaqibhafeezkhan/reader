@@ -45,7 +45,7 @@ test('a ::: block styles quotes, tasks, exchanges and fields inside it', () => {
   const { body } = render('::: red\n> quoted\n- [ ] task\nQ: asked\n\n@ Name: x\n:::\n');
   assert.match(body, /<blockquote>\n<p style="color: var\(--gm-red\)">quoted<\/p>/);
   assert.match(body, /<li class="task" style="color: var\(--gm-red\)"><input type="checkbox"/);
-  assert.match(body, /<li class="qa qa-q" style="color: var\(--gm-red\)"><span class="qa-label">Q<\/span>asked<\/li>/);
+  assert.match(body, /<li class="qa qa-q" style="color: var\(--gm-red\)"(?: id="[A-Z]\d+")?><span class="qa-label">Q<\/span>asked<\/li>/);
   assert.match(body, /<p style="color: var\(--gm-red\)"><span class="field" data-line="5"/);
 });
 

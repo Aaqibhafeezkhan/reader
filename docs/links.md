@@ -243,6 +243,7 @@ It's a link on GitHub too, though it goes nowhere there.
 
 A heading keeps its id, and if two lists number the same way, the first item to have an id keeps it, so number a second list on from the first.
 An item in a list that isn't badged, as a `1)` list under a bullet, has none.
+A question or a retro card has one too, `#Q1` or `#G1`; see [Linking to a question or a card](notes.md#linking-to-a-question-or-a-card).
 
 ::: tabs
 +++ Source

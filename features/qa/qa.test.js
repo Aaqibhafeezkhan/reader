@@ -6,7 +6,7 @@ import { slides } from '../../src/slides.js';
 test('Q: and A: lines become an exchange', () => {
   const { body } = render('- a bullet\nQ: Why?\nA (Thomas): Because.\n\n   More.\nQ (audience): And?\nA: So.\n\n\\A: plain\n');
   assert.match(body, /<li>a bullet<\/li>\n<\/ul>\n<ul>/);
-  assert.match(body, /<li class="qa qa-q">\n<p><span class="qa-label">Q<\/span>Why\?<\/p>/);
+  assert.match(body, /<li class="qa qa-q"(?: id="[A-Z]\d+")?>\n<p><span class="qa-label">Q<\/span>Why\?<\/p>/);
   assert.match(body, /<li class="qa qa-a">\n<p><span class="qa-label">A<\/span><span class="qa-name">Thomas<\/span>Because\.<\/p>\n<p>More\.<\/p>/);
   assert.match(body, /<span class="qa-label">Q<\/span><span class="qa-name">audience<\/span>And\?/);
   assert.match(body, /<p>A: plain<\/p>/);
@@ -15,7 +15,7 @@ test('Q: and A: lines become an exchange', () => {
 
 test('an exchange inside ::: is styled too', () => {
   const { body } = render('::: slategray\nQ: Styled?\nA: Yes.\n:::\n');
-  assert.match(body, /<li class="gm-own qa qa-q" style="--own: slategray; color: var\(--gm-own\)"><span class="qa-label">Q<\/span>Styled\?<\/li>/);
+  assert.match(body, /<li class="gm-own qa qa-q" style="--own: slategray; color: var\(--gm-own\)"(?: id="[A-Z]\d+")?><span class="qa-label">Q<\/span>Styled\?<\/li>/);
   assert.match(body, /<li class="gm-own qa qa-a" style="--own: slategray; color: var\(--gm-own\)"><span class="qa-label">A<\/span>Yes\.<\/li>/);
 });
 
@@ -78,8 +78,8 @@ test('a quote opening the line curls like any other', () => {
 test('Good:, Bad: and Try: lines are cards, each one its own', () => {
   const { body } = render('Good (Josh): one\nGood (Josh): two\nA (Rob): agreed\nBad: three\n\nTry (Josh): four\n\n\\Good: plain\n');
   assert.equal(body.match(/class="qa qa-card qa-good"/g).length, 2);
-  assert.match(body, /<li class="qa qa-card qa-good">\n<p><span class="qa-label qa-toggle"[^>]*>G<\/span><span class="qa-name">Josh<\/span>two<\/p>\n<\/li>\n<li class="qa qa-a">\n<p><span class="qa-label">A<\/span><span class="qa-name">Rob<\/span>agreed/);
-  assert.match(body, /<li class="qa qa-card qa-bad">\n<p><span class="qa-label qa-toggle"[^>]*>B<\/span>three<\/p>/);
+  assert.match(body, /<li class="qa qa-card qa-good"(?: id="[A-Z]\d+")?>\n<p><span class="qa-label qa-toggle"[^>]*>G<\/span><span class="qa-name">Josh<\/span>two<\/p>\n<\/li>\n<li class="qa qa-a">\n<p><span class="qa-label">A<\/span><span class="qa-name">Rob<\/span>agreed/);
+  assert.match(body, /<li class="qa qa-card qa-bad"(?: id="[A-Z]\d+")?>\n<p><span class="qa-label qa-toggle"[^>]*>B<\/span>three<\/p>/);
   assert.match(body, /<span class="qa-label qa-toggle qa-tried"[^>]*>T<\/span><span class="qa-name">Josh<\/span>four/);
   assert.match(body, /<p>Good: plain<\/p>/);
 });
@@ -103,11 +103,11 @@ test('+1 with nothing to vote for stays as typed', () => {
 
 test('a card with [x] is done: it and what is said under it are faded', () => {
   const { body } = render('Good [x] (Josh): one\n+1 (Rob)\nA: yes\nQ: next\n\nBad [ ]: two\n\nQ [x]: plain\n');
-  assert.match(body, /<li class="qa qa-card qa-good qa-done">/);
+  assert.match(body, /<li class="qa qa-card qa-good qa-done"(?: id="[A-Z]\d+")?>/);
   assert.match(body, /<li class="qa qa-vote qa-bare qa-done">/);
   assert.match(body, /<li class="qa qa-a qa-done">/);
-  assert.match(body, /<li class="qa qa-q">/);
-  assert.match(body, /<li class="qa qa-card qa-bad">/);
+  assert.match(body, /<li class="qa qa-q"(?: id="[A-Z]\d+")?>/);
+  assert.match(body, /<li class="qa qa-card qa-bad"(?: id="[A-Z]\d+")?>/);
   assert.match(body, /<p>Q \[x\]: plain<\/p>/);
 });
 
@@ -118,7 +118,7 @@ test('a card\'s label is a toggle named for its card, pressed once discussed; in
   assert.match(body, /<span class="qa-label qa-toggle" role="button" tabindex="0" aria-label="Bad, discussed" aria-pressed="false"[^>]*>B<\/span>/);
   const exported = render(src, { for: 'export' }).body;
   assert.doesNotMatch(exported, /qa-toggle|role="button"|data-on=/);
-  assert.match(exported, /<li class="qa qa-card qa-good qa-done">\n<p><span class="qa-label">G<\/span>/);
+  assert.match(exported, /<li class="qa qa-card qa-good qa-done"(?: id="[A-Z]\d+")?>\n<p><span class="qa-label">G<\/span>/);
 });
 
 test('a tried Try shows a check in place of its T, however it is set', () => {
@@ -151,7 +151,7 @@ test('a card\'s label writes its line done, or not, as written', () => {
 test('a Try card\'s label is a box, ticked once it\'s been tried', () => {
   const { body } = render('Try (Josh): half the cumin\n\nTry [x]: less salt\n');
   assert.match(body, /<span class="qa-label qa-toggle qa-tried" role="checkbox" tabindex="0" aria-label="Try, tried" aria-checked="false" title="Mark it tried"[^>]*>T<\/span>/);
-  assert.match(body, /<li class="qa qa-card qa-try qa-done">\n<p><span class="qa-label qa-toggle qa-tried" role="checkbox"[^>]*aria-checked="true" title="Not tried yet"/);
+  assert.match(body, /<li class="qa qa-card qa-try qa-done"(?: id="[A-Z]\d+")?>\n<p><span class="qa-label qa-toggle qa-tried" role="checkbox"[^>]*aria-checked="true" title="Not tried yet"/);
 });
 
 test('( ) on an answer\'s line is radio buttons in a row, a group named by the question, each knowing its line with only it picked', () => {
@@ -211,7 +211,7 @@ const NESTED = [
 
 test('a Q: or A: indented under an exchange is an exchange of its own, a list in its item', () => {
   const { body } = render(`${NESTED}\n`);
-  assert.match(body, /<li class="qa qa-a"><span class="qa-label">A<\/span>Now, or file an issue\.\n<ul>\n<li class="qa qa-q"><span class="qa-label">Q<\/span><span class="qa-name">Claude<\/span>Fix part A now\?<\/li>\n<li class="qa qa-a"><span class="qa-label">A<\/span>File an issue\.<\/li>\n<li class="qa qa-q">[^\n]*Fix part B now\?<\/li>\n<li class="qa qa-a"><span class="qa-label">A<\/span>Now\.<\/li>\n<\/ul>\n<\/li>\n<li class="qa qa-q">[^\n]*Fix this other part\?<\/li>/);
+  assert.match(body, /<li class="qa qa-a"><span class="qa-label">A<\/span>Now, or file an issue\.\n<ul>\n<li class="qa qa-q"(?: id="[A-Z]\d+")?><span class="qa-label">Q<\/span><span class="qa-name">Claude<\/span>Fix part A now\?<\/li>\n<li class="qa qa-a"><span class="qa-label">A<\/span>File an issue\.<\/li>\n<li class="qa qa-q"(?: id="[A-Z]\d+")?>[^\n]*Fix part B now\?<\/li>\n<li class="qa qa-a"><span class="qa-label">A<\/span>Now\.<\/li>\n<\/ul>\n<\/li>\n<li class="qa qa-q"(?: id="[A-Z]\d+")?>[^\n]*Fix this other part\?<\/li>/);
   assert.doesNotMatch(body, /Q \(Claude\)|A: /);
 });
 
@@ -223,7 +223,7 @@ test('exchanges nest as deep as they\'re indented, and back out to the depth a l
   assert.match(body, /Deeper yet\.<\/li>\n<\/ul>\n<\/li>\n<li class="qa qa-a"><span class="qa-label">A<\/span>Another thought\.<\/li>/);
   // A card's under a card, and a vote for the one at its depth.
   assert.match(body, /data-on=" {2}Try \[x\]: nested"[^>]*>T<\/span><span class="qa-tally">\+1<\/span>nested<\/li>\n<li class="qa qa-vote qa-bare">/);
-  assert.match(body, /<\/ul>\n<\/li>\n<li class="qa qa-q"><span class="qa-label">Q<\/span>Next<\/li>/);
+  assert.match(body, /<\/ul>\n<\/li>\n<li class="qa qa-q"(?: id="[A-Z]\d+")?><span class="qa-label">Q<\/span>Next<\/li>/);
 });
 
 test('an indented Q: with no exchange above it, or after the exchange ended, stays as typed', () => {
@@ -248,4 +248,24 @@ test('an aside under a nested line goes beside it, at any depth', () => {
   assert.doesNotMatch(beside('split in two'), /Part A\?/);
   assert.match(beside('it’s small'), /<span class="qa-label">A<\/span>Now\./);
   assert.doesNotMatch(body, /~#/);
+});
+
+test('each question and card has an id by its label and how many of its kind are before it, nested ones too (gh-300)', () => {
+  const { body, anchors } = render('Q (Daniel): Coffee?\nA (Maria): See [the next](#Q2).\n\nGood (Josh): Fun\n+1\nBad: Late\n  Q: Why?\n  A: Traffic.\nTry: Earlier\nGood: Calm\n');
+  const ids = [...body.matchAll(/<li class="qa[^"]*" id="([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(ids, ['Q1', 'G1', 'B1', 'Q2', 'T1', 'G2']);
+  assert.deepEqual(Object.keys(anchors).sort(), ['B1', 'G1', 'G2', 'Q1', 'Q2', 'T1']);
+  assert.doesNotMatch(body, /<li class="qa qa-a"[^>]* id=/, 'an answer has none');
+  assert.doesNotMatch(body, /qa-vote[^>]* id=/, 'nor a vote');
+});
+
+test('a question carried on by the same person\'s next is one question, with one id', () => {
+  const { body } = render('Q (Daniel): Coffee?\nQ (Daniel): Or tea?\nQ (Maria): A break?\n');
+  assert.deepEqual([...body.matchAll(/ id="(Q\d+)"/g)].map((m) => m[1]), ['Q1', 'Q2']);
+});
+
+test('a deck\'s questions count on across its slides, so each has its own id', () => {
+  const deck = slides('Q: First?\n\n---\n\nQ: Second?\n').slides;
+  assert.match(deck[0].body, / id="Q1"/);
+  assert.match(deck[1].body, / id="Q2"/);
 });

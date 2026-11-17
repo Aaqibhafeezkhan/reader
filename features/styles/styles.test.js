@@ -45,7 +45,7 @@ test('a ::: block styles quotes, tasks, exchanges and fields inside it', () => {
   const { body } = render('::: red\n> quoted\n- [ ] task\nQ: asked\n\n@ Name: x\n:::\n');
   assert.match(body, /<blockquote>\n<p style="color: var\(--gm-red\)">quoted<\/p>/);
   assert.match(body, /<li class="task" style="color: var\(--gm-red\)"><input type="checkbox"/);
-  assert.match(body, /<li class="qa qa-q" style="color: var\(--gm-red\)"><span class="qa-label">Q<\/span>asked<\/li>/);
+  assert.match(body, /<li class="qa qa-q" style="color: var\(--gm-red\)"(?: id="[A-Z]\d+")?><span class="qa-label">Q<\/span>asked<\/li>/);
   assert.match(body, /<p style="color: var\(--gm-red\)"><span class="field" data-line="5"/);
 });
 
@@ -95,7 +95,7 @@ test('braces after a list item\'s bullet and box style the whole item, its box i
 });
 
 test('braces that aren\'t all style names, or aren\'t right after an item\'s bullet and box, stay as typed', () => {
-  const src = '- {placeholder} a\n- {red georgia} b\n- [c]{red} d\n- {red}e\n- f {red}\n- [ ] g {red}\n- h\n  {red} i\n- {red}\n\n{red} j\n\n    - {red} k\n\n- `{red} l`\n- [@ m] {red} n\n';
+  const src = '- {placeholder} a\n- {red georgia} b\n- [c]{red} d\n- {red}e\n- f {red}\n- [ ] g {red}\n- h\n  {red} i\n- {red}\n\n{red} j\n\n    - {red} k\n\n- `{red} l`\n';
   const { body } = render(src);
   assert.match(body, /<li>\{placeholder\} a<\/li>/);
   assert.match(body, /<li>\{red georgia\} b<\/li>/);
@@ -108,8 +108,13 @@ test('braces that aren\'t all style names, or aren\'t right after an item\'s bul
   assert.match(body, /<p>\{red\} j<\/p>/);
   assert.match(body, /<pre><code>- \{red\} k\n<\/code><\/pre>/);
   assert.match(body, /<li><code>\{red\} l<\/code><\/li>/);
-  assert.match(body, /<\/span> \{red\} n<\/li>/);
   assert.doesNotMatch(body, /<li [^>]*style=|[\uE000-\uE009]/);
+});
+
+test('braces after whatever leads an item, a box, a date, a blank, or more than one, style it, whichever feature drew them (gh-291)', () => {
+  const { body } = render('- date:2026-11-10[] {red} Buy milk\n- [ ] date:2026-11-10[] {red} Both\n- [@ m] {red} n\n- [x][ ] {red} staged\n');
+  assert.equal(body.match(/<li [^>]*style="color: var\(--gm-red\)"/g).length, 4);
+  assert.doesNotMatch(body.replace(/<[^>]*>/g, ''), /\{red\}|[\uE000-\uE009]/, 'none is left in the words');
 });
 
 test('an item\'s own color wins over its ::: block\'s, whose font still comes after', () => {
@@ -164,4 +169,19 @@ test('a color named on text reads as text, light or dark: a common name in the f
   assert.match(body, /<span style="color: var\(--gm-blue\)">navy words<\/span>/);
   // Not in the family: its own hue, through --gm-own (src/columns.css).
   assert.match(body, /<span class="gm-own" style="--own: lightgreen; color: var\(--gm-own\)">light words<\/span>/);
+});
+
+test('braces right after a link, a date, a scheme\'s link or a blank style only it, whichever feature drew it (gh-303)', () => {
+  const { body } = render('Due date:2026-11-10[]{red}, rfc:2616[]{red}, [the plan](plan.md){red}, [@ milk: two]{blue} and [x](y.md){circle}.\n');
+  assert.match(body, /Due <span style="color: var\(--gm-red\)"><time class="date"[^>]*>November 10, 2026<\/time><\/span>, /);
+  assert.match(body, /<span style="color: var\(--gm-red\)"><a href="https:\/\/www.rfc-editor.org\/rfc\/rfc2616.html">RFC 2616<\/a><\/span>, /);
+  assert.match(body, /<span style="color: var\(--gm-red\)"><a href="plan.md">the plan<\/a><\/span>, /);
+  assert.match(body, /<span style="color: var\(--gm-blue\)"><span class="field field-inline"[^]*?<\/span><\/span><\/span> and /);
+  assert.match(body, /<span class="mk mk-circle" role="mark"><a href="y.md">x<\/a><\/span>\./);
+  assert.doesNotMatch(body.replace(/data-text="[^"]*"/g, ''), /\{(red|blue|circle)\}/, 'the braces gone, but from the line as written');
+});
+
+test('braces after a space, with a word styles doesn\'t know, or after words or code, stay as typed', () => {
+  const { body } = render('[a](a.md) {red}, [b](b.md){sic}, *c*{red}, `d`{red} and e{red}.\n');
+  assert.match(body, /<a href="a.md">a<\/a> \{red\}, <a href="b.md">b<\/a>\{sic\}, <em>c<\/em>\{red\}, <code>d<\/code>\{red\} and e\{red\}\./);
 });

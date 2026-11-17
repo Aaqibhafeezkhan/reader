@@ -77,6 +77,22 @@ export const MARKS = {
 };
 
 /**
+ * Any feature's placeholder, its pair of marks and what's between them, as
+ * a pattern, for a feature that looks for its own syntax after one to step
+ * past it without knowing whose it is (gh-291): a `:::` block's marker
+ * before a definition, a box before an item's braces.
+ */
+export const PLACEHOLDER = `(?:${Object.values(MARKS).filter((m) => m.length === 2).map(([open, close]) => `${open}[^${close}]*${close}`).join('|')})`;
+
+/**
+ * What starts a list's item, as a pattern: a bullet, a number, `1.` or `1)`,
+ * or a letter, `a)`, which badges reads as a list (gh-261). A feature that
+ * finds its own syntax after an item's start uses it, so that a kind of
+ * list added later is found everywhere at once.
+ */
+export const LIST_MARKER = '(?:[-*+]|\\d{1,9}[.)]|[a-z]\\))';
+
+/**
  * The names features share on `env`, which each of them may read and some
  * may write: `state.env.sourceLines` in a parsing rule, `env.sourceLines` in
  * a renderer rule. `env` is markdown-it's: the object passed to
@@ -245,8 +261,12 @@ export const SHARED_ENV = [
  *   what's done counts these (`progress:[]`), whichever feature drew them.
  * - `answered`: the token is a question, choices of which one is to be
  *   picked, and whether one is (true or false); on the page it carries
- *   `data-answered`. What says whether a page is done (Work's dots) counts
- *   these with the things to be done.
+ *   `data-answered`. What says whether a page is done (Work's dots), or
+ *   how far along a section is (`progress:[]`), counts these with the
+ *   things to be done.
+ * - `anchor`: the id to link to the block by, `#1.d`, which it's given
+ *   unless a heading, or a block before it, has it (src/anchors.js); a
+ *   badged list's item says its badges.
  * - `notExported`: draw nothing for the token on an exported page, because
  *   another feature already shows there what it says, and nothing on that
  *   page could change it (a step's box, whose badge says whether it's done).

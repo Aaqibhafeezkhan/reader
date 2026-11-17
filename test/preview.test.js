@@ -103,6 +103,14 @@ test('a link to a heading on the page scrolls to it, there, and the app is asked
   assertElement(clickToHeading(p, 'its base').scrolled, p.document.querySelectorAll('h2')[1]);
 });
 
+test('a link to an item of a badged list scrolls to it, and the app is asked nothing (gh-262)', () => {
+  const p = showing('1) Ideas\n   d) Today\n2) See [1 d)](#1.d)\n');
+  const { taken, followed, scrolled } = clickToHeading(p, '1 d)');
+  assert.deepEqual({ taken, followed }, { taken: true, followed: [] });
+  assertElement(scrolled, p.document.getElementById('1.d'));
+  assert.deepEqual(p.told, [], 'only a heading is named in the address');
+});
+
 test('a link to a heading the page doesn\'t hold, on another page or slide, asks the app to go there', () => {
   const p = showing('See [the end](#the-end).\n');
   assert.deepEqual(clickToHeading(p, 'the end'), { taken: true, followed: ['#the-end'], scrolled: null });
@@ -713,4 +721,18 @@ test('an output block that scrolls sideways is named "Output"', () => {
   sized(p, 600, 400);
   p.show(render('```output\n' + 'x'.repeat(200) + '\n```\n').body);
   assert.equal(p.document.querySelector('pre').getAttribute('aria-label'), 'Output');
+});
+
+test('on a slide, a click on a button that redraws itself as it\'s pressed, as music\'s Play does, doesn\'t move the deck', () => {
+  const p = showing('Some words.\n', { deck: true });
+  const button = p.document.createElement('button');
+  button.innerHTML = '<svg><path d="M0 0"/></svg>';
+  // Play's own listener turns it to Pause first, leaving the icon pressed in no button.
+  button.addEventListener('click', () => { button.innerHTML = '<svg><path d="M1 1"/></svg>'; });
+  p.document.querySelector('p').append(button);
+  const icon = button.querySelector('path');
+  icon.dispatchEvent(new p.window.MouseEvent('click', { bubbles: true, clientX: 600 }));
+  assert.deepEqual(p.posted.filter((m) => m.type === 'click'), [], 'the deck stays');
+  p.document.querySelector('p').dispatchEvent(new p.window.MouseEvent('click', { bubbles: true, clientX: 600 }));
+  assert.deepEqual(p.posted.filter((m) => m.type === 'click'), [{ type: 'click', left: false }], 'a click on the slide still moves it');
 });

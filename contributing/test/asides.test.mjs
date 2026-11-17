@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { boxes, open } from '../lib/asides-open.mjs';
+import { boxes, open, runOn } from '../lib/asides-open.mjs';
 import { run, scratch, settings, tree } from './setup.mjs';
 
 const CLAUDE = { ai: 'Claude' };
@@ -184,10 +184,10 @@ test('send-watch on the index\'s box lists the whole day, and watches for the co
   assert.equal(out, 'send 2026-11-22/review.md:2: 1 waiting\n  2026-11-22/gh-7/review.md:2: ~# about the item\n');
 });
 
-test('send-watch passes over a box left ticked from a round already answered, with nothing waiting', (t) => {
+test('send-watch passes over a box left ticked in a day already merged', (t) => {
   const dir = scratch(t);
   tree(path.join(dir, 'meetings'), {
-    '2026-11-09/review.md': '- [x] Send to Claude\n\nAll answered.\n',
+    '2026-11-09/review.md': '- [x] Send to Claude\n\nAll answered.\n\n- [x] Then: push, open the PR, merge it.\n',
     '2026-11-11/gh-199/review.md': '- [x] Send to Claude\n\nItem line.\n~# about the item\n',
   });
   const { status, out } = run('review-round/scripts/send-watch.mjs', ['50', '--once'], settings(dir));
@@ -200,4 +200,55 @@ test('send-watch says so when there are no day folders', (t) => {
   const { status, out } = run('review-round/scripts/send-watch.mjs', ['50', '--once'], settings(dir));
   assert.equal(status, 2);
   assert.match(out, /no day folders at/);
+});
+
+test('a line straight after the AI\'s reply, not indented past its ~, is listed to check, as it reads as the page\'s text', (t) => {
+  const day = tree(scratch(t), {
+    'review.md': [
+      'One line.',
+      '~# a question',
+      '~~c An answer,',
+      '  carried on as it should be,',
+      'and one that isn\'t.',
+      '',
+      '- [ ] An item',
+      '  ~# asked',
+      '  ~~c answered',
+      '- [ ] The next item, not a line run on',
+      '',
+      '~c An aside of the AI\'s own',
+      'run on too.',
+      '',
+      '```md',
+      '~~c a sample',
+      'in a fence',
+      '```',
+    ].join('\n'),
+  });
+  assert.deepEqual(runOn(day).map((a) => [a.at, a.text]), [
+    ['review.md:5', 'and one that isn\'t.'],
+    ['review.md:13', 'run on too.'],
+  ]);
+});
+
+test('send-watch says every box ticked in the pass that wakes it, not only the first', (t) => {
+  const dir = scratch(t);
+  tree(path.join(dir, 'meetings'), {
+    '2026-11-22/review.md': '- [ ] Send to Claude\n',
+    '2026-11-22/gh-7/review.md': '- [x] Send to Claude\n\nItem line.\n~# about seven\n',
+    '2026-11-22/gh-8/review.md': '- [x] Send to Claude\n\nItem line.\n~# about eight\n',
+  });
+  const { out } = run('review-round/scripts/send-watch.mjs', ['50', '--once'], settings(dir));
+  assert.match(out, /^send 2026-11-22\/gh-7\/review.md:1: 1 waiting\n.*\nsend 2026-11-22\/gh-8\/review.md:1: 1 waiting\n/);
+});
+
+test('send-watch counts a box already ticked when it starts, in a day not merged, though only choices were picked (gh-262\'s)', (t) => {
+  const dir = scratch(t);
+  tree(path.join(dir, 'meetings'), {
+    '2026-11-16/review.md': '- [ ] Send to Claude\n\n- [ ] Then: push, open the PR, merge it.\n',
+    '2026-11-16/gh-262/review.md': '- [x] Send to Claude\n\nQ (Claude): Keep both?\n- (x) Yes\n- ( ) No\n',
+  });
+  const { status, out } = run('review-round/scripts/send-watch.mjs', ['50', '--once'], settings(dir));
+  assert.equal(status, 0, out);
+  assert.equal(out, 'send 2026-11-16/gh-262/review.md:1: 0 waiting\n');
 });

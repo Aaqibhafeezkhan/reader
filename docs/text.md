@@ -40,6 +40,23 @@ marks the text instead (see [Asides](asides.md)).
 [wavy]{wavy} and [highlighted]{highlight goldenrod}.
 :::
 
+Braces right after a link, or anything else reader draws in a line, style
+only it: a date, a scheme's link, a blank. Only names reader knows count
+there, a color, a background, a generic font, `uppercase` or a mark, as
+on a list item, below; any other word, or braces after a space, stay as
+typed. Pandoc, Djot and kramdown write a link's styles in the same place.
+
+::: tabs
++++ Source
+```markdown
+Due date:2026-11-10[]{red}, see rfc:2616[]{red}, or [the plan](plan.md){circle}.
+Get [@ milk: two]{blue} today.
+```
++++ Rendered
+Due date:2026-11-10[]{red}, see rfc:2616[]{red}, or [the plan](plan.md){circle}.
+Get [@ milk: two]{blue} today.
+:::
+
 For whole paragraphs, lists or tables, fence them with `:::`:
 
 ::: tabs
@@ -66,6 +83,8 @@ until the closing line.
 A list item takes styles of its own from braces where it's declared:
 after its bullet, and its box if it has one, before its text. They style
 the whole item, its bullet or box included, and its cell in a grid.
+What leads the item before them can be anything reader draws, a date or a blank
+as well as a box: `- date:2026-11-10[] {red} Buy milk` is red.
 A heading takes them the same way, after its `#`s and any box: `## {navy} Today`.
 Braces naming anything but colors, backgrounds, the generic fonts
 (`serif`, `monospace`, ...) and `uppercase` stay as typed:
@@ -250,4 +269,17 @@ Shipped :tada: but `:tada:` in code stays.
 ```
 +++ Rendered
 Shipped :tada: but `:tada:` in code stays.
+:::
+
+A browser has no emoji, so `:chrome:`, `:safari:`, `:firefox:` and `:edge:` show its mark, in the text's colour, named for a screen reader and as a tooltip.
+
+::: tabs
++++ Source
+```markdown
+1) [x] :chrome: at desktop and phone sizes
+2) [ ] :safari: :firefox: :edge:
+```
++++ Rendered
+1) [x] :chrome: at desktop and phone sizes
+2) [ ] :safari: :firefox: :edge:
 :::

@@ -315,6 +315,31 @@ GitHub.
 2) Run `npm install`
 :::
 
+A lettered list, `a)`, `b)` and on, has its letters drawn as badges too, at any depth, as the parts of an idea are.
+On GitHub its items are lines of text, so it reads as written.
+Like a numbered list, one starts right under a line of text only at `a)`, but in a list's item any letter does, to pick out one part: `1) Ideas` then `d) Today`.
+A lettered item takes a box, a choice or braces as a numbered one does: `a) [ ] {red} Smaller buttons`.
+`a\)` stays as typed.
+
+::: tabs
++++ Source
+```markdown
+1) Favor icons over words:
+   a) Formatting should be an icon
+   b) Work should be an icon
+2) Remove or consolidate
+   a) Formatting could move to the editor's footer
+```
++++ Rendered
+1) Favor icons over words:
+   a) Formatting should be an icon
+   b) Work should be an icon
+2) Remove or consolidate
+   a) Formatting could move to the editor's footer
+:::
+
+Each item can be linked to by its badges, `[1 d)](#1.d)`; see [Items in a list](links.md#items-in-a-list).
+
 With boxes, a `1)` list is steps to follow; see [Recipes](recipes.md).
 
 ## Tables

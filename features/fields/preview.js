@@ -112,6 +112,7 @@
     field.dataset.text = now;
     slot.textContent = '';
     slot.dataset.value = '';
+    slot.setAttribute('data-unwritten', '');
     return now;
   }
 
@@ -158,6 +159,7 @@
       if (numeric(field) && after && !NUMBER.test(after)) after = NUMBER.test(after.replace(/\.$/, '')) ? after.replace(/\.$/, '') : before;
       slot.textContent = after;
       slot.dataset.value = after;
+      slot.toggleAttribute('data-unwritten', !after);
       if (stay && slot.tabIndex >= 0) {
         resting = slot;
         slot.focus();
@@ -175,8 +177,9 @@
           now = picked(of, boxes(of).indexOf(choice));
           setText(line, now);
           choice.checked = true;
-          of.dataset.answered = 'true';
         }
+        // A choice picked counts once its blank's written in, and no longer once it's emptied.
+        if (of && choice.checked) of.dataset.answered = String(Boolean(after));
         Preview.edit([{ from: line, to: line + 1, before: [was], after: [now] }]);
         if (after) answered(field);
       }
@@ -222,9 +225,14 @@
     // Made from the line as it reads now, a blank in it filled in or not.
     const now = picked(field, boxes(field).indexOf(e.target));
     setText(line, now);
-    field.dataset.answered = 'true';
+    // A choice whose words are a blank still to write in is picked, but
+    // not yet an answer: the keyboard goes to its blank.
+    const unwritten = e.target.closest('.field-choice')?.querySelector('[data-unwritten]');
+    field.dataset.answered = String(!unwritten);
+    unwritten?.focus();
     if (now !== was) {
-      Preview.edit([{ from: line, to: line + 1, before: [was], after: [now] }], { undo: true });
+      // Not one to undo when the keyboard's gone to a blank, as that would close it.
+      Preview.edit([{ from: line, to: line + 1, before: [was], after: [now] }], { undo: !unwritten });
       answered(field);
     }
   });

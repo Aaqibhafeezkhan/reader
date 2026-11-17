@@ -34,11 +34,11 @@
 
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { beforeExtract, keepWritten, readLines, placeholder, MARKS, unplaced, splitText, sections, multipliers, escapeHtml, escapeAttr, addClass } from '../source.js';
+import { beforeExtract, keepWritten, readLines, placeholder, MARKS, LIST_MARKER, unplaced, splitText, sections, multipliers, escapeHtml, escapeAttr, addClass } from '../source.js';
 import { schemeRule } from '../scheme.js';
-import { workable, shut } from '../blank.js';
+import { workable, shut, inlineBlanks } from '../blank.js';
 
-const TASK = /^([ \t]*(?:>[ \t]*|~(?![^\s~])[ \t]*|~[^\s~]+[ \t]+)*(?:[-*+]|\d{1,9}[.)])[ \t]+)(?:((?:\[[ xX]\]){1,9})|\(([ xX])\))(?=[ \t]|$)/;
+const TASK = new RegExp(`^([ \\t]*(?:>[ \\t]*|~(?![^\\s~])[ \\t]*|~[^\\s~]+[ \\t]+)*${LIST_MARKER}[ \\t]+)(?:((?:\\[[ xX]\\]){1,9})|\\(([ xX])\\))(?=[ \\t]|$)`);
 const NAMED = new Set(['field_inline', 'count', 'ingredient_key', 'ingredient_use', 'pitch', 'timer', 'scheme_shown']);
 const HEADING = /^( {0,3}#{1,6}[ \t]+)\[([ xX])\](?=[ \t]|$)/;
 const [OPEN, CLOSE] = MARKS.tasks;
@@ -116,7 +116,8 @@ export function tasks(md) {
         input.meta = { ...box, group: lists.at(-1), name: nameOf(inline.children), heading };
         // A box is a thing to be done; a choice isn't (see source.js's tags).
         if (!box.radio) input.meta.done = box.checked;
-        else if (opens.length) questions.set(opens.at(-1), Boolean(questions.get(opens.at(-1)) || box.checked));
+        // A choice whose words have a blank in them is picked once it's written in.
+        else if (opens.length) questions.set(opens.at(-1), Boolean(questions.get(opens.at(-1)) || (box.checked && !inlineBlanks(box.on).some((b) => !b.value.trim()))));
         inline.children.unshift(input);
       }
     }

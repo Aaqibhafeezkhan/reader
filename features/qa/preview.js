@@ -44,9 +44,14 @@
     const was = row.dataset.text;
     const now = box.dataset.on;
     row.dataset.text = now;
-    row.dataset.answered = 'true';
+    // A choice whose words are a blank still to write in is picked, but
+    // not yet an answer: the keyboard goes to its blank.
+    const unwritten = box.closest('.qa-choice')?.querySelector('[data-unwritten]');
+    row.dataset.answered = String(!unwritten);
+    unwritten?.focus();
     if (now === was) return;
-    Preview.edit([{ from: line, to: line + 1, before: [was], after: [now] }], { undo: true });
+    // Not one to undo when the keyboard's gone to a blank, as that would close it.
+    Preview.edit([{ from: line, to: line + 1, before: [was], after: [now] }], { undo: !unwritten });
     row.dispatchEvent(new Event('preview:answered', { bubbles: true }));
   };
   document.addEventListener('change', (e) => {
@@ -54,7 +59,11 @@
   });
   document.addEventListener('preview:answered', (e) => {
     const box = Preview.workable && e.target.closest?.('.qa-choice')?.querySelector(CHOICE);
-    if (!box || box === e.target || box.checked) return;
+    if (!box || box === e.target) return;
+    if (box.checked) {
+      box.closest('.qa-choices').dataset.answered = String(!box.closest('.qa-choice').querySelector('[data-unwritten]'));
+      return;
+    }
     box.checked = true;
     pick(box);
   });

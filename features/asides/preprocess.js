@@ -16,7 +16,7 @@
 import { attribute } from './key.js';
 import { STYLES } from '../mark.js';
 import { OPEN, DIVIDER, CLOSE } from '../layout.js';
-import { fenced } from '../source.js';
+import { fenced, LIST_MARKER } from '../source.js';
 
 const FENCE_RE = /^\s{0,3}(`{3,}|~{3,})/;
 
@@ -70,7 +70,7 @@ function selection(written, style) {
 // markdown's own, and reader's `:::` styles, `+++` panes, `@` fields and
 // `!TERM:` definitions; and a layout's lines, once the styles feature has
 // left them as marks of their own (features/layout.js).
-const BLOCK_START_RE = new RegExp(String.raw`^[ \t]*(?:[*+-][ \t]|\d+[.)][ \t]|#{1,6}[ \t]|>|${'```'}|~{3,}|-{3,}\s*$|_{3,}\s*$|:{3}|\+{3,}(?:[ \t]|$)|@[ \t]|\\?![ \t]*[^\s[!:()][^:\n]*:(?:[ \t]|$)|[${OPEN}${DIVIDER}${CLOSE}])`);
+const BLOCK_START_RE = new RegExp(String.raw`^[ \t]*(?:${LIST_MARKER}[ \t]|#{1,6}[ \t]|>|${'```'}|~{3,}|-{3,}\s*$|_{3,}\s*$|:{3}|\+{3,}(?:[ \t]|$)|@[ \t]|\\?![ \t]*[^\s[!:()][^:\n]*:(?:[ \t]|$)|[${OPEN}${DIVIDER}${CLOSE}])`);
 
 function expandTabs(line) {
   return line.replace(/\t/g, '    ');

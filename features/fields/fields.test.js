@@ -71,7 +71,7 @@ test('[@ ] in a sentence is a blank there, knowing where it is on its line', () 
   const line = 'I am from a [@ an item from childhood] and [@ a product: Tang].';
   const { body } = render(`# Me\n\n${line}\n`);
   const text = 'data-text="I am from a [@ an item from childhood] and [@ a product: Tang]."';
-  assert.match(body, new RegExp(`<p>I am from a <span class="field field-inline" data-line="2" ${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} data-head="\\[@ an item from childhood" data-start="12" data-end="38"><span class="field-value" data-value="" tabindex="0" role="textbox" aria-label="an item from childhood"></span><span class="field-label">an item from childhood</span></span> and `));
+  assert.match(body, new RegExp(`<p>I am from a <span class="field field-inline" data-line="2" ${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} data-head="\\[@ an item from childhood" data-start="12" data-end="38"><span class="field-value" data-value="" data-unwritten tabindex="0" role="textbox" aria-label="an item from childhood"></span><span class="field-label">an item from childhood</span></span> and `));
   assert.match(body, /data-head="\[@ a product" data-start="43" data-end="62"><span class="field-value" data-value="Tang" tabindex="0" role="textbox" aria-label="a product">Tang<\/span><span class="field-label">a product<\/span><\/span>\.<\/p>/);
 });
 
@@ -96,7 +96,7 @@ test('a blank is reached by the keyboard and read as a box named by its label, b
   const md = '@ Name: Josh\n\nI am [@ age].\n';
   const { body } = render(md);
   assert.match(body, /<span class="field-value" data-value="Josh" tabindex="0" role="textbox" aria-label="Name">/);
-  assert.match(body, /<span class="field-value" data-value="" tabindex="0" role="textbox" aria-label="age">/);
+  assert.match(body, /<span class="field-value" data-value="" data-unwritten tabindex="0" role="textbox" aria-label="age">/);
   assert.doesNotMatch(render(md, { for: 'export' }).body, /tabindex|role="textbox"/);
 });
 
@@ -107,7 +107,7 @@ test('on a slide or an exported page, no field is a box: it reads as its label a
     assert.doesNotMatch(body, /class="field-value"[^>]*(tabindex|role=)/, `on ${where}`);
     assert.match(body, /<span class="field-label">Name<\/span><span class="field-value" data-value="Josh">Josh<\/span><\/span>/, `on ${where}`);
     assert.match(body, /<span class="field-label">Thoughts<\/span><span class="field-value" data-value=""><\/span><span class="field-blank vh">blank<\/span><\/span>/, `on ${where}`);
-    assert.match(body, /<span class="field-value" data-value=""><\/span><span class="field-label">age<\/span><span class="field-blank vh">blank<\/span>/, `on ${where}`);
+    assert.match(body, /<span class="field-value" data-value="" data-unwritten><\/span><span class="field-label">age<\/span><span class="field-blank vh">blank<\/span>/, `on ${where}`);
     assert.match(body, /<span class="field-value" data-value="home">home<\/span><span class="field-label">a place<\/span>/, `on ${where}`);
     assert.equal(body.match(/field-blank/g).length, 2, `on ${where}, only the empty ones say so`);
     // A field of choices keeps its buttons, showing the one picked.

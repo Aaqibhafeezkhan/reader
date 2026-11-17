@@ -13,19 +13,6 @@ const FRAME = ['features/*/preview.js', 'features/puzzles/kinds/*.js'];
 const NAMES = new Set(fs.readdirSync(FEATURES, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name));
 
 /**
- * A feature that reads another's placeholder, by the one whose it is:
- * where the other's is found at the start of a line, ahead of this one's
- * own, and this one has to step past it. Anything else reads the other's
- * tokens.
- */
-const PLACED = {
-  // A `:::` block's marker may lead a definition's line.
-  definitions: ['styles'],
-  // A list item's or a heading's braces come after its box, as tasks has placed it.
-  styles: ['tasks'],
-};
-
-/**
  * The feature whose directory holds `file`, at any depth, or null for a
  * file outside every feature's: one at the top of features/, which
  * features share, or one elsewhere. `dir` says `file` is a directory.
@@ -49,7 +36,8 @@ function featureOf(file, dir) {
  * Nor does a feature read another's placeholders, `MARKS.<name>` in
  * features/source.js, which it leaves in the text before the text is
  * parsed: it reads the tokens they become, which carry their words in
- * `content` (gh-282). PLACED lists the few that must.
+ * `content` (gh-282). One that finds its own after another's at a line's
+ * start steps past any feature's, PLACEHOLDER, without knowing whose (gh-291).
  *
  * And a feature sets on `env` only the names in SHARED_ENV that say how to
  * write them (features/source.js); it keeps its own state under a Symbol of
@@ -85,7 +73,7 @@ const featureTangle = {
     const source = (node) => node.source && check(node.source, literal(node.source), imported);
     // MARKS.date, MARKS['date'] or const { date } = MARKS, outside features/date/.
     const placed = (node, name) => {
-      if (!NAMES.has(name) || name === own || PLACED[own]?.includes(name)) return;
+      if (!NAMES.has(name) || name === own) return;
       context.report({ node, messageId: 'placed', data: { name, who: own ?? 'This file', where: own ? `features/${own}/index.js` : "a feature's index.js" } });
     };
     const isMarks = (node) => node?.type === 'Identifier' && node.name === 'MARKS';
@@ -169,7 +157,7 @@ export default [
   },
   // The app and what it imports are modules; the preview frame's scripts
   // (its own, the puzzles' and the features') are classic scripts sharing
-  // `window.Preview` and `window.Puzzles`, Mermaid's `window.mermaid`, and
+  // `window.Preview` and `window.Puzzles`, Mermaid's `window.mermaid`, abcjs's `window.ABCJS`, and
   // `window.Ink` (ink.js) and `window.Tone` (tone.js). The app and the speaker view have `window.Theme`
   // (theme.js), `window.Frames` (frames.js) and `window.Overview` (overview.js); the app and the preview
   // frame `window.Spoken` (spoken.js).
@@ -179,6 +167,6 @@ export default [
   },
   {
     files: ['static/preview-api.js', 'static/preview.js', 'static/ink.js', 'static/theme.js', 'static/frames.js', 'static/speaker.js', 'static/overview.js', 'static/spoken.js', 'static/views.js', 'static/awake.js', 'static/tone.js', ...FRAME],
-    languageOptions: { sourceType: 'script', globals: { ...globals.browser, Preview: 'readonly', Puzzles: 'readonly', mermaid: 'readonly', Ink: 'readonly', Tone: 'readonly', Theme: 'readonly', Frames: 'readonly', Overview: 'readonly', Spoken: 'readonly' } },
+    languageOptions: { sourceType: 'script', globals: { ...globals.browser, Preview: 'readonly', Puzzles: 'readonly', mermaid: 'readonly', ABCJS: 'readonly', Ink: 'readonly', Tone: 'readonly', Theme: 'readonly', Frames: 'readonly', Overview: 'readonly', Spoken: 'readonly' } },
   },
 ];

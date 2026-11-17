@@ -57,7 +57,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { beforeExtract, keepWritten, addClass, escapeAttr, fenced, unplaced, textToken } from '../source.js';
 import { workable, shut, inlineBlanks, codeSpans } from '../blank.js';
-import { MARK, choicesIn, pickedAt } from '../choices.js';
+import { MARK, choicesIn, pickedAt, answeredBy } from '../choices.js';
 
 // The speaker of each exchange's line, kept on `env` under a key no other feature can name, so that
 // one reads this one's tokens instead (gh-282); an aside's parse, a copy of
@@ -69,6 +69,9 @@ const QA = /^\\?(Q|A|Good|Bad|Try)(?:[ \t]+\[([ xX])\])?(?:[ \t]*\(((?:[^()\n]|\
 const VOTE = /^\+1(?:[ \t]*\(((?:[^()\n]|\([^()\n]*\))*)\))?(?::[ \t]+(?=\S)|:?[ \t]*$)/;
 const LABELS = { Good: 'G', Bad: 'B', Try: 'T', '+1': '+1' };
 const CARDS = new Set(['Good', 'Bad', 'Try']);
+// How many of each kind have been counted, for their ids, on `env.shared`
+// so a deck's slides count on from the ones before.
+const COUNTED = Symbol('qa counted');
 
 export function qa(md) {
   keepWritten(md);
@@ -132,7 +135,7 @@ function answerChoices(written, line, head) {
   if (!at) return null;
   const found = choicesIn(written, lead + at, [...inlineBlanks(written), ...codeSpans(written)]);
   if (!found) return null;
-  return { line, text: written, checked: found.map((c) => c.checked), on: found.map((c, k) => pickedAt(written, found, k)), off: pickedAt(written, found), head };
+  return { line, text: written, answered: answeredBy(found, inlineBlanks(written)), checked: found.map((c) => c.checked), on: found.map((c, k) => pickedAt(written, found, k)), off: pickedAt(written, found), head };
 }
 
 /**
@@ -243,12 +246,21 @@ function items(state) {
   const said = { get: (n) => state.env[SAID].get(source?.[n] ?? n) };
   choose(state, said);
   const tokens = state.tokens;
+  const counted = state.env.shared ? (state.env.shared[COUNTED] ??= {}) : {};
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
     if (t.type === 'list_item_open' && t.markup === '+' && said.get(t.map?.[0])?.who) {
       const { who, name, votes, bare, head, toggle } = said.get(t.map[0]);
       const kind = who === '+1' ? `vote${bare ? ' qa-bare' : ''}` : `${CARDS.has(who) ? 'card qa-' : ''}${who.toLowerCase()}`;
       addClass(t, `qa qa-${kind}${head?.done ? ' qa-done' : ''}`);
+      // A question or a card is linked to by its kind and how many of that
+      // kind come before it, `#Q2`, `#G1` (gh-300); src/anchors.js gives it
+      // the id unless a heading or a block before it has it.
+      if (who === 'Q' || CARDS.has(who)) {
+        const letter = LABELS[who] ?? who;
+        counted[letter] = (counted[letter] ?? 0) + 1;
+        t.meta = { ...t.meta, anchor: `${letter}${counted[letter]}` };
+      }
       let k = i + 1;
       while (k < tokens.length && tokens[k].type !== 'inline') k++;
       const inline = tokens[k];
@@ -337,7 +349,7 @@ function choiceRow(state, row, choices) {
   }
   if (parts.filter((p) => p.mark).length !== choices.on.length) return row;
   const open = new state.Token('qa_choices_open', 'span', 1);
-  open.meta = { ...choices, answered: choices.checked.some(Boolean), name: choices.head?.words };
+  open.meta = { ...choices, answered: choices.answered, name: choices.head?.words };
   const out = [open];
   let choice = null;
   const finish = () => {

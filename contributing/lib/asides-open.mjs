@@ -129,6 +129,33 @@ export function boxes(root, dir = root, { ai } = config()) {
   return found;
 }
 
+// Each line straight after one of the AI's asides or replies (`~c`, `~~c`) that
+// isn't indented past its `~` nor an aside itself: an aside's line that runs on
+// is indented (docs/asides.md), or it reads as the page's text. It may be the
+// paragraph carrying on below, as it can under a line, so these are to look at,
+// not waiting on anyone.
+export function runOn(root, dir = root) {
+  const found = [];
+  for (const f of files(dir)) {
+    const lines = fs.readFileSync(f, 'utf8').split('\n');
+    let fence = false;
+    let at = -1;
+    lines.forEach((l, i) => {
+      if (/^\s*(```|~~~)/.test(l)) { fence = !fence; at = -1; return; }
+      if (fence || !l.trim()) { at = -1; return; }
+      const mark = /^(\s*)~~?c(\s|$)/.exec(l);
+      if (mark) { at = mark[1].length; return; }
+      if (/^\s*~/.test(l)) { at = -1; return; }
+      // An indented line carries the aside on; the first that isn't ends it.
+      if (at >= 0 && /^\s*/.exec(l)[0].length > at) return;
+      // A new item, heading or quote isn't a line run on.
+      if (at >= 0 && !/^\s*(?:[-*+]|\d{1,9}[.)]|[a-z]\)|#{1,6}|>)(?:\s|$)/.test(l)) found.push({ at: where(root, f, i), text: l.trim() });
+      at = -1;
+    });
+  }
+  return found;
+}
+
 // asides-open.mjs <day folder>: both lists, for handing over a round.
 export function main(argv) {
   const dir = path.resolve(argv[0] || '.');
@@ -138,4 +165,6 @@ export function main(argv) {
   };
   say(`Waiting on ${config().ai}`, open(dir));
   say('Waiting on you', boxes(dir));
+  const loose = runOn(dir);
+  if (loose.length) say('To check, a reply\'s line run on without its indent, or the page carrying on', loose);
 }

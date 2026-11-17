@@ -61,9 +61,9 @@
 
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { beforeExtract, readLines, placeholder, MARKS, splitText, escapeHtml, escapeAttr } from '../source.js';
+import { beforeExtract, readLines, placeholder, MARKS, LIST_MARKER, splitText, escapeHtml, escapeAttr } from '../source.js';
 import { typable, hinted, unfilled, shut, workable, inlineBlanks } from '../blank.js';
-import { choicesIn, pickedAt } from '../choices.js';
+import { choicesIn, pickedAt, answeredBy } from '../choices.js';
 
 // A label is any but a colon, though one can be in its hint's braces.
 const BRACED = '\\{[^}\\n]*\\}';
@@ -108,7 +108,7 @@ function inItem(lines, at) {
   for (let k = at - 1; k >= 0; k--) {
     const before = lines[k].match(/^([ \t]*)(\S.*)?$/);
     if (!before?.[2] || before[1].length >= indent) continue;
-    const item = /^(?:[-*+]|\d+[.)])[ \t]+/.exec(before[2]);
+    const item = new RegExp(`^${LIST_MARKER}[ \\t]+`).exec(before[2]);
     return Boolean(item) && before[1].length + item[0].length <= indent;
   }
   return false;
@@ -133,7 +133,7 @@ function inlineBlank({ line, text, start, end, label, value }, env) {
   const v = escapeHtml(value);
   return `<span class="field field-inline" data-line="${line}" data-text="${escapeAttr(text)}"`
     + ` data-head="${escapeAttr(`[@ ${label}`)}" data-start="${start}" data-end="${end}">`
-    + `<span class="field-value" data-value="${v}"${typable(label, env)}>${v}</span>`
+    + `<span class="field-value" data-value="${v}"${value.trim() ? '' : ' data-unwritten'}${typable(label, env)}>${v}</span>`
     + `<span class="${labelClass(label)}">${escapeHtml(label)}</span>${unfilled(value, env)}</span>`;
 }
 
@@ -200,7 +200,7 @@ export function fields(md) {
       if (found[k].inline) t.content = found[k].label;
       // A field of choices is a question (see source.js's tags).
       const picks = !t.meta.inline && choices(t.meta.text, t.meta.head, t.meta.value);
-      if (picks) t.meta = { ...t.meta, answered: picks.some((c) => c.checked) };
+      if (picks) t.meta = { ...t.meta, answered: answeredBy(picks, inlineBlanks(t.meta.text)) };
       return t;
     });
     // An indented code block shows a field as it's written.
@@ -241,7 +241,7 @@ export function fields(md) {
     const picks = choices(text, head, value);
     if (picks) {
       // Its buttons a group, named by its label, and a question.
-      return `${open} data-choices data-answered="${picks.some((c) => c.checked)}" role="radiogroup" aria-labelledby="field-${line}"><span class="${labelClass(label)}" id="field-${line}">${escapeHtml(label)}</span><span class="field-choices">`
+      return `${open} data-choices data-answered="${answeredBy(picks, inlineBlanks(text))}" role="radiogroup" aria-labelledby="field-${line}"><span class="${labelClass(label)}" id="field-${line}">${escapeHtml(label)}</span><span class="field-choices">`
         + picks.map((c) => choiceHtml(c, line, text, env)).join('')
         + '</span></span>';
     }

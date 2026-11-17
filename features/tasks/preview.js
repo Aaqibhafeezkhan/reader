@@ -18,7 +18,14 @@
  * the heading's `[x]` (`data-own`), and it's pressed while its section is
  * done, by that or by everything to be done in it being done
  * (`data-full`), counted again here as they're done and undone, a section
- * with a box under it as one of them. It sends `preview:done` too.
+ * with a box under it as one of them. It sends `preview:done` too. When
+ * the last of what's in it is done, its heading's `[x]` is written with
+ * that, as one undo, and when one is undone, taken back with it: the
+ * file is the record, as a review's Acceptance Criteria is.
+ * A list's item with a box does the same for what's under it (gh-301):
+ * when the last box or set of choices under it is done, its `[x]` is
+ * written in the same edit, and taken back when one's undone; ticked by
+ * hand first, it stays ticked until one is.
  * Where the page can't be worked (`Preview.workable`), as on a slide, none
  * of them takes a click or a key; when it stops being workable while it's
  * showing, as a page past its time does, they're shut as the server would
@@ -81,6 +88,13 @@
         } else if (!inside) parts.push(n.dataset.done ?? n.dataset.answered);
       }
       const full = parts.length > 0 && parts.every((v) => v === 'true');
+      // Done or undone by what's in it just now, the file says so too.
+      if (Preview.workable && String(full) !== button.dataset.full && button.dataset.own === String(!full)) {
+        const line = Number(button.dataset.line);
+        const as = (on) => (on ? button.dataset.on : button.dataset.off);
+        Preview.edit([{ from: line, to: line + 1, before: [as(!full)], after: [as(full)] }], { undo: true });
+        button.dataset.own = String(full);
+      }
       button.dataset.full = String(full);
       if (full) button.setAttribute('aria-disabled', 'true');
       else button.removeAttribute('aria-disabled');
@@ -89,17 +103,77 @@
       markDone(button, done);
     }
   };
-  // Once a turn, after whatever changed on the page has said so.
+  /** A list item's own box, plain: a box with stages, or none, is left to be ticked by hand. */
+  const ownBox = (li) => li.querySelector(':scope > input.task-box, :scope > p > input.task-box');
+  /**
+   * What's to be done under list item `li`: each item under it with a box,
+   * which counts as one, what's under it being its; and each list of
+   * choices, done once one is picked. An item with neither is looked into.
+   */
+  const partsOf = (li) => {
+    const parts = [];
+    const walk = (el) => {
+      for (const list of el.querySelectorAll(':scope > ul, :scope > ol')) {
+        if (list.dataset.answered) parts.push(list.dataset.answered);
+        for (const item of list.querySelectorAll(':scope > li')) {
+          const box = item.querySelector(':scope > input.task-box, :scope > p > input.task-box, :scope > .stage-box, :scope > p > .stage-box');
+          if (box) parts.push(box.dataset.done);
+          else if (!item.querySelector(':scope > input.choice-box, :scope > p > input.choice-box')) walk(item);
+        }
+      }
+    };
+    walk(li);
+    return parts;
+  };
+  const itemBoxes = () => [...document.querySelectorAll('li > input.task-box, li > p > input.task-box')]
+    .filter((b) => !b.closest('.field, .gm-asides, .gm-masthead') && ownBox(b.closest('li')) === b);
+  /**
+   * Each list item with a box and something under it to do, innermost
+   * first: done or undone by what's under it just now, the file says so
+   * too, as a section's heading does. `data-full` is whether what's under
+   * it was all done when it was last looked at, so only a change writes.
+   */
+  const settleItems = ({ write = true } = {}) => {
+    const boxes = itemBoxes();
+    for (let i = boxes.length - 1; i >= 0; i--) {
+      const box = boxes[i];
+      const parts = partsOf(box.closest('li'));
+      if (!parts.length) continue;
+      const full = parts.every((v) => v === 'true');
+      if (write && Preview.workable && box.dataset.full != null && String(full) !== box.dataset.full && box.defaultChecked === !full) {
+        Preview.edit([boxLine(box, full)], { undo: true });
+        box.checked = box.defaultChecked = full;
+        markDone(box, full);
+      }
+      box.dataset.full = String(full);
+    }
+  };
+  // Drawn again, each item's box starts from what the file says.
+  Preview.register({ restore: () => settleItems({ write: false }) });
+
+  // Once a turn, after whatever changed on the page has said so, and before
+  // the turn's edits go up, for a heading's to go with them.
   let settling = false;
+  const settleNow = () => {
+    if (!settling) return;
+    settleItems();
+    settleSections();
+    settling = false;
+  };
   const settle = () => {
-    if (settling || !document.querySelector('.section-done')) return;
+    if (settling) return;
     settling = true;
-    queueMicrotask(() => {
-      settleSections();
-      settling = false;
-    });
+    queueMicrotask(settleNow);
   };
   for (const type of ['change', 'preview:done', 'preview:answered']) document.addEventListener(type, settle);
+  // Looked at again just before the edits go up, whatever was asked: after
+  // a real click the browser runs the microtask between one listener and
+  // the next, before the one that marks a choice picked has, so what's on
+  // the page is only all said by now.
+  document.addEventListener('preview:sending', () => {
+    settling = true;
+    settleNow();
+  });
 
   // A box or a choice where the page can't be worked: a click on it, which
   // Space is too, is called off before it ticks, and so are the keys that
@@ -119,6 +193,12 @@
     for (const b of document.querySelectorAll('.task-reset, .task-log')) Preview.shut(b, { hidden: '' });
   });
 
+  /** A blank still to be written in, in choice `box`'s own words, not an item under it. */
+  const unwrittenIn = (box) => {
+    const item = box.closest('li');
+    return [...(item?.querySelectorAll('[data-unwritten]') ?? [])].find((b) => b.closest('li') === item);
+  };
+
   /** Box `box` written as it now reads, and the rest of its choices with it. */
   const answer = (box) => {
     const group = box.type === 'radio'
@@ -129,9 +209,18 @@
     // The choices no longer picked, to tell what's in them (preview:unpicked).
     const unpicked = group.filter((b) => b !== box && b.defaultChecked);
     for (const b of group) b.defaultChecked = b.checked;
+    let unwritten = null;
     if (box.type === 'checkbox') markDone(box, box.checked);
-    else box.closest('[data-answered]')?.setAttribute('data-answered', 'true');
-    if (edits.length) Preview.edit(edits, { undo: true });
+    else {
+      // A choice whose words are a blank still to write in is picked, but
+      // not yet an answer: the keyboard goes to its blank. Its edit isn't
+      // one to undo, as a field's isn't, as that passes the keyboard through
+      // the editor, and the blank would close (static/app/editing.js).
+      unwritten = unwrittenIn(box);
+      box.closest('[data-answered]')?.setAttribute('data-answered', String(!unwritten));
+      unwritten?.focus();
+    }
+    if (edits.length) Preview.edit(edits, { undo: !unwritten });
     // What was answered inside a choice no longer picked is let go of, in the same turn's edit.
     for (const b of unpicked) b.closest('li')?.dispatchEvent(new Event('preview:unpicked'));
   };
@@ -155,7 +244,7 @@
       if (!box.defaultChecked) {
         box.checked = true;
         answer(box);
-      }
+      } else box.closest('[data-answered]')?.setAttribute('data-answered', String(!unwrittenIn(box)));
       return;
     }
   });

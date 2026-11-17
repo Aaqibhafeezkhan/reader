@@ -15,6 +15,9 @@ import { carried, lastRetro as lastRetroOf } from '../../lib/retros.mjs';
 
 const c = config();
 const REVIEWERS = reviewers(c);
+// What settles a question is said beside it, in the margin, as an aside of the AI's
+// with this topic (`~co`), where it can't be read as one of its choices.
+const OUTCOME = 'topic o: Outcome';
 const args = process.argv.slice(2);
 const date = args[0];
 const opt = (name, or = '') => {
@@ -52,6 +55,7 @@ function write(rel, text) {
 const index = `---
 title: Review ${date}
 ${REVIEWERS}
+${OUTCOME}
 tags: ${opt('tag')}
 multibox:
   stages: heard, agreed, done
@@ -106,6 +110,7 @@ Left in ${opt('tag', 'this milestone')} after this: <fill>.
 const item = ({ n, title: t }) => `---
 title: gh-${n} ${t}
 ${REVIEWERS}
+${OUTCOME}
 ---
 
 ← [review](../review.md)
@@ -146,7 +151,9 @@ All the following criteria must be accepted for this review to be complete.
 
 Q (${c.ai}): Does ${link(n)} still describe what shipped?
 - ( ) The issue stands
-- ( ) The issue stands, with a closing comment on what went beyond it
+- ( ) The issue stands, with this closing comment:
+
+  > <fill: the comment as it would be posted, on what went beyond the issue; or "Nothing went beyond it.">
 - ( ) A PR replaces it
 - ( ) [@ Something else]
 `;

@@ -297,6 +297,42 @@ test('a section shows it\'s done once everything in it is, and undone once one i
   assert.deepEqual(said, ['true', 'false']);
 });
 
+test('the edit that does the last of a section writes its heading done, up to the sections it\'s in, and undoing one takes them back', async () => {
+  const { $$, click, edits } = await page(DAY);
+  const [read, watch] = $$('.task-box');
+  click(read);
+  assert.deepEqual(await edits(), [[[7, '- [ ] Read', '- [x] Read']]]);
+  click(watch);
+  assert.deepEqual(await edits(), [[[8, '- [ ] Watch', '- [x] Watch'], [5, '## [ ] Ways', '## [x] Ways']]], 'one edit, so one undo');
+  click($$('.choice-box')[0]);
+  assert.deepEqual(await edits(), [[[2, '- ( ) Navy Day', '- (x) Navy Day'], [0, '# [ ] Today', '# [x] Today']]]);
+  click(read);
+  assert.deepEqual(await edits(), [[[7, '- [x] Read', '- [ ] Read'], [5, '## [x] Ways', '## [ ] Ways'], [0, '# [x] Today', '# [ ] Today']]]);
+  const [today, ways] = $$('.section-done');
+  assert.equal(ways.getAttribute('aria-pressed'), 'false');
+  assert.equal(today.getAttribute('aria-pressed'), 'false');
+});
+
+test('a section pressed done is left done as its last part is done, and a heading already done is not written again', async () => {
+  const { $$, click, edits } = await page(DAY.replace('## [ ] Ways', '## [x] Ways'));
+  const [read, watch] = $$('.task-box');
+  click(read);
+  click(watch);
+  assert.deepEqual(await edits(), [[[7, '- [ ] Read', '- [x] Read'], [8, '- [ ] Watch', '- [x] Watch']]]);
+  assert.equal($$('.section-done')[1].getAttribute('aria-pressed'), 'true');
+});
+
+test('a field\'s choice that does the last of a section goes up with its heading, as one undo', async () => {
+  const { $, edits } = await page('## [ ] Mood\n\n@ Closest word: ( ) Calm ( ) Content\n');
+  const calm = $('.field input');
+  assert.ok(calm, 'a field of choices');
+  calm.checked = true;
+  calm.dispatchEvent(new calm.ownerDocument.defaultView.Event('change', { bubbles: true }));
+  const sent = await edits();
+  assert.equal(sent.length, 1, 'one edit');
+  assert.deepEqual(sent[0].at(-1), [0, '## [ ] Mood', '## [x] Mood']);
+});
+
 test('as the page changes, a section with nothing to do stays done only by its button, and one after a done sibling still counts', async () => {
   const { $$, click, edits } = await page('# [ ] Day\n\n## [ ] Empty\n\nWords.\n\n## [x] Ticked\n\n## [ ] Ways\n\n- [ ] Read\n- [ ] Watch\n');
   const [day, empty, , ways] = $$('.section-done');
@@ -327,4 +363,55 @@ test('Start over clears a section\'s own [x] too', async () => {
   click($('.task-reset'));
   assert.deepEqual(await edits(), [[[7, '- [x] Read', '- [ ] Read'], [5, '## [x] Ways', '## [ ] Ways']]]);
   assert.equal(ways.getAttribute('aria-pressed'), 'false');
+});
+
+const PACK = '- [ ] Pack\n  - [x] Passport\n  - [ ] Charger\n  - ( ) Backpack\n  - ( ) Suitcase\n- [ ] Go\n';
+
+test('the tick or pick that does the last part under an item writes its box done too, as one undo, and undoing one takes it back (gh-301)', async () => {
+  const { $$, click, edits } = await page(PACK);
+  const [pack, , charger] = $$('.task-box');
+  click(charger);
+  assert.deepEqual(await edits(), [[[2, '  - [ ] Charger', '  - [x] Charger']]], 'a bag still to pick');
+  click($$('.choice-box')[0]);
+  assert.deepEqual(await edits(), [[[3, '  - ( ) Backpack', '  - (x) Backpack'], [0, '- [ ] Pack', '- [x] Pack']]], 'one edit, so one undo');
+  assert.equal(pack.checked, true);
+  click(charger);
+  assert.deepEqual(await edits(), [[[2, '  - [x] Charger', '  - [ ] Charger'], [0, '- [x] Pack', '- [ ] Pack']]]);
+  assert.equal(pack.checked, false);
+});
+
+test('an item\'s box carries up through the items it\'s in, and one ticked by hand first stays ticked as its last part is done', async () => {
+  const nested = '- [ ] Trip\n  - [ ] Pack\n    - [ ] Passport\n  - [x] Book\n';
+  const { $$, click, edits } = await page(nested);
+  click($$('.task-box')[2]);
+  assert.deepEqual(await edits(), [[[2, '    - [ ] Passport', '    - [x] Passport'], [1, '  - [ ] Pack', '  - [x] Pack'], [0, '- [ ] Trip', '- [x] Trip']]]);
+  const hand = await page('- [x] Pack\n  - [ ] Passport\n');
+  hand.click(hand.$$('.task-box')[1]);
+  assert.deepEqual(await hand.edits(), [[[1, '  - [ ] Passport', '  - [x] Passport']]], 'already ticked, not written again');
+});
+
+test('a page drawn with an item\'s parts all done but its box not is left as the file says, until something under it changes', async () => {
+  const { $$, click, edits } = await page('- [ ] Pack\n  - [x] Passport\n- [ ] Other\n');
+  click($$('.task-box')[2]);
+  assert.deepEqual(await edits(), [[[2, '- [ ] Other', '- [x] Other']]]);
+});
+
+test('a choice whose words are a blank, picked last, waits for the blank: the keyboard goes there, and the heading\'s written with the words', async () => {
+  const p = await page('## [ ] Plan\n\n- ( ) Yes\n- ( ) [@ Something else]\n');
+  const pick = p.$$('.choice-box')[1];
+  const sent = async () => {
+    await settle();
+    return p.posted.splice(0).filter((m) => m.type === 'edit').map((m) => [m.undo ?? false, m.edits.map((e) => [e.from, e.before.join('\n'), e.after.join('\n')])]);
+  };
+  p.click(pick);
+  assert.deepEqual(await sent(), [[false, [[3, '- ( ) [@ Something else]', '- (x) [@ Something else]']]]], 'the pick alone, not one to undo, as that would close the blank');
+  assert.equal(pick.closest('[data-answered]').dataset.answered, 'false');
+  const blank = p.$('.field-value');
+  const input = blank.querySelector('textarea');
+  assert.equal(p.document.activeElement, input, 'the keyboard in the blank, open');
+  input.value = 'later';
+  input.dispatchEvent(new p.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  const written = (await sent()).flatMap(([, edits]) => edits);
+  assert.deepEqual(written.find((e) => e[0] === 3), [3, '- (x) [@ Something else]', '- (x) [@ Something else: later]']);
+  assert.deepEqual(written.find((e) => e[0] === 0), [0, '## [ ] Plan', '## [x] Plan'], 'done with its words');
 });

@@ -6,8 +6,21 @@
 // folder, so nothing it clicks writes to a file that matters.
 //
 //   node browse.mjs <file.md> --steps <steps.json> --repo <reader checkout>
-//        [--browser chromium|webkit|firefox|safari] [--phone] [--zoom 2] [--forced-colors] [--out <dir>]
+//        [--browser chromium|webkit|firefox|safari|all, or a list: chromium,safari]
+//        [--theme light|dark|light,dark] [--phone] [--zoom 2] [--forced-colors] [--out <dir>]
 //        [--step-timeout 8000] [--timeout 120000]
+//
+// --theme chooses reader's own Theme (static/theme.js) before the first step,
+// so Safari gets it too, where Playwright's colorScheme doesn't reach, and the
+// shots say it: <browser>-dark-<name>.png. Without it, it's the system's.
+//
+// More than one browser or theme (all is Chromium, Firefox, WebKit and Safari
+// Technology Preview) runs the steps in each, one after another, each run on
+// its own as one browser's would be. One that can't start, as Safari inside
+// the sandbox, is said and skipped, and the rest still run. Then it writes
+// <out>/index.md, a reader page with each shot under its name, a column for
+// each browser, and a row of them for each theme. It exits 1 if a browser
+// failed a step, and 4, for one browser, if it couldn't start.
 //
 // --zoom 2 lays the page out as the browser's 200% would: half the window, at
 // twice the pixels. --forced-colors is the system's colours, as Windows' contrast
@@ -48,6 +61,11 @@ import { createRequire } from 'node:module';
 import { parseArgs } from 'node:util';
 
 const STP = '/Applications/Safari Technology Preview.app/Contents/MacOS/safaridriver';
+const BROWSERS = ['chromium', 'firefox', 'webkit', 'safari'];
+const NAMES = { chromium: 'Chromium', firefox: 'Firefox', webkit: 'WebKit', safari: 'Safari Technology Preview' };
+const THEMES = ['light', 'dark'];
+// A run that couldn't start: its browser, or reader, never got as far as a step.
+const NOT_STARTED = 4;
 const PHONE = { width: 390, height: 844 };
 const DESKTOP = { width: 1280, height: 800 };
 
@@ -57,6 +75,7 @@ const { values: opt, positionals } = parseArgs({
     steps: { type: 'string' },
     repo: { type: 'string', default: process.cwd() },
     browser: { type: 'string', default: 'chromium' },
+    theme: { type: 'string' },
     phone: { type: 'boolean', default: false },
     zoom: { type: 'string', default: '1' },
     'forced-colors': { type: 'boolean', default: false },
@@ -68,8 +87,17 @@ const { values: opt, positionals } = parseArgs({
 const file = positionals[0] && path.resolve(positionals[0]);
 const repo = path.resolve(opt.repo);
 if (!file || !opt.steps || !fs.existsSync(path.join(repo, 'bin/reader.js'))) {
-  console.error('usage: browse.mjs <file.md> --steps <steps.json> --repo <reader checkout> [--browser chromium|webkit|firefox|safari] [--phone] [--zoom 2] [--forced-colors] [--out <dir>]');
+  console.error('usage: browse.mjs <file.md> --steps <steps.json> --repo <reader checkout> [--browser chromium|webkit|firefox|safari|all] [--theme light|dark|light,dark] [--phone] [--zoom 2] [--forced-colors] [--out <dir>]');
   process.exit(2);
+}
+const browsers = opt.browser === 'all' ? BROWSERS : opt.browser.split(',');
+const themes = opt.theme ? opt.theme.split(',') : [null];
+for (const [what, asked, known] of [['--browser', browsers, BROWSERS], ['--theme', themes.filter(Boolean), THEMES]]) {
+  const odd = asked.filter((a) => !known.includes(a));
+  if (odd.length) {
+    console.error(`${what} is one of ${known.join(', ')}${what === '--browser' ? ', or all' : ''}, not ${odd.join(', ')}`);
+    process.exit(2);
+  }
 }
 const steps = JSON.parse(fs.readFileSync(opt.steps, 'utf8'));
 const STEP_MS = Number(opt['step-timeout']);
@@ -78,12 +106,77 @@ if (!(zoom >= 1 && zoom <= 4)) {
   console.error(`--zoom is from 1 to 4, not ${opt.zoom}`);
   process.exit(2);
 }
+if (browsers.length > 1 || themes.length > 1) await runEach();
 if (opt.browser === 'safari' && (zoom !== 1 || opt['forced-colors'])) {
   console.error('--zoom and --forced-colors are for Playwright\'s browsers, not safari');
   process.exit(2);
 }
-const label = `${opt.browser}${opt.phone ? '-phone' : ''}${zoom !== 1 ? `-zoom${opt.zoom}` : ''}${opt['forced-colors'] ? '-forced' : ''}`;
+const label = labelOf(opt.browser, opt.theme);
 fs.mkdirSync(opt.out, { recursive: true });
+
+/** What a run's shots are named with: its browser, how it's seen, and its theme. */
+function labelOf(browser, theme) {
+  return `${browser}${opt.phone ? '-phone' : ''}${zoom !== 1 ? `-zoom${opt.zoom}` : ''}${opt['forced-colors'] ? '-forced' : ''}${theme ? `-${theme}` : ''}`;
+}
+
+/**
+ * Each browser and theme asked for, a run of this script each, one after
+ * another, then the page of their shots; it exits as they went.
+ */
+async function runEach() {
+  const self = new URL(import.meta.url).pathname;
+  const passOn = ['--steps', opt.steps, '--repo', repo, '--out', opt.out, '--step-timeout', opt['step-timeout'], '--timeout', opt.timeout,
+    ...(opt.phone ? ['--phone'] : []), ...(zoom !== 1 ? ['--zoom', opt.zoom] : []), ...(opt['forced-colors'] ? ['--forced-colors'] : [])];
+  const outcome = new Map();
+  for (const browser of browsers) {
+    for (const theme of themes) {
+      const run = `${NAMES[browser]}${theme ? `, ${theme}` : ''}`;
+      if (browser === 'safari' && (zoom !== 1 || opt['forced-colors'])) {
+        console.log(`skip  ${run}: --zoom and --forced-colors are Playwright's, not Safari's`);
+        outcome.set(`${browser} ${theme}`, 'skipped: not for Safari');
+        continue;
+      }
+      console.log(`----  ${run}`);
+      const { status } = spawnSync(process.execPath, [self, file, ...passOn, '--browser', browser, ...(theme ? ['--theme', theme] : [])], { stdio: 'inherit' });
+      const how = status === 0 ? 'ok' : status === NOT_STARTED ? "skipped: it couldn't start" : 'failed a step';
+      if (status === NOT_STARTED) console.log(`skip  ${run}: it couldn't start, so the others ran without it`);
+      outcome.set(`${browser} ${theme}`, how);
+    }
+  }
+  const page = path.join(opt.out, 'index.md');
+  fs.mkdirSync(opt.out, { recursive: true });
+  fs.writeFileSync(page, shotsPage(outcome));
+  console.log(`page  ${page}`);
+  const failed = [...outcome.values()].some((how) => how === 'failed a step');
+  process.exit(failed ? 1 : 0);
+}
+
+/** The reader page of every run's shots: each shot by its name, a column to a browser, a row of them to a theme. */
+function shotsPage(outcome) {
+  const names = [...new Set([...steps.filter((s) => 'shot' in s).map((s) => String(s.shot)), 'failed'])];
+  const has = (browser, theme, name) => fs.existsSync(path.join(opt.out, `${labelOf(browser, theme)}-${name}.png`));
+  const lines = ['---', `title: Shots of ${path.basename(file)}`, '---', ''];
+  lines.push(`Steps: \`${path.basename(opt.steps)}\`.`);
+  for (const theme of themes) {
+    for (const browser of browsers) lines.push(`- ${NAMES[browser]}${theme ? `, ${theme}` : ''}: ${outcome.get(`${browser} ${theme}`)}`);
+  }
+  for (const name of names) {
+    if (!browsers.some((b) => themes.some((t) => has(b, t, name)))) continue;
+    lines.push('', `## ${name}`);
+    for (const theme of themes) {
+      if (theme) lines.push('', `### ${theme[0].toUpperCase()}${theme.slice(1)}`);
+      lines.push('', '::: columns');
+      for (const browser of browsers) {
+        const shot = `${labelOf(browser, theme)}-${name}.png`;
+        lines.push(`+++ ${NAMES[browser]}`, has(browser, theme, name)
+          ? `![${NAMES[browser]}${theme ? `, ${theme}` : ''}: ${name}](${shot})`
+          : `No shot: ${outcome.get(`${browser} ${theme}`) ?? 'not run'}.`);
+      }
+      lines.push(':::');
+    }
+  }
+  return `${lines.join('\n')}\n`;
+}
 
 // Everything to end, last started first. end() runs each once, whatever fails.
 const enders = [];
@@ -154,10 +247,14 @@ async function playwright(url) {
   const page = await context.newPage();
   await within(15000, 'opening reader', page.goto(url));
   await within(15000, 'reader drawing', page.waitForSelector('#preview'));
-  const frame = async () => (await page.waitForSelector('#preview')).contentFrame();
-  const where = async (s) => (s.frame ? frame() : page);
+  // `"frame": true` is the page's frame, `#preview`; a name is another, `"frame": "stage"` for Present's.
+  const frameId = (s) => (typeof s?.frame === 'string' ? `#${s.frame}` : '#preview');
+  const frame = async (s) => (await page.waitForSelector(frameId(s))).contentFrame();
+  const where = async (s) => (s.frame ? frame(s) : page);
   const box = async (s, sel, fx = 0.5, fy = 0.5) => {
     const el = await (await where(s)).waitForSelector(sel, { timeout: STEP_MS });
+    // A press lands where the element is on the screen, so it's brought there first, as a person would scroll to it.
+    await el.scrollIntoViewIfNeeded({ timeout: STEP_MS });
     const b = await el.boundingBox();
     if (!b) throw new Error(`${sel} isn't on the screen`);
     return [b.x + b.width * fx, b.y + b.height * fy];
@@ -192,8 +289,8 @@ async function playwright(url) {
       await touch('touchEnd', to);
       return 'real touch, through CDP';
     }
-    const f = await frame();
-    const off = s.frame ? await (await page.$('#preview')).boundingBox() : { x: 0, y: 0 };
+    const f = await frame(s);
+    const off = s.frame ? await (await page.$(frameId(s))).boundingBox() : { x: 0, y: 0 };
     const inside = s.frame ? f : page;
     // The browser never saw this pointer, so capturing it would throw: for the
     // drag, capture is stood in for, for this pointer alone. Each event goes in
@@ -244,7 +341,16 @@ async function playwright(url) {
     },
     async press(s) { await page.keyboard.press(s.press); },
     async wait(s) { await (await where(s)).waitForSelector(s.wait, { timeout: STEP_MS }); },
-    async until(s) { await (await where(s)).waitForFunction(s.until, null, { timeout: STEP_MS }); },
+    // Polled with evaluate, as waitForFunction makes a function of a string,
+    // which the page's policy refuses (no 'unsafe-eval'). A frame drawn again
+    // meanwhile, as a theme change does, is asked again.
+    async until(s) {
+      const by = Date.now() + (s.timeout ?? STEP_MS);
+      while (!await (await where(s)).evaluate(`!!(${s.until})`).catch(() => false)) {
+        if (Date.now() > by) throw new Error(`${s.until}: not true in time`);
+        await new Promise((r) => setTimeout(r, 150));
+      }
+    },
     async eval(s) { return JSON.stringify(await (await where(s)).evaluate(s.eval)); },
     async shot(name) {
       const to = path.join(opt.out, `${label}-${name}.png`);
@@ -341,7 +447,8 @@ async function safari(url) {
   };
   const poll = async (s, js) => {
     const until = Date.now() + (s.timeout ?? STEP_MS);
-    while (!await script(s, `return !!(${js})`)) {
+    // A frame drawn again meanwhile, as a theme change does, is asked again.
+    while (!await script(s, `return !!(${js})`).catch(() => false)) {
       if (Date.now() > until) throw new Error(`${js}: not true in time`);
       await new Promise((r) => setTimeout(r, 150));
     }
@@ -353,6 +460,8 @@ async function safari(url) {
     if (Array.isArray(p)) return { x: Math.round(p[0]), y: Math.round(p[1]), origin: 'viewport' };
     const sel = typeof p === 'object' ? p.at : p;
     const ref = await find(sel, !!s.frame);
+    // An action's element must be in view, or the press lands on nothing, so it's brought there first.
+    await script(s, "arguments[0].scrollIntoView({ block: 'center', inline: 'nearest' })", [ref]);
     if (typeof p !== 'object') return { x: 0, y: 0, origin: ref };
     const r = await call('GET', `${s0}/element/${idOf(ref)}/rect`);
     return { x: Math.round(r.width * ((p.x ?? 0.5) - 0.5)), y: Math.round(r.height * ((p.y ?? 0.5) - 0.5)), origin: ref };
@@ -407,12 +516,19 @@ async function safari(url) {
 // ---- the run ---------------------------------------------------------------
 
 const ACTIONS = ['work', 'click', 'tap', 'drag', 'type', 'press', 'wait', 'until', 'eval', 'shot', 'sleep'];
+// The theme, chosen in the app as the help does, and the page drawn again in it.
+const theming = opt.theme ? [
+  { eval: `Theme.choose('${opt.theme}')` },
+  { until: `document.documentElement.classList.contains('gm-dark') === ${opt.theme === 'dark'} || !!document.querySelector('.gm-bg')`, frame: true },
+] : [];
 let code = 0;
+let started = false;
 try {
   const url = await startReader(scratchCopy());
   const b = await (opt.browser === 'safari' ? safari(url) : playwright(url));
+  started = true;
   console.log(`ok    ${label}: reader open at ${url}`);
-  for (const [i, s] of steps.entries()) {
+  for (const [i, s] of [...theming, ...steps].entries()) {
     const act = ACTIONS.find((a) => a in s);
     const what = `${i + 1} ${act} ${act === 'work' ? '' : JSON.stringify(s[act])}${s.frame ? ' (in the page)' : ''}`;
     try {
@@ -430,7 +546,7 @@ try {
   }
 } catch (e) {
   console.log(`FAIL  ${e.message}`);
-  code = 1;
+  code = started ? 1 : NOT_STARTED;
 }
 await end();
 process.exit(code);

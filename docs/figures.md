@@ -33,6 +33,44 @@ flowchart LR
 ```
 :::
 
+## Music
+
+A `music` fence is a tune in [ABC notation](https://abcnotation.com/), the plain-text way tunes are written down, drawn on a staff by [abcjs](https://abcjs.net/), with **Play** in its lower right.
+Its header says its title (`T:`), time (`M:`), note length (`L:`) and key (`K:`), and the notes come after, a bar line `|` between bars.
+That's the basics; everything else ABC can say, and how it's drawn and played, is abcjs's, so see [abcjs](https://abcjs.net/) for what it can do, and tell [abcjs](https://github.com/paulrosen/abcjs/issues) about a tune it draws or plays wrong.
+In a file opened anywhere else, the fence is still its text.
+
+::: tabs
++++ Source
+````markdown
+```music
+X:1
+T:Twinkle, Twinkle
+M:4/4
+L:1/4
+K:C
+C C G G | A A G2 | F F E E | D D C2 |]
+```
+````
++++ Rendered
+```music
+X:1
+T:Twinkle, Twinkle
+M:4/4
+L:1/4
+K:C
+C C G G | A A G2 | F F E E | D D C2 |]
+```
+:::
+
+- **Play** plays it on a piano, each note marked on the staff as it sounds, a little bolder and in the page's accent, and turns to **Pause**, which waits where it is until Play carries on. It plays on a slide and in Work too.
+- Once it's begun, **Back to the start** is beside it: playing, it plays on from the start; paused, it waits there. At its end, it's as it was before it was played.
+- A chord in quotes before a note, `"G"G3`, is drawn above it and played under the tune, and, as on a lead sheet, it sounds until the next chord, through a repeat too. To stop it, write `"^N.C."` where it ends: the `^` sets "N.C." above the staff as words, which abcjs takes as no chord, as it [says](https://docs.abcjs.net/overview/abc-notation.html#chord-break); without it, `"N.C."` is read as a chord's name, and the chord before plays on.
+- The piano's notes come from abcjs's website the first time each is played, through reader, which keeps them in a cache folder of its own, outside your files (`~/Library/Caches/reader` on a Mac, `~/.cache/reader` on Linux, or wherever `READER_CACHE` says). So a tune plays offline once its notes have been played; one that hasn't says it needs the network.
+- A screen reader hears the staff as an image named by its title, key, time and bars, "Twinkle, Twinkle: C major, 4/4, 4 bars", and then its text.
+- ABC with something wrong in it shows its text, what's wrong under it, and what could be drawn of it, faded.
+- An exported page shows the staff as it was drawn, with no button.
+
 ## Headlines
 
 A `headline` fence is set like a clipping from the paper it ran in: the

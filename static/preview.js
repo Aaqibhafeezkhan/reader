@@ -194,7 +194,10 @@
     const el = scroller(pre);
     const other = el === pre ? pre.querySelector(':scope > code') : pre;
     if (other?.hasAttribute('tabindex')) for (const a of REACHED) other.removeAttribute(a);
-    const over = el.scrollWidth > el.clientWidth + 1;
+    // Kept out of sight for a screen reader, a pixel wide, as a drawn tune's
+    // text is (features/music), it's read, not scrolled: the keyboard
+    // reaching it would find nothing to see.
+    const over = pre.clientWidth > 1 && el.scrollWidth > el.clientWidth + 1;
     if (over === el.hasAttribute('tabindex')) return;
     if (over) {
       const lang = CODE_LANG.exec(pre.querySelector('code')?.className || '');

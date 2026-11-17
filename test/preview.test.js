@@ -689,6 +689,16 @@ test('a block that no longer scrolls, as the window widens, gives the keyboard b
   assert.equal(pre.hasAttribute('aria-label'), false);
 });
 
+test('a block kept out of sight for a screen reader, a pixel wide, as a drawn tune\'s text is, is no Tab stop, whatever it holds', () => {
+  const p = preview();
+  sized(p, 600, 1);
+  p.show(render('```js\nconst aVeryLongLine = 1;\n```\n').body);
+  const pre = p.document.querySelector('pre');
+  assert.equal(pre.hasAttribute('tabindex'), false);
+  assert.equal(pre.querySelector('code').hasAttribute('tabindex'), false);
+  assert.equal(pre.hasAttribute('role'), false);
+});
+
 test('a block that fits is no Tab stop, and one with no language is just "Code"', () => {
   const p = preview();
   sized(p, 300, 400);

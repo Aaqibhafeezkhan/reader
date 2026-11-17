@@ -5,6 +5,11 @@
   position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; border: 0;
   overflow: hidden; clip-path: inset(50%); white-space: pre;
 }
+/* Nor is anything in it there to reach by Tab (gh-81's review): its code's
+ * Copy, out of sight with it, nor its code as a block to scroll, which
+ * browsers give the keyboard to by themselves. */
+.music.drawn > pre:not(.music-error) .code-copy { display: none; }
+.music.drawn > pre:not(.music-error) > code { overflow: visible; }
 .music-staff { color: var(--gm-ink); }
 /* As wide as the text is, abcjs scaling it to fit (its `responsive`). */
 .music-staff svg path, .music-staff svg text { fill: currentColor; }

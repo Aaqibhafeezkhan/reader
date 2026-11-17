@@ -113,7 +113,14 @@
     queueMicrotask(settleNow);
   };
   for (const type of ['change', 'preview:done', 'preview:answered']) document.addEventListener(type, settle);
-  document.addEventListener('preview:sending', settleNow);
+  // Looked at again just before the edits go up, whatever was asked: after
+  // a real click the browser runs the microtask between one listener and
+  // the next, before the one that marks a choice picked has, so what's on
+  // the page is only all said by now.
+  document.addEventListener('preview:sending', () => {
+    settling = true;
+    settleNow();
+  });
 
   // A box or a choice where the page can't be worked: a click on it, which
   // Space is too, is called off before it ticks, and so are the keys that

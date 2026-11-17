@@ -50,7 +50,7 @@ test('the cache is where each system keeps an app\'s, unless READER_CACHE says',
   assert.equal(cacheDir({}, 'darwin', '/Users/a'), '/Users/a/Library/Caches/reader');
   assert.equal(cacheDir({}, 'linux', '/home/a'), '/home/a/.cache/reader');
   assert.equal(cacheDir({ XDG_CACHE_HOME: '/c' }, 'linux', '/home/a'), '/c/reader');
-  assert.equal(cacheDir({ LOCALAPPDATA: 'C:\\L' }, 'win32', 'C:\\U'), path.join('C:\\L', 'reader', 'Cache'));
+  assert.equal(cacheDir({ LOCALAPPDATA: 'C:\\L' }, 'win32', 'C:\\U'), 'C:\\L\\reader\\Cache');
   assert.equal(cacheDir({ READER_CACHE: '/r' }, 'darwin', '/Users/a'), '/r');
 });
 

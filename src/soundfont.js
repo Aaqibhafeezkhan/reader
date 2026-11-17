@@ -26,9 +26,10 @@ const WAIT = 15000;
 /** Where reader keeps what it fetches, as each system keeps an app's cache. */
 export function cacheDir(env = process.env, platform = process.platform, home = os.homedir()) {
   if (env.READER_CACHE) return env.READER_CACHE;
-  if (platform === 'darwin') return path.join(home, 'Library', 'Caches', 'reader');
-  if (platform === 'win32') return path.join(env.LOCALAPPDATA || path.join(home, 'AppData', 'Local'), 'reader', 'Cache');
-  return path.join(env.XDG_CACHE_HOME || path.join(home, '.cache'), 'reader');
+  // Each system's own paths, whichever system this runs on, as its tests ask for all three.
+  if (platform === 'darwin') return path.posix.join(home, 'Library', 'Caches', 'reader');
+  if (platform === 'win32') return path.win32.join(env.LOCALAPPDATA || path.win32.join(home, 'AppData', 'Local'), 'reader', 'Cache');
+  return path.posix.join(env.XDG_CACHE_HOME || path.posix.join(home, '.cache'), 'reader');
 }
 
 export class NoteError extends Error {

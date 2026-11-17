@@ -107,12 +107,16 @@
     // Made in the press itself, which is what lets it sound.
     const audioContext = new Context();
     const synth = new ABCJS.synth.CreateSynth();
+    // The piano and the marks are given the same tempo, as abcjs's own player
+    // gives them: left to itself, with no Q:, the piano took a 6/8 tune's
+    // beat as a quarter, not a dotted quarter, and ran a third faster.
+    const measure = tune.millisecondsPerMeasure();
     const mine = { source, synth, timer: null, paused: false, atStart: false };
     playing = mine;
     show();
     say(host, 'Getting its notes…');
     try {
-      await synth.init({ audioContext, visualObj: tune, options: { soundFontUrl: SOUNDS() } });
+      await synth.init({ audioContext, visualObj: tune, millisecondsPerMeasure: measure, options: { soundFontUrl: SOUNDS() } });
       await synth.prime();
     } catch {
       if (playing === mine) stop();
@@ -121,6 +125,7 @@
     if (playing !== mine) return undefined;
     say(host, '');
     const timer = new ABCJS.TimingCallbacks(tune, {
+      qpm: Math.round((tune.getBeatsPerMeasure() / measure) * 60000),
       eventCallback: (ev) => {
         unmark();
         if (!ev) {

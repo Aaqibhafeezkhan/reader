@@ -14,6 +14,7 @@ function frame({ offline = false } = {}) {
   const p = preview();
   const said = [];
   let callback = null;
+  const tempo = {};
   p.window.AudioContext = class { constructor() { said.push('audio context'); } };
   p.window.ABCJS = {
     renderAbc: (el, text, options) => {
@@ -23,12 +24,12 @@ function frame({ offline = false } = {}) {
         return [{ lines: [1], warnings: ['Music Line:2:2: Unknown character <span>ignored</span>', 'Music Line:2:2: Unknown character <span>ignored</span>'] }];
       }
       el.innerHTML = '<svg><path class="abcjs-note"></path></svg>';
-      return [{ lines: [1], warnings: [] }];
+      return [{ lines: [1], warnings: [], millisecondsPerMeasure: () => 3000, getBeatsPerMeasure: () => 2 }];
     },
     synth: {
       supportsAudio: () => true,
       CreateSynth: class {
-        async init(o) { said.push(['init', o.options.soundFontUrl]); }
+        async init(o) { said.push(['init', o.options.soundFontUrl]); tempo.piano = o.millisecondsPerMeasure; }
         async prime() { if (offline) throw new Error('404'); said.push('prime'); }
         start() { said.push('start'); }
         stop() { said.push('stop'); }
@@ -37,7 +38,7 @@ function frame({ offline = false } = {}) {
       },
     },
     TimingCallbacks: class {
-      constructor(tune, o) { callback = o.eventCallback; }
+      constructor(tune, o) { callback = o.eventCallback; tempo.marks = o.qpm; }
       start(at) { said.push(['timer start', at]); }
       pause() { said.push('timer pause'); }
       stop() { said.push('timer stop'); }
@@ -51,7 +52,7 @@ function frame({ offline = false } = {}) {
   };
   const $ = (sel) => p.document.querySelector(sel);
   const beat = (n) => callback(n == null ? null : { elements: [[p.document.querySelectorAll('.abcjs-note')[n]]] });
-  return { ...p, said, settled, $, beat };
+  return { ...p, said, settled, $, beat, tempo };
 }
 
 test('a tune is drawn on a staff named for it, as wide as the text, its ABC out of sight, with Play in its lower right', async () => {
@@ -103,6 +104,16 @@ test('Play plays it from reader\'s own notes, marking each as it sounds, and tur
   assert.equal(play.title, 'Play');
   assert.ok(start.hidden);
   assert.equal(p.document.querySelectorAll('.music-now').length, 0);
+});
+
+test('the piano and the marks keep the same tempo, the tune\'s measure, as a 6/8 tune\'s piano otherwise ran a third fast', async () => {
+  const p = frame();
+  p.show(render(`\`\`\`music\n${TWINKLE}\n\`\`\`\n`).body);
+  await p.settled();
+  p.$('.music-play').click();
+  await p.settled();
+  // 3 seconds a measure of 2 beats is 40 beats a minute, for both
+  assert.deepEqual(p.tempo, { piano: 3000, marks: 40 });
 });
 
 test('Back to the start: playing, it plays on from there; paused, it waits there until Play', async () => {

@@ -40,6 +40,17 @@ export function choicesIn(line, from = 0, skip = []) {
   return found;
 }
 
+/**
+ * Whether `choices`, as choicesIn found them, are answered: one picked, and
+ * any blank in its words (`blanks`, as blank.js's inlineBlanks finds them)
+ * written in, as a choice whose words are still to be written isn't an
+ * answer yet.
+ */
+export function answeredBy(choices, blanks = []) {
+  const unwritten = (c) => blanks.some((b) => b.start >= c.label.start && b.end <= c.label.end && !b.value.trim());
+  return choices.some((c) => c.checked && !unwritten(c));
+}
+
 /** `line` with only its `k`-th choice picked, of `choices` as choicesIn found them; with none, for no `k`. */
 export function pickedAt(line, choices, k = -1) {
   // A mark written is as long as it was, so each is still where it was found.

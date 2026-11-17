@@ -57,7 +57,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { beforeExtract, keepWritten, addClass, escapeAttr, fenced, unplaced, textToken } from '../source.js';
 import { workable, shut, inlineBlanks, codeSpans } from '../blank.js';
-import { MARK, choicesIn, pickedAt } from '../choices.js';
+import { MARK, choicesIn, pickedAt, answeredBy } from '../choices.js';
 
 // The speaker of each exchange's line, kept on `env` under a key no other feature can name, so that
 // one reads this one's tokens instead (gh-282); an aside's parse, a copy of
@@ -135,7 +135,7 @@ function answerChoices(written, line, head) {
   if (!at) return null;
   const found = choicesIn(written, lead + at, [...inlineBlanks(written), ...codeSpans(written)]);
   if (!found) return null;
-  return { line, text: written, checked: found.map((c) => c.checked), on: found.map((c, k) => pickedAt(written, found, k)), off: pickedAt(written, found), head };
+  return { line, text: written, answered: answeredBy(found, inlineBlanks(written)), checked: found.map((c) => c.checked), on: found.map((c, k) => pickedAt(written, found, k)), off: pickedAt(written, found), head };
 }
 
 /**
@@ -349,7 +349,7 @@ function choiceRow(state, row, choices) {
   }
   if (parts.filter((p) => p.mark).length !== choices.on.length) return row;
   const open = new state.Token('qa_choices_open', 'span', 1);
-  open.meta = { ...choices, answered: choices.checked.some(Boolean), name: choices.head?.words };
+  open.meta = { ...choices, answered: choices.answered, name: choices.head?.words };
   const out = [open];
   let choice = null;
   const finish = () => {

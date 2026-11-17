@@ -105,3 +105,15 @@ test('the bar is drawn in the page\'s colours, empty as empty in every browser, 
   assert.match(drawn, /\.progress progress::-webkit-progress-value \{ background: var\(--gm-accent\); \}/);
   assert.match(drawn, /\.progress progress::-moz-progress-bar \{ background: var\(--gm-accent\); \}/);
 });
+
+test('a choice picked whose words are a blank counts once the blank is written in, in a list, a field and an answer', () => {
+  const md = (pick, field, answer) => render([
+    'progress:[]', '',
+    '- ( ) Yes', `- (x) [@ Something else${pick}]`, '',
+    `@ Mood: ( ) Calm (x) [@ other${field}]`, '',
+    'Q: Now?', `A: ( ) Yes (x) [@ Something else${answer}]`,
+  ].join('\n')).body;
+  assert.equal(bars(md('', '', ''))[0].count, '0 of 3', 'picked, but nothing written');
+  assert.equal(bars(md(': later', ': tired', ': soon'))[0].count, '3 of 3');
+  assert.match(md('', '', ''), /<ul data-answered="false"/);
+});

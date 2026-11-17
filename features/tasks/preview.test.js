@@ -395,3 +395,23 @@ test('a page drawn with an item\'s parts all done but its box not is left as the
   click($$('.task-box')[2]);
   assert.deepEqual(await edits(), [[[2, '- [ ] Other', '- [x] Other']]]);
 });
+
+test('a choice whose words are a blank, picked last, waits for the blank: the keyboard goes there, and the heading\'s written with the words', async () => {
+  const p = await page('## [ ] Plan\n\n- ( ) Yes\n- ( ) [@ Something else]\n');
+  const pick = p.$$('.choice-box')[1];
+  const sent = async () => {
+    await settle();
+    return p.posted.splice(0).filter((m) => m.type === 'edit').map((m) => [m.undo ?? false, m.edits.map((e) => [e.from, e.before.join('\n'), e.after.join('\n')])]);
+  };
+  p.click(pick);
+  assert.deepEqual(await sent(), [[false, [[3, '- ( ) [@ Something else]', '- (x) [@ Something else]']]]], 'the pick alone, not one to undo, as that would close the blank');
+  assert.equal(pick.closest('[data-answered]').dataset.answered, 'false');
+  const blank = p.$('.field-value');
+  const input = blank.querySelector('textarea');
+  assert.equal(p.document.activeElement, input, 'the keyboard in the blank, open');
+  input.value = 'later';
+  input.dispatchEvent(new p.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  const written = (await sent()).flatMap(([, edits]) => edits);
+  assert.deepEqual(written.find((e) => e[0] === 3), [3, '- (x) [@ Something else]', '- (x) [@ Something else: later]']);
+  assert.deepEqual(written.find((e) => e[0] === 0), [0, '## [ ] Plan', '## [x] Plan'], 'done with its words');
+});

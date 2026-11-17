@@ -44,7 +44,7 @@ Its line ends in a **Done** button; pressed, it reads **✓ Done**, the title go
 Pressing it again takes that back.
 A section written done, `## [x] Stretch`, starts folded on the page, out of the way; click its heading to open it ([Folding the page](files.md)).
 
-A section is done, too, once everything in it that can be done is: its boxes ticked, its choices made, and each section with a box under it done.
+A section is done, too, once everything in it that can be done is: its boxes ticked, its choices made (one whose words are a blank, once it's written in), and each section with a box under it done.
 It shows **✓ Done** on its own then, and stays done until one of them is undone.
 The click that does the last of them writes the heading's `[x]` too, in the same edit, so one undo takes back both, and undoing one of them writes `[ ]` back; that carries up to the sections it's in.
 So the file says what the page does, as where it's the record, such as a review's Acceptance Criteria.
@@ -312,6 +312,7 @@ progress:[326/1007] pages
 
 Empty brackets count what's to be done in its section (the heading it's under, to the next at that level or above, or the slide it's on), and how many are done.
 That's each box, ticked, and each set of choices, a list of them or a field's, once one is picked, as the heading's Done counts them.
+A choice whose words are a blank, `( ) [@ Something else]`, counts once its blank is written in: picking it puts the keyboard there, and the section waits for the words.
 A staged box counts once it's full; the heading's own Done button doesn't, as it says the whole section is done.
 
 ::: tabs

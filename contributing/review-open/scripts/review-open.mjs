@@ -69,10 +69,10 @@ Branch \`${branch}\` (worktree \`.claude/worktrees/${branch.replace('/', '-')}\`
 Each item below has a file and a box of its own: tick its **Send to ${c.ai}** when you've written in it, and I'll answer only that file while you carry on with the next.
 This box is for anything in this page, or for everything at once.
 
-To try it, run the branch's reader. It restarts itself when reader's code changes, and opens no new tab; I'll say when to reload the page.
+To try it, run the branch's reader. It starts again when reader's code changes, and the page shows the change by itself.
 
 \`\`\`sh
-node --watch ${worktree}/bin/reader.js ${tilde(day)} --port 8734 --no-browser
+npm --prefix ${worktree} run dev -- ${tilde(day)} --port 8734 --no-browser
 \`\`\`
 
 ## Please look

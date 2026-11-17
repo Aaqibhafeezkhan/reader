@@ -46,8 +46,9 @@ const USAGE = `usage: reader <dir> [--port 8734] [--frame-port 8735] [--no-brows
                  can read and write <dir>
   --dev          developer mode: a link to $reader/<path> opens that file in
                  reader's own folder, read-only, such as a review's link to
-                 a test on its branch; off by default, as it says where
-                 reader is
+                 a test on its branch; and the page shows the change when
+                 reader is started again with changed code (npm run dev);
+                 off by default, as it says where reader is
   --version      print reader's version: v0.0.2, or v0.0.2+abc1234 from a
                  checkout that isn't at that release
 `;
@@ -162,6 +163,8 @@ if (opts.tailscale) {
   allowHosts.push(...tailnet.names);
 }
 
+// --dev: `$reader/…` links open reader's own files (gh-263), and the page
+// notices when `npm run dev` (scripts/dev.js) starts it again (gh-208).
 const made = createServer({ root: dir, allowHosts, dayStarts: opts.dayStarts, dev: Boolean(opts.dev) });
 const { server, content } = made;
 

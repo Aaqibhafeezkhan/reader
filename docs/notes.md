@@ -128,6 +128,37 @@ been tried: the same `[x]`, a check in place of the T, and the card stays
 as it was. On a slide being presented, a card shows whether it's done but
 can't be clicked.
 
+## Linking to a question or a card
+
+Each question and each card can be linked to by its label and how many of
+its kind come before it, counted down the whole file, nested ones too:
+`#Q1` is the first question, `#G2` the second Good, and `#B1` and `#T1` the
+first Bad and Try. A question carried on by another `Q:` from the same
+person is one question, with one id.
+
+::: tabs
++++ Source
+```markdown
+Q (Daniel): Where should we go for coffee?
+A (Maria): Let's look at [the next question](#Q2) first.
+
+Q (Daniel): Do we need a break at all?
+A (Maria): Yes. Back to [the first question](#Q1), then.
+```
++++ Rendered
+Q (Daniel): Where should we go for coffee?
+A (Maria): Let's look at [the next question](#Q2) first.
+
+Q (Daniel): Do we need a break at all?
+A (Maria): Yes. Back to [the first question](#Q1), then.
+:::
+
+A card or question added above one moves its number on, and a link to it
+with it. To keep one where it is, put it in a numbered list, `1) Good:`,
+whose item is `#1` however the cards around it move (see [Items in a
+list](links.md#items-in-a-list)). A heading, or a block before it, keeps an
+id that's already had.
+
 ## Definitions
 
 A line starting `!` is a **definition**: a term, a colon, and what it

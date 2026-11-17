@@ -65,6 +65,7 @@ C C G G | A A G2 | F F E E | D D C2 |]
 
 - **Play** plays it on a piano, each note marked on the staff as it sounds, a little bolder and in the page's accent, and turns to **Pause**, which waits where it is until Play carries on. It plays on a slide and in Work too.
 - Once it's begun, **Back to the start** is beside it: playing, it plays on from the start; paused, it waits there. At its end, it's as it was before it was played.
+- A chord in quotes before a note, `"G"G3`, is drawn above it and played under the tune, and, as on a lead sheet, it sounds until the next chord, through a repeat too. To stop it, write `"^N.C."` where it ends: the `^` sets "N.C." above the staff as words, which abcjs takes as no chord, as it [says](https://docs.abcjs.net/overview/abc-notation.html#chord-break); without it, `"N.C."` is read as a chord's name, and the chord before plays on.
 - The piano's notes come from abcjs's website the first time each is played, through reader, which keeps them in a cache folder of its own, outside your files (`~/Library/Caches/reader` on a Mac, `~/.cache/reader` on Linux, or wherever `READER_CACHE` says). So a tune plays offline once its notes have been played; one that hasn't says it needs the network.
 - A screen reader hears the staff as an image named by its title, key, time and bars, "Twinkle, Twinkle: C major, 4/4, 4 bars", and then its text.
 - ABC with something wrong in it shows its text, what's wrong under it, and what could be drawn of it, faded.

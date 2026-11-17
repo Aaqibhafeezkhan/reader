@@ -123,9 +123,12 @@ A `+1` with no card or question above it stays as typed.
 
 A card that's a paragraph or two long can have its label on a line of its
 own, and its words indented under it, a blank line between or not. The
-same goes for a `Q:` or an `A:`. A label alone with nothing indented under
-it stays as typed, as does one whose next line is an aside, or another
-card, question or answer:
+same goes for a `Q:` or an `A:`. Its words are a paragraph: a label alone
+with nothing indented under it stays as typed, as does one with a list, a
+quote or code under it, or another card, question or answer. An aside
+written between a label and its words goes beside the label, with a blank
+line before the words, as an indented line straight after an aside is the
+aside's own:
 
 ::: tabs
 +++ Source

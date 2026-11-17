@@ -47,7 +47,10 @@
  * A label with nothing after its colon starts one too, when the next line
  * with words on it is indented under it, and isn't itself an exchange's,
  * a vote or an aside: its words, a paragraph or more, are the indented ones
- * (gh-219). With nothing indented under it, it stays as typed.
+ * (gh-219). With nothing indented under it, or something other than a
+ * paragraph, a list, a quote or code, it stays as typed. Whether it has its
+ * words is read once the asides are out, so that one written between a
+ * label and its words goes beside the label.
  *
  *   Good (Claude):
  *
@@ -91,6 +94,9 @@ const COUNTED = Symbol('qa counted');
 export function qa(md) {
   keepWritten(md);
   beforeExtract(md, 'qa_lines', lines);
+  // Once the asides are out, and before markdown reads the blocks: whether
+  // a label alone on its line has words under it (gh-219).
+  md.core.ruler.before('block', 'qa_under', under);
   // Last, after markdown's own rules: a paragraph split off here has no
   // source text of its own for them to check before they'd run.
   md.core.ruler.push('qa_items', items);
@@ -164,11 +170,14 @@ function lines(state) {
   const said = new Map();
   const base = state.env.lineBase ?? 0;
   // What's open at each depth of nesting, the margin's first: the indent its
-  // lines start at, who's speaking (`open`), and the question or card a
-  // vote is for (`head`).
+  // lines start at, who's speaking (`open`), the question or card a vote is
+  // for (`head`), and the label alone on its line that's speaking, if it is
+  // one (`cand`), which may yet go back to typed text (`under`).
   let levels = [];
   const code = fenced();
   const src = state.src.split('\n');
+  // The label alone on its line that what's at depth `at` hangs from, if any.
+  const hangsFrom = (at) => levels.slice(0, at).reverse().find((l) => l.cand)?.cand ?? null;
   const out = src.map((line, n) => {
     if (code(line)) {
       levels = [];
@@ -179,7 +188,7 @@ function lines(state) {
     const at = depthOf(levels, width(lead));
     // Indented, a line nests only in an exchange open above it.
     if (at < 0) return line;
-    const level = levels[at]?.indent === width(lead) ? levels[at] : { indent: width(lead), open: null, head: null };
+    const level = levels[at]?.indent === width(lead) ? levels[at] : { indent: width(lead), open: null, head: null, cand: null };
     const pad = ' '.repeat(2 * at);
     const v = level.head && VOTE.exec(body);
     if (v) {
@@ -187,10 +196,15 @@ function lines(state) {
       levels = [...levels.slice(0, at), level];
       level.head.votes++;
       level.open = { who: '+1' };
-      said.set(n, { who: '+1', name: v[1]?.trim() ?? '', bare: !text, head: level.head });
+      level.cand = null;
+      const dep = level.head.under ? level.head : hangsFrom(at);
+      said.set(n, { who: '+1', name: v[1]?.trim() ?? '', bare: !text, head: level.head, typed: line, dep });
       return `${pad}+ +1 ${text}`;
     }
-    const q = QA.exec(body) ?? (underIt(src, n, width(lead)) ? BARE.exec(body) : null);
+    // A label alone on its line is only a candidate here: whether words are
+    // under it is read once the asides are out (`under`), as this reads a
+    // line at a time.
+    const q = QA.exec(body) ?? BARE.exec(body);
     const bare = Boolean(q) && !QA.test(body);
     // Only a card is done, or not.
     if (!q || q[0].startsWith('\\') || (q[2] && !CARDS.has(q[1]))) {
@@ -210,11 +224,13 @@ function lines(state) {
     const choices = who === 'A' ? answerChoices(written, base + n, level.head) : null;
     const { open } = level;
     if (open && !bare && open.who === who && !CARDS.has(who) && (!name || name === open.name)) {
-      said.set(n, { more: true, choices });
+      said.set(n, { more: true, choices, typed: line, dep: level.cand ?? hangsFrom(at) });
       return `${pad}  ${text}`;
     }
     level.open = { who, name };
-    const item = { who, name, votes: 0, head: level.head, choices, depth: at, under: bare };
+    const item = { who, name, votes: 0, head: level.head, choices, depth: at, typed: line, dep: hangsFrom(at) };
+    if (bare) Object.assign(item, { under: true, indent: width(lead) });
+    level.cand = bare ? item : null;
     if (who !== 'A') item.head = level.head = item;
     if (CARDS.has(who)) {
       const after = written.indexOf(who) + who.length;
@@ -236,17 +252,60 @@ function lines(state) {
 }
 
 /**
- * Whether the next line of `src` after line `n` with words on it is indented
- * deeper than `indent`, and is words, not an exchange's line, a vote or an
- * aside: a label alone on line `n` takes it as its own.
+ * Decides, once the asides are out and before markdown reads the blocks,
+ * whether each label alone on its line has words under it (gh-219): the
+ * next line with words, indented under it, starting a paragraph. One that
+ * hasn't goes back to typed text, with all that hung from it. Read here
+ * rather than with the lines, so that an aside between a label and its
+ * words is already gone, and goes beside the label.
  */
-function underIt(src, n, indent) {
-  let k = n + 1;
-  while (k < src.length && !src[k].trim()) k++;
-  if (k >= src.length) return false;
-  const lead = /^[ \t]*/.exec(src[k])[0];
-  const body = src[k].slice(lead.length);
-  return width(lead) > indent && !QA.test(body) && !BARE.test(body) && !VOTE.test(body) && !body.startsWith('~');
+function under(state) {
+  const said = state.env[SAID];
+  if (!said || state.inlineMode || state.env.nested) return;
+  const labels = [...said].filter(([, s]) => s.under);
+  if (!labels.length) return;
+  const src = state.src.split('\n');
+  // Lines as written -> lines now, the asides out.
+  const source = state.env.sourceLines;
+  const now = new Map(src.map((_, k) => [source?.[k] ?? k, k]));
+  const typed = new Set();
+  const back = (item) => {
+    if (typed.has(item)) return;
+    typed.add(item);
+    for (const s of said.values()) if (s.dep === item) back(s);
+  };
+  for (const [n, item] of labels) if (!typed.has(item) && !wordsUnder(src, now.get(n), item)) back(item);
+  if (!typed.size) return;
+  for (const [n, s] of [...said]) {
+    if (!typed.has(s)) continue;
+    said.delete(n);
+    const k = now.get(n);
+    if (k != null) src[k] = s.typed;
+  }
+  state.src = src.join('\n');
+}
+
+// What starts something other than a paragraph: a list's item (a numbered
+// or lettered one too), a quote, a fence, a heading, a table's row, a block.
+const NOT_WORDS = /^(?:[-+*]|\d{1,9}[.)]|[a-zA-Z][.)])(?:[ \t]|$)|^(?:>|```|~~~|#{1,6}(?:[ \t]|$)|\||:::)/;
+
+/**
+ * Whether the next line of `src` after line `k` with words on it is indented
+ * under the label alone on line `k`, `item`, and starts a paragraph: not
+ * another block, indented code, or an exchange's line or a vote left as
+ * typed.
+ */
+function wordsUnder(src, k, item) {
+  if (k == null) return false;
+  let j = k + 1;
+  while (j < src.length && !src[j].trim()) j++;
+  if (j >= src.length) return false;
+  const lead = /^[ \t]*/.exec(src[j])[0];
+  const body = src[j].slice(lead.length);
+  const w = width(lead);
+  // Four past where the item's words start is code.
+  return w > item.indent && w - (2 * item.depth + 2) < 4 && !NOT_WORDS.test(body)
+    && !QA.test(body) && !BARE.test(body) && !VOTE.test(body);
 }
 
 /** How wide `lead` is, a tab to the next stop of four, as markdown counts it. */

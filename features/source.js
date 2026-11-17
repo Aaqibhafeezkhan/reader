@@ -10,6 +10,10 @@
  * between two private-use characters, which markdown passes through
  * untouched. Once the text is parsed, it turns its placeholders into tokens
  * (`splitText`).
+ *
+ * Such a pass decides only about the line it's on, as the asides are still
+ * in the text: anything that looks at the lines around it, as whether words
+ * follow a label (features/qa), runs after `aside_extract`, once they're out.
  */
 
 import { frontMatter, fenced, withEntries } from '../static/markdown.js';
@@ -20,7 +24,9 @@ export { frontMatter, fenced, withEntries };
  * Adds `rule` to read the source as written, before the page's front matter
  * and comments come off (`page_extract`, src/page.js), and so before any
  * feature takes lines out of it (an aside's); or after normalizing it when
- * there's no such rule (a test of the feature alone).
+ * there's no such rule (a test of the feature alone). `rule` decides only
+ * about each line on its own: one that reads the lines around it would see
+ * the asides among them.
  */
 export function beforeExtract(md, name, rule) {
   try {

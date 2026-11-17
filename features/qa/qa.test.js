@@ -300,3 +300,24 @@ test('an aside on a card written under its label goes where it would beside it (
   }
 });
 
+test('an aside between a label alone and its words goes beside the label, a blank line before the words (gh-219)', () => {
+  const page = render('---\nreviewer m: Maria\nreviewer #: Josh\n---\n\nBad (Maria):\n~m This makes me think ...\n~# A comment.\n\n  Straight under.\nA (Claude): Answered beside.\n').body;
+  assert.match(page, /<li class="qa qa-card qa-bad" id="B1">\n<p><span class="qa-label qa-toggle"[^>]*>B<\/span><span class="qa-name">Maria<\/span>Straight under\.<\/p>/);
+  assert.equal(page.match(/gm-aside-cell/g)?.length, 2, 'both asides, beside it');
+  assert.match(page, /<li class="qa qa-a">(?:\n<p>)?<span class="qa-label">A<\/span><span class="qa-name">Claude<\/span>Answered beside\./);
+  // With no blank line, the indented line is the aside's own, and the label has no words.
+  const tight = render('---\nreviewer m: Maria\n---\n\nBad (Maria):\n~m An aside\n  its next line.\n').body;
+  assert.match(tight, /<p>Bad \(Maria\):<\/p>/);
+  assert.doesNotMatch(tight, /qa-card/);
+});
+
+test('a label alone with a list, a quote or code under it stays as typed, and what\'s under it as written (gh-219, gh-81)', () => {
+  for (const [src, under] of [['A (Claude):\n  - ( ) Yes\n  - ( ) No\n', /<ul data-answered="false">/], ['Bad (Josh):\n  > quoted\n', /<blockquote>/], ['A (Josh):\n  ```\n  code\n  ```\n', /<pre><code>code/], ['Q (Josh):\n  1. first\n', /<ol>\n<li>first<\/li>/], ['Good (Josh):\n\n      indented code\n', /<pre><code>/]]) {
+    const { body } = render(src);
+    assert.match(body, /<p>(A|Bad|Q|Good) \(\w+\):<\/p>/, src);
+    assert.doesNotMatch(body, /qa-(card|a|q)\b/, src);
+    assert.match(body, under, src);
+    assert.doesNotMatch(body, /[\uE000-\uE00D]/, src);
+  }
+});
+

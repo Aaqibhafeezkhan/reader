@@ -40,7 +40,7 @@ That only finds asides and retro cards, so always read the whole sent file too: 
 
 - **Settled in chat:** add `Decision:` under the item right then, with why and what was turned down. Old decisions stay, struck through. Chat is faster, but it's lost in a crash, and the file is the record.
 - Tick the staged box's stage, and give a Done item its outcome, as `review-open` says: an aside, `~co …`, in the margin under what it settles, never among its choices.
-- When an item is Done, move it to **Done** at the bottom of the index, so that what's open stays at the top. (Until gh-242 folds them.)
+- When an item is Done, move it to **Done** at the bottom of the index, so that what's open stays at the top.
 - **A criterion added to an item already done reopens it,** so that it's plain there's more to do: in its file, untick `# [ ] Review` and `## [ ] Acceptance Criteria`; in the index, move it back to **Please look**, with none of its stages ticked, and a line under it saying what's new.
 - **A thread that gets long:** suggest breaking it out into a file of its own.
 - Ask whether a piece exists only to support another before building it: "This warning is here because the icon disappears; should it disappear?"

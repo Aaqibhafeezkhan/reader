@@ -40,6 +40,23 @@ marks the text instead (see [Asides](asides.md)).
 [wavy]{wavy} and [highlighted]{highlight goldenrod}.
 :::
 
+Braces right after a link, or anything else reader draws in a line, style
+only it: a date, a scheme's link, a blank. Only names reader knows count
+there, a color, a background, a generic font, `uppercase` or a mark, as
+on a list item, below; any other word, or braces after a space, stay as
+typed. Pandoc, Djot and kramdown write a link's styles in the same place.
+
+::: tabs
++++ Source
+```markdown
+Due date:2026-11-10[]{red}, see rfc:2616[]{red}, or [the plan](plan.md){circle}.
+Get [@ milk: two]{blue} today.
+```
++++ Rendered
+Due date:2026-11-10[]{red}, see rfc:2616[]{red}, or [the plan](plan.md){circle}.
+Get [@ milk: two]{blue} today.
+:::
+
 For whole paragraphs, lists or tables, fence them with `:::`:
 
 ::: tabs

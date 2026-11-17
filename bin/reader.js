@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- *   reader <dir> [--port 8734] [--frame-port 8735] [--no-browser] [--open <file>] [--day-starts 04:00] [--host <address> --allow-host <name>] [--tailscale]
+ *   reader <dir> [--port 8734] [--frame-port 8735] [--no-browser] [--open <file>] [--day-starts 04:00] [--host <address> --allow-host <name>] [--tailscale] [--dev]
  *   reader export <file>... [--out <file>] [--no-draw]
  *   reader --version
  *
@@ -19,7 +19,7 @@ import { addressOf } from '../static/app/address.js';
 
 const USAGE = `usage: reader <dir> [--port 8734] [--frame-port 8735] [--no-browser]
                      [--open <file>] [--day-starts <time>]
-                     [--host <addr> --allow-host <name>] [--tailscale]
+                     [--host <addr> --allow-host <name>] [--tailscale] [--dev]
        reader export <file>... [--out <file>] [--no-draw]
        reader --version
 
@@ -44,6 +44,10 @@ const USAGE = `usage: reader <dir> [--port 8734] [--frame-port 8735] [--no-brows
                  tailscale serve, at its tailnet name; taken off again when
                  reader stops. There is no sign-in: anyone on the tailnet
                  can read and write <dir>
+  --dev          developer mode: a link to $reader/<path> opens that file in
+                 reader's own folder, read-only, such as a review's link to
+                 a test on its branch; off by default, as it says where
+                 reader is
   --version      print reader's version: v0.0.2, or v0.0.2+abc1234 from a
                  checkout that isn't at that release
 `;
@@ -68,6 +72,8 @@ function parseArgs(argv) {
       opts.framePort = portNumber(a.slice('--frame-port='.length));
     } else if (a === '--tailscale') {
       opts.tailscale = true;
+    } else if (a === '--dev') {
+      opts.dev = true;
     } else if (a === '--no-browser') {
       opts.browser = false;
     } else if (a === '--open') {
@@ -156,7 +162,7 @@ if (opts.tailscale) {
   allowHosts.push(...tailnet.names);
 }
 
-const made = createServer({ root: dir, allowHosts, dayStarts: opts.dayStarts });
+const made = createServer({ root: dir, allowHosts, dayStarts: opts.dayStarts, dev: Boolean(opts.dev) });
 const { server, content } = made;
 
 // Without --port, count up from 8734 so each directory gets its own instance

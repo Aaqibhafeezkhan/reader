@@ -78,4 +78,8 @@ export function remember(key, value) {
   try { localStorage.setItem(key, value); } catch { /* ignore */ }
 }
 
-export const dirty = () => state.current?.type === 'md' && el.editor.value !== state.saved;
+/** Where a path is in reader's own folder, which the server reads in dev mode only, and never writes (gh-263). */
+export const SOURCE = '$reader/';
+export const isSource = (p) => typeof p === 'string' && p.startsWith(SOURCE);
+
+export const dirty = () => state.current?.type === 'md' && !isSource(state.current.path) && el.editor.value !== state.saved;

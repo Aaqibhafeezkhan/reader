@@ -3,11 +3,11 @@
  */
 
 import { applyEdits } from '../edits.js';
-import { el, state, deck } from './state.js';
+import { el, state, deck, isSource } from './state.js';
 import { renderNow, scheduleRender } from './render.js';
 import { scheduleSave } from './saving.js';
 import { loadDeck, showSlide, scheduleDeckReload } from './deck.js';
-import { updateDirty, updateCounts } from './status.js';
+import { updateDirty, updateCounts, toast } from './status.js';
 import { COPIED } from './sync.js';
 
 /** Insert via execCommand so the browser's undo stack still works. */
@@ -122,6 +122,11 @@ export function toLineEdge(end, extend) {
  */
 export function applyEdit({ edits, undo = false, drawn = false }, { fromStage = false } = {}) {
   if (state.current?.type !== 'md') return;
+  // reader's own file is read, not written: what the page changed is put back.
+  if (isSource(state.current.path)) {
+    renderNow();
+    return toast('reader\'s own files are read here, not written', true);
+  }
   const t = el.editor;
   const change = applyEdits(t.value, edits);
   if (!change || (change.start === change.end && !change.text)) {

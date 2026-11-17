@@ -7,7 +7,7 @@
 //
 //   node browse.mjs <file.md> --steps <steps.json> --repo <reader checkout>
 //        [--browser chromium|webkit|firefox|safari|all, or a list: chromium,safari]
-//        [--theme light|dark|light,dark] [--phone] [--zoom 2] [--forced-colors] [--out <dir>]
+//        [--theme light|dark|light,dark] [--phone] [--zoom 2] [--forced-colors] [--dev] [--out <dir>]
 //        [--step-timeout 8000] [--timeout 120000]
 //
 // --theme chooses reader's own Theme (static/theme.js) before the first step,
@@ -24,7 +24,8 @@
 //
 // --zoom 2 lays the page out as the browser's 200% would: half the window, at
 // twice the pixels. --forced-colors is the system's colours, as Windows' contrast
-// themes give. Both are Playwright's, so not for safari.
+// themes give. Both are Playwright's, so not for safari. --dev starts reader in
+// dev mode, so a `$reader/` link opens reader's own files (gh-263).
 //
 // safari is Safari Technology Preview, never the Safari you use: its own
 // safaridriver and its own windows. Once only, it needs
@@ -79,6 +80,7 @@ const { values: opt, positionals } = parseArgs({
     phone: { type: 'boolean', default: false },
     zoom: { type: 'string', default: '1' },
     'forced-colors': { type: 'boolean', default: false },
+    dev: { type: 'boolean', default: false },
     out: { type: 'string', default: 'shots' },
     'step-timeout': { type: 'string', default: '8000' },
     timeout: { type: 'string', default: '120000' },
@@ -87,7 +89,7 @@ const { values: opt, positionals } = parseArgs({
 const file = positionals[0] && path.resolve(positionals[0]);
 const repo = path.resolve(opt.repo);
 if (!file || !opt.steps || !fs.existsSync(path.join(repo, 'bin/reader.js'))) {
-  console.error('usage: browse.mjs <file.md> --steps <steps.json> --repo <reader checkout> [--browser chromium|webkit|firefox|safari|all] [--theme light|dark|light,dark] [--phone] [--zoom 2] [--forced-colors] [--out <dir>]');
+  console.error('usage: browse.mjs <file.md> --steps <steps.json> --repo <reader checkout> [--browser chromium|webkit|firefox|safari|all] [--theme light|dark|light,dark] [--phone] [--zoom 2] [--forced-colors] [--dev] [--out <dir>]');
   process.exit(2);
 }
 const browsers = opt.browser === 'all' ? BROWSERS : opt.browser.split(',');
@@ -126,7 +128,7 @@ function labelOf(browser, theme) {
 async function runEach() {
   const self = new URL(import.meta.url).pathname;
   const passOn = ['--steps', opt.steps, '--repo', repo, '--out', opt.out, '--step-timeout', opt['step-timeout'], '--timeout', opt.timeout,
-    ...(opt.phone ? ['--phone'] : []), ...(zoom !== 1 ? ['--zoom', opt.zoom] : []), ...(opt['forced-colors'] ? ['--forced-colors'] : [])];
+    ...(opt.phone ? ['--phone'] : []), ...(zoom !== 1 ? ['--zoom', opt.zoom] : []), ...(opt['forced-colors'] ? ['--forced-colors'] : []), ...(opt.dev ? ['--dev'] : [])];
   const outcome = new Map();
   for (const browser of browsers) {
     for (const theme of themes) {
@@ -216,7 +218,7 @@ function scratchCopy() {
 }
 
 const startReader = (copy) => within(15000, 'starting reader', new Promise((resolve, reject) => {
-  const child = spawn(process.execPath, [path.join(repo, 'bin/reader.js'), path.dirname(copy), '--port', '0', '--no-browser', '--open', path.basename(copy)],
+  const child = spawn(process.execPath, [path.join(repo, 'bin/reader.js'), path.dirname(copy), '--port', '0', '--no-browser', '--open', path.basename(copy), ...(opt.dev ? ['--dev'] : [])],
     { stdio: ['ignore', 'pipe', 'pipe'] });
   enders.push(() => child.kill());
   let said = '';

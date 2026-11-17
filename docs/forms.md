@@ -52,6 +52,9 @@ A section pressed done before its last part keeps its `[x]` as that's done, but 
 A section with nothing in it to tick or pick is done only by its button.
 `## \[ ] Stretch` keeps the brackets as typed.
 
+A list's item with a box does the same for what's under it: `- [ ] Pack` with boxes or choices under it is ticked, in the same edit, by the tick or pick that does the last of them, and unticked when one is undone, carrying up through the items it's in.
+Ticked by hand first, it stays ticked until one of them is undone.
+
 ::: tabs
 +++ Source
 ```markdown

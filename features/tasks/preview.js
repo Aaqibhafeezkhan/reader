@@ -22,6 +22,10 @@
  * the last of what's in it is done, its heading's `[x]` is written with
  * that, as one undo, and when one is undone, taken back with it: the
  * file is the record, as a review's Acceptance Criteria is.
+ * A list's item with a box does the same for what's under it (gh-301):
+ * when the last box or set of choices under it is done, its `[x]` is
+ * written in the same edit, and taken back when one's undone; ticked by
+ * hand first, it stays ticked until one is.
  * Where the page can't be worked (`Preview.workable`), as on a slide, none
  * of them takes a click or a key; when it stops being workable while it's
  * showing, as a page past its time does, they're shut as the server would
@@ -99,16 +103,65 @@
       markDone(button, done);
     }
   };
+  /** A list item's own box, plain: a box with stages, or none, is left to be ticked by hand. */
+  const ownBox = (li) => li.querySelector(':scope > input.task-box, :scope > p > input.task-box');
+  /**
+   * What's to be done under list item `li`: each item under it with a box,
+   * which counts as one, what's under it being its; and each list of
+   * choices, done once one is picked. An item with neither is looked into.
+   */
+  const partsOf = (li) => {
+    const parts = [];
+    const walk = (el) => {
+      for (const list of el.querySelectorAll(':scope > ul, :scope > ol')) {
+        if (list.dataset.answered) parts.push(list.dataset.answered);
+        for (const item of list.querySelectorAll(':scope > li')) {
+          const box = item.querySelector(':scope > input.task-box, :scope > p > input.task-box, :scope > .stage-box, :scope > p > .stage-box');
+          if (box) parts.push(box.dataset.done);
+          else if (!item.querySelector(':scope > input.choice-box, :scope > p > input.choice-box')) walk(item);
+        }
+      }
+    };
+    walk(li);
+    return parts;
+  };
+  const itemBoxes = () => [...document.querySelectorAll('li > input.task-box, li > p > input.task-box')]
+    .filter((b) => !b.closest('.field, .gm-asides, .gm-masthead') && ownBox(b.closest('li')) === b);
+  /**
+   * Each list item with a box and something under it to do, innermost
+   * first: done or undone by what's under it just now, the file says so
+   * too, as a section's heading does. `data-full` is whether what's under
+   * it was all done when it was last looked at, so only a change writes.
+   */
+  const settleItems = ({ write = true } = {}) => {
+    const boxes = itemBoxes();
+    for (let i = boxes.length - 1; i >= 0; i--) {
+      const box = boxes[i];
+      const parts = partsOf(box.closest('li'));
+      if (!parts.length) continue;
+      const full = parts.every((v) => v === 'true');
+      if (write && Preview.workable && box.dataset.full != null && String(full) !== box.dataset.full && box.defaultChecked === !full) {
+        Preview.edit([boxLine(box, full)], { undo: true });
+        box.checked = box.defaultChecked = full;
+        markDone(box, full);
+      }
+      box.dataset.full = String(full);
+    }
+  };
+  // Drawn again, each item's box starts from what the file says.
+  Preview.register({ restore: () => settleItems({ write: false }) });
+
   // Once a turn, after whatever changed on the page has said so, and before
   // the turn's edits go up, for a heading's to go with them.
   let settling = false;
   const settleNow = () => {
     if (!settling) return;
+    settleItems();
     settleSections();
     settling = false;
   };
   const settle = () => {
-    if (settling || !document.querySelector('.section-done')) return;
+    if (settling) return;
     settling = true;
     queueMicrotask(settleNow);
   };

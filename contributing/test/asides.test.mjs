@@ -184,10 +184,10 @@ test('send-watch on the index\'s box lists the whole day, and watches for the co
   assert.equal(out, 'send 2026-11-22/review.md:2: 1 waiting\n  2026-11-22/gh-7/review.md:2: ~# about the item\n');
 });
 
-test('send-watch passes over a box left ticked from a round already answered, with nothing waiting', (t) => {
+test('send-watch passes over a box left ticked in a day already merged', (t) => {
   const dir = scratch(t);
   tree(path.join(dir, 'meetings'), {
-    '2026-11-09/review.md': '- [x] Send to Claude\n\nAll answered.\n',
+    '2026-11-09/review.md': '- [x] Send to Claude\n\nAll answered.\n\n- [x] Then: push, open the PR, merge it.\n',
     '2026-11-11/gh-199/review.md': '- [x] Send to Claude\n\nItem line.\n~# about the item\n',
   });
   const { status, out } = run('review-round/scripts/send-watch.mjs', ['50', '--once'], settings(dir));
@@ -240,4 +240,15 @@ test('send-watch says every box ticked in the pass that wakes it, not only the f
   });
   const { out } = run('review-round/scripts/send-watch.mjs', ['50', '--once'], settings(dir));
   assert.match(out, /^send 2026-11-22\/gh-7\/review.md:1: 1 waiting\n.*\nsend 2026-11-22\/gh-8\/review.md:1: 1 waiting\n/);
+});
+
+test('send-watch counts a box already ticked when it starts, in a day not merged, though only choices were picked (gh-262\'s)', (t) => {
+  const dir = scratch(t);
+  tree(path.join(dir, 'meetings'), {
+    '2026-11-16/review.md': '- [ ] Send to Claude\n\n- [ ] Then: push, open the PR, merge it.\n',
+    '2026-11-16/gh-262/review.md': '- [x] Send to Claude\n\nQ (Claude): Keep both?\n- (x) Yes\n- ( ) No\n',
+  });
+  const { status, out } = run('review-round/scripts/send-watch.mjs', ['50', '--once'], settings(dir));
+  assert.equal(status, 0, out);
+  assert.equal(out, 'send 2026-11-16/gh-262/review.md:1: 0 waiting\n');
 });

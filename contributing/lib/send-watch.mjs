@@ -11,6 +11,12 @@ import { parseArgs } from 'node:util';
 import { files, open } from './asides-open.mjs';
 import { config, literal } from './config.mjs';
 
+/** Whether the day in `dir` is merged: its index's last box, "Then: push, open the PR, merge it.", ticked. */
+export function merged(dir) {
+  const index = path.join(dir, 'review.md');
+  return fs.existsSync(index) && /^\s*[-*+] \[[xX]\] Then: push, open the PR, merge it\./m.test(fs.readFileSync(index, 'utf8'));
+}
+
 export async function main(argv) {
   const { values: opt, positionals } = parseArgs({
     args: argv,
@@ -37,8 +43,8 @@ export async function main(argv) {
           if (!m) return;
           const key = `${f}:${i}`;
           const ticked = m[1] !== ' ';
-          // Already ticked when the watch starts counts too, if anything's waiting: it was
-          // sent while no one watched.
+          // Already ticked when the watch starts counts too, as it was sent while no one
+          // watched (the AI unticks each box as its round ends), unless its day is merged.
           if (ticked && (first || was.get(key) === false)) {
             // Paths with /, as asides-open gives them, on every system.
             const rel = path.relative(ROOT, f).split(path.sep).join('/');
@@ -52,9 +58,9 @@ export async function main(argv) {
               || (legacy ? w.at.startsWith(`${rel}:`) || w.at.startsWith(`${day}/try/`) || w.at.startsWith(`${rel.replace(/\.md$/, '')}/`)
                 : dir === day ? w.at.startsWith(`${rel}:`) : w.at.startsWith(`${dir}/`));
             const waiting = open(ROOT, path.join(ROOT, day)).filter(about);
-            // One left ticked from a round already answered, as an old day's can be, has
-            // nothing waiting: it isn't a send.
-            if (first && !waiting.length) return was.set(key, ticked);
+            // One left ticked in a day already merged isn't a send: what's answered there,
+            // picks and ticks as well as asides, is done with.
+            if (first && merged(path.join(ROOT, day))) return was.set(key, ticked);
             console.log(`send ${rel}:${i + 1}: ${waiting.length} waiting${waiting.map((a) => `\n  ${a.at}: ${a.text.slice(0, 120)}`).join('')}`);
             sent = true;
           }

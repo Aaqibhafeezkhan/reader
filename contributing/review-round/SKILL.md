@@ -11,6 +11,16 @@ A ticked box in `gh-N/review.md` is about everything in `gh-N/`, its try files i
 
 Both of us write these files. A write can land over their typing, which has cost a manual merge (gh-218). So read the file again right before writing, change only what you mean to, and if what you expected isn't there, stop and look, since they've probably just edited it. Take their change as the current state.
 
+## Several at once
+
+The watcher wakes you for every box ticked since it last looked, and they keep reviewing while you work, so a send mustn't wait behind a build.
+
+- **Do it yourself** when `npm test` and lint are enough to know it's right: answers, asides, issues, tries, outcomes, docs, skills and contributing scripts, a test to update, a one-line fix a unit test covers.
+- **Hand it to a fork** (the Agent tool's `fork`, which keeps this conversation) when it's checked with `browse.mjs`, as anything seen or clicked is; when it touches more than one feature; when its cause isn't known yet; or when it builds a whole issue. Reproduce it first yourself, as the answer needs it, and give the fork what you found and the steps. It works in a worktree of its own off the review branch (`.claude/worktrees/`), commits there, checks it in every browser, and reports; it can't ask them anything, so where it's unsure it stops and says so.
+- **Something you started that grows** past that line goes to a fork with what you'd found, rather than your finishing it.
+- **Only you merge,** one fork's work at a time, onto the review branch, with the tests run, and only you write the index. One job runs for an item at a time: a second send on it waits for the first. Safari Technology Preview runs one session at a time, so its checks take turns.
+- Say in the reply what went to a fork, and answer what you can meanwhile; when its work is merged, say so there, and that the page needs reloading.
+
 ## For each `~#` aside or waiting card
 
 Find them with `node scripts/asides-open.mjs <day folder>`.

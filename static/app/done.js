@@ -11,6 +11,17 @@ import { progressBar, progressWords } from '../progress.js';
 const HEADINGS = 'h1, h2, h3, h4, h5, h6';
 
 /**
+ * `body` with each tag's inline style renamed `data-style`. The page's HTML
+ * is read here, in the app, whose policy allows no inline style, and every
+ * browser's parse refuses some, each refusal an error in the console (gh-272);
+ * a page's marks and headings don't need its looks. Only tags are touched, as
+ * the renderer escapes a `<` in the text (markdown-it's `html: false`).
+ */
+export function unstyled(body) {
+  return body.replace(/(<[a-z][^>]*?\s)style="/gi, '$1data-style="');
+}
+
+/**
  * A page's name, from its first heading, and whether it's done: as its
  * opening heading says, if it says whether its section is done; otherwise
  * when everything on it to be done is, and every question is answered, a
@@ -19,7 +30,7 @@ const HEADINGS = 'h1, h2, h3, h4, h5, h6';
  * nothing to do on it, and `done` is null.
  */
 export function mark(body, i) {
-  const doc = new DOMParser().parseFromString(`<body>${body}</body>`, 'text/html');
+  const doc = new DOMParser().parseFromString(`<body>${unstyled(body)}</body>`, 'text/html');
   const heading = doc.querySelector(HEADINGS);
   // As a screen reader hears it, an image by its alt, as the deck names a slide (spoken.js).
   const title = (heading && Spoken.short(Spoken.spoken(heading, Infinity))) || `Page ${i + 1}`;

@@ -27,6 +27,22 @@ test("a page's name is its first heading as it's heard, an image in it by its al
   assert.equal(mark('<p>No heading</p>', 2).title, 'Page 3');
 });
 
+test('a page is read without its inline styles, which the app\'s policy refuses, each an error in the console (gh-272)', () => {
+  const [page] = drawn('# One\n\n@ Thoughts:::\n\n~ a note\n\n[Words]{blue} and `style="kept"` in code');
+  assert.match(page.body, / style="/, 'the page has inline styles');
+  const { DOMParser } = globalThis;
+  const was = DOMParser.prototype.parseFromString;
+  const read = [];
+  DOMParser.prototype.parseFromString = function parse(html, type) { read.push(html); return was.call(this, html, type); };
+  try {
+    assert.equal(mark(page.body, 0).title, 'One');
+  } finally {
+    DOMParser.prototype.parseFromString = was;
+  }
+  assert.doesNotMatch(read[0], /<[^>]*\sstyle="/, 'no tag keeps its style');
+  assert.match(read[0], /style=&quot;kept&quot;|style="kept"/, 'the words are as written');
+});
+
 test('a page is done by what\'s tagged on it: its heading\'s box, or every box ticked and every question answered', () => {
   const marks = drawn(DECK).map((p, i) => mark(p.body, i));
   assert.deepEqual(marks.map((m) => m.done), [true, false, true, true, false, null]);

@@ -27,3 +27,48 @@ ol.badges > li:not(.gm-cont)::before {
 @media print {
   ol.badges { padding-left: max(var(--gm-indent), 2.2em); }
 }
+/* A choice's badge is its radio, as a step's is its box (steps.css): the
+ * radio sits over the badge, unseen, so a press on the badge picks it, and
+ * the badge says whether it's picked, hollow until it is, then filled, as a
+ * radio is (gh-81's review). The sizes are the badge's, at its .8em. */
+ol.badges > li > .choice-box, ol.badges > li > p > .choice-box {
+  position: absolute;
+  right: calc(100% + .4em * .8);
+  top: calc(.12em * .8);
+  width: calc(1.6em * .8);
+  height: calc(1.6em * .8);
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+ol.badges > li:has(> .choice-box, > p > .choice-box):not(.gm-cont)::before {
+  background: var(--gm-paper);
+  color: var(--badge);
+  box-shadow: inset 0 0 0 1.5px var(--badge);
+  cursor: pointer;
+}
+ol.badges > li:has(> .choice-box:checked, > p > .choice-box:checked):not(.gm-cont)::before {
+  background: var(--badge);
+  color: var(--badge-ink);
+}
+ol.badges > li:has(> .choice-box:focus-visible, > p > .choice-box:focus-visible)::before {
+  outline: 2px solid var(--gm-accent);
+  outline-offset: 5px;
+}
+.unworkable ol.badges > li > .choice-box, .unworkable ol.badges > li > p > .choice-box,
+.unworkable ol.badges > li:has(> .choice-box, > p > .choice-box)::before { cursor: default; }
+/* In the system's colours a badge's fill is taken away, so a picked one is
+ * drawn in the system's highlight, and an unpicked one outlined. */
+@media (forced-colors: active) {
+  ol.badges > li:has(> .choice-box, > p > .choice-box):not(.gm-cont)::before {
+    forced-color-adjust: none;
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: inset 0 0 0 1.5px CanvasText;
+  }
+  ol.badges > li:has(> .choice-box:checked, > p > .choice-box:checked):not(.gm-cont)::before {
+    background: Highlight;
+    color: HighlightText;
+    box-shadow: none;
+  }
+}

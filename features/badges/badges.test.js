@@ -76,3 +76,15 @@ test('under a line of text, `b)` with a box stays text, as only `a)` starts a li
   const { body } = render('Pick one:\nb) [ ] stays text\n');
   assert.match(body, /<p>Pick one:\nb\) \[ \] stays text<\/p>/);
 });
+
+test('a choice on a badged item is picked by its badge, its radio over it unseen, and the badge shows the pick (gh-81\'s review)', () => {
+  const { body } = render('1) Which?\n   a) ( ) Apple\n   b) (x) Pear\n2) ( ) One\n');
+  assert.match(body, /<li class="task" data-n="a"[^>]*><input type="radio" class="choice-box"/, 'the radio straight inside the item, where the rule finds it');
+  assert.match(body, /<li class="task" data-n="b"[^>]*><input type="radio" class="choice-box"[^>]* checked>/);
+  const css = readFileSync(new URL('./badges.css', import.meta.url), 'utf8');
+  assert.match(css, /ol\.badges > li > \.choice-box, ol\.badges > li > p > \.choice-box \{[^}]*position: absolute;[^}]*opacity: 0;[^}]*cursor: pointer;/, 'laid over the badge, unseen');
+  assert.match(css, /:has\(> \.choice-box, > p > \.choice-box\):not\(\.gm-cont\)::before \{[^}]*background: var\(--gm-paper\);[^}]*color: var\(--badge\);/, 'hollow until picked');
+  assert.match(css, /:has\(> \.choice-box:checked, > p > \.choice-box:checked\):not\(\.gm-cont\)::before \{[^}]*background: var\(--badge\);/, 'filled once picked');
+  assert.match(css, /:has\(> \.choice-box:focus-visible, > p > \.choice-box:focus-visible\)::before \{[^}]*outline: 2px solid/, 'the keyboard\'s ring on the badge');
+  assert.match(css, /@media \(forced-colors: active\) \{[\s\S]*\.choice-box:checked[\s\S]*background: Highlight;/, 'in the system\'s colours too');
+});

@@ -50,14 +50,15 @@ Pages to make your own: each one to download into reader, and copy.
 - [Asides](asides.md): your own voice in the margin, who it's from and what
   it's about, and the words it means
 - [Styling text](text.md): colors and fonts, arrows, math, notes to play, emoji
-- [Links](links.md): scripture, RFCs, searches, profiles, other files
+- [Links](links.md): scripture, RFCs, searches, profiles, other files,
+  headings, a list's items, reader's own files
 - [Notes on a talk](notes.md): questions and answers, retro cards,
   definitions, quotes
 - [Forms and checklists](forms.md): tasks, fields to fill in, blanks, dates, timers
 - [Layout](layout.md): `:::` blocks, columns, rows, grids, tabs, compare, callouts,
   number badges
 - [Code](code.md): highlighting, picked lines, callouts, output
-- [Diagrams and figures](figures.md): Mermaid, headlines, numbers, images
+- [Diagrams and figures](figures.md): Mermaid, headlines, numbers, images, music
 - [Puzzles](puzzles.md): sudoku, train tracks, word search, coordinate
   graphs, mazes
 - [Recipes](recipes.md): amounts that scale, staged boxes, steps,

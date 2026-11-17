@@ -3,7 +3,8 @@
 // for the AI in that box's day folder (asides-open.mjs). The AI answers them all,
 // then unticks the box to say the round is done.
 //   send-watch.mjs [poll ms] [--once] [--root <meetings dir>]
-// With --once it stops at the first event, so a background command can wake the AI.
+// With --once it stops after the first pass that finds any, saying every box ticked in
+// it, so a background command can wake the AI for all of them at once.
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
@@ -28,6 +29,7 @@ export async function main(argv) {
   }
 
   for (;;) {
+    let sent = false;
     try {
       for (const f of files(ROOT)) {
         fs.readFileSync(f, 'utf8').split('\n').forEach((l, i) => {
@@ -54,7 +56,7 @@ export async function main(argv) {
             // nothing waiting: it isn't a send.
             if (first && !waiting.length) return was.set(key, ticked);
             console.log(`send ${rel}:${i + 1}: ${waiting.length} waiting${waiting.map((a) => `\n  ${a.at}: ${a.text.slice(0, 120)}`).join('')}`);
-            if (opt.once) process.exit(0);
+            sent = true;
           }
           was.set(key, ticked);
         });
@@ -63,6 +65,7 @@ export async function main(argv) {
     } catch (e) {
       console.log(`watcher error: ${e.message}`);
     }
+    if (sent && opt.once) process.exit(0);
     await new Promise((r) => setTimeout(r, POLL));
   }
 }

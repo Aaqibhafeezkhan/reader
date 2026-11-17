@@ -230,3 +230,14 @@ test('a line straight after the AI\'s reply, not indented past its ~, is listed 
     ['review.md:13', 'run on too.'],
   ]);
 });
+
+test('send-watch says every box ticked in the pass that wakes it, not only the first', (t) => {
+  const dir = scratch(t);
+  tree(path.join(dir, 'meetings'), {
+    '2026-11-22/review.md': '- [ ] Send to Claude\n',
+    '2026-11-22/gh-7/review.md': '- [x] Send to Claude\n\nItem line.\n~# about seven\n',
+    '2026-11-22/gh-8/review.md': '- [x] Send to Claude\n\nItem line.\n~# about eight\n',
+  });
+  const { out } = run('review-round/scripts/send-watch.mjs', ['50', '--once'], settings(dir));
+  assert.match(out, /^send 2026-11-22\/gh-7\/review.md:1: 1 waiting\n.*\nsend 2026-11-22\/gh-8\/review.md:1: 1 waiting\n/);
+});

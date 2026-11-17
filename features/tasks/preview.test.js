@@ -364,3 +364,34 @@ test('Start over clears a section\'s own [x] too', async () => {
   assert.deepEqual(await edits(), [[[7, '- [x] Read', '- [ ] Read'], [5, '## [x] Ways', '## [ ] Ways']]]);
   assert.equal(ways.getAttribute('aria-pressed'), 'false');
 });
+
+const PACK = '- [ ] Pack\n  - [x] Passport\n  - [ ] Charger\n  - ( ) Backpack\n  - ( ) Suitcase\n- [ ] Go\n';
+
+test('the tick or pick that does the last part under an item writes its box done too, as one undo, and undoing one takes it back (gh-301)', async () => {
+  const { $$, click, edits } = await page(PACK);
+  const [pack, , charger] = $$('.task-box');
+  click(charger);
+  assert.deepEqual(await edits(), [[[2, '  - [ ] Charger', '  - [x] Charger']]], 'a bag still to pick');
+  click($$('.choice-box')[0]);
+  assert.deepEqual(await edits(), [[[3, '  - ( ) Backpack', '  - (x) Backpack'], [0, '- [ ] Pack', '- [x] Pack']]], 'one edit, so one undo');
+  assert.equal(pack.checked, true);
+  click(charger);
+  assert.deepEqual(await edits(), [[[2, '  - [x] Charger', '  - [ ] Charger'], [0, '- [x] Pack', '- [ ] Pack']]]);
+  assert.equal(pack.checked, false);
+});
+
+test('an item\'s box carries up through the items it\'s in, and one ticked by hand first stays ticked as its last part is done', async () => {
+  const nested = '- [ ] Trip\n  - [ ] Pack\n    - [ ] Passport\n  - [x] Book\n';
+  const { $$, click, edits } = await page(nested);
+  click($$('.task-box')[2]);
+  assert.deepEqual(await edits(), [[[2, '    - [ ] Passport', '    - [x] Passport'], [1, '  - [ ] Pack', '  - [x] Pack'], [0, '- [ ] Trip', '- [x] Trip']]]);
+  const hand = await page('- [x] Pack\n  - [ ] Passport\n');
+  hand.click(hand.$$('.task-box')[1]);
+  assert.deepEqual(await hand.edits(), [[[1, '  - [ ] Passport', '  - [x] Passport']]], 'already ticked, not written again');
+});
+
+test('a page drawn with an item\'s parts all done but its box not is left as the file says, until something under it changes', async () => {
+  const { $$, click, edits } = await page('- [ ] Pack\n  - [x] Passport\n- [ ] Other\n');
+  click($$('.task-box')[2]);
+  assert.deepEqual(await edits(), [[[2, '- [ ] Other', '- [x] Other']]]);
+});

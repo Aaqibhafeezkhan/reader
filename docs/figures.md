@@ -37,6 +37,7 @@ flowchart LR
 
 A `music` fence is a tune in [ABC notation](https://abcnotation.com/), the plain-text way tunes are written down, drawn on a staff by [abcjs](https://abcjs.net/), with **Play** in its lower right.
 Its header says its title (`T:`), time (`M:`), note length (`L:`) and key (`K:`), and the notes come after, a bar line `|` between bars.
+That's the basics; everything else ABC can say, and how it's drawn and played, is abcjs's, so see [abcjs](https://abcjs.net/) for what it can do, and tell [abcjs](https://github.com/paulrosen/abcjs/issues) about a tune it draws or plays wrong.
 In a file opened anywhere else, the fence is still its text.
 
 ::: tabs

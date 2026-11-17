@@ -9,8 +9,10 @@
 /* As wide as the text is, abcjs scaling it to fit (its `responsive`). */
 .music-staff svg path, .music-staff svg text { fill: currentColor; }
 .music-staff .abcjs-staff, .music-staff .abcjs-bar, .music-staff .abcjs-ledger { stroke: currentColor; }
-/* The note being played, as it goes. */
-.music-staff .music-now, .music-staff .music-now path { fill: var(--gm-accent); }
+/* The note being played, as it goes: in the accent, and a little bolder,
+ * with a thin line of the accent round its own shape, so it isn't told by
+ * its colour alone. */
+.music-staff .music-now, .music-staff .music-now path { fill: var(--gm-accent); stroke: var(--gm-accent); stroke-width: 1.4px; paint-order: stroke; }
 .music.warned .music-staff { opacity: 0.6; }
 /* Under the staff, in its lower right, as code's Copy is: what's said, Back
  * to the start once it's begun, and Play or Pause. Always seen, as Play is

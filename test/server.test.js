@@ -663,6 +663,6 @@ test('in dev mode, $reader/ is reader\'s own folder: its files are read, never w
   // Without dev mode, it's nowhere, as it says where reader is.
   const off = await fetch(`${base}/api/file?path=${encodeURIComponent('$reader/docs/links.md')}`);
   assert.equal(off.status, 404);
-  assert.match((await off.json()).error, /dev mode only \(--dev\)/);
+  assert.match((await off.json()).error, /under npm run dev only/);
   assert.equal((await fetch(`${base}/content/$reader/package.json`)).status, 404);
 });

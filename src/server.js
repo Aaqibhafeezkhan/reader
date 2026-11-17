@@ -2,7 +2,7 @@
  * HTTP API and static files.
  *
  *   GET  /api/info             content root and name, reader's version: { label, url, release }, and when its day starts, in minutes after midnight (`--day-starts`); `dev: true` with --dev
- *   GET  /api/dev              with --dev only (`npm run dev`), { boot, app }: this start of the server, and the app's own files' fingerprint (src/dev.js)
+ *   GET  /api/dev              under `npm run dev` only, { boot, app }: this start of the server, and the app's own files' fingerprint (src/dev.js)
  *   GET  /api/tree             listable files, newest first, each with its date; today's date; and the folders today's file could be started in
  *   GET  /api/start-day?dir=   { from, to, mtime, css, body }: the folder's latest file, drawn whole and open, to clear its answers
  *   POST /api/start-day        { dir, from, mtime, edits } -> { path, from, mtime }: today's file, made from it with `edits` made
@@ -243,7 +243,7 @@ const CONTENT_SANDBOX = { 'Content-Security-Policy': 'sandbox' };
  * the preview frames' second port, listens once it does (`listenFrames`), and
  * closes with it.
  */
-export function createServer({ root, allowHosts = [], now = Date.now, dayStarts = 0, soundfont = {}, dev = false }) {
+export function createServer({ root, allowHosts = [], now = Date.now, dayStarts = 0, soundfont = {}, dev = false, restarts = false }) {
   const content = createContent(root);
   // reader's own folder, for `$reader/…` in dev mode only, as it says where
   // reader is installed; read, never written.
@@ -251,15 +251,17 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
   /** The content `rel` is in, and its path there: `$reader/…` is reader's own. */
   function where(rel) {
     if (typeof rel !== 'string' || !rel.startsWith(SOURCE)) return [content, rel];
-    if (!source) throw Object.assign(new Error(`${SOURCE}… is reader's own folder, in dev mode only (--dev): ${rel}`), { status: 404 });
+    if (!source) throw Object.assign(new Error(`${SOURCE}… is reader's own folder, under npm run dev only: ${rel}`), { status: 404 });
     return [source, rel.slice(SOURCE.length)];
   }
   const readAny = (rel) => {
     const [from, at] = where(rel);
     return { ...from.read(at), path: rel };
   };
-  // Working on reader: how a page tells it was started again (src/dev.js).
-  const started = dev ? devInfo(STATIC_DIR) : null;
+  // Working on reader under `npm run dev`, which starts it again as its code
+  // changes: how a page tells it was (src/dev.js). Not with `--dev` alone, as
+  // nothing would start it again.
+  const started = dev && restarts ? devInfo(STATIC_DIR) : null;
   // Which reader this is, worked out now, while nothing's waiting on it.
   const known = version();
   const hosts = new Set([...LOOPBACK, ...allowHosts.map((h) => h.toLowerCase())]);

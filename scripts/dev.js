@@ -45,6 +45,8 @@ function main(args) {
   const start = () => {
     child = spawn(process.execPath, [path.join(ROOT, 'bin', 'reader.js'), ...argsFor(args, first)], {
       stdio: 'inherit',
+      // What tells reader the page should watch for its next start (bin/reader.js).
+      env: { ...process.env, READER_RESTARTS: '1' },
     });
     first = false;
     child.on('exit', (code, signal) => {

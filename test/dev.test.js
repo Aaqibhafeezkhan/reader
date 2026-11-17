@@ -52,8 +52,8 @@ test('the app\'s fingerprint changes when one of its files does, and not when on
   assert.notEqual(appFingerprint(dir), after, 'what index.html loads');
 });
 
-test('with --dev, as npm run dev runs it, the server says which start of it this is, and info says it\'s dev', async (t) => {
-  const base = await listening(t, { dev: true });
+test('under npm run dev, the server says which start of it this is, and info says it\'s dev', async (t) => {
+  const base = await listening(t, { dev: true, restarts: true });
   const info = await (await fetch(`${base}/api/info`)).json();
   assert.equal(info.dev, true);
   const res = await fetch(`${base}/api/dev`);
@@ -62,9 +62,15 @@ test('with --dev, as npm run dev runs it, the server says which start of it this
   assert.match(one.boot, /^[0-9a-f-]{36}$/);
   assert.equal(one.app, appFingerprint(STATIC_DIR));
   assert.deepEqual(await (await fetch(`${base}/api/dev`)).json(), one, 'the same until it\'s started again');
-  const other = await (await fetch(`${await listening(t, { dev: true })}/api/dev`)).json();
+  const other = await (await fetch(`${await listening(t, { dev: true, restarts: true })}/api/dev`)).json();
   assert.notEqual(other.boot, one.boot, 'each start its own');
   assert.equal(other.app, one.app, 'with the same code');
+});
+
+test('with --dev alone, as the browser checks run it, nothing starts it again, so the page isn\'t told to watch', async (t) => {
+  const base = await listening(t, { dev: true });
+  assert.equal((await (await fetch(`${base}/api/info`)).json()).dev, undefined);
+  assert.notEqual((await fetch(`${base}/api/dev`)).status, 200);
 });
 
 test('without --dev, the server has no dev mode', async (t) => {

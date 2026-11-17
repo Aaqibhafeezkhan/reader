@@ -204,7 +204,7 @@ another file. Images and links in a note resolve relative to that note, so
 
 ### reader's own files
 
-Started with `--dev`, for working on reader itself, reader reads its own folder too: a link to `$reader/` and a path opens that file there, wherever the note is, a markdown file in reader and anything else as its text.
+Run with `npm run dev`, for working on reader itself, reader reads its own folder too: a link to `$reader/` and a path opens that file there, wherever the note is, a markdown file in reader and anything else as its text.
 A review kept outside reader's folder can point at a test or a sample on the branch being reviewed:
 
 ```markdown
@@ -213,7 +213,7 @@ See [the journal sample]($reader/samples/daily-journal/2026-11-02.md), and [its 
 
 reader's own files are read there, never written: one opened in reader can't be edited, and a box ticked on its page is put back.
 Hidden files and folders, such as `.git`, aren't there, as in your own folder.
-Without `--dev` the link goes nowhere, as `$reader` would say where reader is installed.
+Run as `reader`, the link goes nowhere, as `$reader` would say where reader is installed.
 
 ## Headings
 

@@ -46,7 +46,7 @@ tab. `--port` asks for one port exactly.
 
 ```console
 $ reader [dir] [--port 8734] [--frame-port 8735] [--no-browser] [--open <file>] [--day-starts 04:00]
-         [--host <address>] [--allow-host <name>]... [--tailscale] [--dev]
+         [--host <address>] [--allow-host <name>]... [--tailscale]
 $ reader export <file>... [--out <file>] [--no-draw]
 $ reader --version
 ```
@@ -56,8 +56,7 @@ only on `127.0.0.1` and rejects requests addressed to any other host name;
 `--host` and `--allow-host` open it to other devices (below). It rejects
 any path that would leave `dir`, including through symlinks.
 
-`--dev` is for working on reader itself: a link to `$reader/<path>` opens that file in reader's own folder, read-only ([Links](links.md#readers-own-files)), and the page shows the change when reader is started again with changed code, as `npm run dev` does (`CONTRIBUTING.md`).
-It's off by default, as it says where reader is.
+For working on reader itself there's `npm run dev`, in reader's own folder ([CONTRIBUTING.md](https://github.com/jzheaux/reader/blob/main/CONTRIBUTING.md)): it starts reader again as its code changes, and opens `$reader/` links in reader's own folder ([Links](links.md#readers-own-files)).
 
 The page's preview is served apart from the app, so that what a document
 draws can't reach your files: at `frames.localhost` on the app's port, where

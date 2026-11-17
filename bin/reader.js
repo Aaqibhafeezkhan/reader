@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- *   reader <dir> [--port 8734] [--frame-port 8735] [--no-browser] [--open <file>] [--day-starts 04:00] [--host <address> --allow-host <name>] [--tailscale] [--dev]
+ *   reader <dir> [--port 8734] [--frame-port 8735] [--no-browser] [--open <file>] [--day-starts 04:00] [--host <address> --allow-host <name>] [--tailscale]
  *   reader export <file>... [--out <file>] [--no-draw]
  *   reader --version
  *
@@ -19,7 +19,7 @@ import { addressOf } from '../static/app/address.js';
 
 const USAGE = `usage: reader <dir> [--port 8734] [--frame-port 8735] [--no-browser]
                      [--open <file>] [--day-starts <time>]
-                     [--host <addr> --allow-host <name>] [--tailscale] [--dev]
+                     [--host <addr> --allow-host <name>] [--tailscale]
        reader export <file>... [--out <file>] [--no-draw]
        reader --version
 
@@ -44,11 +44,6 @@ const USAGE = `usage: reader <dir> [--port 8734] [--frame-port 8735] [--no-brows
                  tailscale serve, at its tailnet name; taken off again when
                  reader stops. There is no sign-in: anyone on the tailnet
                  can read and write <dir>
-  --dev          developer mode: a link to $reader/<path> opens that file in
-                 reader's own folder, read-only, such as a review's link to
-                 a test on its branch; and the page shows the change when
-                 reader is started again with changed code (npm run dev);
-                 off by default, as it says where reader is
   --version      print reader's version: v0.0.2, or v0.0.2+abc1234 from a
                  checkout that isn't at that release
 `;
@@ -163,9 +158,14 @@ if (opts.tailscale) {
   allowHosts.push(...tailnet.names);
 }
 
-// --dev: `$reader/…` links open reader's own files (gh-263), and the page
-// notices when `npm run dev` (scripts/dev.js) starts it again (gh-208).
-const made = createServer({ root: dir, allowHosts, dayStarts: opts.dayStarts, dev: Boolean(opts.dev) });
+// --dev, which only `npm run dev` (scripts/dev.js) and the contributing
+// browser checks pass, so it isn't in the usage: `$reader/…` links open
+// reader's own files (gh-263); and, from `npm run dev` alone, which says so in
+// READER_RESTARTS, the page notices when it's started again (gh-208).
+const made = createServer({
+  root: dir, allowHosts, dayStarts: opts.dayStarts,
+  dev: Boolean(opts.dev), restarts: Boolean(opts.dev) && process.env.READER_RESTARTS === '1',
+});
 const { server, content } = made;
 
 // Without --port, count up from 8734 so each directory gets its own instance

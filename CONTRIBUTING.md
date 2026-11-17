@@ -33,9 +33,11 @@ drawn again, or, if the app's own files changed, the whole page is loaded
 again, on the same file, scrolled where it was, with any edit saved first.
 Only reader's code is watched, never the folder it's serving, and it opens no
 new browser tab when it starts again. A start that fails, from a mistake
-mid-edit, waits for the next change. It runs reader with `--dev`, which is
-what lets the page notice, and opens `$reader/` links in reader's own folder
-([Links](docs/links.md)); plain `reader` does neither.
+mid-edit, waits for the next change. It also opens `$reader/` links in
+reader's own folder ([Links](docs/links.md)); plain `reader` does neither.
+Underneath, it runs reader with `--dev`, kept out of `--help` as only it and
+the contributing browser checks pass it, and says in `READER_RESTARTS` that
+it will start reader again, which is what lets the page watch for it.
 
 ## Layout of the code
 

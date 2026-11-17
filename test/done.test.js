@@ -43,6 +43,33 @@ test('a page is read without its inline styles, which the app\'s policy refuses,
   assert.match(read[0], /style=&quot;kept&quot;|style="kept"/, 'the words are as written');
 });
 
+test('a slide is read without its inline styles too, and handed to the stage with them back (gh-272)', async () => {
+  const { steps } = await import('../static/app/deck.js');
+  const { readPage, writePage, unstyled } = await import('../static/app/html.js');
+  const [page] = drawn('# One\n\n@ Thoughts:::\n\n[Words]{blue} and `style="kept"` in code\n\n- one\n- two');
+  const { DOMParser } = globalThis;
+  const was = DOMParser.prototype.parseFromString;
+  const read = [];
+  DOMParser.prototype.parseFromString = function parse(html, type) { read.push(html); return was.call(this, html, type); };
+  let out;
+  try {
+    out = steps(page.body);
+  } finally {
+    DOMParser.prototype.parseFromString = was;
+  }
+  assert.ok(read.length, 'it was read');
+  for (const html of read) assert.doesNotMatch(html, /<[^>]*\sstyle="/, 'no tag keeps its style as it\'s read');
+  const styles = (html) => [...html.matchAll(/<[^>]*\sstyle="([^"]*)"/g)].map((m) => m[1]);
+  assert.deepEqual(styles(out.body), styles(page.body), 'the stage gets each style back');
+  assert.ok(styles(page.body).length >= 2, 'a field and braces have styles');
+  assert.doesNotMatch(out.body, /data-style/);
+  assert.match(out.body, /style=&quot;kept&quot;|style="kept"/, 'words that say style are as written');
+  assert.ok(out.steps > 0, 'and its steps still counted');
+  // A tag whose attribute has a `>` in its value, as innerHTML writes it, keeps its style.
+  assert.equal(writePage(readPage('<p title="a > b" style="color: red">x</p>')), '<p title="a > b" style="color: red">x</p>');
+  assert.equal(unstyled('<p title="a > b" style="c">x</p>'), '<p title="a > b" data-style="c">x</p>');
+});
+
 test('a page is done by what\'s tagged on it: its heading\'s box, or every box ticked and every question answered', () => {
   const marks = drawn(DECK).map((p, i) => mark(p.body, i));
   assert.deepEqual(marks.map((m) => m.done), [true, false, true, true, false, null]);

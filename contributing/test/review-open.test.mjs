@@ -45,7 +45,7 @@ test('it lays out the index, a folder for each item to look at, and the retro wi
 test('the index uses the config\'s names and repo, lists the items in the order given, and renders as boxes and headings', (t) => {
   const { day } = laidOut(t);
   const index = read(day, 'review.md');
-  assert.match(index, /^reviewer #: Grace\nreviewer c: Codex\ntags: 0\.0\.5$/m);
+  assert.match(index, /^reviewer #: Grace\nreviewer c: Codex\ntopic o: Outcome\ntags: 0\.0\.5$/m);
   assert.match(index, /^Branch `review\/2026\.11\.22` \(worktree `\.claude\/worktrees\/review-2026\.11\.22`\)/m);
   assert.ok(index.indexOf('### gh-22 Tabs move on') < index.indexOf('### gh-21 Pages fold'));
   assert.match(index, /^- \[ \] gh:acme\/reader#23\[gh-23\] Typo in the docs\./m);
@@ -78,7 +78,7 @@ test('what it lays out waits on the contributor, not the AI, until it is filled 
   const { day } = laidOut(t);
   assert.deepEqual(open(day, day, { ai: 'Codex' }), []);
   const waiting = boxes(day, day, { ai: 'Codex' }).map((b) => b.at);
-  assert.ok(waiting.includes('gh-21/review.md:20'), 'its Try');
+  assert.ok(waiting.includes('gh-21/review.md:21'), 'its Try');
   assert.ok(waiting.some((at) => at.startsWith('gh-22/')), 'the other item');
   assert.ok(waiting.some((at) => at.startsWith('review.md:')), 'the index');
 });

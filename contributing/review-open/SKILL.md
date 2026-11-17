@@ -51,8 +51,9 @@ Its shape is the one `review-open.mjs` writes: it reads in the order the contrib
   - **Settled decisions,** in place of a Decisions section: what was decided, why, and what was turned down (`Turned down: …`). Tick them yourself.
 - **A criterion's box means they accept it,** which is apart from picking its choice: picking answers the question, and ticking says the criterion is met. Don't tick one they haven't, unless it's a settled decision or a dropped one.
 - **A dropped criterion** is struck, `~~…~~`, with "No longer applies:" and why after it, and ticked. A question that changes is rewritten in place, and the asides keep the history; one replaced by another is struck, its options lose their `( )`, then `A (<ai>): Replaced by "<name>".`, pointing by a name they can search for.
-- Add `Outcome:` under a criterion once settled: `Outcome: gh-N filed`, `Outcome: <hash>`, or `Outcome: no change, because …`.
-- **`## Closing`**: compare the issue with what shipped and give your reasoning, then `Q (<ai>): Does gh-N still describe what shipped?` with its four choices: the issue stands; it stands, with a closing comment on what went beyond it; a PR replaces it; or something else.
+- Once a criterion is settled, say its outcome in the margin, as an aside of yours with the `Outcome` topic (`topic o: Outcome`, which `review-open.mjs` declares), straight under what it settles and never among a question's choices: `~co gh-N filed.`, `~co Fixed in <hash>.`, or `~co No change, because …`. It shows your name and an Outcome pill, and the masthead counts them.
+- An answer with its choices under it, `A (<name>): ->` and the `- ( )` lines indented beneath, is fine wherever it draws; inside a criterion, a list item, a question doesn't draw as one until gh-302, so there it's still `Q (<ai>):` and its choices.
+- **`## Closing`**: compare the issue with what shipped and give your reasoning, then `Q (<ai>): Does gh-N still describe what shipped?` with its four choices: the issue stands; it stands, with this closing comment, the comment drafted as a quote under that choice, so picking it agrees to those words; a PR replaces it; or something else.
 - Something only to make them aware gets a plain box, never the three stages: every line under **Done, nothing to look at**, and anything like it in an item.
 
 ## 5. Before handing over

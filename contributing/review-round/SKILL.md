@@ -19,6 +19,7 @@ That only finds asides and retro cards, so always read the whole sent file too: 
 
 1. **Check before answering.** Does it already work? Say so before filing or building anything. Read the code rather than remembering it, and try it if you can: a claim you checked is worth far more than one you recall.
 2. Answer with `~~c` directly under it, a reply in their thread, or `A (<ai>):` on a retro card. Never `~c`, which is an aside of its own: closing their thread leaves it open, and `asides-open` lists it to be made `~~c`. One sentence per line.
+   Each line after the first is indented past the `~`, two spaces, as `docs/asides.md` asks; one that isn't reads as the page's text, not the reply (until gh-305 reads the same alias again as the same aside).
 3. **Rewrite the bullet in the same edit,** if the answer changes where things stand. The bullet always says the current state, and the aside stays as the history.
 4. If the idea sounds off to you, say so, gently, with why and one or two alternatives, then build what they choose. Show alternatives only if they ask, or if you're very confident a picture shows something they're missing. People often learn by playing with what they asked for, so this is pushback, not refusal.
 5. Give a proposal its own buttons, as `review-open` sets out: `- Q (<ai>): …?`, with `- ( ) Yes` and `- ( ) [@ Something else]` indented under it, so that they can answer each one, or say what instead.
@@ -37,6 +38,7 @@ That only finds asides and retro cards, so always read the whole sent file too: 
 
 ## Finish the round
 
+- Run `asides-open` again, and indent any line of yours it lists under "To check" that's a reply run on; one that's the page carrying on below an aside stays.
 - Untick their **Send to <ai>**, so that they know it's done.
 - Start the watcher again, in the background: `node scripts/send-watch.mjs 2000 --once`. It watches every day folder. Don't tell them each time.
 - In chat: only what they need, and what's next.

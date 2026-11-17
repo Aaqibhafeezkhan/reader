@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { boxes, open } from '../lib/asides-open.mjs';
+import { boxes, open, runOn } from '../lib/asides-open.mjs';
 import { run, scratch, settings, tree } from './setup.mjs';
 
 const CLAUDE = { ai: 'Claude' };
@@ -200,4 +200,33 @@ test('send-watch says so when there are no day folders', (t) => {
   const { status, out } = run('review-round/scripts/send-watch.mjs', ['50', '--once'], settings(dir));
   assert.equal(status, 2);
   assert.match(out, /no day folders at/);
+});
+
+test('a line straight after the AI\'s reply, not indented past its ~, is listed to check, as it reads as the page\'s text', (t) => {
+  const day = tree(scratch(t), {
+    'review.md': [
+      'One line.',
+      '~# a question',
+      '~~c An answer,',
+      '  carried on as it should be,',
+      'and one that isn\'t.',
+      '',
+      '- [ ] An item',
+      '  ~# asked',
+      '  ~~c answered',
+      '- [ ] The next item, not a line run on',
+      '',
+      '~c An aside of the AI\'s own',
+      'run on too.',
+      '',
+      '```md',
+      '~~c a sample',
+      'in a fence',
+      '```',
+    ].join('\n'),
+  });
+  assert.deepEqual(runOn(day).map((a) => [a.at, a.text]), [
+    ['review.md:5', 'and one that isn\'t.'],
+    ['review.md:13', 'run on too.'],
+  ]);
 });

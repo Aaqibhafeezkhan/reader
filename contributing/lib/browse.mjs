@@ -247,8 +247,10 @@ async function playwright(url) {
   const page = await context.newPage();
   await within(15000, 'opening reader', page.goto(url));
   await within(15000, 'reader drawing', page.waitForSelector('#preview'));
-  const frame = async () => (await page.waitForSelector('#preview')).contentFrame();
-  const where = async (s) => (s.frame ? frame() : page);
+  // `"frame": true` is the page's frame, `#preview`; a name is another, `"frame": "stage"` for Present's.
+  const frameId = (s) => (typeof s?.frame === 'string' ? `#${s.frame}` : '#preview');
+  const frame = async (s) => (await page.waitForSelector(frameId(s))).contentFrame();
+  const where = async (s) => (s.frame ? frame(s) : page);
   const box = async (s, sel, fx = 0.5, fy = 0.5) => {
     const el = await (await where(s)).waitForSelector(sel, { timeout: STEP_MS });
     // A press lands where the element is on the screen, so it's brought there first, as a person would scroll to it.
@@ -287,8 +289,8 @@ async function playwright(url) {
       await touch('touchEnd', to);
       return 'real touch, through CDP';
     }
-    const f = await frame();
-    const off = s.frame ? await (await page.$('#preview')).boundingBox() : { x: 0, y: 0 };
+    const f = await frame(s);
+    const off = s.frame ? await (await page.$(frameId(s))).boundingBox() : { x: 0, y: 0 };
     const inside = s.frame ? f : page;
     // The browser never saw this pointer, so capturing it would throw: for the
     // drag, capture is stood in for, for this pointer alone. Each event goes in

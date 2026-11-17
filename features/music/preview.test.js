@@ -15,7 +15,7 @@ function frame({ offline = false } = {}) {
   const said = [];
   let callback = null;
   const tempo = {};
-  p.window.AudioContext = class { constructor() { said.push('audio context'); } };
+  p.window.AudioContext = class { constructor() { said.push('audio context'); } async close() { said.push('audio closed'); } };
   p.window.ABCJS = {
     renderAbc: (el, text, options) => {
       said.push(['draw', text, options]);
@@ -99,8 +99,9 @@ test('Play plays it from reader\'s own notes, marking each as it sounds, and tur
   play.click();
   assert.deepEqual(p.said.slice(-2), ['resume', ['timer start', undefined]]);
   assert.equal(play.title, 'Pause');
-  // Played to its end, it's as it was before it was played.
+  // Played to its end, it's as it was before it was played, its audio closed.
   p.beat(null);
+  assert.ok(p.said.includes('audio closed'));
   assert.equal(play.title, 'Play');
   assert.ok(start.hidden);
   assert.equal(p.document.querySelectorAll('.music-now').length, 0);

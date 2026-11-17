@@ -85,10 +85,13 @@
   /** Stops what's playing, or paused, and puts it back as it was before it was played. */
   function stop() {
     if (!playing) return;
-    const { synth, timer } = playing;
+    const { synth, timer, audioContext } = playing;
     playing = null;
     try { timer?.stop(); } catch { /* already stopped */ }
     try { synth?.stop(); } catch { /* already stopped */ }
+    // Each Play makes its own, so each is closed with it, rather than left
+    // open, one more for each tune played, which browsers limit.
+    audioContext?.close?.().catch(() => {});
     unmark();
     show();
   }
@@ -111,7 +114,7 @@
     // gives them: left to itself, with no Q:, the piano took a 6/8 tune's
     // beat as a quarter, not a dotted quarter, and ran a third faster.
     const measure = tune.millisecondsPerMeasure();
-    const mine = { source, synth, timer: null, paused: false, atStart: false };
+    const mine = { source, synth, audioContext, timer: null, paused: false, atStart: false };
     playing = mine;
     show();
     say(host, 'Getting its notes…');

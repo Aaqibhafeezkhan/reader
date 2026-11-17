@@ -150,7 +150,10 @@
     const col = Number(el.dataset.col);
     const text = el.dataset.text;
     const from = col + SCHEME.length;
-    close();
+    // The keyboard goes back to the date, as Esc's does: the calendar's day
+    // it was on is hidden with it. The page drawn again with the day finds
+    // the date again by its line (static/preview.js).
+    close({ refocus: true });
     if (picked === was || text.slice(col, from) !== SCHEME) return;
     const now = text.slice(0, from) + picked + text.slice(from + was.length);
     // Until the next render, the page is what the file says: this date's

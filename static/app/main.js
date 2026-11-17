@@ -25,6 +25,7 @@ import { wireGoTo, openGoTo, isGoTo, goToHeading } from './goto.js';
 import { wireTheme } from './theme.js';
 import { makeCopy, setUpCopy } from './copying.js';
 import { fileKey } from './file-keys.js';
+import { wireDev, restorePlace } from './dev.js';
 
 state.previewReady = whenReady(el.preview);
 deck.stageReady = whenReady(el.stage);
@@ -56,6 +57,9 @@ async function init() {
     if (first.path === wanted && heading) goToHeading(heading);
     else if (first.path === wanted && line) goToLines(line, last);
   } else showEmpty('No markdown files here yet. Press New to start one.');
+  // Under `npm run dev`, back where it was before reader was started again.
+  if (info.dev) await restorePlace();
+  wireDev(info);
   // Back or Forward, or a heading's hash typed in (address.js).
   window.addEventListener('popstate', followAddress);
 }

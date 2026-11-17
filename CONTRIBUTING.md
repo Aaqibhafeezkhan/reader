@@ -20,6 +20,23 @@ $ cd docs && node ../bin/reader.js export *.md
 A change to what reader-markdown does goes in its page there, with a sample
 in a `::: tabs` block, its `+++ Source` and `+++ Rendered` tabs.
 
+To run reader while you change it, `npm run dev`, with reader's own
+arguments after `--`:
+
+```console
+$ npm run dev -- ~/Documents/notes --port 8734
+```
+
+It starts reader again whenever its code changes, in `src/`, `features/`,
+`static/` or `bin/`, and the page shows the change by itself: the preview is
+drawn again, or, if the app's own files changed, the whole page is loaded
+again, on the same file, scrolled where it was, with any edit saved first.
+Only reader's code is watched, never the folder it's serving, and it opens no
+new browser tab when it starts again. A start that fails, from a mistake
+mid-edit, waits for the next change. It runs reader with `--dev`, which is
+what lets the page notice, and opens `$reader/` links in reader's own folder
+([Links](docs/links.md)); plain `reader` does neither.
+
 ## Layout of the code
 
 | | |
@@ -28,6 +45,7 @@ in a `::: tabs` block, its `+++ Source` and `+++ Rendered` tabs.
 | `src/version.js` | which reader this is, from `package.json` (and the commit, in a checkout past its release): for `--version` and the foot of the file list |
 | `src/export-cli.js`, `src/browser.js` | `reader export`, and the headless browser it draws with |
 | `src/export.js` | a document as one HTML file, to keep, send or print: its stylesheet and images inside it, a deck as its pages |
+| `scripts/dev.js`, `src/dev.js`, `static/app/dev.js` | `npm run dev`: reader started again as its code changes; which start of the server this is, and the app's own files' fingerprint (`/api/dev`); and the page noticing, and drawing the preview again or loading the whole page |
 | `scripts/shots.js` | `npm run shots`: screenshots of a page for a review, across browsers, sizes and themes |
 | `scripts/shots-report.js` | the `report.html` written beside a run's screenshots: every picture on one page, narrowed by pills, read from their names |
 | `action.yml` | the GitHub Action |

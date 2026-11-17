@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "node bin/reader.js",
+    "dev": "node scripts/dev.js",
     "test": "node --test",
     "lint": "eslint .",
     "shots": "node scripts/shots.js"

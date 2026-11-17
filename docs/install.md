@@ -56,7 +56,7 @@ only on `127.0.0.1` and rejects requests addressed to any other host name;
 `--host` and `--allow-host` open it to other devices (below). It rejects
 any path that would leave `dir`, including through symlinks.
 
-`--dev` is for working on reader itself: a link to `$reader/<path>` opens that file in reader's own folder, read-only ([Links](links.md#readers-own-files)).
+`--dev` is for working on reader itself: a link to `$reader/<path>` opens that file in reader's own folder, read-only ([Links](links.md#readers-own-files)), and the page shows the change when reader is started again with changed code, as `npm run dev` does (`CONTRIBUTING.md`).
 It's off by default, as it says where reader is.
 
 The page's preview is served apart from the app, so that what a document

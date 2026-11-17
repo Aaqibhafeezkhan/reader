@@ -574,6 +574,11 @@
     window.dispatchEvent(new CustomEvent('preview:open-to', { detail: { target: t } }));
     marks = null;
     t.scrollIntoView({ behavior: 'smooth' });
+    // The keyboard goes there too, so the next Tab goes on from where the
+    // page went, not from the link (gh-81's review): a place that can't
+    // take it, a heading or an item, takes it but stays out of Tab's way.
+    if (!t.matches(REACHABLE)) t.setAttribute('tabindex', '-1');
+    t.focus({ preventScroll: true });
   });
 
   /** What on the page has the id `id`: a heading first, then anything else, and never the frame's own. */

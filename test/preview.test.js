@@ -120,6 +120,16 @@ test('a link to an item of a badged list scrolls to it, and the app is asked not
   assert.deepEqual(p.told, [], 'only a heading is named in the address');
 });
 
+test('a link within the page gives its target the keyboard, so Tab goes on from there, not from the link', () => {
+  const p = showing('1) Ideas\n   b) [ ] Today\n2) See [1 b)](#1.b) and [the end](#the-end).\n\n## The end\n');
+  clickToHeading(p, '1 b)');
+  const item = p.document.getElementById('1.b');
+  assertElement(p.document.activeElement, item);
+  assert.equal(item.getAttribute('tabindex'), '-1', 'reached by the link, not by Tab');
+  clickToHeading(p, 'the end');
+  assertElement(p.document.activeElement, p.document.querySelector('h2'));
+});
+
 test('a link to a heading the page doesn\'t hold, on another page or slide, asks the app to go there', () => {
   const p = showing('See [the end](#the-end).\n');
   assert.deepEqual(clickToHeading(p, 'the end'), { taken: true, followed: ['#the-end'], scrolled: null });

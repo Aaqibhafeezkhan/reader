@@ -108,5 +108,8 @@ test('in Work, a link to a heading on another of a workbook\'s pages turns to it
   const render = framed.filter((m) => m.type === 'render').at(-1);
   assert.match(render.body, /<h2 id="the-end"/, 'the second page');
   assert.deepEqual(framed.filter((m) => m.type === 'scroll').at(-1), { type: 'scroll', line: 14 });
+  // Opening the folded sections it's in, once the page it's on is drawn.
+  const drawn = framed.lastIndexOf(render);
+  assert.ok(framed.slice(drawn).some((m) => m.type === 'open-to' && m.line === 14), 'the heading opened on the page turned to');
   state.working = false;
 });

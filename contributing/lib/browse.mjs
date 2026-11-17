@@ -48,6 +48,7 @@
 //   { "wait": ".gm-doc", "frame": true }      until it's there
 //   { "until": "document.title !== ''", "frame": true }   until it's true
 //   { "eval": "document.querySelectorAll('.done').length", "frame": true }  prints it
+//   { "console": true }                       the console's errors since the last, from the app and its frames (not Safari)
 //   { "shot": "after-drag" }                  <out>/<browser>[-phone][-zoom2][-forced]-<name>.png
 //   { "sleep": 300 }
 // Each step may also have "timeout" in ms. It stops at the first step that fails,
@@ -245,6 +246,15 @@ async function playwright(url) {
     ? { ...phone, viewport, ...seen, ...(opt.browser === 'firefox' ? { isMobile: undefined } : {}) }
     : { viewport, hasTouch: true, ...seen });
   const page = await context.newPage();
+  // The console's errors, from the app and its frames, since the last `console` step.
+  let errors = [];
+  page.on('console', (m) => { if (['error', 'warning'].includes(m.type())) errors.push(`${m.location().url.split('/').pop() || 'the page'}: ${m.text()}`); });
+  // What the browser says itself, such as a policy's refusals, reaches the console without a console call: Chromium's log has it.
+  if (opt.browser === 'chromium') {
+    const log = await context.newCDPSession(page);
+    log.on('Log.entryAdded', ({ entry }) => { if (entry.level === 'error') errors.push(`${(entry.url ?? '').split('/').pop() || 'the page'}: ${entry.text}`); });
+    await log.send('Log.enable');
+  }
   await within(15000, 'opening reader', page.goto(url));
   await within(15000, 'reader drawing', page.waitForSelector('#preview'));
   // `"frame": true` is the page's frame, `#preview`; a name is another, `"frame": "stage"` for Present's.
@@ -352,6 +362,11 @@ async function playwright(url) {
       }
     },
     async eval(s) { return JSON.stringify(await (await where(s)).evaluate(s.eval)); },
+    async console() {
+      const said = errors;
+      errors = [];
+      return `${said.length} errors${said.length ? `, the first: ${said.slice(0, 3).join(' | ')}` : ''}`;
+    },
     async shot(name) {
       const to = path.join(opt.out, `${label}-${name}.png`);
       await page.screenshot({ path: to });
@@ -505,6 +520,7 @@ async function safari(url) {
     async wait(s) { await find(s.wait, !!s.frame, s.timeout ?? STEP_MS); },
     async until(s) { await poll(s, s.until); },
     async eval(s) { return JSON.stringify(await script(s, `return (${s.eval})`)); },
+    async console() { throw new Error("the console is read through Playwright's browsers, not Safari's driver"); },
     async shot(name) {
       const to = path.join(opt.out, `${label}-${name}.png`);
       fs.writeFileSync(to, Buffer.from(await call('GET', `${s0}/screenshot`, null, 15000), 'base64'));
@@ -515,7 +531,7 @@ async function safari(url) {
 
 // ---- the run ---------------------------------------------------------------
 
-const ACTIONS = ['work', 'click', 'tap', 'drag', 'type', 'press', 'wait', 'until', 'eval', 'shot', 'sleep'];
+const ACTIONS = ['work', 'click', 'tap', 'drag', 'type', 'press', 'wait', 'until', 'eval', 'console', 'shot', 'sleep'];
 // The theme, chosen in the app as the help does, and the page drawn again in it.
 const theming = opt.theme ? [
   { eval: `Theme.choose('${opt.theme}')` },

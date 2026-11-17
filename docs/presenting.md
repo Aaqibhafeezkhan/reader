@@ -26,6 +26,7 @@ type: workbook
 
 A workbook and slides are both decks: either can be worked through in Work a page at a time and saved as its pages.
 Only slides offer **Present**, as a slide shuts what a workbook is for: its boxes, fields and Done buttons.
+`⌘⇧.` still presents any page as slides, a workbook or a document, for when you want one shown that way.
 A file opened in the mode its type picks doesn't change the mode you chose for documents.
 
 ## Work

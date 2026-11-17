@@ -269,3 +269,34 @@ test('a deck\'s questions count on across its slides, so each has its own id', (
   assert.match(deck[0].body, / id="Q1"/);
   assert.match(deck[1].body, / id="Q2"/);
 });
+
+test('a card\'s words can start on the line under its label, indented, a paragraph or more (gh-219)', () => {
+  const { body } = render('Good (Claude):\n\n  An aside kept each conversation in place.\n\n  Neither of us had to say which line.\n+1 (Josh): I\'d add that.\n');
+  assert.match(body, /<li class="qa qa-card qa-good" id="G1">\n<p><span class="qa-label qa-toggle"[^>]*data-on="Good \[x\] \(Claude\):" data-off="Good \(Claude\):">G<\/span><span class="qa-tally">\+1<\/span><span class="qa-name">Claude<\/span>An aside kept each conversation in place\.<\/p>\n<p>Neither of us had to say which line\.<\/p>\n<\/li>/);
+  assert.match(body, /<li class="qa qa-vote">\n<p><span class="qa-label">\+1<\/span><span class="qa-name">Josh<\/span>I’d add that\.<\/p>/);
+  assert.doesNotMatch(body, /[\uE000-\uE00D]/);
+});
+
+test('words straight under a label, with no blank line, are its words too, and a question\'s or an answer\'s (gh-219)', () => {
+  const { body } = render('Bad [x] (Josh):\n  Tight under.\n  More of it.\nQ:\n  Why?\nA (Rob):\n  Because.\n');
+  assert.match(body, /<li class="qa qa-card qa-bad qa-done" id="B1"><span class="qa-label qa-toggle"[^>]*data-on="Bad \[x\] \(Josh\):" data-off="Bad \(Josh\):">B<\/span><span class="qa-name">Josh<\/span>Tight under\.\nMore of it\.<\/li>/);
+  assert.match(body, /<li class="qa qa-q" id="Q1"><span class="qa-label">Q<\/span>Why\?<\/li>/);
+  assert.match(body, /<li class="qa qa-a"><span class="qa-label">A<\/span><span class="qa-name">Rob<\/span>Because\.<\/li>/);
+  assert.doesNotMatch(body, /[\uE000-\uE00D]/);
+});
+
+test('a label alone stays as typed with nothing indented under it, or with an aside, a vote or another label next (gh-219)', () => {
+  for (const src of ['Good (Claude):\n\nNot indented.\n', 'Good (Claude):\n', 'Try (Ana):\n~ an aside\n', 'Good (Claude):\n  Q: a question\n', 'Good (Claude):\n  +1 (Rob)\n']) {
+    const { body } = render(src);
+    assert.match(body, /<p>(Good|Try) \((Claude|Ana)\):/, src);
+    assert.doesNotMatch(body, /qa-card/, src);
+  }
+});
+
+test('an aside on a card written under its label goes where it would beside it (gh-219)', () => {
+  const page = (card) => render(`---\nreviewer #: Josh\n---\n\n${card}`).body.replace(/ data-(line|on|off)="[^"]*"/g, '');
+  for (const words of ['An aside.\n  ~# I agree.\n\n  Second.\n', 'An aside.\n\n  Second.\n  ~# On the second.\n']) {
+    assert.equal(page(`Good (Claude):\n\n  ${words}`), page(`Good (Claude): ${words}`));
+  }
+});
+

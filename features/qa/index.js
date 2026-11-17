@@ -44,6 +44,17 @@
  *     Q (Claude): Fix part A now?
  *     A: File an issue.
  *
+ * A label with nothing after its colon starts one too, when the next line
+ * with words on it is indented under it, and isn't itself an exchange's,
+ * a vote or an aside: its words, a paragraph or more, are the indented ones
+ * (gh-219). With nothing indented under it, it stays as typed.
+ *
+ *   Good (Claude):
+ *
+ *     An aside under the line it was about kept each conversation in place.
+ *
+ *     Neither of us had to say which line or which item.
+ *
  * Before anything else reads the source -- the asides included, so
  * that an aside ends where an exchange's line begins -- each such line
  * becomes a `+` list item (so it never joins a `-` or `*` list above it), and
@@ -55,7 +66,7 @@
 
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { beforeExtract, keepWritten, addClass, escapeAttr, fenced, unplaced, textToken } from '../source.js';
+import { beforeExtract, keepWritten, addClass, escapeAttr, fenced, unplaced, textToken, MARKS } from '../source.js';
 import { workable, shut, inlineBlanks, codeSpans } from '../blank.js';
 import { MARK, choicesIn, pickedAt, answeredBy } from '../choices.js';
 
@@ -66,6 +77,10 @@ const SAID = Symbol('said');
 
 // A name may hold a link, whose address is in parentheses of its own.
 const QA = /^\\?(Q|A|Good|Bad|Try)(?:[ \t]+\[([ xX])\])?(?:[ \t]*\(((?:[^()\n]|\([^()\n]*\))*)\))?:[ \t]+(?=\S)/;
+// The same, with nothing after its colon: its words start on a line under it.
+const BARE = new RegExp(`${QA.source.slice(0, -'[ \\t]+(?=\\S)'.length)}[ \\t]*$`);
+// Where such a label's words would be, until they're found under it (items).
+const [UNDER] = MARKS.qa;
 const VOTE = /^\+1(?:[ \t]*\(((?:[^()\n]|\([^()\n]*\))*)\))?(?::[ \t]+(?=\S)|:?[ \t]*$)/;
 const LABELS = { Good: 'G', Bad: 'B', Try: 'T', '+1': '+1' };
 const CARDS = new Set(['Good', 'Bad', 'Try']);
@@ -153,7 +168,8 @@ function lines(state) {
   // vote is for (`head`).
   let levels = [];
   const code = fenced();
-  const out = state.src.split('\n').map((line, n) => {
+  const src = state.src.split('\n');
+  const out = src.map((line, n) => {
     if (code(line)) {
       levels = [];
       return line;
@@ -174,7 +190,8 @@ function lines(state) {
       said.set(n, { who: '+1', name: v[1]?.trim() ?? '', bare: !text, head: level.head });
       return `${pad}+ +1 ${text}`;
     }
-    const q = QA.exec(body);
+    const q = QA.exec(body) ?? (underIt(src, n, width(lead)) ? BARE.exec(body) : null);
+    const bare = Boolean(q) && !QA.test(body);
     // Only a card is done, or not.
     if (!q || q[0].startsWith('\\') || (q[2] && !CARDS.has(q[1]))) {
       const escaped = q?.[0].startsWith('\\');
@@ -192,12 +209,12 @@ function lines(state) {
     const written = state.env.written?.[n] ?? line;
     const choices = who === 'A' ? answerChoices(written, base + n, level.head) : null;
     const { open } = level;
-    if (open && open.who === who && !CARDS.has(who) && (!name || name === open.name)) {
+    if (open && !bare && open.who === who && !CARDS.has(who) && (!name || name === open.name)) {
       said.set(n, { more: true, choices });
       return `${pad}  ${text}`;
     }
     level.open = { who, name };
-    const item = { who, name, votes: 0, head: level.head, choices, depth: at };
+    const item = { who, name, votes: 0, head: level.head, choices, depth: at, under: bare };
     if (who !== 'A') item.head = level.head = item;
     if (CARDS.has(who)) {
       const after = written.indexOf(who) + who.length;
@@ -211,11 +228,25 @@ function lines(state) {
       };
     }
     said.set(n, item);
-    return `${pad}+ ${text}`;
+    return `${pad}+ ${bare ? UNDER : text}`;
   });
   // An escaped `\A:` loses its backslash even when nothing else changed.
   state.src = out.join('\n');
   if (said.size) state.env[SAID] = said;
+}
+
+/**
+ * Whether the next line of `src` after line `n` with words on it is indented
+ * deeper than `indent`, and is words, not an exchange's line, a vote or an
+ * aside: a label alone on line `n` takes it as its own.
+ */
+function underIt(src, n, indent) {
+  let k = n + 1;
+  while (k < src.length && !src[k].trim()) k++;
+  if (k >= src.length) return false;
+  const lead = /^[ \t]*/.exec(src[k])[0];
+  const body = src[k].slice(lead.length);
+  return width(lead) > indent && !QA.test(body) && !BARE.test(body) && !VOTE.test(body) && !body.startsWith('~');
 }
 
 /** How wide `lead` is, a tab to the next stop of four, as markdown counts it. */
@@ -244,6 +275,7 @@ function items(state) {
   // Lines the parser saw -> lines as written, before asides were taken out.
   const source = state.env.sourceLines;
   const said = { get: (n) => state.env[SAID].get(source?.[n] ?? n) };
+  lift(state, said);
   choose(state, said);
   const tokens = state.tokens;
   const counted = state.env.shared ? (state.env.shared[COUNTED] ??= {}) : {};
@@ -273,6 +305,36 @@ function items(state) {
       inline?.children.unshift(label);
     } else if (t.type === 'inline' && t.map) {
       i = carryOn(state, i, said);
+    }
+  }
+}
+
+/**
+ * Takes away the placeholder a label alone on its line left where its words
+ * would be, so that the words under it are the item's first (gh-219): with a
+ * blank line between, its paragraph, the next one then starting at the
+ * label's line; straight under it, its line, and the break after it.
+ */
+function lift(state, said) {
+  const tokens = state.tokens;
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (t.type !== 'list_item_open' || t.markup !== '+' || !said.get(t.map?.[0])?.under) continue;
+    const at = tokens.findIndex((x, k) => k > i && x.type === 'inline');
+    const inline = tokens[at];
+    const [first, next] = inline?.children ?? [];
+    if (first?.type !== 'text' || !first.content.startsWith(UNDER)) continue;
+    if (inline.children.length === 1 && first.content.trim() === UNDER) {
+      tokens.splice(at - 1, 3);
+      // Its words' paragraph starts at the label's line, as it would beside
+      // it, so an aside on them lines up with the card, not inside it (rows.js).
+      const words = tokens[at - 1];
+      if (words?.type === 'paragraph_open' && words.map) words.map = [t.map[0], words.map[1]];
+    } else if (first.content.trim() === UNDER && /break$/.test(next?.type)) {
+      inline.children.splice(0, 2);
+      inline.map = [inline.map[0] + 1, inline.map[1]];
+    } else {
+      first.content = first.content.slice(UNDER.length);
     }
   }
 }

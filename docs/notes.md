@@ -121,6 +121,31 @@ Try [x] (Ana): Put the release dates on the team calendar
 
 A `+1` with no card or question above it stays as typed.
 
+A card that's a paragraph or two long can have its label on a line of its
+own, and its words indented under it, a blank line between or not. The
+same goes for a `Q:` or an `A:`. A label alone with nothing indented under
+it stays as typed, as does one whose next line is an aside, or another
+card, question or answer:
+
+::: tabs
++++ Source
+```markdown
+Good (Claude):
+
+  An aside under the line it was about kept each conversation in place.
+
+  Neither of us had to say which line or which item.
++1 (Josh): I'd add that it shows we need to fold finished asides.
+```
++++ Rendered
+Good (Claude):
+
+  An aside under the line it was about kept each conversation in place.
+
+  Neither of us had to say which line or which item.
++1 (Josh): I'd add that it shows we need to fold finished asides.
+:::
+
 Clicking a card's G or B marks its discussion done: the line gets an
 `[x]` (`Good [x] (Josh):`), and the card, its votes and its answers fade.
 Click again to take it away. A `Try`'s T is a box instead, ticked once it's

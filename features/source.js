@@ -68,6 +68,8 @@ export const MARKS = {
   items: ['\uE004', '\uE005'],
   box: ['\uE008', '\uE009'],
   attributions: ['\uE007'],
+  // A card or exchange whose words start on the line under its label (features/qa).
+  qa: ['\uE006'],
   sizes: ['\uE00E', '\uE00F'],
   fields: ['\uE010', '\uE012'],
   date: ['\uE013', '\uE014'],

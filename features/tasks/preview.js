@@ -193,12 +193,6 @@
     for (const b of document.querySelectorAll('.task-reset, .task-log')) Preview.shut(b, { hidden: '' });
   });
 
-  /** A blank still to be written in, in choice `box`'s own words, not an item under it. */
-  const unwrittenIn = (box) => {
-    const item = box.closest('li');
-    return [...(item?.querySelectorAll('[data-unwritten]') ?? [])].find((b) => b.closest('li') === item);
-  };
-
   /** Box `box` written as it now reads, and the rest of its choices with it. */
   const answer = (box) => {
     const group = box.type === 'radio'
@@ -213,12 +207,12 @@
     if (box.type === 'checkbox') markDone(box, box.checked);
     else {
       // A choice whose words are a blank still to write in is picked, but
-      // not yet an answer: the keyboard goes to its blank. Its edit isn't
-      // one to undo, as a field's isn't, as that passes the keyboard through
-      // the editor, and the blank would close (static/app/editing.js).
-      unwritten = unwrittenIn(box);
+      // not yet an answer: the keyboard goes to its blank (Preview.toBlank).
+      // Its edit isn't one to undo, as a field's isn't, as that passes the
+      // keyboard through the editor, and the blank, or the radio an arrow
+      // left it on, would lose it (static/app/editing.js).
+      unwritten = Preview.toBlank(box);
       box.closest('[data-answered]')?.setAttribute('data-answered', String(!unwritten));
-      unwritten?.focus();
     }
     if (edits.length) Preview.edit(edits, { undo: !unwritten });
     // What was answered inside a choice no longer picked is let go of, in the same turn's edit.
@@ -244,7 +238,7 @@
       if (!box.defaultChecked) {
         box.checked = true;
         answer(box);
-      } else box.closest('[data-answered]')?.setAttribute('data-answered', String(!unwrittenIn(box)));
+      } else box.closest('[data-answered]')?.setAttribute('data-answered', String(!Preview.blankOf(box)));
       return;
     }
   });

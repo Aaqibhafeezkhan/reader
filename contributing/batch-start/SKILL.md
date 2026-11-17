@@ -7,7 +7,19 @@ description: Check a batch of reader issues before any work on them starts. Use 
 
 `<ai>` stands for your name in the config (see `contributing/README.md`), `Claude` unless set.
 
-## 1. Check, don't remember
+## 1. Make the review worktree first
+
+```sh
+node scripts/branch.mjs review <review date, YYYY-MM-DD>   # review/YYYY.MM.DD from main, in .claude/worktrees/review-YYYY.MM.DD
+```
+
+Before anything else, so that the contributor runs reader from the review worktree from the start, reading `batch.md` and then the review in it, rather than from main first and the worktree once it's made. Tell them the command:
+
+```sh
+node --watch <repo>/.claude/worktrees/review-YYYY.MM.DD/bin/reader.js <meetings>/<review date> --port 8734 --no-browser
+```
+
+## 2. Check, don't remember
 
 ```sh
 node scripts/batch-start.mjs <milestone> 221,237,240 --day <review date, YYYY-MM-DD>
@@ -35,17 +47,16 @@ node scripts/batch-start.mjs <milestone> 267 --day <review date>
 
 The checks are the same, so it's the same script, not a step of its own. An issue I filed that day can't have a PR yet, but its milestone can be wrong, and the retro's owed outcomes still apply. Say in the review's index which issues joined later, and that they were checked.
 
-## 2. Then lay out the work
+## 3. Then lay out the work
 
 The git steps are scripted, so they come out the same each time; don't do them by hand.
 
 ```sh
-node scripts/branch.mjs review <review date, YYYY-MM-DD>   # review/YYYY.MM.DD from main, in .claude/worktrees/review-YYYY.MM.DD
 node scripts/branch.mjs issue 221                           # issue/gh-221 from it, in .claude/worktrees/issue-gh-221
 node scripts/branch.mjs merge 221 --trailer "Co-Authored-By: <you> <email>"
 ```
 
-- The review branch is named for its review date, normally tomorrow. Give `--date` to `issue` and `merge` when there's more than one review branch.
+- The review branch, made in step 1, is named for its review date, normally tomorrow. Give `--date` to `issue` and `merge` when there's more than one review branch.
 - Work on each issue in its own worktree, so issues can go side by side; `issue` links the review worktree's `node_modules` into it, and `merge` takes the link away. Every commit there is signed off, `git commit -s`, and ends `See gh-N`, its own paragraph just before the trailers.
 - `merge` refuses a commit without `See gh-N`, and changes not committed. It merges `--no-ff` as `Merge issue/gh-N: <title>`, with `Closes gh-N`, the trailers you give and the sign-off, then removes the issue's worktree; the branch stays. If it stops on a conflict, resolve it in the review worktree and `git commit -s`, which keeps that message.
 - Anything new that's seen is built to be seen and pressed by everyone from its first commit: 24 by 24 pixels to press, 3 to 1 for its marks, and drawn in the system's colours. Decided then, it's cheap; `review-open` checks it.

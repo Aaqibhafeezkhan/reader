@@ -722,3 +722,17 @@ test('an output block that scrolls sideways is named "Output"', () => {
   p.show(render('```output\n' + 'x'.repeat(200) + '\n```\n').body);
   assert.equal(p.document.querySelector('pre').getAttribute('aria-label'), 'Output');
 });
+
+test('on a slide, a click on a button that redraws itself as it\'s pressed, as music\'s Play does, doesn\'t move the deck', () => {
+  const p = showing('Some words.\n', { deck: true });
+  const button = p.document.createElement('button');
+  button.innerHTML = '<svg><path d="M0 0"/></svg>';
+  // Play's own listener turns it to Pause first, leaving the icon pressed in no button.
+  button.addEventListener('click', () => { button.innerHTML = '<svg><path d="M1 1"/></svg>'; });
+  p.document.querySelector('p').append(button);
+  const icon = button.querySelector('path');
+  icon.dispatchEvent(new p.window.MouseEvent('click', { bubbles: true, clientX: 600 }));
+  assert.deepEqual(p.posted.filter((m) => m.type === 'click'), [], 'the deck stays');
+  p.document.querySelector('p').dispatchEvent(new p.window.MouseEvent('click', { bubbles: true, clientX: 600 }));
+  assert.deepEqual(p.posted.filter((m) => m.type === 'click'), [{ type: 'click', left: false }], 'a click on the slide still moves it');
+});

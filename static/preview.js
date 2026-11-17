@@ -638,9 +638,14 @@
 
   // On a slide, a click anywhere but a link, a puzzle, a tab, a card's
   // label, a field, a task's box or choice or a button moves the deck, the left third
-  // back and the rest forward.
+  // back and the rest forward. What was clicked is noted as the click sets out,
+  // before anything it lands on hears of it: a button can redraw itself first
+  // (music's Play, turning to Pause), leaving its icon in no button.
+  const KEEPS = 'a[href], .puzzle, .tab, .qa-toggle, input, label, button, .field';
+  let kept = false;
+  document.addEventListener('click', (e) => { kept = Boolean(e.target.closest?.(KEEPS)); }, true);
   document.addEventListener('click', (e) => {
-    if (!Preview.deck || (e.target.closest && e.target.closest('a[href], .puzzle, .tab, .qa-toggle, input, label, button, .field'))) return;
+    if (!Preview.deck || kept) return;
     window.parent.postMessage({ type: 'click', left: e.clientX < innerWidth / 3 }, '*');
   });
 

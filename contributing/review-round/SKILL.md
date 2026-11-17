@@ -19,7 +19,7 @@ The watcher wakes you for every box ticked since it last looked, and they keep r
 - **Hand it to a fork** (the Agent tool's `fork`, which keeps this conversation) when it's checked with `browse.mjs`, as anything seen or clicked is; when it touches more than one feature; when its cause isn't known yet; or when it builds a whole issue. Reproduce it first yourself, as the answer needs it, and give the fork what you found and the steps. It works in a worktree of its own off the review branch (`.claude/worktrees/`), commits there, checks it in every browser, and reports; it can't ask them anything, so where it's unsure it stops and says so.
 - **Something you started that grows** past that line goes to a fork with what you'd found, rather than your finishing it.
 - **Only you merge,** one fork's work at a time, onto the review branch, with the tests run, and only you write the index. One job runs for an item at a time: a second send on it waits for the first. Safari Technology Preview runs one session at a time, so its checks take turns.
-- Say in the reply what went to a fork, and answer what you can meanwhile; when its work is merged, say so there, and that the page needs reloading.
+- Say in the reply what went to a fork, and answer what you can meanwhile; when its work is merged, say so there; under `npm run dev`, the page shows it by itself.
 
 ## For each `~#` aside or waiting card
 
@@ -34,7 +34,7 @@ That only finds asides and retro cards, so always read the whole sent file too: 
 4. If the idea sounds off to you, say so, gently, with why and one or two alternatives, then build what they choose. Show alternatives only if they ask, or if you're very confident a picture shows something they're missing. People often learn by playing with what they asked for, so this is pushback, not refusal.
 5. Give a proposal its own buttons, as `review-open` sets out: `- Q (<ai>): …?`, with `- ( ) Yes` and `- ( ) [@ Something else]` indented under it, so that they can answer each one, or say what instead.
    An aside is for the side conversation, not for proposals. When one leads to proposals, end the aside with `Proposals in "<heading>".` and put them under that heading, beneath what they're about. When it ends in a fix instead, the aside names the fix: `Fixed in <hash>.` A changed proposal is rewritten in place. A dropped one is struck and loses its `( )`, then gets `A (<ai>): Replaced by "<name>".` A picked choice is an answer, as an aside is, so read for them as well.
-6. If a second thread touches a decision open elsewhere, say so right there, and point to it by a name they can search for. Line numbers move, and links can't name a heading until gh-244.
+6. If a second thread touches a decision open elsewhere, say so right there, and point to it by a name they can search for. Line numbers move, so link a heading rather than a line: `[its name](#its-name)`, or `[its name](gh-N/review.md#its-name)` in another file.
 
 ## When something settles
 

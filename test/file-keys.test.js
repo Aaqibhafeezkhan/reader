@@ -16,9 +16,11 @@ const FILES = [
 let files = FILES;
 const starts = [{ dir: 'journal', open: 'journal/2026-11-03.md' }];
 let posts = [];
+let puts = [];
 globalThis.fetch = async (url, { method = 'GET', body } = {}) => {
   const ask = String(url);
   const said = body && JSON.parse(body);
+  if (method === 'PUT') puts.push(ask);
   if (/^\/api\/(copy|trash)/.test(ask)) posts.push({ method, ask, said });
   if (ask.startsWith('/api/trash')) files = files.filter((f) => f.path !== said.path);
   const out = ask.startsWith('/api/info') ? { name: 'notes', root: '/notes' }
@@ -36,6 +38,8 @@ const { el, state } = await import('../static/app/state.js');
 Object.defineProperty(el.preview, 'contentWindow', { value: { postMessage() {} } });
 await import('../static/app/main.js');
 const { go, loadTree, open } = await import('../static/app/files.js');
+const { scheduleSave, save } = await import('../static/app/saving.js');
+const { AUTOSAVE_DELAY } = await import('../static/app/state.js');
 const settled = async () => {
   for (let i = 0; i < 5; i++) await new Promise(setImmediate);
 };
@@ -112,6 +116,29 @@ test('⌘⌥⌫ moves the open file to the trash, with an Undo', async () => {
   assert.equal(await pressing('Backspace'), true);
   assert.deepEqual(posts.map((p) => [p.ask, p.said.path]), [['/api/trash', 'notes.md']]);
   assert.match(el.toast.textContent, /notes\.md is in the trash/);
+});
+
+test('on reader\'s own file, Make a copy and Copy for today are gone, their keys and the trash\'s do nothing, and it isn\'t saved; back on a file of yours, they\'re back (gh-263)', async () => {
+  await fresh('$reader/docs/links.md');
+  assert.equal(state.current.path, '$reader/docs/links.md');
+  assert.deepEqual([el.copyFile.hidden, el.copyToday.hidden], [true, true]);
+  for (const [code, opts] of [['KeyY'], ['KeyY', { metaKey: true, altKey: true, shiftKey: true }], ['Backspace']]) {
+    assert.equal(await pressing(code, opts), true, `${code} is still taken, as the page's own`);
+  }
+  assert.deepEqual(posts, [], 'nothing copied or trashed');
+  // Typed into it, somehow, it's neither saved in a while nor when asked.
+  puts = [];
+  el.editor.value = '# A, changed\n';
+  scheduleSave();
+  mock.timers.tick(AUTOSAVE_DELAY);
+  await settled();
+  await save({ explicit: true });
+  await settled();
+  assert.deepEqual(puts, []);
+  el.editor.value = state.saved;
+  await fresh('notes.md');
+  assert.deepEqual([el.copyFile.hidden, el.copyToday.hidden], [false, false]);
+  assert.equal(el.copyFile.getAttribute('aria-disabled'), 'false');
 });
 
 test('Ctrl+Alt that types a letter, as AltGr does, is left to be typed', async () => {

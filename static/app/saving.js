@@ -3,7 +3,7 @@
  */
 
 import { scheduleGutter } from './lines.js';
-import { el, state, deck, dirty, isSource, AUTOSAVE_DELAY } from './state.js';
+import { el, state, deck, dirty, readOnly, AUTOSAVE_DELAY } from './state.js';
 import { api } from './api.js';
 import { renderNow } from './render.js';
 import { loadDeck, showSlide, closeDeck } from './deck.js';
@@ -42,7 +42,7 @@ export async function saveFirst() {
 
 export async function doSave({ explicit, force }) {
   const cur = state.current;
-  if (cur?.type !== 'md' || isSource(cur.path)) return;
+  if (cur?.type !== 'md' || readOnly()) return;
   if (state.conflict && !force) return;
   const text = el.editor.value;
   if (text === state.saved && !explicit) return;

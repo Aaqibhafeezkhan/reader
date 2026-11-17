@@ -5,7 +5,7 @@
  * outline (outline.js).
  */
 
-import { el, state, deck, remembered, remember, isSource } from './state.js';
+import { el, state, remembered, remember, isSource, lockEditor } from './state.js';
 import { api, exportUrl, contentUrl } from './api.js';
 import { saveFirst, setConflict } from './saving.js';
 import { exportDocument } from './exporting.js';
@@ -461,6 +461,8 @@ export function rememberedDir() {
 
 /** Show the folder `p` is in, and its versions if it isn't the one its row opens. */
 export function reveal(p) {
+  // reader's own file, `$reader/…`, isn't in the list, so there's nowhere to show it (gh-263).
+  if (isSource(p)) return;
   const group = groupOf(state.files, p);
   go(dirOf(p), group && group.opens.path !== p ? group.name : null, { focus: false });
 }
@@ -482,7 +484,7 @@ export async function follow(href) {
   let id = '';
   try { id = decodeURIComponent(url.hash.slice(1)); } catch { /* not a heading's */ }
   if (p !== state.current?.path) {
-    if (!isSource(p)) reveal(p);
+    reveal(p);
     await open(p);
     if (p !== state.current?.path) return;
   }
@@ -578,7 +580,7 @@ export async function open(p) {
   setConflict(false);
 
   if (type === 'pdf') {
-    state.current = { path: p, type };
+    state.current = { path: p, type, readOnly: isSource(p) };
     state.saved = '';
     el.editor.value = '';
     showPdf(p);
@@ -590,13 +592,13 @@ export async function open(p) {
       return toast(err.message, true);
     }
     if (seq !== state.openSeq) return;
-    state.current = { path: p, type };
+    state.current = { path: p, type, readOnly: isSource(p) };
     state.saved = file.text;
     state.mtime = file.mtime;
     state.worked = false;
     el.editor.value = file.text;
     el.editor.disabled = false;
-    el.editor.readOnly = state.working || deck.open || isSource(p);
+    lockEditor();
     el.editor.scrollTop = 0;
     el.editor.setSelectionRange(0, 0);
     // A workbook opens in Work, slides in Edit, a document as last chosen.

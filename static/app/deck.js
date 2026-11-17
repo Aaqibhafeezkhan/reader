@@ -2,7 +2,7 @@
  * Presenting: a deck of slides, a step at a time, with a speaker view.
  */
 
-import { el, state, deck, dirty, remember, RENDER_DELAY } from './state.js';
+import { el, state, deck, dirty, remember, lockEditor, RENDER_DELAY } from './state.js';
 import { api } from './api.js';
 import { baseFor } from './render.js';
 import { save } from './saving.js';
@@ -49,7 +49,7 @@ export async function present() {
   deck.reveal = 0;
   deck.scale = 1;
   deck.open = true;
-  el.editor.readOnly = true;
+  lockEditor();
   deck.returnTo = document.activeElement;
   if (document.activeElement === el.editor) el.editor.blur();
   // Out of reach under the slides, for the keyboard and for a screen reader.

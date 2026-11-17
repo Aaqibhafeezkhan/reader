@@ -52,7 +52,7 @@ async function init() {
   const first = (isSource(wanted) ? { path: wanted } : state.files.find((f) => f.path === wanted))
     || under.find((f) => f.type === 'md') || state.files.find((f) => f.type === 'md') || state.files[0];
   if (first) {
-    if (!isSource(first.path)) reveal(first.path);
+    reveal(first.path);
     await open(first.path);
     if (first.path === wanted && heading) goToHeading(heading);
     else if (first.path === wanted && line) goToLines(line, last);
@@ -86,7 +86,7 @@ async function followAddress() {
   const { wanted, line, last, params, heading } = readAddress();
   if (!state.files.some((f) => f.path === wanted) && !isSource(wanted)) return;
   if (wanted !== state.current?.path) {
-    if (!isSource(wanted)) reveal(wanted);
+    reveal(wanted);
     await open(wanted);
   } else Frames.post(el.preview, { type: 'address', params });
   if (wanted !== state.current?.path) return;

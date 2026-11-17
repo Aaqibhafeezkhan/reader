@@ -82,4 +82,16 @@ export function remember(key, value) {
 export const SOURCE = '$reader/';
 export const isSource = (p) => typeof p === 'string' && p.startsWith(SOURCE);
 
-export const dirty = () => state.current?.type === 'md' && !isSource(state.current.path) && el.editor.value !== state.saved;
+/**
+ * Whether the open file is read here, never written: reader's own, from
+ * `$reader/` (gh-263). Set once, where a file is opened (files.js), and what
+ * the editor, saving, the page's edits and the copy buttons all go by.
+ */
+export const readOnly = () => Boolean(state.current?.readOnly);
+
+/** The editor takes typing only in Edit, with no deck open, on a file that's written. */
+export function lockEditor() {
+  el.editor.readOnly = state.working || deck.open || readOnly();
+}
+
+export const dirty = () => state.current?.type === 'md' && !readOnly() && el.editor.value !== state.saved;

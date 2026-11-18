@@ -12,9 +12,9 @@
  * - `html`: a pass over the finished page's HTML, for what the tokens don't
  *   reach (the masthead, say).
  * - `css`: added to the rendered page's stylesheet.
- * - `raw`: applied before the rest: a feature that reads the file as
- *   written, before the page's front matter and comments come off
- *   (src/page.js).
+ * - `raw`: applied before the rest: a feature whose rules read the file's
+ *   lines before markdown reads the blocks, once the page's front matter,
+ *   comments and asides are off (src/page.js, features/source.js).
  * - `late`: a markdown-it plugin applied after every feature's `plugin`,
  *   for a rule that reads what all of them leave as text: the words an
  *   aside chooses.

@@ -101,8 +101,9 @@ export function extract(src, features = FEATURES) {
  * closes is asked of the features (`closesAt`), and whether it's closed by `env.now`
  * (now, if not given), `env.closed`. Token maps count
  * lines of what's left; `env.sourceLines[n]` is the line of the source that
- * line `n` of it came from. Features that read the file as written go before
- * this rule (`beforeExtract`, features/source.js). `features` are the ones
+ * line `n` of it came from. Features that read the lines go after this rule
+ * and the asides' (`beforeExtract`, features/source.js), and find a line's
+ * place in the file through it. `features` are the ones
  * the page is rendered with, which may claim lines of its front matter.
  */
 export function page(md, features = FEATURES) {

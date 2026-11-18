@@ -15,7 +15,7 @@
  *
  * A span is an inline rule. A `:::` block is read line by line before the
  * blocks are parsed: its fence lines read as blank, and each line inside
- * gets a marker naming the styles, after whatever opens its block (`>`, `~`,
+ * gets a marker naming the styles, after whatever opens its block (`>`,
  * a bullet, `#`) and after each table pipe, so it lands in the paragraph,
  * heading, list item or cell that line belongs to. Once the blocks are
  * parsed, the markers come out, before the inline rules can take them for
@@ -57,9 +57,9 @@ const ITEM = new RegExp(`^([ \\t]*(?:>[ \\t]*)*(?:${LIST_MARKER}[ \\t]+`
   + '(\\{([\\w-]+(?:[ \\t]+[\\w-]+)*)\\}[ \\t]+)(?=\\S)');
 // Words that set how text is cased rather than its color or font.
 const CASES = new Set(['uppercase']);
-// What opens a line's block, for the marker to go after.
-// An aside's `~` can carry aliases and the words it's about: `~c[the lazy dog] `.
-const PREFIX = new RegExp(String.raw`^[ \t]*(?:~[^\s~[]*(?:\[(?:[^\]\\\n]|\\.)+\](?:\{[a-z]+\})?)?[ \t]+|[>~][ \t]*)*(?:${LIST_MARKER}[ \t]+)?(?:#{1,6}[ \t]+)?`);
+// What opens a line's block, for the marker to go after. The asides are
+// out by now (gh-305), so an aside's `~` is never one.
+const PREFIX = new RegExp(String.raw`^[ \t]*(?:>[ \t]*)*(?:${LIST_MARKER}[ \t]+)?(?:#{1,6}[ \t]+)?`);
 // Lines a marker would change the meaning of.
 const RULE = /^[ \t]*([-*_=])(?:[ \t]*\1)*[ \t]*$/;
 const DELIMITER_ROW = /^[ \t]*\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*$/;

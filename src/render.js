@@ -27,8 +27,8 @@ const PURPOSES = ['preview', 'present', 'export'];
 
 /** The markdown-it that parses a document, built from `features`. */
 function markdown(features) {
-  // Features that read the file as written go before the rest, their rules
-  // before the page's front matter and comments come off.
+  // Features that read the file's lines go before the rest, their rules
+  // once the page's front matter, comments and asides are off.
   const md = new MarkdownIt({ html: false, linkify: true, typographer: true, breaks: false });
   md.use(pageRule, features);
   for (const f of features.filter((f) => f.plugin && f.raw)) md.use(f.plugin);

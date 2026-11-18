@@ -33,8 +33,13 @@ The speaker said most teams adopt a tool long before they agree on how to use it
 
 An aside can go after a paragraph or straight under any line of one.
 Under a line, the paragraph carries on below it as one paragraph, so
-with a sentence to a line, a reviewer can answer any sentence. There,
-an aside that runs onto a second line indents it.
+with a sentence to a line, a reviewer can answer any sentence.
+
+An aside is only its own `~` lines, as a quote is its `>` lines: one that
+runs onto a second line starts that line with `~` too, and the lines join
+into one paragraph. A line without one, indented or not, is the page's own
+again. So taking every `~` line out leaves the page exactly as it would be
+unannotated, and reader does just that before it reads anything else.
 
 ## Who, and what about
 
@@ -100,6 +105,52 @@ takes it darker on a light page, or lighter on a dark one, where it
 wouldn't read: `#ffd700` is a dark gold. The rule and the marks keep it as
 it's written.
 
+## More than a line
+
+Lines in a row with the same mark and aliases are one aside, read as a
+quote's lines are: they join into one paragraph, a line of the mark alone
+starts the next, and what follows the mark is markdown, a list, a box or a
+blank included. A line with other aliases, words in brackets, or a box
+starts another aside, about the same line as the ones before it, so to
+carry on one that names words, its next lines give only its aliases:
+
+::: tabs
++++ Source
+```markdown
+The line with these words is what the asides are about.
+~# This aside
+~m is not the same as this aside.
+~#[these words] are found in the line the asides are about.
+~#[the asides are about] start another, as their words are different.
+~#c A different aside, with a topic too,
+~#c and the same paragraph, one sentence to a line.
+~#c
+~#c Its second paragraph, and I can:
+~#c - [ ] still tick a box
+~#c - ( ) and pick
+~#c - ( ) [@ or fill in a blank]
+```
++++ Rendered
+The line with these words is what the asides are about.
+~# This aside
+~m is not the same as this aside.
+~#[these words] are found in the line the asides are about.
+~#[the asides are about] start another, as their words are different.
+~#c A different aside, with a topic too,
+~#c and the same paragraph, one sentence to a line.
+~#c
+~#c Its second paragraph, and I can:
+~#c - [ ] still tick a box
+~#c - ( ) and pick
+~#c - ( ) [@ or fill in a blank]
+:::
+
+Two lines in a row from the writer, `~` and `~`, are likewise one aside of
+two lines, not two asides. Before, an aside's next line was indented, and
+a line of plain text after one could carry it on too;
+`node scripts/asides-rewrite.mjs <file or folder>` gives such lines their
+mark, so a file written that way reads as it did (`--check` lists them).
+
 ## Threads
 
 Reviewing in the margin is a conversation, so an aside can be answered.
@@ -129,7 +180,7 @@ Only a recipe's steps use one up.
 :::
 
 The replies sit under the aside, a little in, each opening with who wrote it, and the thread keeps the aside's place beside its line.
-Replies are flat: every `~~` after an aside answers that thread, as comments under a review comment do.
+Replies are flat: every `~~` after an aside answers that thread, as comments under a review comment do. A reply that runs onto more lines starts each with its own mark, `~~m`, as an aside does; a reply from someone else, or one with other aliases, is the next reply.
 A reply counts towards its reviewer in the legend.
 `~~` only starts a reply before a space or a run of aliases, so `~~struck~~` text is struck through, as it always was.
 

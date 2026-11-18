@@ -58,12 +58,12 @@
  *
  *     Neither of us had to say which line or which item.
  *
- * Before anything else reads the source -- the asides included, so
- * that an aside ends where an exchange's line begins -- each such line
- * becomes a `+` list item (so it never joins a `-` or `*` list above it), and
- * one that carries on the item before it is indented into that item. Who
- * spoke is kept, by line, on `env` under the feature's own key; once the text is parsed, the items on
- * those lines are labelled, finding their lines through the asides feature's
+ * Before markdown reads the blocks, once the asides are out (gh-305), each
+ * such line becomes a `+` list item (so it never joins a `-` or `*` list
+ * above it), and one that carries on the item before it is indented into
+ * that item. Who spoke is kept, by line, on `env` under the feature's own
+ * key; once the text is parsed, the items on those lines are labelled. A
+ * card's toggle writes its line of the file, found through
  * `env.sourceLines`.
  */
 
@@ -160,10 +160,18 @@ function answerChoices(written, line, head, marked) {
  * empty (an empty one would join the line before); labelling takes it off.
  */
 function lines(state) {
-  // An aside is a thought of the reader's own, not part of an exchange.
-  if (state.inlineMode || state.env.nested) return;
+  if (state.inlineMode) return;
+  // An aside is a thought of the reader's own, not part of an exchange; an
+  // escaped line in it loses its backslash, as at the page's margin.
+  if (state.env.nested) {
+    const code = fenced();
+    state.src = state.src.split('\n').map((line) => (!code(line) && (QA.exec(line) ?? BARE.exec(line))?.[0].startsWith('\\') ? line.slice(1) : line)).join('\n');
+    return;
+  }
   const said = new Map();
   const lineBase = state.env.lineBase ?? 0;
+  // Each line's line in the file, and as written there.
+  const from = (n) => state.env.sourceLines?.[n] ?? n;
   // What's open at each depth of nesting, the margin's first: the indent its
   // lines start at, who's speaking (`open`), and the question or card a vote
   // is for (`head`).
@@ -233,8 +241,8 @@ function lines(state) {
     // the one before carried on: that's not in a row.
     if (levels.length > at + 1) level.open = null;
     levels = [...levels.slice(0, at), level];
-    const written = state.env.written?.[n] ?? line;
-    const choices = who === 'A' ? answerChoices(written, lineBase + n, level.head, opens) : null;
+    const written = state.env.written?.[from(n)] ?? line;
+    const choices = who === 'A' ? answerChoices(written, lineBase + from(n), level.head, opens) : null;
     const { open } = level;
     if (open && !bare && !opens && open.who === who && !CARDS.has(who) && (!name || name === open.name)) {
       said.set(n, { more: true, choices });
@@ -249,7 +257,7 @@ function lines(state) {
       item.done = box === 'x' || box === 'X';
       item.toggle = {
         done: item.done,
-        line: lineBase + n,
+        line: lineBase + from(n),
         on: `${written.slice(0, after)} [x]${rest}`,
         off: box === ' ' ? written : `${written.slice(0, after)}${rest}`,
       };
@@ -313,9 +321,8 @@ const wordsAt = (tokens, i) => (tokens[i + 1]?.type === 'paragraph_open' && toke
  */
 function items(state) {
   if (!state.env[SAID] || state.env.nested) return;
-  // Lines the parser saw -> lines as written, before asides were taken out.
-  const source = state.env.sourceLines;
-  const said = { get: (n) => state.env[SAID].get(source?.[n] ?? n) };
+  // By the lines the parser saw, which this read before it (`lines`).
+  const said = state.env[SAID];
   choose(state, said);
   const tokens = state.tokens;
   const counted = state.env.shared ? (state.env.shared[COUNTED] ??= {}) : {};

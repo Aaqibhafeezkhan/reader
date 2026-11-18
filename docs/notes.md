@@ -69,6 +69,32 @@ Indenting only nests an exchange in another: an indented `Q:` with no
 exchange above it stays as typed. Under a heading, the heading's level
 already says what it belongs to.
 
+Inside a list's item, an exchange starts at the item's words, as one does at
+the margin: a question under a numbered point, with its choices under it, is
+drawn as a question in that point. A `- Q:` bullet is a question too, and a
+`- A:` in the bullet after it its answer:
+
+::: tabs
++++ Source
+```markdown
+1) [ ] **Two lists numbered the same**
+
+   The first item to claim an id keeps it.
+
+   Q (Claude): Is that enough, for now?
+   - ( ) Yes
+   - ( ) [@ Something else]
+```
++++ Rendered
+1) [ ] **Two lists numbered the same**
+
+   The first item to claim an id keeps it.
+
+   Q (Claude): Is that enough, for now?
+   - ( ) Yes
+   - ( ) [@ Something else]
+:::
+
 An answer can be a pick from choices, `( )` in front of each, as a
 [field's](forms.md#fields) are: they're radio buttons in a row, one set to
 each `A:` line. Clicking one writes `(x)` in front of it, and `( )` in front of

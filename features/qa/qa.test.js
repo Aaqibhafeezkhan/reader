@@ -233,6 +233,44 @@ test('an indented Q: with no exchange above it, or after the exchange ended, sta
   }
 });
 
+test('a Q: in a numbered item is drawn as a question inside it, its choices under it (gh-302)', () => {
+  const md = '1) [ ] **Two lists numbered the same**\n\n   The first item to claim an id keeps it.\n\n   Q (Claude): Is that enough, for now?\n   - ( ) Yes\n   - ( ) [@ Something else]\n';
+  const { body } = render(md);
+  const item = /<li class="task step"[^>]*>([\s\S]*?)<\/li>\n<\/ol>/.exec(body)[1];
+  assert.match(item, /<p>The first item to claim an id keeps it\.<\/p>\n<ul>\n<li class="qa qa-q" id="Q1"><span class="qa-label">Q<\/span><span class="qa-name">Claude<\/span>Is that enough, for now\?<\/li>\n<\/ul>\n<ul data-answered="false">/);
+  assert.match(item, /data-on=" {3}- \(x\) Yes"/);
+  assert.doesNotMatch(body, /Q \(Claude\):/);
+});
+
+test('a Q: and A: in a bullet\'s or a task\'s item are an exchange inside it, nesting under each other as at the margin (gh-302)', () => {
+  const bullet = render('- one\n- two\n\n  Q: Under two?\n  A: ( ) Yes ( ) No\n    Q: Nested?\n\nafter\n').body;
+  assert.match(bullet, /<p>two<\/p>\n<ul>\n<li class="qa qa-q" id="Q1"><span class="qa-label">Q<\/span>Under two\?<\/li>\n<li class="qa qa-a"><span class="qa-label">A<\/span><span class="qa-choices" role="radiogroup" aria-label="Under two\?" data-line="4" data-text=" {2}A: \( \) Yes \( \) No"/);
+  assert.match(bullet, /<\/span>\n<ul>\n<li class="qa qa-q" id="Q2"><span class="qa-label">Q<\/span>Nested\?<\/li>/);
+  assert.match(bullet, /<\/ul>\n<p>after<\/p>/);
+  const task = render('- [ ] Fix it\n\n  Good (Josh): it\'s small\n').body;
+  assert.match(task, /aria-label="Fix it"> Fix it<\/p>\n<ul>\n<li class="qa qa-card qa-good" id="G1"><span class="qa-label qa-toggle"[^>]*data-line="2" data-on=" {2}Good \[x\] \(Josh\): it's small"/);
+  assert.match(render('- one\n\n  \\Q: as typed\n').body, /<p>Q: as typed<\/p>/);
+});
+
+test('a - Q: bullet is a question, its choices under it, and a - A: straight after it its answer, each its own bullet; 1) Good: keeps its number (gh-302)', () => {
+  const { body } = render('- Q (Claude): Ship it?\n  - ( ) Yes\n  - ( ) No\n- Q (Claude): Or later?\n- A: ( ) Now ( ) Later\n');
+  assert.match(body, /<ul>\n<li>\n<ul>\n<li class="qa qa-q" id="Q1"><span class="qa-label">Q<\/span><span class="qa-name">Claude<\/span>Ship it\?<\/li>\n<\/ul>\n<ul data-answered="false">\n<li class="task"><input type="radio"[^>]*data-on=" {2}- \(x\) Yes"/);
+  assert.match(body, /<li class="qa qa-a"><span class="qa-label">A<\/span><span class="qa-choices" role="radiogroup" aria-label="Or later\?" data-line="4" data-text="- A: \( \) Now \( \) Later"/);
+  assert.match(body, /data-on="- A: \(x\) Now \( \) Later"/);
+  const card = render('1) Good (Josh): kept\n2) Try: next\n').body;
+  assert.match(card, /<li data-n="1" id="1">\n<ul>\n<li class="qa qa-card qa-good" id="G1"><span class="qa-label qa-toggle"[^>]*data-on="1\) Good \[x\] \(Josh\): kept" data-off="1\) Good \(Josh\): kept">G<\/span>/);
+  assert.match(card, /data-on="2\) Try \[x\]: next"/);
+  assert.equal(render('+ Q: Plus?\n').body.match(/qa-label/g).length, 1, 'a + bullet labels the question once');
+});
+
+test('an aside under a question in a list\'s item goes beside it (gh-302)', () => {
+  const md = '---\nreviewer #: Josh\n---\n\n1) [ ] **A point**\n\n   Q (Claude): Agreed?\n   ~# not yet\n   - ( ) Yes\n';
+  const { body } = render(md);
+  const beside = body.split('<section class="gm-pair">').slice(1).find((p) => p.includes('not yet'));
+  assert.match(beside, /<span class="qa-label">Q<\/span><span class="qa-name">Claude<\/span>Agreed\?/);
+  assert.doesNotMatch(body, /~#|Q \(Claude\):/);
+});
+
 test('a nested answer\'s choices are named by its own question and write its line as indented', () => {
   const { body } = render('Q: Top?\nA: Split it.\n  Q: Part A?\n  A: ( ) Now ( ) [@ Something else]\n');
   assert.match(body, /<span class="qa-choices" role="radiogroup" aria-label="Part A\?" data-line="3" data-text=" {2}A: \( \) Now \( \) \[@ Something else\]"/);

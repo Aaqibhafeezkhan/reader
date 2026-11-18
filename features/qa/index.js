@@ -37,8 +37,12 @@
  *
  * Indented under an exchange, a `Q:` or `A:` line (a card's, a vote's) is
  * an exchange nested in it, as deep as it's indented: a list in the item
- * above. Indented with no exchange above it, it stays as typed. Back from
- * a nested exchange, an `A:` is a new answer, not the one before carried on.
+ * above. Indented with no exchange above it, it stays as typed, unless it's
+ * at the words of a list's item: then it starts an exchange inside the item,
+ * as at the margin (gh-302). So does one straight after a list item's marker,
+ * `- Q:` or `1) Good:`, and a `- A:` in the next bullet goes on with it. Back
+ * from a nested exchange, an `A:` is a new answer, not the one before
+ * carried on.
  *
  *   A: Now, or file an issue.
  *     Q (Claude): Fix part A now?
@@ -150,8 +154,8 @@ export function qa(md) {
  * choice's line with only it picked (`on`) and the line with none (`off`).
  * A mark in a blank's answer or in code is that's, not a choice.
  */
-function answerChoices(written, line, head) {
-  const lead = /^[ \t]*/.exec(written)[0].length;
+function answerChoices(written, line, head, marked) {
+  const lead = (marked ? /^[ \t]*\S+[ \t]+/ : /^[ \t]*/).exec(written)[0].length;
   const at = QA.exec(written.slice(lead))?.[0].length;
   if (!at) return null;
   const found = choicesIn(written, lead + at, [...inlineBlanks(written), ...codeSpans(written)]);
@@ -168,12 +172,15 @@ function lines(state) {
   // An aside is a thought of the reader's own, not part of an exchange.
   if (state.inlineMode || state.env.nested) return;
   const said = new Map();
-  const base = state.env.lineBase ?? 0;
+  const lineBase = state.env.lineBase ?? 0;
   // What's open at each depth of nesting, the margin's first: the indent its
   // lines start at, who's speaking (`open`), the question or card a vote is
   // for (`head`), and the label alone on its line that's speaking, if it is
   // one (`cand`), which may yet go back to typed text (`under`).
   let levels = [];
+  // Where the words of each list item open around a line start, innermost
+  // last, so that an exchange can start inside one (gh-302).
+  const cols = [];
   const code = fenced();
   const src = state.src.split('\n');
   // The label alone on its line that what's at depth `at` hangs from, if any.
@@ -184,12 +191,32 @@ function lines(state) {
       return line;
     }
     const lead = /^[ \t]*/.exec(line)[0];
-    const body = line.slice(lead.length);
-    const at = depthOf(levels, width(lead));
-    // Indented, a line nests only in an exchange open above it.
-    if (at < 0) return line;
-    const level = levels[at]?.indent === width(lead) ? levels[at] : { indent: width(lead), open: null, head: null, cand: null };
-    const pad = ' '.repeat(2 * at);
+    // A list item's marker, `- ` or `1) `, before an exchange's line starts
+    // one inside the item, as a line indented to its words would (gh-302).
+    const marker = ITEM.exec(line.slice(lead.length))?.[0] ?? '';
+    const after = line.slice(lead.length + marker.length);
+    const opens = Boolean(marker) && (QA.test(after) || BARE.test(after)) && !after.startsWith('\\');
+    const body = opens ? after : line.slice(lead.length);
+    const indent = width(opens ? lead + marker : lead);
+    if (line.trim()) {
+      while (cols.length && cols.at(-1) > width(lead)) cols.pop();
+    }
+    // Inside a list item: at its words' indent, short of code.
+    const inItem = cols.length > 0 && indent >= cols.at(-1) && indent < cols.at(-1) + 4;
+    if (marker) cols.push(itemCol(lead, marker));
+    // A bullet's exchange goes on in the next bullet alike, `- Q:` then
+    // `- A:`, each an item of its own.
+    let at = opens ? (levels[0]?.indent === indent ? 0 : -1) : depthOf(levels, indent);
+    // Indented, a line nests only in an exchange open above it, or starts
+    // one in the list item it's in.
+    if (at < 0 && (opens || (inItem && (QA.test(body) || BARE.test(body))))) {
+      levels = [];
+      at = 0;
+    }
+    if (at < 0) return escapedIn(line, lead, body, inItem);
+    const level = levels[at]?.indent === indent ? levels[at] : { indent, open: null, head: null, cand: null };
+    const base = at ? levels[0].indent : indent;
+    const pad = opens ? lead + marker : ' '.repeat(base + 2 * at);
     const v = level.head && VOTE.exec(body);
     if (v) {
       const text = body.slice(v[0].length);
@@ -209,9 +236,10 @@ function lines(state) {
     // Only a card is done, or not.
     if (!q || q[0].startsWith('\\') || (q[2] && !CARDS.has(q[1]))) {
       const escaped = q?.[0].startsWith('\\');
-      // Any other line at the margin ends the exchange.
-      if (!lead && body) levels = [];
-      return escaped && (!lead || levels.length) ? lead + body.slice(1) : line;
+      // Any other line at the margin, or at the indent an exchange inside
+      // a list item started at, ends the exchange.
+      if (body && levels.length && width(lead) <= levels[0].indent) levels = [];
+      return escaped && (!lead || levels.length || inItem) ? lead + body.slice(1) : line;
     }
     const [m, who, box] = q;
     const name = q[3]?.trim() ?? '';
@@ -221,15 +249,15 @@ function lines(state) {
     if (levels.length > at + 1) level.open = null;
     levels = [...levels.slice(0, at), level];
     const written = state.env.written?.[n] ?? line;
-    const choices = who === 'A' ? answerChoices(written, base + n, level.head) : null;
+    const choices = who === 'A' ? answerChoices(written, lineBase + n, level.head, opens) : null;
     const { open } = level;
-    if (open && !bare && open.who === who && !CARDS.has(who) && (!name || name === open.name)) {
+    if (open && !bare && !opens && open.who === who && !CARDS.has(who) && (!name || name === open.name)) {
       said.set(n, { more: true, choices, typed: line, dep: level.cand ?? hangsFrom(at) });
       return `${pad}  ${text}`;
     }
     level.open = { who, name };
     const item = { who, name, votes: 0, head: level.head, choices, depth: at, typed: line, dep: hangsFrom(at) };
-    if (bare) Object.assign(item, { under: true, indent: width(lead) });
+    if (bare) Object.assign(item, { under: true, indent, col: base + 2 * at + 2 });
     level.cand = bare ? item : null;
     if (who !== 'A') item.head = level.head = item;
     if (CARDS.has(who)) {
@@ -238,7 +266,7 @@ function lines(state) {
       item.done = box === 'x' || box === 'X';
       item.toggle = {
         done: item.done,
-        line: base + n,
+        line: lineBase + n,
         on: `${written.slice(0, after)} [x]${rest}`,
         off: box === ' ' ? written : `${written.slice(0, after)}${rest}`,
       };
@@ -304,9 +332,22 @@ function wordsUnder(src, k, item) {
   const body = src[j].slice(lead.length);
   const w = width(lead);
   // Four past where the item's words start is code.
-  return w > item.indent && w - (2 * item.depth + 2) < 4 && !NOT_WORDS.test(body)
+  return w > item.indent && w - item.col < 4 && !NOT_WORDS.test(body)
     && !QA.test(body) && !BARE.test(body) && !VOTE.test(body);
 }
+
+// A list item's marker and the space after it.
+const ITEM = /^(?:[-+*]|\d{1,9}[.)])[ \t]+/;
+
+/** Where a list item's words start, its marker `marker` after `lead`, as markdown counts it: one past the marker if five or more spaces follow it. */
+const itemCol = (lead, marker) => {
+  const mark = marker.trimEnd();
+  const w = width(lead + marker);
+  return w - width(lead + mark) > 4 ? width(lead + mark) + 1 : w;
+};
+
+/** A line `line` left as typed, losing the backslash before an exchange's label inside a list item, as at the margin. */
+const escapedIn = (line, lead, body, inItem) => (inItem && /^\\(?:Q|A|Good|Bad|Try)\b/.test(body) ? lead + body.slice(1) : line);
 
 /** How wide `lead` is, a tab to the next stop of four, as markdown counts it. */
 const width = (lead) => [...lead].reduce((w, c) => (c === '\t' ? w + 4 - (w % 4) : w + 1), 0);
@@ -326,6 +367,13 @@ function depthOf(levels, indent) {
 }
 
 /**
+ * Whether `tokens[i]` opens an exchange's item: a `+` one with words of its
+ * own, not a `+ Q:` item whose first words are the exchange in it (gh-302).
+ */
+const exchangeAt = (tokens, i) => tokens[i].type === 'list_item_open' && tokens[i].markup === '+' && tokens[i].map
+  && tokens[i + 1]?.type !== 'bullet_list_open';
+
+/**
  * Labels the list items on lines that held a `Q:` or `A:`, and starts a new
  * paragraph where an item carries on from the line before.
  */
@@ -340,7 +388,7 @@ function items(state) {
   const counted = state.env.shared ? (state.env.shared[COUNTED] ??= {}) : {};
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
-    if (t.type === 'list_item_open' && t.markup === '+' && said.get(t.map?.[0])?.who) {
+    if (exchangeAt(tokens, i) && said.get(t.map[0])?.who) {
       const { who, name, votes, bare, head, toggle } = said.get(t.map[0]);
       const kind = who === '+1' ? `vote${bare ? ' qa-bare' : ''}` : `${CARDS.has(who) ? 'card qa-' : ''}${who.toLowerCase()}`;
       addClass(t, `qa qa-${kind}${head?.done ? ' qa-done' : ''}`);
@@ -378,7 +426,7 @@ function lift(state, said) {
   const tokens = state.tokens;
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
-    if (t.type !== 'list_item_open' || t.markup !== '+' || !said.get(t.map?.[0])?.under) continue;
+    if (!exchangeAt(tokens, i) || !said.get(t.map[0])?.under) continue;
     const at = tokens.findIndex((x, k) => k > i && x.type === 'inline');
     const inline = tokens[at];
     const [first, next] = inline?.children ?? [];
@@ -407,7 +455,7 @@ function choose(state, said) {
   const tokens = state.tokens;
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
-    const item = t.type === 'list_item_open' && t.markup === '+' && said.get(t.map?.[0]);
+    const item = exchangeAt(tokens, i) && said.get(t.map[0]);
     if (item?.who && item.who !== 'A' && item.who !== '+1') {
       const inline = tokens.slice(i + 1).find((x) => x.type === 'inline');
       item.words = words(inline?.children ?? []);

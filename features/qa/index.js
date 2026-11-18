@@ -48,16 +48,12 @@
  *     Q (Claude): Fix part A now?
  *     A: File an issue.
  *
- * A label with nothing after its colon starts one too, when the next line
- * with words on it is indented under it, and isn't itself an exchange's,
- * a vote or an aside: its words, a paragraph or more, are the indented ones
- * (gh-219). With nothing indented under it, or something other than a
- * paragraph, a list, a quote or code, it stays as typed. Whether it has its
- * words is read once the asides are out, so that one written between a
- * label and its words goes beside the label.
+ * A label with nothing after its colon starts one too, its words on the
+ * lines indented straight under it, as markdown reads a bullet alone on its
+ * line: a paragraph or more, a list, a quote or code (gh-219). A blank line
+ * straight after it leaves the card empty, as it leaves `-` alone.
  *
  *   Good (Claude):
- *
  *     An aside under the line it was about kept each conversation in place.
  *
  *     Neither of us had to say which line or which item.
@@ -73,7 +69,7 @@
 
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { beforeExtract, keepWritten, addClass, escapeAttr, fenced, unplaced, textToken, MARKS } from '../source.js';
+import { beforeExtract, keepWritten, addClass, escapeAttr, fenced, unplaced, textToken } from '../source.js';
 import { workable, shut, inlineBlanks, codeSpans } from '../blank.js';
 import { MARK, choicesIn, pickedAt, answeredBy } from '../choices.js';
 
@@ -84,10 +80,8 @@ const SAID = Symbol('said');
 
 // A name may hold a link, whose address is in parentheses of its own.
 const QA = /^\\?(Q|A|Good|Bad|Try)(?:[ \t]+\[([ xX])\])?(?:[ \t]*\(((?:[^()\n]|\([^()\n]*\))*)\))?:[ \t]+(?=\S)/;
-// The same, with nothing after its colon: its words start on a line under it.
+// The same, with nothing after its colon: its words start on the line under it.
 const BARE = new RegExp(`${QA.source.slice(0, -'[ \\t]+(?=\\S)'.length)}[ \\t]*$`);
-// Where such a label's words would be, until they're found under it (items).
-const [UNDER] = MARKS.qa;
 const VOTE = /^\+1(?:[ \t]*\(((?:[^()\n]|\([^()\n]*\))*)\))?(?::[ \t]+(?=\S)|:?[ \t]*$)/;
 const LABELS = { Good: 'G', Bad: 'B', Try: 'T', '+1': '+1' };
 const CARDS = new Set(['Good', 'Bad', 'Try']);
@@ -98,9 +92,6 @@ const COUNTED = Symbol('qa counted');
 export function qa(md) {
   keepWritten(md);
   beforeExtract(md, 'qa_lines', lines);
-  // Once the asides are out, and before markdown reads the blocks: whether
-  // a label alone on its line has words under it (gh-219).
-  md.core.ruler.before('block', 'qa_under', under);
   // Last, after markdown's own rules: a paragraph split off here has no
   // source text of its own for them to check before they'd run.
   md.core.ruler.push('qa_items', items);
@@ -174,17 +165,14 @@ function lines(state) {
   const said = new Map();
   const lineBase = state.env.lineBase ?? 0;
   // What's open at each depth of nesting, the margin's first: the indent its
-  // lines start at, who's speaking (`open`), the question or card a vote is
-  // for (`head`), and the label alone on its line that's speaking, if it is
-  // one (`cand`), which may yet go back to typed text (`under`).
+  // lines start at, who's speaking (`open`), and the question or card a vote
+  // is for (`head`).
   let levels = [];
   // Where the words of each list item open around a line start, innermost
   // last, so that an exchange can start inside one (gh-302).
   const cols = [];
   const code = fenced();
   const src = state.src.split('\n');
-  // The label alone on its line that what's at depth `at` hangs from, if any.
-  const hangsFrom = (at) => levels.slice(0, at).reverse().find((l) => l.cand)?.cand ?? null;
   const out = src.map((line, n) => {
     if (code(line)) {
       levels = [];
@@ -214,7 +202,7 @@ function lines(state) {
       at = 0;
     }
     if (at < 0) return escapedIn(line, lead, body, inItem);
-    const level = levels[at]?.indent === indent ? levels[at] : { indent, open: null, head: null, cand: null };
+    const level = levels[at]?.indent === indent ? levels[at] : { indent, open: null, head: null };
     const base = at ? levels[0].indent : indent;
     const pad = opens ? lead + marker : ' '.repeat(base + 2 * at);
     const v = level.head && VOTE.exec(body);
@@ -223,14 +211,11 @@ function lines(state) {
       levels = [...levels.slice(0, at), level];
       level.head.votes++;
       level.open = { who: '+1' };
-      level.cand = null;
-      const dep = level.head.under ? level.head : hangsFrom(at);
-      said.set(n, { who: '+1', name: v[1]?.trim() ?? '', bare: !text, head: level.head, typed: line, dep });
+      said.set(n, { who: '+1', name: v[1]?.trim() ?? '', bare: !text, head: level.head });
       return `${pad}+ +1 ${text}`;
     }
-    // A label alone on its line is only a candidate here: whether words are
-    // under it is read once the asides are out (`under`), as this reads a
-    // line at a time.
+    // A label alone on its line is a bullet alone: its words are the lines
+    // indented straight under it, for markdown to find (gh-219).
     const q = QA.exec(body) ?? BARE.exec(body);
     const bare = Boolean(q) && !QA.test(body);
     // Only a card is done, or not.
@@ -252,13 +237,11 @@ function lines(state) {
     const choices = who === 'A' ? answerChoices(written, lineBase + n, level.head, opens) : null;
     const { open } = level;
     if (open && !bare && !opens && open.who === who && !CARDS.has(who) && (!name || name === open.name)) {
-      said.set(n, { more: true, choices, typed: line, dep: level.cand ?? hangsFrom(at) });
+      said.set(n, { more: true, choices });
       return `${pad}  ${text}`;
     }
     level.open = { who, name };
-    const item = { who, name, votes: 0, head: level.head, choices, depth: at, typed: line, dep: hangsFrom(at) };
-    if (bare) Object.assign(item, { under: true, indent, col: base + 2 * at + 2 });
-    level.cand = bare ? item : null;
+    const item = { who, name, votes: 0, head: level.head, choices, depth: at, bare, typed: body.trim() };
     if (who !== 'A') item.head = level.head = item;
     if (CARDS.has(who)) {
       const after = written.indexOf(who) + who.length;
@@ -272,68 +255,11 @@ function lines(state) {
       };
     }
     said.set(n, item);
-    return `${pad}+ ${bare ? UNDER : text}`;
+    return bare ? `${pad}+` : `${pad}+ ${text}`;
   });
   // An escaped `\A:` loses its backslash even when nothing else changed.
   state.src = out.join('\n');
   if (said.size) state.env[SAID] = said;
-}
-
-/**
- * Decides, once the asides are out and before markdown reads the blocks,
- * whether each label alone on its line has words under it (gh-219): the
- * next line with words, indented under it, starting a paragraph. One that
- * hasn't goes back to typed text, with all that hung from it. Read here
- * rather than with the lines, so that an aside between a label and its
- * words is already gone, and goes beside the label.
- */
-function under(state) {
-  const said = state.env[SAID];
-  if (!said || state.inlineMode || state.env.nested) return;
-  const labels = [...said].filter(([, s]) => s.under);
-  if (!labels.length) return;
-  const src = state.src.split('\n');
-  // Lines as written -> lines now, the asides out.
-  const source = state.env.sourceLines;
-  const now = new Map(src.map((_, k) => [source?.[k] ?? k, k]));
-  const typed = new Set();
-  const back = (item) => {
-    if (typed.has(item)) return;
-    typed.add(item);
-    for (const s of said.values()) if (s.dep === item) back(s);
-  };
-  for (const [n, item] of labels) if (!typed.has(item) && !wordsUnder(src, now.get(n), item)) back(item);
-  if (!typed.size) return;
-  for (const [n, s] of [...said]) {
-    if (!typed.has(s)) continue;
-    said.delete(n);
-    const k = now.get(n);
-    if (k != null) src[k] = s.typed;
-  }
-  state.src = src.join('\n');
-}
-
-// What starts something other than a paragraph: a list's item (a numbered
-// or lettered one too), a quote, a fence, a heading, a table's row, a block.
-const NOT_WORDS = /^(?:[-+*]|\d{1,9}[.)]|[a-zA-Z][.)])(?:[ \t]|$)|^(?:>|```|~~~|#{1,6}(?:[ \t]|$)|\||:::)/;
-
-/**
- * Whether the next line of `src` after line `k` with words on it is indented
- * under the label alone on line `k`, `item`, and starts a paragraph: not
- * another block, indented code, or an exchange's line or a vote left as
- * typed.
- */
-function wordsUnder(src, k, item) {
-  if (k == null) return false;
-  let j = k + 1;
-  while (j < src.length && !src[j].trim()) j++;
-  if (j >= src.length) return false;
-  const lead = /^[ \t]*/.exec(src[j])[0];
-  const body = src[j].slice(lead.length);
-  const w = width(lead);
-  // Four past where the item's words start is code.
-  return w > item.indent && w - item.col < 4 && !NOT_WORDS.test(body)
-    && !QA.test(body) && !BARE.test(body) && !VOTE.test(body);
 }
 
 // A list item's marker and the space after it.
@@ -367,11 +293,19 @@ function depthOf(levels, indent) {
 }
 
 /**
- * Whether `tokens[i]` opens an exchange's item: a `+` one with words of its
- * own, not a `+ Q:` item whose first words are the exchange in it (gh-302).
+ * Whether `tokens[i]` opens an exchange's item: a `+` one, not a `+ Q:` item
+ * whose first words are the exchange in it, on its own line (gh-302). A
+ * label alone's list starts on the line under it.
  */
 const exchangeAt = (tokens, i) => tokens[i].type === 'list_item_open' && tokens[i].markup === '+' && tokens[i].map
-  && tokens[i + 1]?.type !== 'bullet_list_open';
+  && !(tokens[i + 1]?.type === 'bullet_list_open' && tokens[i + 1].map?.[0] === tokens[i].map[0]);
+
+/**
+ * The inline of the paragraph an exchange's item at `tokens[i]` starts with,
+ * its words, on its line or the one under; -1 if it starts with something
+ * else, a list, a quote, code, or is empty.
+ */
+const wordsAt = (tokens, i) => (tokens[i + 1]?.type === 'paragraph_open' && tokens[i + 2]?.type === 'inline' ? i + 2 : -1);
 
 /**
  * Labels the list items on lines that held a `Q:` or `A:`, and starts a new
@@ -382,7 +316,6 @@ function items(state) {
   // Lines the parser saw -> lines as written, before asides were taken out.
   const source = state.env.sourceLines;
   const said = { get: (n) => state.env[SAID].get(source?.[n] ?? n) };
-  lift(state, said);
   choose(state, said);
   const tokens = state.tokens;
   const counted = state.env.shared ? (state.env.shared[COUNTED] ??= {}) : {};
@@ -400,8 +333,20 @@ function items(state) {
         counted[letter] = (counted[letter] ?? 0) + 1;
         t.meta = { ...t.meta, anchor: `${letter}${counted[letter]}` };
       }
-      let k = i + 1;
-      while (k < tokens.length && tokens[k].type !== 'inline') k++;
+      let k = wordsAt(tokens, i);
+      // Words under a label alone start their paragraph at the label's line,
+      // as they would beside it, so an aside on them lines up with the card,
+      // not inside it (rows.js).
+      if (k > 0 && tokens[i + 1].map) tokens[i + 1].map = [t.map[0], tokens[i + 1].map[1]];
+      if (k < 0) {
+        // Nothing to say on its line: a paragraph of its own for the label,
+        // shown as an item's in a tight list is, without one.
+        k = i + 2;
+        const open = Object.assign(new state.Token('paragraph_open', 'p', 1), { hidden: true, block: true });
+        const close = Object.assign(new state.Token('paragraph_close', 'p', -1), { hidden: true, block: true });
+        const words = Object.assign(new state.Token('inline', '', 0), { children: [], content: '' });
+        tokens.splice(i + 1, 0, open, words, close);
+      }
       const inline = tokens[k];
       if (who === '+1') {
         const first = inline.children[0];
@@ -414,39 +359,24 @@ function items(state) {
       // of any paragraph; a card's own are on its line, before its words.
       inline?.children.unshift(label, new state.Token('text', '', 0));
     } else if (t.type === 'inline' && t.map) {
+      asTyped(t, said);
       i = carryOn(state, i, said);
     }
   }
 }
 
 /**
- * Takes away the placeholder a label alone on its line left where its words
- * would be, so that the words under it are the item's first (gh-219): with a
- * blank line between, its paragraph, the next one then starting at the
- * label's line; straight under it, its line, and the break after it.
+ * A label alone on its line that went on a paragraph, as a bullet alone
+ * can't start a list there, put back as typed: its `+` the line's words.
  */
-function lift(state, said) {
-  const tokens = state.tokens;
-  for (let i = 0; i < tokens.length; i++) {
-    const t = tokens[i];
-    if (!exchangeAt(tokens, i) || !said.get(t.map[0])?.under) continue;
-    const at = tokens.findIndex((x, k) => k > i && x.type === 'inline');
-    const inline = tokens[at];
-    const [first, next] = inline?.children ?? [];
-    if (first?.type !== 'text' || !first.content.startsWith(UNDER)) continue;
-    if (inline.children.length === 1 && first.content.trim() === UNDER) {
-      tokens.splice(at - 1, 3);
-      // Its words' paragraph starts at the label's line, as it would beside
-      // it, so an aside on them lines up with the card, not inside it (rows.js).
-      const words = tokens[at - 1];
-      if (words?.type === 'paragraph_open' && words.map) words.map = [t.map[0], words.map[1]];
-    } else if (first.content.trim() === UNDER && /break$/.test(next?.type)) {
-      inline.children.splice(0, 2);
-      inline.map = [inline.map[0] + 1, inline.map[1]];
-    } else {
-      first.content = first.content.slice(UNDER.length);
+function asTyped(inline, said) {
+  let line = inline.map[0];
+  inline.children?.forEach((c, k, all) => {
+    if (/break$/.test(c.type)) line++;
+    else if (c.type === 'text' && c.content === '+' && (!k || /break$/.test(all[k - 1].type)) && said.get(line)?.bare) {
+      c.content = said.get(line).typed;
     }
-  }
+  });
 }
 
 /**
@@ -460,8 +390,8 @@ function choose(state, said) {
     const t = tokens[i];
     const item = exchangeAt(tokens, i) && said.get(t.map[0]);
     if (item?.who && item.who !== 'A' && item.who !== '+1') {
-      const inline = tokens.slice(i + 1).find((x) => x.type === 'inline');
-      item.words = words(inline?.children ?? []);
+      const at = wordsAt(tokens, i);
+      item.words = at < 0 ? '' : words(tokens[at].children ?? []);
     } else if (t.type === 'inline' && t.map && t.children) {
       chooseIn(state, t, said);
     }

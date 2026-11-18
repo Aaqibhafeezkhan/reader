@@ -12,8 +12,8 @@
  * (`splitText`).
  *
  * Such a pass decides only about the line it's on, as the asides are still
- * in the text: anything that looks at the lines around it, as whether words
- * follow a label (features/qa), runs after `aside_extract`, once they're out.
+ * in the text: anything that looks at the lines around it runs after
+ * `aside_extract`, once they're out.
  */
 
 import { frontMatter, fenced, withEntries } from '../static/markdown.js';
@@ -74,8 +74,6 @@ export const MARKS = {
   items: ['\uE004', '\uE005'],
   box: ['\uE008', '\uE009'],
   attributions: ['\uE007'],
-  // A card or exchange whose words start on the line under its label (features/qa).
-  qa: ['\uE006'],
   sizes: ['\uE00E', '\uE00F'],
   fields: ['\uE010', '\uE012'],
   date: ['\uE013', '\uE014'],

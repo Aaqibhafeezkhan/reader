@@ -19,7 +19,8 @@ test('::: styles every block until the closing :::', () => {
   assert.match(body, /<td class="font" style="text-align:right; color: var\(--gm-red\); --font: 'georgia'">2<\/td>/);
   assert.match(body, /<hr>/);
   assert.match(body, /<code>\[c\]\{red\}\n<\/code>/);
-  assert.match(body, new RegExp(`<summary ${style}>aside</summary>`));
+  // An aside is out before the styles are read (gh-305): the reader's own, not the block's.
+  assert.match(body, /<summary>aside<\/summary>/);
   assert.match(body, /<p>after<\/p>\n<p>:::<\/p>/);
   assert.doesNotMatch(body, /[\uE000-\uE007]/);
 });
@@ -56,9 +57,10 @@ test('a ::: with nothing open stays as typed, and code inside a block is left al
   assert.match(body, /<pre><code>indented\n<\/code><\/pre>/);
 });
 
-test('an aside in a ::: block keeps its style', () => {
-  const { body } = render('::: red\n~ aside\n:::\n');
-  assert.match(body, /<summary style="color: var\(--gm-red\)">aside<\/summary>/);
+test('an aside in a ::: block is the reader\'s own, not styled with it (gh-305)', () => {
+  const { body } = render('::: red\nA line.\n~ aside\n:::\n');
+  assert.match(body, /<summary>aside<\/summary>/);
+  assert.match(body, /<p style="color: var\(--gm-red\)">A line\.<\/p>/);
 });
 
 test('the stylesheet comes with the feature', () => {

@@ -47,11 +47,17 @@ test('code and asides are not exchanges', () => {
   assert.doesNotMatch(body, /class="qa/);
 });
 
-test('an aside, like any line at the margin, ends the exchange', () => {
+test('an aside is out before the exchanges are read, so the page reads as without it (gh-305)', () => {
   const { body } = render('A (Ann): one\n~ a thought\nA (Ann): two\nA: three\n');
-  assert.equal(body.match(/class="qa qa-a"/g).length, 2);
-  assert.match(body, /two<span class="qa-para"><\/span>three/);
   assert.match(body, /a thought/);
+  assert.equal(body.match(/class="qa qa-a"/g).length, render('A (Ann): one\nA (Ann): two\nA: three\n').body.match(/class="qa qa-a"/g).length);
+  // A vote after an aside under a card counts for it, as without the aside.
+  const voted = render('Good (Claude): Words.\n~ A note.\n+1 (Maria): Agreed.\n').body;
+  assert.match(voted, /<span class="qa-tally">\+1<\/span>/);
+  assert.match(voted, /<li class="qa qa-vote">/);
+  const more = render('Good (Claude): Words.\n~ A note.\n\n  More.\n+1 (Maria): Agreed.\n').body;
+  assert.match(more, /qa-tally">\+1</);
+  assert.match(more, /<li class="qa qa-vote">/);
 });
 
 test('the stylesheet comes with the feature', () => {
@@ -59,7 +65,7 @@ test('the stylesheet comes with the feature', () => {
 });
 
 test('an escaped line keeps no backslash, even with no exchange about', () => {
-  const { body } = render('text\n\n\\A: plain\n\n~ aside\n\\Q: in the aside\n');
+  const { body } = render('text\n\n\\A: plain\n\n~ aside\n~ \\Q: in the aside\n');
   assert.match(body, /<p>A: plain<\/p>/);
   assert.match(body, /aside\nQ: in the aside/);
 });
@@ -350,10 +356,10 @@ test('an aside on a card written under its label goes where it would beside it (
   }
 });
 
-test('an aside straight under a label alone takes the indented line after it as its own, leaving the card empty, until gh-305 (gh-219)', () => {
-  const page = render('---\nreviewer m: Maria\n---\n\nBad (Maria):\n~m An aside\n  its next line.\n').body;
-  assert.match(page, /<li class="qa qa-card qa-bad" id="B1"><span class="qa-label qa-toggle"[^>]*>B<\/span><span class="qa-name">Maria<\/span><\/li>/);
-  assert.match(page, /An aside\nits next line\./);
+test('an aside straight under a label alone goes beside it, and the indented line after it is the card\'s words (gh-219, gh-305)', () => {
+  const page = render('---\nreviewer m: Maria\n---\n\nBad (Maria):\n~m An aside\n~m on two lines.\n  The card\'s words.\n').body;
+  assert.match(page, /<li class="qa qa-card qa-bad" id="B1"><span class="qa-label qa-toggle"[^>]*data-line="4"[^>]*>B<\/span><span class="qa-name">Maria<\/span>The card’s words\.<\/li>/);
+  assert.match(page, /An aside\non two lines\./);
 });
 
 test('a list, a quote, code or a heading straight under a label alone is its card\'s, as under a bullet alone (gh-219, gh-81)', () => {

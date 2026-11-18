@@ -39,6 +39,8 @@ export function open(root, dir = root, { ai } = config()) {
     const closes = (s) => /^\s*~#\s+\[[xX]\]/.test(s);
     lines.forEach((l, i) => {
       if (fenced[i] || !/^\s*~#(\s|$)/.test(l) || closes(l)) return;
+      // An aside's next lines start with its mark too (gh-305): one aside, waiting once.
+      if (i > 0 && /^\s*~#(\s|$)/.test(lines[i - 1]) && !fenced[i - 1]) return;
       let answered = false;
       let unthreaded = null;
       // to the end of its paragraph: an aside can go onto a line of its own (a code sample)
@@ -129,11 +131,11 @@ export function boxes(root, dir = root, { ai } = config()) {
   return found;
 }
 
-// Each line straight after one of the AI's asides or replies (`~c`, `~~c`) that
-// isn't indented past its `~` nor an aside itself: an aside's line that runs on
-// is indented (docs/asides.md), or it reads as the page's text. It may be the
-// paragraph carrying on below, as it can under a line, so these are to look at,
-// not waiting on anyone.
+// Each line straight after one of the AI's asides or replies (`~c`, `~~c`)
+// that's indented past its `~` and isn't an aside itself: an aside's next line
+// starts with its own mark (docs/asides.md, gh-305), so this one, written as
+// one used to be, reads as the page's text. It may be the page, an item's
+// words carrying on, so these are to look at, not waiting on anyone.
 export function runOn(root, dir = root) {
   const found = [];
   for (const f of files(dir)) {
@@ -146,10 +148,8 @@ export function runOn(root, dir = root) {
       const mark = /^(\s*)~~?c(\s|$)/.exec(l);
       if (mark) { at = mark[1].length; return; }
       if (/^\s*~/.test(l)) { at = -1; return; }
-      // An indented line carries the aside on; the first that isn't ends it.
-      if (at >= 0 && /^\s*/.exec(l)[0].length > at) return;
-      // A new item, heading or quote isn't a line run on.
-      if (at >= 0 && !/^\s*(?:[-*+]|\d{1,9}[.)]|[a-z]\)|#{1,6}|>)(?:\s|$)/.test(l)) found.push({ at: where(root, f, i), text: l.trim() });
+      // Indented past it, as a line carrying it on was before.
+      if (at >= 0 && /^\s*/.exec(l)[0].length > at) found.push({ at: where(root, f, i), text: l.trim() });
       at = -1;
     });
   }
@@ -166,5 +166,5 @@ export function main(argv) {
   say(`Waiting on ${config().ai}`, open(dir));
   say('Waiting on you', boxes(dir));
   const loose = runOn(dir);
-  if (loose.length) say('To check, a reply\'s line run on without its indent, or the page carrying on', loose);
+  if (loose.length) say('To check, a reply\'s line indented, as before gh-305, which now reads as the page\'s', loose);
 }

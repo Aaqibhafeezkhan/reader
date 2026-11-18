@@ -27,7 +27,7 @@ Priya Raman, keynote
 - she credited Dan McKinley's [Choose Boring Technology](https://boringtechnology.club/)
 - graph of incidents by age of dependency, drops off after year 2
 ~ So the first two years of a dependency are where we pay for it.
-  Worth checking against our own incident log.
+~ Worth checking against our own incident log.
 - she kept coming back to !SLO
 
 Q (audience): When is it worth spending a token?
@@ -54,7 +54,7 @@ Tomás Ortega
 - pick one on purpose
 - an unbounded queue is choosing to crash later
 ~[unbounded queue] Our importer does exactly this.
-  That was the outage in August.
+~ That was the outage in August.
 
 Q (Tomás): Who has a queue with no max?
 A: Half the room.

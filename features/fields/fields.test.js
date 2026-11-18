@@ -25,9 +25,12 @@ test('@ lines in code, indented, without a label or mid-sentence are left as typ
   assert.match(body, /@mention: hi/);
 });
 
-test('a field carried into an aside keeps its line', () => {
-  const { body } = render('~ a thought\n@ Name: x\n', { line: 3 });
-  assert.match(body, /gm-aside-cell[\s\S]*<span class="field" data-line="4" data-text="@ Name: x" data-head="@ Name:">/);
+test('a field in an aside keeps its line, written with its mark (gh-305)', () => {
+  const { body } = render('~ a thought\n~ @ Name: x\n', { line: 3 });
+  assert.match(body, /gm-aside-cell[\s\S]*<span class="field" data-line="4" data-text="~ @ Name: x" data-head="~ @ Name:">/);
+  // A line after an aside with no mark is the page's own.
+  const page = render('~ a thought\n@ Name: x\n', { line: 3 }).body;
+  assert.match(page, /gm-speaker">\n<p><span class="field" data-line="4" data-text="@ Name: x"/);
 });
 
 test('a field in a ::: block is styled with it', () => {

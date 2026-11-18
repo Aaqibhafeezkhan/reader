@@ -26,7 +26,7 @@ That plain text is reader-markdown.
 !reader-markdown: GitHub-flavored markdown, plus a few extras for taking notes, reviewing, teaching and presenting; it still reads as plain text anywhere else
 
 ~ This page is !reader-markdown too.
-A line like this one, starting with `~`, is an aside: the writer's voice, set in the margin.
+~ A line like this one, starting with `~`, is an aside: the writer's voice, set in the margin.
 
 Each part below takes one habit from a day of notes at Riverbend Dev Days.
 At the end, you'll give that day its ten minutes yourself.
@@ -85,12 +85,12 @@ Write yours on a line starting `~ `, right under the line it's about.
 ```markdown
 - an unbounded queue is choosing to crash later
 ~ Our importer does exactly this.
-  That was the outage in August.
+~ That was the outage in August.
 ```
 +++ Rendered
 - an unbounded queue is choosing to crash later
 ~ Our importer does exactly this.
-  That was the outage in August.
+~ That was the outage in August.
 :::
 
 The aside sits in the margin, level with the line, and the list stays one list.
@@ -109,7 +109,7 @@ To point at the exact words, name them in brackets after the `~`:
 :::
 
 ~ If you can't tell whether a thought was the speaker's or yours, it's yours.
-Make it an aside.
+~ Make it an aside.
 
 ---
 
@@ -181,7 +181,7 @@ Make them a quote, with `> --` and who said it on the last line:
 :::
 
 ~ One or two per talk.
-If everything is a quote, nothing is.
+~ If everything is a quote, nothing is.
 
 ---
 

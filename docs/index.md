@@ -15,7 +15,7 @@ and a few more things for taking notes, reviewing, teaching and presenting.
 A file of it still reads as plain text anywhere else.
 
 ~ This is an aside, written as a line starting `~`. These pages are
-reader-markdown too, saved as HTML with `reader export`.
+~ reader-markdown too, saved as HTML with `reader export`.
 
 Each sample in these pages has two tabs: **Source**, what you'd type, and
 **Rendered**, what reader makes of it. The pages are saved copies, so what

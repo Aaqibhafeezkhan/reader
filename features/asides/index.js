@@ -36,7 +36,7 @@ import { preprocess, ASIDES } from './preprocess.js';
 import { ownClass } from './key.js';
 import { KEYS, keyOf, unreadOf } from '../key.js';
 import { marks, about } from './marks.js';
-import { escapeHtml, escapeAttr } from '../source.js';
+import { escapeHtml, escapeAttr, noteEnv } from '../source.js';
 import { shut } from '../blank.js';
 
 export function asides(md) {
@@ -51,7 +51,10 @@ export function asides(md) {
     // Each aside's line, and each line left, traced back to the file
     // through the page's own trace.
     const page = state.env.sourceLines ?? [];
-    for (const a of [...asides, ...asides.flatMap((t) => t.replies ?? [])]) a.line = page[a.line] ?? a.line;
+    for (const a of [...asides, ...asides.flatMap((t) => t.replies ?? [])]) {
+      a.line = page[a.line] ?? a.line;
+      a.lines = a.lines.map((k) => page[k] ?? k);
+    }
     // A reply naming no topic is about its thread's, for the filter and the
     // legend, though its chips stay as written; one naming its own is about
     // those alone (gh-21's review).
@@ -157,8 +160,10 @@ function voice(by, about = by?.topics) {
 export function asideTokens(md, aside, env) {
   // Parse the aside body as markdown in its own right, so **emphasis**,
   // `code`, links and even nested lists work inside a thought. Link reference
-  // definitions carry over; the aside bookkeeping deliberately does not.
-  return md.parse(aside.text, { ...env, [ASIDES]: null, nested: true });
+  // definitions carry over; the aside bookkeeping deliberately does not. Its
+  // lines are read as the page's are, each by its line in the file and with
+  // its mark, so a box or a blank in it writes its line back whole.
+  return md.parse(aside.text, { ...noteEnv(env, aside), [ASIDES]: null });
 }
 
 // A chip's or a pill's class, and whether it's in an author's own colour.

@@ -155,13 +155,14 @@ paragraphs, indented, a blank line between them, and a list, a quote or
 code under it are the card's too. A blank line straight after the label
 leaves the card empty, as it leaves a bullet alone, and a label alone
 straight under a paragraph's line stays as typed, as a bullet alone can't
-start a list there. An aside written straight under the label takes the
-indented line after it as its own, so write it under the words instead:
+start a list there. An aside can go straight under the label, beside it,
+as an aside is only its own `~` lines (see [asides](asides.md)):
 
 ::: tabs
 +++ Source
 ```markdown
 Good (Claude):
+~ Written under its label.
   An aside under the line it was about kept each conversation in place.
 
   Neither of us had to say which line or which item.
@@ -169,6 +170,7 @@ Good (Claude):
 ```
 +++ Rendered
 Good (Claude):
+~ Written under its label.
   An aside under the line it was about kept each conversation in place.
 
   Neither of us had to say which line or which item.

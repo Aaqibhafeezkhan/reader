@@ -1,7 +1,9 @@
 /**
  * Source-level pass that lifts asides out of a document *before* the
  * markdown block parser runs, once the page's front matter and comments are
- * off (src/page.js).
+ * off (src/page.js), and before any other feature reads the lines: an aside
+ * is exactly its own `~` lines, so what's left is the page as if it had
+ * never been annotated, and no other feature need know an aside's syntax.
  *
  * This is the heart of the extension. An aside is a marginal thought, so it
  * must not change the shape of the thing it is written beside. If the `~` line
@@ -15,10 +17,7 @@
 
 import { attribute } from './key.js';
 import { STYLES } from '../mark.js';
-import { OPEN, DIVIDER, CLOSE } from '../layout.js';
-import { fenced, LIST_MARKER } from '../source.js';
-
-const FENCE_RE = /^\s{0,3}(`{3,}|~{3,})/;
+import { fenced } from '../source.js';
 
 // A `~` on its own, or followed by whitespace. `~~strike~~` and the `~~~` fence
 // are both excluded by requiring the next character not to be another tilde.
@@ -66,20 +65,6 @@ function selection(written, style) {
   return { text, nth: n ? Number(n[1]) : 1, style: style?.toLowerCase() ?? null };
 }
 
-// Lines that begin a block the aside should not swallow as a lazy continuation:
-// markdown's own, and reader's `:::` styles, `+++` panes, `@` fields and
-// `!TERM:` definitions; and a layout's lines, once the styles feature has
-// left them as marks of their own (features/layout.js).
-const BLOCK_START_RE = new RegExp(String.raw`^[ \t]*(?:${LIST_MARKER}[ \t]|#{1,6}[ \t]|>|${'```'}|~{3,}|-{3,}\s*$|_{3,}\s*$|:{3}|\+{3,}(?:[ \t]|$)|@[ \t]|\\?![ \t]*[^\s[!:()][^:\n]*:(?:[ \t]|$)|[${OPEN}${DIVIDER}${CLOSE}])`);
-
-function expandTabs(line) {
-  return line.replace(/\t/g, '    ');
-}
-
-function indentOf(line) {
-  return expandTabs(line).match(/^ */)[0].length;
-}
-
 /**
  * The page's asides, kept on `env` under a key no other feature can name
  * (gh-282). Another feature reads an aside's notes in the margin
@@ -101,7 +86,11 @@ export const ASIDES = Symbol('asides');
  *   has `select: { text, nth, style }`, and `within` when it's written
  *   straight under the line they're in. One with a box after its aliases
  *   has `box: { checked, on, off }`, its line ticked and not; and one
- *   answered has `replies`, each `{ text, line, by }`.
+ *   answered has `replies`, each `{ text, line, lines, prefixes, by }`.
+ *   Each aside's and reply's `lines` has, for each line of its `text`, the
+ *   line of `src` it's on, and `prefixes` what comes before it on that line,
+ *   its mark and aliases, for a feature that writes a line back
+ *   (features/source.js's `noteEnv`).
  */
 export function preprocess(src, key = new Map()) {
   const lines = String(src).replace(/\r\n?/g, '\n').split('\n');
@@ -136,37 +125,45 @@ export function preprocess(src, key = new Map()) {
     // it still ends the paragraph.
     const within = out.length > 0 && out[out.length - 1].trim() !== '';
 
-    // Collect the aside: its first line, plus any continuation lines. A
-    // continuation is a non-blank line that is either indented past the `~`,
-    // prefixed with its own `~`, or (after a blank) plain prose lazily wrapped
-    // onto the next line. Anything that starts a new block ends the aside.
+    // Collect the aside: its first line, and the lines straight under it
+    // with the same mark, read as a quote's `>` lines are (see `carryOn`).
     const am = found.m;
     const startLine = i;
-    let first = (am[5] || '').trim();
+    let first = (am[5] || '').trimStart();
     // A box after its aliases makes it a thread that can be resolved: the
     // line as written, ticked and not, for the page to write back.
     const box = BOX_RE.exec(first);
     if (box) first = first.slice(box[0].length);
-    const head = am[0].length - am[1].length - (am[5] || '').length;
-    const body = [first];
-    i = carryOn(i, line, head, within, body);
+    const body = { text: [first], lines: [i], prefixes: [line.slice(0, line.length - first.length)] };
+    i = carryOn(i, (next) => {
+      const m = asideOf(next, key)?.m;
+      if (!m || m[2] !== am[2] || m[3] != null) return null;
+      const rest = m[5] ?? '';
+      return BOX_RE.test(rest.trimStart()) ? null : rest;
+    }, body);
     const aside = {
       anchor: out.length,
-      text: body.join('\n').replace(/\s+$/, ''),
+      text: body.text.join('\n').replace(/\s+$/, ''),
       line: startLine,
+      lines: body.lines,
+      prefixes: body.prefixes,
       ...(found.by && { by: found.by }),
       ...(found.select && { select: found.select, within }),
       ...(box && { box: boxOf(line, box[1] !== ' ') }),
     };
 
-    // Its replies, each `~~` straight under it or under the last, and their
-    // own continuation lines: one thread, flat, as the replies to a comment.
+    // Its replies, each `~~` straight under it or under the last, with the
+    // same lines of their own: one thread, flat, as the replies to a comment.
     const replies = [];
     for (let r; i < lines.length && (r = replyOf(lines[i], key));) {
       const at = i;
-      const words = [(r.m[3] || '').trim()];
-      i = carryOn(i, lines[i], r.m[0].length - r.m[1].length - r.m[3].length, within, words);
-      replies.push({ text: words.join('\n').replace(/\s+$/, ''), line: at, ...(r.by && { by: r.by }) });
+      const said = (r.m[3] || '').trimStart();
+      const words = { text: [said], lines: [at], prefixes: [lines[at].slice(0, lines[at].length - said.length)] };
+      i = carryOn(i, (next) => {
+        const m = REPLY_RE.exec(next);
+        return m && m[2] === r.m[2] ? m[3] ?? '' : null;
+      }, words);
+      replies.push({ text: words.text.join('\n').replace(/\s+$/, ''), line: at, lines: words.lines, prefixes: words.prefixes, ...(r.by && { by: r.by }) });
     }
     if (replies.length) aside.replies = replies;
 
@@ -180,31 +177,23 @@ export function preprocess(src, key = new Map()) {
   }
 
   /**
-   * The continuation lines of an aside or a reply that starts on `lines[at]`,
-   * whose marker and aliases take `head` characters, pushed onto `body`:
-   * returns the line after them.
+   * The lines that carry on an aside or a reply that starts on `lines[at]`:
+   * each straight under it with the same mark and aliases, as a quote's
+   * lines each start with `>`. `same(line)` says what follows the mark on
+   * one, or null for a line that doesn't carry it on, which ends it. Like a
+   * quote's, a line's words, one space off, join the line before's
+   * paragraph, and one with the mark alone starts the next paragraph.
+   * Nothing else carries it on: a line with no mark is the page's own.
+   * Pushes each onto `body`, with its line and what comes before its words
+   * there, and returns the line after them.
    */
-  function carryOn(at, line, head, within, body) {
-    const markerIndent = indentOf(line);
-    const contentIndent = expandTabs(line).indexOf('~') + head + 1;
+  function carryOn(at, same, body) {
     let k = at + 1;
-    while (k < lines.length) {
-      const next = lines[k];
-      if (!next.trim()) break;
-      if (FENCE_RE.test(next)) break;
-      // A fresh `~` starts a fresh thought. Two tildes in a row are two
-      // separate asides that happen to share an anchor -- they will sit in the
-      // same cell, each keeping its own mark. A `~~` is a reply to it. A
-      // continuation line with no `~` is instead a wrapped line of the *same*
-      // thought.
-      if (asideOf(next, key) || replyOf(next, key)) break;
-      const ind = indentOf(next);
-      if (ind > markerIndent || (!within && !BLOCK_START_RE.test(next))) {
-        body.push(expandTabs(next).slice(Math.min(ind, contentIndent)));
-        k++;
-        continue;
-      }
-      break;
+    for (let rest; k < lines.length && (rest = same(lines[k])) != null; k++) {
+      const words = rest.replace(/^[ \t]/, '');
+      body.text.push(words);
+      body.lines.push(k);
+      body.prefixes.push(lines[k].slice(0, lines[k].length - words.length));
     }
     return k;
   }

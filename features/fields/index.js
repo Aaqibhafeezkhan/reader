@@ -61,15 +61,16 @@
 
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { beforeExtract, readLines, placeholder, MARKS, LIST_MARKER, splitText, escapeHtml, escapeAttr } from '../source.js';
+import { beforeExtract, readLines, placeholder, MARKS, LIST_MARKER, NOTE_MARK, splitText, escapeHtml, escapeAttr } from '../source.js';
 import { typable, hinted, unfilled, shut, workable, inlineBlanks } from '../blank.js';
 import { choicesIn, pickedAt, answeredBy } from '../choices.js';
 
 // A label is any but a colon, though one can be in its hint's braces.
 const BRACED = '\\{[^}\\n]*\\}';
 const LABEL = `(?:${BRACED}|[^:\\n{]|\\{(?![^}\\n]*\\}))*?(?:${BRACED}|[^:\\s{]|\\{(?![^}\\n]*\\}))`;
-const FIELD = new RegExp(`^([ \\t]*)@[ \\t]+(${LABEL})[ \\t]*(:+)[ \\t]*(.*?)[ \\t]*$`);
-const HEAD = new RegExp(`^[ \\t]*@[ \\t]+${LABEL}[ \\t]*:+`);
+// In an aside, the line starts with its mark (NOTE_MARK), which stays.
+const FIELD = new RegExp(`^((?:${NOTE_MARK})?[ \\t]*)@[ \\t]+(${LABEL})[ \\t]*(:+)[ \\t]*(.*?)[ \\t]*$`);
+const HEAD = new RegExp(`^(?:${NOTE_MARK})?[ \\t]*@[ \\t]+${LABEL}[ \\t]*:+`);
 const HINT = /^(.*?[^\s])[ \t]*(?<!\\)\{[ \t]*([^}\n]*?[^\s])[ \t]*(?<!\\)\}$/;
 const [OPEN, CLOSE] = MARKS.fields;
 // The fields found, by placeholder, kept on `env` under a key no other feature can name, so that

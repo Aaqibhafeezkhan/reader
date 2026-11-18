@@ -409,7 +409,10 @@ function items(state) {
       }
       const label = new state.Token('qa_label', '', 0);
       label.meta = { who, name, votes, toggle };
-      inline?.children.unshift(label);
+      // Braces straight after the label would style it alone (styles' braces
+      // after something drawn): they're the words', as typed, as at the start
+      // of any paragraph; a card's own are on its line, before its words.
+      inline?.children.unshift(label, new state.Token('text', '', 0));
     } else if (t.type === 'inline' && t.map) {
       i = carryOn(state, i, said);
     }

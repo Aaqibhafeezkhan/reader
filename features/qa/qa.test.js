@@ -359,3 +359,11 @@ test('a label alone with a list, a quote or code under it stays as typed, and wh
   }
 });
 
+
+test('braces at the start of the words under a label stay as typed, not styling the label', () => {
+  const under = render('Good (Claude):\n\n  {red} Its words.\n').body;
+  assert.doesNotMatch(under, /gm-red/);
+  assert.match(under, /<span class="qa-name">Claude<\/span>\{red\} Its words\./);
+  const beside = render('Good (Claude): {red} Its words.\n').body;
+  assert.match(beside, /<li class="qa qa-card qa-good" style="color: var\(--gm-red\)"/);
+});

@@ -517,6 +517,12 @@ async function safari(url) {
   const at = async (s, p) => {
     if (Array.isArray(p)) return { x: Math.round(p[0]), y: Math.round(p[1]), origin: 'viewport' };
     const sel = typeof p === 'object' ? p.at : p;
+    // The frame is drawn again once a press writes its line back, and Safari
+    // then presses in the frame it had, which takes nothing: go in afresh.
+    if (s.frame) {
+      await call('POST', `${s0}/frame`, { id: null });
+      inFrame = false;
+    }
     const ref = await find(sel, !!s.frame);
     // An action's element must be in view, or the press lands on nothing, so it's brought there first.
     await script(s, "arguments[0].scrollIntoView({ block: 'center', inline: 'nearest' })", [ref]);

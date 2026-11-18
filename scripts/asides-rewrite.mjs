@@ -17,6 +17,11 @@
  * A folder is read for its `.md` files, all the way down. `--check` lists
  * the lines that would change without writing them, and exits 1 if there
  * are any. Rewriting a file already rewritten changes nothing.
+ *
+ * Run it once, on files written before gh-305, and only on those: in a file
+ * written since, a line indented straight under an aside can be the page's
+ * own (a card's words under its label, an item's), and this would take it
+ * for the aside's, as the old rule did. Look over what `--check` lists first.
  */
 
 import fs from 'node:fs';

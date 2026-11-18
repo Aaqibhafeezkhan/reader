@@ -150,6 +150,9 @@ two lines, not two asides. Before, an aside's next line was indented, and
 a line of plain text after one could carry it on too;
 `node scripts/asides-rewrite.mjs <file or folder>` gives such lines their
 mark, so a file written that way reads as it did (`--check` lists them).
+Run it once, on files written before, as in one written since, an indented
+line under an aside may be the page's own, and it would take it for the
+aside's.
 
 ## Threads
 

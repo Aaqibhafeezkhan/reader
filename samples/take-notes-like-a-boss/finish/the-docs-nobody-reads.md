@@ -17,7 +17,7 @@ Dana Whitfield
 > -- Dana Whitfield
 
 ~ Our README starts with history.
-The person at 2am wants the install command.
+~ The person at 2am wants the install command.
 
 - [ ] Move the README's history to the bottom
 - [ ] Ask support for last month's top ten tickets

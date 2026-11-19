@@ -4,11 +4,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { rewrite } from '../scripts/asides-rewrite.mjs';
 import { render } from '../src/render.js';
 
 const KEYED = '---\nreviewer #: Josh\nreviewer c: Claude\n---\n\n';
-const SCRIPT = new URL('../scripts/asides-rewrite.mjs', import.meta.url).pathname;
+const SCRIPT = fileURLToPath(new URL('../scripts/asides-rewrite.mjs', import.meta.url));
 
 test('a line that carried an aside or a reply on gets its mark, its words as they were read (gh-305)', () => {
   const { text, changed } = rewrite(`${KEYED}- [ ] Smaller buttons\n  ~# Should these match Copy?\n  ~~c Yes, at 24 pixels.\n    They'd sit in the lower right.\n\nA line.\n~#[line] About it,\n  indented.\n`);

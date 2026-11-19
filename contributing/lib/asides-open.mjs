@@ -92,10 +92,13 @@ export function boxes(root, dir = root, { ai } = config()) {
   for (const f of files(dir).filter((p) => path.basename(p) === 'review.md' || path.basename(path.dirname(p)) === 'review')) {
     let fence = false;
     // A run of `- ( )` choices, asides allowed between them, an answer's indented lines
-    // included, is one question; it waits until one is picked. So does a field of
-    // choices, `@ Label: ( ) a ( ) b`.
+    // included, is one question; it waits until one is picked. A choice's own lines,
+    // indented under it after a blank, as a closing comment's quote, keep it going,
+    // as they're its item's. So does a field of choices, `@ Label: ( ) a ( ) b`.
     let group = null;
     let aside = false;
+    // Blank lines since the last choice, which end the run unless a choice's own lines follow.
+    let blank = false;
     const endGroup = () => {
       if (group && !group.picked) found.push({ at: group.at, text: group.text });
       group = null;
@@ -103,11 +106,15 @@ export function boxes(root, dir = root, { ai } = config()) {
     fs.readFileSync(f, 'utf8').split('\n').forEach((l, i) => {
       if (/^\s*(```|~~~)/.test(l)) { endGroup(); fence = !fence; }
       if (!fence && /^\s*[-*+] \([ xX]\)/.test(l)) {
-        if (!group) group = { at: where(root, f, i), text: l.trim(), picked: false };
+        if (group && blank && /^\s*/.exec(l)[0].length !== group.indent) endGroup();
+        if (!group) group = { at: where(root, f, i), text: l.trim(), picked: false, indent: /^\s*/.exec(l)[0].length };
         if (/^\s*[-*+] \([xX]\)/.test(l)) group.picked = true;
         aside = false;
+        blank = false;
         return;
       }
+      if (!fence && group && !l.trim()) { blank = true; return; }
+      if (!fence && group && /^\s*/.exec(l)[0].length > group.indent && !/^\s*~/.test(l)) { aside = false; return; }
       if (!fence && group && (/^\s*~/.test(l) || (aside && /^\s+\S/.test(l)))) {
         aside = true;
         return;

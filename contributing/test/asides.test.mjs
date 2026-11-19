@@ -149,6 +149,28 @@ test('what waits on the contributor: boxes, criteria, untried Tries and unpicked
     'the Send box left out is the configured AI\'s');
 });
 
+test('a choice\'s own lines under it, a closing comment\'s quote after a blank, keep its question one, picked or waiting once', (t) => {
+  const closing = (pick) => [
+    'Q (Claude): Does gh-1 still describe what shipped?',
+    `- (${pick[0]}) The issue stands`,
+    `- (${pick[1]}) The issue stands, with this closing comment:`,
+    '',
+    '  > Nothing went beyond it.',
+    '- ( ) A PR replaces it',
+    '- ( ) [@ Something else]',
+  ];
+  const day = tree(scratch(t), {
+    'review.md': [
+      ...closing(' x'),
+      '',
+      ...closing('  '),
+    ].join('\n'),
+  });
+  assert.deepEqual(boxes(day, day, CLAUDE).map((b) => [b.at, b.text]), [
+    ['review.md:10', '- ( ) The issue stands'],
+  ]);
+});
+
 test('asides-open lists both, under the names the config gives, with / between folders', (t) => {
   const dir = scratch(t);
   const day = tree(path.join(dir, 'meetings', '2026-11-22'), {

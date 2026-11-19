@@ -378,3 +378,10 @@ test('braces at the start of the words under a label stay as typed, not styling 
   const beside = render('Good (Claude): {red} Its words.\n').body;
   assert.match(beside, /<li class="qa qa-card qa-good" style="color: var\(--gm-red\)"/);
 });
+
+test('braces alone beside a label colour the whole card, its words under it (gh-219)', () => {
+  const { body } = render('Good (Claude): {red}\n  Its words.\n\n  More.\n');
+  assert.match(body, /<li class="qa qa-card qa-good" style="color: var\(--gm-red\)"/);
+  assert.match(body, /Its words\./);
+  assert.doesNotMatch(body, />[^<]*\{red\}/);
+});

@@ -49,12 +49,13 @@ const [BOX_OPEN, BOX_CLOSE] = MARKS.box;
 // A list item's first line with braces where it's declared, after its
 // bullet and any box (as typed, or as another feature has placed it, whose
 // placeholder this steps past without knowing whose it is), and before its
-// text: `- ( ) {bg-honeydew} **A**`. A heading's are the same, after its
+// text: `- ( ) {bg-honeydew} **A**`, or alone, for its words under it,
+// `- {red}` (gh-219's review). A heading's are the same, after its
 // `#`s and any box: `## [ ] {uppercase} Today`.
 const ITEM = new RegExp(`^([ \\t]*(?:>[ \\t]*)*(?:${LIST_MARKER}[ \\t]+`
   + `(?:(?:${PLACEHOLDER}|(?:\\[[ xX]\\])+|\\([ xX]\\))[ \\t]+)*`
   + `|#{1,6}[ \\t]+(?:(?:${PLACEHOLDER}|\\[[ xX]\\])[ \\t]+)*))`
-  + '(\\{([\\w-]+(?:[ \\t]+[\\w-]+)*)\\}[ \\t]+)(?=\\S)');
+  + '(\\{([\\w-]+(?:[ \\t]+[\\w-]+)*)\\}(?:[ \\t]+(?=\\S)|[ \\t]*$))');
 // Words that set how text is cased rather than its color or font.
 const CASES = new Set(['uppercase']);
 // What opens a line's block, for the marker to go after. The asides are
@@ -139,6 +140,8 @@ const known = (name) => COLORS.has(name.toLowerCase()) || background(name) || GE
 function item(line) {
   const m = ITEM.exec(line);
   if (!m || !m[3].split(/\s+/).every(known)) return line;
+  // A heading's need words after them: there are none under it to style.
+  if (m[0].length >= line.trimEnd().length && /^[ \t]*(?:>[ \t]*)*#/.test(line)) return line;
   return m[1] + ITEM_OPEN + m[2] + ITEM_CLOSE + line.slice(m[0].length);
 }
 
@@ -197,6 +200,8 @@ function own(tokens, i) {
     li.meta = { ...li.meta, own: braces.trim().slice(1, -1).trim() };
     return '';
   });
+  // Braces alone on the item's line leave it empty: its words start on the next.
+  if (li && /^[ \t]*\n/.test(t.content)) t.content = t.content.replace(/^[ \t]*\n/, '');
 }
 
 /**

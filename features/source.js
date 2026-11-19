@@ -1,15 +1,22 @@
 /**
  * Helpers for features that read the source as written.
  *
- * Some syntax has to be found in the file before anything else reads it --
- * a checkbox or a field remembers the line it was written on, and the line
- * as written, to be edited later -- even when it ends up in an aside, which
- * is parsed apart from the rest. Such a feature reads each line first
- * (`readLines`, as a core rule before the page's `page_extract`), keeps
- * what it found on `env`, and leaves a placeholder in the text: a number
- * between two private-use characters, which markdown passes through
+ * Some syntax has to be found in the lines before markdown reads the blocks
+ * -- a checkbox or a field remembers the line of the file it was written
+ * on, and the line as written, to be edited later. Such a feature reads
+ * each line (`readLines`, as a core rule just before markdown's `block`),
+ * keeps what it found on `env`, and leaves a placeholder in the text: a
+ * number between two private-use characters, which markdown passes through
  * untouched. Once the text is parsed, it turns its placeholders into tokens
  * (`splitText`).
+ *
+ * By then the page's front matter and comments are off (`page_extract`,
+ * src/page.js), and so are its asides (`aside_extract`, features/asides),
+ * each exactly its own `~` lines (gh-305): what such a pass reads is the
+ * page as if it had never been annotated, and an aside's own text is read
+ * apart, when it's parsed, as its own page (`noteEnv`). `readLines` gives
+ * each line its line in the file, and `env.written` the line as written,
+ * whatever was taken out around it.
  */
 
 import { frontMatter, fenced, withEntries } from '../static/markdown.js';
@@ -17,17 +24,13 @@ import { frontMatter, fenced, withEntries } from '../static/markdown.js';
 export { frontMatter, fenced, withEntries };
 
 /**
- * Adds `rule` to read the source as written, before the page's front matter
- * and comments come off (`page_extract`, src/page.js), and so before any
- * feature takes lines out of it (an aside's); or after normalizing it when
- * there's no such rule (a test of the feature alone).
+ * Adds `rule` to read the source's lines before markdown reads its blocks,
+ * once the front matter, the comments and the asides are out
+ * (`page_extract`, `aside_extract`), in the order the rules are added. Its
+ * name is from when such rules ran before those came out, and saw them.
  */
 export function beforeExtract(md, name, rule) {
-  try {
-    md.core.ruler.before('page_extract', name, rule);
-  } catch {
-    md.core.ruler.after('normalize', name, rule);
-  }
+  md.core.ruler.before('block', name, rule);
 }
 
 /**
@@ -42,19 +45,61 @@ export function keepWritten(md) {
   });
 }
 
+// What comes before each line of a note's own text in the file: an aside's
+// mark and aliases (`noteEnv`).
+const PREFIXES = Symbol('prefixes');
+
+/**
+ * The `env` to parse a note's own text with, apart from the page's (an
+ * aside's, features/asides): `note.lines` has, for each line of its text,
+ * the line of the source it's on (as `env.sourceLines` does the page's),
+ * and `note.prefixes` what comes before it there, its mark. `readLines`
+ * then reads its lines too, each with what's before it, as written, so a
+ * box or a blank in it writes back its whole line.
+ */
+export function noteEnv(env, note) {
+  return { ...env, nested: true, sourceLines: note.lines, [PREFIXES]: note.prefixes };
+}
+
+/**
+ * What may come before a line's own syntax on a line of a note's own text,
+ * as `readLines` gives it: the note's mark, `~` or `~~`, its aliases, the
+ * words it's about and a box (features/asides), and the space after them,
+ * so that a feature finding `@ Label:` at a line's start finds it there too.
+ */
+export const NOTE_MARK = String.raw`~{1,2}[^\s~[]*(?:\[(?:[^\]\\\n]|\\.)+\](?:\{[\w-]+\})?)?(?:[ \t]+\[[ xX]\])?(?:[ \t]+|$)`;
+
 /**
  * Runs `fn(line, n, lines, i)` over each line of the source outside fenced
- * code, and puts back what it returns; `lines` are the source's lines as
- * they were, `i` this one's index among them. Skipped for a nested parse
- * (`env.nested`: its lines were read with the rest) and for inline rendering. The line numbers count
- * from `env.lineBase`, the line of the file the text starts on.
+ * code, and puts back what it returns; `n` is its line in the file, counted
+ * from `env.lineBase`, the line of the file the text starts on, through
+ * what was taken out of it (`env.sourceLines`); `lines` are the source's
+ * lines as they were, `i` this one's index among them, and while `fn` runs,
+ * `env.written[i]` is that line as written. A note's own text (`noteEnv`)
+ * is read a line at a time with what comes before it in the file, its mark,
+ * which comes off again after; any other nested parse is skipped, as is
+ * inline rendering.
  */
 export function readLines(state, fn) {
-  if (state.inlineMode || state.env.nested) return;
-  const base = state.env.lineBase ?? 0;
+  const env = state.env;
+  const prefixes = env.nested ? env[PREFIXES] : [];
+  if (state.inlineMode || !prefixes) return;
+  const base = env.lineBase ?? 0;
+  const at = (n) => env.sourceLines?.[n] ?? n;
   const code = fenced();
   const lines = state.src.split('\n');
-  state.src = lines.map((line, n) => (code(line) ? line : fn(line, base + n, lines, n))).join('\n');
+  const file = env.written;
+  env.written = file && lines.map((_, n) => file[at(n)]);
+  try {
+    state.src = lines.map((line, n) => {
+      if (code(line)) return line;
+      const mark = prefixes[n] ?? '';
+      const out = fn(mark + line, base + at(n), lines, n);
+      return out.startsWith(mark) ? out.slice(mark.length) : out;
+    }).join('\n');
+  } finally {
+    env.written = file;
+  }
 }
 
 /**
@@ -206,7 +251,7 @@ export const SHARED_ENV = [
   {
     name: 'sourceLines',
     type: 'number[]',
-    description: 'for each line of the text the parser sees, the line of the source it came from, both from 0, once the front matter, comments and asides are out',
+    description: 'for each line of the text the parser sees, the line of the source it came from, both from 0, once the front matter, comments and asides are out; in an aside\'s own parse, its text\'s',
     read: 'const fileLine = env.lineBase + (env.sourceLines?.[n] ?? n);',
     write: 'only by a feature that takes lines out of the text, to keep it in step: '
       + 'const before = state.env.sourceLines ?? []; state.env.sourceLines = kept.map((k) => before[k] ?? k); // features/asides',
@@ -217,9 +262,9 @@ export const SHARED_ENV = [
   {
     name: 'nested',
     type: 'boolean | undefined',
-    description: 'true while an aside\'s own text is parsed, apart from the file\'s; a rule over the whole file skips it',
+    description: 'true while an aside\'s own text is parsed, apart from the file\'s; a rule over the whole file skips it, but for readLines, which reads its lines too',
     read: 'if (state.inlineMode || state.env.nested) return;',
-    write: 'on a copy, never on env itself: md.parse(text, { ...env, nested: true }); // features/asides',
+    write: 'on a copy, never on env itself: md.parse(text, noteEnv(env, note)); // features/asides, noteEnv above',
   },
   {
     name: 'written',

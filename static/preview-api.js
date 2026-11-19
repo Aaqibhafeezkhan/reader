@@ -67,6 +67,15 @@
  *     A feature sets it with `setAddress`, which tells the app and sends
  *     `preview:address` too; it isn't the file, so nothing is written.
  *
+ *   Preview.blankOf(box), Preview.toBlank(box)
+ *     A choice whose words are a blank still to write in, `( ) [@ Other]`,
+ *     isn't an answer until it's written (gh-293). `blankOf` is the blank
+ *     still to write in a choice's own words, not in a choice under it, or
+ *     null; `toBlank` gives it the keyboard, as the choice is picked, and
+ *     returns it. Not when the pick came from an arrow key, though, as
+ *     the arrows go through a group's choices: the blank opens on a click or
+ *     Space on its choice instead, picked or not (gh-81's review).
+ *
  *   preview:open-to
  *     Sent to the window before the page goes to a place, from the outline
  *     or Go to (`detail.line`) or by a link in it (`detail.target`), so a
@@ -211,7 +220,41 @@
   heard.className = 'vh';
   heard.setAttribute('aria-live', 'polite');
   document.documentElement.append(heard);
+  // Whether the key being handled is an arrow, which picks a radio as it
+  // moves through its group: set as a key goes down, and cleared as it goes
+  // up or a pointer goes down, so a change or a click it brings sees it.
+  const ARROWS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+  let arrowed = false;
+  document.addEventListener('keydown', (e) => { arrowed = ARROWS.includes(e.key); }, true);
+  document.addEventListener('keyup', () => { arrowed = false; }, true);
+  document.addEventListener('pointerdown', () => { arrowed = false; }, true);
+  // What holds a choice's own words: a field's choice, an answer's, or a list's item.
+  const CHOICE = '.field-choice, .qa-choice, li';
+  const blankOf = (box) => {
+    const own = box?.closest?.(CHOICE);
+    return [...(own?.querySelectorAll('[data-unwritten]') ?? [])].find((b) => b.closest(CHOICE) === own) ?? null;
+  };
+  // A click or Space on a choice already picked, as one an arrow picked
+  // is, opens its blank, as it brings no change for its feature to answer.
+  const picked = (box) => box.matches?.('input[type=radio]') && box.checked;
+  document.addEventListener('click', (e) => {
+    if (!arrowed && picked(e.target)) blankOf(e.target)?.focus();
+  });
+  // Space on one already picked, which some browsers send no click for.
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== ' ' || e.defaultPrevented || !picked(e.target)) return;
+    const blank = blankOf(e.target);
+    if (!blank) return;
+    e.preventDefault();
+    blank.focus();
+  });
   window.Preview = {
+    blankOf,
+    toBlank(box) {
+      const blank = blankOf(box);
+      if (blank && !arrowed) blank.focus();
+      return blank;
+    },
     say(text) {
       if (!heard.isConnected) document.documentElement.append(heard);
       // The same again is still heard.

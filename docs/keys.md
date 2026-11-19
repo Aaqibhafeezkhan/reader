@@ -38,7 +38,7 @@ title: Keys
 | `⌘.` | work mode on / off |
 | `Esc` | in work mode, back to editing |
 | `⌥←` / `⌥→` | in work mode, a deck's page before / next page |
-| `⌘⇧.` | present as slides |
+| `⌘⇧.` | present as slides, any page, though only slides offer **Present** |
 
 ## On the page
 

@@ -49,6 +49,15 @@ test('a link to a markdown file or a heading shows its address in reader, so a c
   assert.equal(link('abs').getAttribute('href'), '/api/files');
 });
 
+test('a link to $reader/ is to reader\'s own folder, wherever the note is, a markdown file opening in reader (gh-263)', () => {
+  const p = showing('[docs]($reader/docs/links.md#other-files) [test]($reader/test/samples.test.js) ![logo]($reader/static/icon.png)');
+  assert.equal(p.link('docs').href, 'http://localhost:8734/read/$reader/docs/links.md#other-files');
+  assert.equal(p.link('docs').dataset.content, 'http://localhost:8734/content/$reader/docs/links.md#other-files');
+  assert.equal(p.link('test').href, 'http://localhost:8734/content/$reader/test/samples.test.js', 'anything else is its file');
+  assert.equal(p.document.querySelector('img').src, 'http://localhost:8734/content/$reader/static/icon.png');
+  assert.deepEqual(click(p, p.link('docs')), { taken: true, followed: ['http://localhost:8734/content/$reader/docs/links.md#other-files'] });
+});
+
 test('a page not from the content directory keeps its links as written', () => {
   const { link } = showing('[next](next.md)', { base: 'http://localhost:8734/export/' });
   assert.equal(link('next').getAttribute('href'), 'next.md');
@@ -109,6 +118,16 @@ test('a link to an item of a badged list scrolls to it, and the app is asked not
   assert.deepEqual({ taken, followed }, { taken: true, followed: [] });
   assertElement(scrolled, p.document.getElementById('1.d'));
   assert.deepEqual(p.told, [], 'only a heading is named in the address');
+});
+
+test('a link within the page gives its target the keyboard, so Tab goes on from there, not from the link', () => {
+  const p = showing('1) Ideas\n   b) [ ] Today\n2) See [1 b)](#1.b) and [the end](#the-end).\n\n## The end\n');
+  clickToHeading(p, '1 b)');
+  const item = p.document.getElementById('1.b');
+  assertElement(p.document.activeElement, item);
+  assert.equal(item.getAttribute('tabindex'), '-1', 'reached by the link, not by Tab');
+  clickToHeading(p, 'the end');
+  assertElement(p.document.activeElement, p.document.querySelector('h2'));
 });
 
 test('a link to a heading the page doesn\'t hold, on another page or slide, asks the app to go there', () => {
@@ -678,6 +697,16 @@ test('a block that no longer scrolls, as the window widens, gives the keyboard b
   assert.equal(pre.hasAttribute('tabindex'), false);
   assert.equal(pre.hasAttribute('role'), false);
   assert.equal(pre.hasAttribute('aria-label'), false);
+});
+
+test('a block kept out of sight for a screen reader, a pixel wide, as a drawn tune\'s text is, is no Tab stop, whatever it holds', () => {
+  const p = preview();
+  sized(p, 600, 1);
+  p.show(render('```js\nconst aVeryLongLine = 1;\n```\n').body);
+  const pre = p.document.querySelector('pre');
+  assert.equal(pre.hasAttribute('tabindex'), false);
+  assert.equal(pre.querySelector('code').hasAttribute('tabindex'), false);
+  assert.equal(pre.hasAttribute('role'), false);
 });
 
 test('a block that fits is no Tab stop, and one with no language is just "Code"', () => {

@@ -47,11 +47,17 @@ test('code and asides are not exchanges', () => {
   assert.doesNotMatch(body, /class="qa/);
 });
 
-test('an aside, like any line at the margin, ends the exchange', () => {
+test('an aside is out before the exchanges are read, so the page reads as without it (gh-305)', () => {
   const { body } = render('A (Ann): one\n~ a thought\nA (Ann): two\nA: three\n');
-  assert.equal(body.match(/class="qa qa-a"/g).length, 2);
-  assert.match(body, /two<span class="qa-para"><\/span>three/);
   assert.match(body, /a thought/);
+  assert.equal(body.match(/class="qa qa-a"/g).length, render('A (Ann): one\nA (Ann): two\nA: three\n').body.match(/class="qa qa-a"/g).length);
+  // A vote after an aside under a card counts for it, as without the aside.
+  const voted = render('Good (Claude): Words.\n~ A note.\n+1 (Maria): Agreed.\n').body;
+  assert.match(voted, /<span class="qa-tally">\+1<\/span>/);
+  assert.match(voted, /<li class="qa qa-vote">/);
+  const more = render('Good (Claude): Words.\n~ A note.\n\n  More.\n+1 (Maria): Agreed.\n').body;
+  assert.match(more, /qa-tally">\+1</);
+  assert.match(more, /<li class="qa qa-vote">/);
 });
 
 test('the stylesheet comes with the feature', () => {
@@ -59,7 +65,7 @@ test('the stylesheet comes with the feature', () => {
 });
 
 test('an escaped line keeps no backslash, even with no exchange about', () => {
-  const { body } = render('text\n\n\\A: plain\n\n~ aside\n\\Q: in the aside\n');
+  const { body } = render('text\n\n\\A: plain\n\n~ aside\n~ \\Q: in the aside\n');
   assert.match(body, /<p>A: plain<\/p>/);
   assert.match(body, /aside\nQ: in the aside/);
 });
@@ -233,6 +239,44 @@ test('an indented Q: with no exchange above it, or after the exchange ended, sta
   }
 });
 
+test('a Q: in a numbered item is drawn as a question inside it, its choices under it (gh-302)', () => {
+  const md = '1) [ ] **Two lists numbered the same**\n\n   The first item to claim an id keeps it.\n\n   Q (Claude): Is that enough, for now?\n   - ( ) Yes\n   - ( ) [@ Something else]\n';
+  const { body } = render(md);
+  const item = /<li class="task step"[^>]*>([\s\S]*?)<\/li>\n<\/ol>/.exec(body)[1];
+  assert.match(item, /<p>The first item to claim an id keeps it\.<\/p>\n<ul>\n<li class="qa qa-q" id="Q1"><span class="qa-label">Q<\/span><span class="qa-name">Claude<\/span>Is that enough, for now\?<\/li>\n<\/ul>\n<ul data-answered="false">/);
+  assert.match(item, /data-on=" {3}- \(x\) Yes"/);
+  assert.doesNotMatch(body, /Q \(Claude\):/);
+});
+
+test('a Q: and A: in a bullet\'s or a task\'s item are an exchange inside it, nesting under each other as at the margin (gh-302)', () => {
+  const bullet = render('- one\n- two\n\n  Q: Under two?\n  A: ( ) Yes ( ) No\n    Q: Nested?\n\nafter\n').body;
+  assert.match(bullet, /<p>two<\/p>\n<ul>\n<li class="qa qa-q" id="Q1"><span class="qa-label">Q<\/span>Under two\?<\/li>\n<li class="qa qa-a"><span class="qa-label">A<\/span><span class="qa-choices" role="radiogroup" aria-label="Under two\?" data-line="4" data-text=" {2}A: \( \) Yes \( \) No"/);
+  assert.match(bullet, /<\/span>\n<ul>\n<li class="qa qa-q" id="Q2"><span class="qa-label">Q<\/span>Nested\?<\/li>/);
+  assert.match(bullet, /<\/ul>\n<p>after<\/p>/);
+  const task = render('- [ ] Fix it\n\n  Good (Josh): it\'s small\n').body;
+  assert.match(task, /aria-label="Fix it"> Fix it<\/p>\n<ul>\n<li class="qa qa-card qa-good" id="G1"><span class="qa-label qa-toggle"[^>]*data-line="2" data-on=" {2}Good \[x\] \(Josh\): it's small"/);
+  assert.match(render('- one\n\n  \\Q: as typed\n').body, /<p>Q: as typed<\/p>/);
+});
+
+test('a - Q: bullet is a question, its choices under it, and a - A: straight after it its answer, each its own bullet; 1) Good: keeps its number (gh-302)', () => {
+  const { body } = render('- Q (Claude): Ship it?\n  - ( ) Yes\n  - ( ) No\n- Q (Claude): Or later?\n- A: ( ) Now ( ) Later\n');
+  assert.match(body, /<ul>\n<li>\n<ul>\n<li class="qa qa-q" id="Q1"><span class="qa-label">Q<\/span><span class="qa-name">Claude<\/span>Ship it\?<\/li>\n<\/ul>\n<ul data-answered="false">\n<li class="task"><input type="radio"[^>]*data-on=" {2}- \(x\) Yes"/);
+  assert.match(body, /<li class="qa qa-a"><span class="qa-label">A<\/span><span class="qa-choices" role="radiogroup" aria-label="Or later\?" data-line="4" data-text="- A: \( \) Now \( \) Later"/);
+  assert.match(body, /data-on="- A: \(x\) Now \( \) Later"/);
+  const card = render('1) Good (Josh): kept\n2) Try: next\n').body;
+  assert.match(card, /<li data-n="1" id="1">\n<ul>\n<li class="qa qa-card qa-good" id="G1"><span class="qa-label qa-toggle"[^>]*data-on="1\) Good \[x\] \(Josh\): kept" data-off="1\) Good \(Josh\): kept">G<\/span>/);
+  assert.match(card, /data-on="2\) Try \[x\]: next"/);
+  assert.equal(render('+ Q: Plus?\n').body.match(/qa-label/g).length, 1, 'a + bullet labels the question once');
+});
+
+test('an aside under a question in a list\'s item goes beside it (gh-302)', () => {
+  const md = '---\nreviewer #: Josh\n---\n\n1) [ ] **A point**\n\n   Q (Claude): Agreed?\n   ~# not yet\n   - ( ) Yes\n';
+  const { body } = render(md);
+  const beside = body.split('<section class="gm-pair">').slice(1).find((p) => p.includes('not yet'));
+  assert.match(beside, /<span class="qa-label">Q<\/span><span class="qa-name">Claude<\/span>Agreed\?/);
+  assert.doesNotMatch(body, /~#|Q \(Claude\):/);
+});
+
 test('a nested answer\'s choices are named by its own question and write its line as indented', () => {
   const { body } = render('Q: Top?\nA: Split it.\n  Q: Part A?\n  A: ( ) Now ( ) [@ Something else]\n');
   assert.match(body, /<span class="qa-choices" role="radiogroup" aria-label="Part A\?" data-line="3" data-text=" {2}A: \( \) Now \( \) \[@ Something else\]"/);
@@ -268,4 +312,76 @@ test('a deck\'s questions count on across its slides, so each has its own id', (
   const deck = slides('Q: First?\n\n---\n\nQ: Second?\n').slides;
   assert.match(deck[0].body, / id="Q1"/);
   assert.match(deck[1].body, / id="Q2"/);
+});
+
+test('a card\'s words can start on the line straight under its label, indented, a paragraph or more (gh-219)', () => {
+  const { body } = render('Good (Claude):\n  An aside kept each conversation in place.\n\n  Neither of us had to say which line.\n+1 (Josh): I\'d add that.\n');
+  assert.match(body, /<li class="qa qa-card qa-good" id="G1">\n<p><span class="qa-label qa-toggle"[^>]*data-on="Good \[x\] \(Claude\):" data-off="Good \(Claude\):">G<\/span><span class="qa-tally">\+1<\/span><span class="qa-name">Claude<\/span>An aside kept each conversation in place\.<\/p>\n<p>Neither of us had to say which line\.<\/p>\n<\/li>/);
+  assert.match(body, /<li class="qa qa-vote">\n<p><span class="qa-label">\+1<\/span><span class="qa-name">Josh<\/span>I’d add that\.<\/p>/);
+  assert.doesNotMatch(body, /[\uE000-\uE00D]/);
+});
+
+test('words straight under a label, with no blank line, are its words too, and a question\'s or an answer\'s (gh-219)', () => {
+  const { body } = render('Bad [x] (Josh):\n  Tight under.\n  More of it.\nQ:\n  Why?\nA (Rob):\n  Because.\n');
+  assert.match(body, /<li class="qa qa-card qa-bad qa-done" id="B1"><span class="qa-label qa-toggle"[^>]*data-on="Bad \[x\] \(Josh\):" data-off="Bad \(Josh\):">B<\/span><span class="qa-name">Josh<\/span>Tight under\.\nMore of it\.<\/li>/);
+  assert.match(body, /<li class="qa qa-q" id="Q1"><span class="qa-label">Q<\/span>Why\?<\/li>/);
+  assert.match(body, /<li class="qa qa-a"><span class="qa-label">A<\/span><span class="qa-name">Rob<\/span>Because\.<\/li>/);
+  assert.doesNotMatch(body, /[\uE000-\uE00D]/);
+});
+
+test('a label alone with a blank line or nothing under it is an empty card, as a bullet alone is an empty item (gh-219)', () => {
+  for (const [src, after] of [['Good (Claude):\n\n  Indented, after a blank.\n', /<\/ul>\n<p>Indented, after a blank\.<\/p>/], ['Good (Claude):\n\nNot indented.\n', /<\/ul>\n<p>Not indented\.<\/p>/], ['Good (Claude):\n', /<\/ul>/]]) {
+    const { body } = render(src);
+    assert.match(body, /<li class="qa qa-card qa-good" id="G1"><span class="qa-label qa-toggle"[^>]*>G<\/span><span class="qa-name">Claude<\/span><\/li>/, src);
+    assert.match(body, after, src);
+    assert.doesNotMatch(body, /[\uE000-\uE00D]/, src);
+  }
+});
+
+test('a label alone straight under a paragraph\'s line stays as typed, as a bullet alone can\'t start a list there (gh-219)', () => {
+  const { body } = render('Some text.\nGood (Claude):\n  Its words.\n');
+  assert.match(body, /<p>Some text\.\nGood \(Claude\):\nIts words\.<\/p>/);
+  assert.doesNotMatch(body, /qa-card/);
+});
+
+test('an exchange indented under a label alone is nested in its card (gh-219)', () => {
+  const q = render('Good (Claude):\n  Q: a question?\n').body;
+  assert.match(q, /<li class="qa qa-card qa-good" id="G1"><span class="qa-label qa-toggle"[^>]*>G<\/span><span class="qa-name">Claude<\/span>\n<ul>\n<li class="qa qa-q" id="Q1"><span class="qa-label">Q<\/span>a question\?<\/li>/);
+});
+
+test('an aside on a card written under its label goes where it would beside it (gh-219)', () => {
+  const page = (card) => render(`---\nreviewer #: Josh\n---\n\n${card}`).body.replace(/ data-(line|on|off)="[^"]*"/g, '');
+  for (const words of ['An aside.\n  ~# I agree.\n\n  Second.\n', 'An aside.\n\n  Second.\n  ~# On the second.\n']) {
+    assert.equal(page(`Good (Claude):\n  ${words}`), page(`Good (Claude): ${words}`));
+  }
+});
+
+test('an aside straight under a label alone goes beside it, and the indented line after it is the card\'s words (gh-219, gh-305)', () => {
+  const page = render('---\nreviewer m: Maria\n---\n\nBad (Maria):\n~m An aside\n~m on two lines.\n  The card\'s words.\n').body;
+  assert.match(page, /<li class="qa qa-card qa-bad" id="B1"><span class="qa-label qa-toggle"[^>]*data-line="4"[^>]*>B<\/span><span class="qa-name">Maria<\/span>The card’s words\.<\/li>/);
+  assert.match(page, /An aside\non two lines\./);
+});
+
+test('a list, a quote, code or a heading straight under a label alone is its card\'s, as under a bullet alone (gh-219, gh-81)', () => {
+  for (const [src, kind, under] of [['A (Claude):\n  - ( ) Yes\n  - ( ) No\n', 'qa-a', /<ul data-answered="false">/], ['Bad (Josh):\n  > quoted\n', 'qa-card qa-bad', /<blockquote>/], ['A (Josh):\n  ```\n  code\n  ```\n', 'qa-a', /<pre><code>code/], ['Q (Josh):\n  1. first\n', 'qa-q', /<ol>\n<li>first<\/li>/], ['Good (Josh):\n  # A heading\n', 'qa-card qa-good', /<h1[^>]*>A heading<\/h1>/]]) {
+    const { body } = render(src);
+    assert.match(body, new RegExp(`<li class="qa ${kind}"[^>]*><span class="qa-label`), src);
+    assert.match(body, new RegExp(`<li class="qa ${kind}"[\\s\\S]*${under.source}[\\s\\S]*</li>`), src);
+    assert.doesNotMatch(body, /[\uE000-\uE00D]/, src);
+  }
+});
+
+test('braces at the start of the words under a label stay as typed, not styling the label', () => {
+  const under = render('Good (Claude):\n  {red} Its words.\n').body;
+  assert.doesNotMatch(under, /gm-red/);
+  assert.match(under, /<span class="qa-name">Claude<\/span>\{red\} Its words\./);
+  const beside = render('Good (Claude): {red} Its words.\n').body;
+  assert.match(beside, /<li class="qa qa-card qa-good" style="color: var\(--gm-red\)"/);
+});
+
+test('braces alone beside a label colour the whole card, its words under it (gh-219)', () => {
+  const { body } = render('Good (Claude): {red}\n  Its words.\n\n  More.\n');
+  assert.match(body, /<li class="qa qa-card qa-good" style="color: var\(--gm-red\)"/);
+  assert.match(body, /Its words\./);
+  assert.doesNotMatch(body, />[^<]*\{red\}/);
 });

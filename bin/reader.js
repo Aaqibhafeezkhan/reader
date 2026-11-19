@@ -68,6 +68,8 @@ function parseArgs(argv) {
       opts.framePort = portNumber(a.slice('--frame-port='.length));
     } else if (a === '--tailscale') {
       opts.tailscale = true;
+    } else if (a === '--dev') {
+      opts.dev = true;
     } else if (a === '--no-browser') {
       opts.browser = false;
     } else if (a === '--open') {
@@ -156,7 +158,14 @@ if (opts.tailscale) {
   allowHosts.push(...tailnet.names);
 }
 
-const made = createServer({ root: dir, allowHosts, dayStarts: opts.dayStarts });
+// --dev, which only `npm run dev` (scripts/dev.js) and the contributing
+// browser checks pass, so it isn't in the usage: `$reader/…` links open
+// reader's own files (gh-263); and, from `npm run dev` alone, which says so in
+// READER_RESTARTS, the page notices when it's started again (gh-208).
+const made = createServer({
+  root: dir, allowHosts, dayStarts: opts.dayStarts,
+  dev: Boolean(opts.dev), restarts: Boolean(opts.dev) && process.env.READER_RESTARTS === '1',
+});
 const { server, content } = made;
 
 // Without --port, count up from 8734 so each directory gets its own instance

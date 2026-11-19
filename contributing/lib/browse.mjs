@@ -7,8 +7,8 @@
 //
 //   node browse.mjs <file.md> --steps <steps.json> --repo <reader checkout>
 //        [--browser chromium|webkit|firefox|safari|all, or a list: chromium,safari]
-//        [--theme light|dark|light,dark] [--phone] [--zoom 2] [--forced-colors] [--out <dir>]
-//        [--step-timeout 8000] [--timeout 120000]
+//        [--theme light|dark|light,dark] [--phone] [--zoom 2] [--forced-colors] [--dev] [--out <dir>]
+//        [--step-timeout 8000] [--timeout 120000] [--plan]
 //
 // --theme chooses reader's own Theme (static/theme.js) before the first step,
 // so Safari gets it too, where Playwright's colorScheme doesn't reach, and the
@@ -24,13 +24,21 @@
 //
 // --zoom 2 lays the page out as the browser's 200% would: half the window, at
 // twice the pixels. --forced-colors is the system's colours, as Windows' contrast
-// themes give. Both are Playwright's, so not for safari.
+// themes give. Both are Playwright's, so not for safari. --dev starts reader in
+// dev mode, so a `$reader/` link opens reader's own files (gh-263).
 //
 // safari is Safari Technology Preview, never the Safari you use: its own
 // safaridriver and its own windows. Once only, it needs
 //   "/Applications/Safari Technology Preview.app/Contents/MacOS/safaridriver" --enable
 // and Develop > Allow Remote Automation in Safari Technology Preview.
 // It can't run inside Claude Code's sandbox, where safaridriver can't listen.
+//
+// --plan says what it would do and starts nothing, no reader and no browser:
+// a line for each run, `run   Chromium, dark` or `skip  …: why`, then a line
+// for each step, `step  2 click "#x" in #preview`, where it acts, the app or a
+// frame. Its tests read it (contributing/test/browse.test.mjs). Every step is
+// checked before anything starts, with or without --plan: one that names no
+// action, or more than one, stops it with 2.
 //
 // Steps are a JSON array, each one an object with one action. `frame: true`
 // means inside the rendered page (#preview); without it, the app around it.
@@ -48,6 +56,7 @@
 //   { "wait": ".gm-doc", "frame": true }      until it's there
 //   { "until": "document.title !== ''", "frame": true }   until it's true
 //   { "eval": "document.querySelectorAll('.done').length", "frame": true }  prints it
+//   { "console": true }                       the console's errors since the last, from the app and its frames (not Safari)
 //   { "shot": "after-drag" }                  <out>/<browser>[-phone][-zoom2][-forced]-<name>.png
 //   { "sleep": 300 }
 // Each step may also have "timeout" in ms. It stops at the first step that fails,
@@ -79,15 +88,17 @@ const { values: opt, positionals } = parseArgs({
     phone: { type: 'boolean', default: false },
     zoom: { type: 'string', default: '1' },
     'forced-colors': { type: 'boolean', default: false },
+    dev: { type: 'boolean', default: false },
     out: { type: 'string', default: 'shots' },
     'step-timeout': { type: 'string', default: '8000' },
     timeout: { type: 'string', default: '120000' },
+    plan: { type: 'boolean', default: false },
   },
 });
 const file = positionals[0] && path.resolve(positionals[0]);
 const repo = path.resolve(opt.repo);
 if (!file || !opt.steps || !fs.existsSync(path.join(repo, 'bin/reader.js'))) {
-  console.error('usage: browse.mjs <file.md> --steps <steps.json> --repo <reader checkout> [--browser chromium|webkit|firefox|safari|all] [--theme light|dark|light,dark] [--phone] [--zoom 2] [--forced-colors] [--out <dir>]');
+  console.error('usage: browse.mjs <file.md> --steps <steps.json> --repo <reader checkout> [--browser chromium|webkit|firefox|safari|all] [--theme light|dark|light,dark] [--phone] [--zoom 2] [--forced-colors] [--dev] [--out <dir>] [--plan]');
   process.exit(2);
 }
 const browsers = opt.browser === 'all' ? BROWSERS : opt.browser.split(',');
@@ -100,23 +111,59 @@ for (const [what, asked, known] of [['--browser', browsers, BROWSERS], ['--theme
   }
 }
 const steps = JSON.parse(fs.readFileSync(opt.steps, 'utf8'));
+const ACTIONS = ['work', 'click', 'tap', 'drag', 'type', 'press', 'wait', 'until', 'eval', 'console', 'shot', 'sleep'];
+// Each step names one action, checked before anything starts.
+for (const [i, s] of steps.entries()) {
+  const acts = ACTIONS.filter((a) => s && typeof s === 'object' && a in s);
+  if (acts.length !== 1) {
+    console.error(`step ${i + 1} ${acts.length ? `names more than one action, ${acts.join(' and ')}` : 'names no action'}; each is one of ${ACTIONS.join(', ')}`);
+    process.exit(2);
+  }
+}
 const STEP_MS = Number(opt['step-timeout']);
 const zoom = Number(opt.zoom);
 if (!(zoom >= 1 && zoom <= 4)) {
   console.error(`--zoom is from 1 to 4, not ${opt.zoom}`);
   process.exit(2);
 }
-if (browsers.length > 1 || themes.length > 1) await runEach();
 if (opt.browser === 'safari' && (zoom !== 1 || opt['forced-colors'])) {
   console.error('--zoom and --forced-colors are for Playwright\'s browsers, not safari');
   process.exit(2);
 }
+if (opt.plan) plan();
+if (browsers.length > 1 || themes.length > 1) await runEach();
 const label = labelOf(opt.browser, opt.theme);
 fs.mkdirSync(opt.out, { recursive: true });
 
 /** What a run's shots are named with: its browser, how it's seen, and its theme. */
 function labelOf(browser, theme) {
   return `${browser}${opt.phone ? '-phone' : ''}${zoom !== 1 ? `-zoom${opt.zoom}` : ''}${opt['forced-colors'] ? '-forced' : ''}${theme ? `-${theme}` : ''}`;
+}
+
+/** The element a step acts in: the app, null; `"frame": true`, the page's #preview; a name, that frame, `"frame": "stage"` for Present's. */
+function frameOf(s) {
+  if (!s?.frame) return null;
+  return typeof s.frame === 'string' ? `#${s.frame}` : '#preview';
+}
+
+/** Each run asked for, a browser in a theme, and why it's skipped, if it is. */
+function runsOf() {
+  return browsers.flatMap((browser) => themes.map((theme) => ({
+    browser,
+    theme,
+    name: `${NAMES[browser]}${theme ? `, ${theme}` : ''}`,
+    skip: browser === 'safari' && (zoom !== 1 || opt['forced-colors']) ? "--zoom and --forced-colors are Playwright's, not Safari's" : null,
+  })));
+}
+
+/** --plan: what it would do, starting nothing; then it exits. */
+function plan() {
+  for (const r of runsOf()) console.log(r.skip ? `skip  ${r.name}: ${r.skip}` : `run   ${r.name}`);
+  for (const [i, s] of steps.entries()) {
+    const act = ACTIONS.find((a) => a in s);
+    console.log(`step  ${i + 1} ${act}${act === 'work' ? '' : ` ${JSON.stringify(s[act])}`} in ${frameOf(s) ?? 'the app'}`);
+  }
+  process.exit(0);
 }
 
 /**
@@ -126,22 +173,19 @@ function labelOf(browser, theme) {
 async function runEach() {
   const self = new URL(import.meta.url).pathname;
   const passOn = ['--steps', opt.steps, '--repo', repo, '--out', opt.out, '--step-timeout', opt['step-timeout'], '--timeout', opt.timeout,
-    ...(opt.phone ? ['--phone'] : []), ...(zoom !== 1 ? ['--zoom', opt.zoom] : []), ...(opt['forced-colors'] ? ['--forced-colors'] : [])];
+    ...(opt.phone ? ['--phone'] : []), ...(zoom !== 1 ? ['--zoom', opt.zoom] : []), ...(opt['forced-colors'] ? ['--forced-colors'] : []), ...(opt.dev ? ['--dev'] : [])];
   const outcome = new Map();
-  for (const browser of browsers) {
-    for (const theme of themes) {
-      const run = `${NAMES[browser]}${theme ? `, ${theme}` : ''}`;
-      if (browser === 'safari' && (zoom !== 1 || opt['forced-colors'])) {
-        console.log(`skip  ${run}: --zoom and --forced-colors are Playwright's, not Safari's`);
-        outcome.set(`${browser} ${theme}`, 'skipped: not for Safari');
-        continue;
-      }
-      console.log(`----  ${run}`);
-      const { status } = spawnSync(process.execPath, [self, file, ...passOn, '--browser', browser, ...(theme ? ['--theme', theme] : [])], { stdio: 'inherit' });
-      const how = status === 0 ? 'ok' : status === NOT_STARTED ? "skipped: it couldn't start" : 'failed a step';
-      if (status === NOT_STARTED) console.log(`skip  ${run}: it couldn't start, so the others ran without it`);
-      outcome.set(`${browser} ${theme}`, how);
+  for (const { browser, theme, name: run, skip } of runsOf()) {
+    if (skip) {
+      console.log(`skip  ${run}: ${skip}`);
+      outcome.set(`${browser} ${theme}`, 'skipped: not for Safari');
+      continue;
     }
+    console.log(`----  ${run}`);
+    const { status } = spawnSync(process.execPath, [self, file, ...passOn, '--browser', browser, ...(theme ? ['--theme', theme] : [])], { stdio: 'inherit' });
+    const how = status === 0 ? 'ok' : status === NOT_STARTED ? "skipped: it couldn't start" : 'failed a step';
+    if (status === NOT_STARTED) console.log(`skip  ${run}: it couldn't start, so the others ran without it`);
+    outcome.set(`${browser} ${theme}`, how);
   }
   const page = path.join(opt.out, 'index.md');
   fs.mkdirSync(opt.out, { recursive: true });
@@ -216,7 +260,7 @@ function scratchCopy() {
 }
 
 const startReader = (copy) => within(15000, 'starting reader', new Promise((resolve, reject) => {
-  const child = spawn(process.execPath, [path.join(repo, 'bin/reader.js'), path.dirname(copy), '--port', '0', '--no-browser', '--open', path.basename(copy)],
+  const child = spawn(process.execPath, [path.join(repo, 'bin/reader.js'), path.dirname(copy), '--port', '0', '--no-browser', '--open', path.basename(copy), ...(opt.dev ? ['--dev'] : [])],
     { stdio: ['ignore', 'pipe', 'pipe'] });
   enders.push(() => child.kill());
   let said = '';
@@ -245,10 +289,19 @@ async function playwright(url) {
     ? { ...phone, viewport, ...seen, ...(opt.browser === 'firefox' ? { isMobile: undefined } : {}) }
     : { viewport, hasTouch: true, ...seen });
   const page = await context.newPage();
+  // The console's errors, from the app and its frames, since the last `console` step.
+  let errors = [];
+  page.on('console', (m) => { if (['error', 'warning'].includes(m.type())) errors.push(`${m.location().url.split('/').pop() || 'the page'}: ${m.text()}`); });
+  // What the browser says itself, such as a policy's refusals, reaches the console without a console call: Chromium's log has it.
+  if (opt.browser === 'chromium') {
+    const log = await context.newCDPSession(page);
+    log.on('Log.entryAdded', ({ entry }) => { if (entry.level === 'error') errors.push(`${(entry.url ?? '').split('/').pop() || 'the page'}: ${entry.text}`); });
+    await log.send('Log.enable');
+  }
   await within(15000, 'opening reader', page.goto(url));
   await within(15000, 'reader drawing', page.waitForSelector('#preview'));
-  // `"frame": true` is the page's frame, `#preview`; a name is another, `"frame": "stage"` for Present's.
-  const frameId = (s) => (typeof s?.frame === 'string' ? `#${s.frame}` : '#preview');
+  // `"frame": true` is the page's frame, `#preview`; a name is another, `"frame": "stage"` for Present's (frameOf).
+  const frameId = (s) => frameOf(s) ?? '#preview';
   const frame = async (s) => (await page.waitForSelector(frameId(s))).contentFrame();
   const where = async (s) => (s.frame ? frame(s) : page);
   const box = async (s, sel, fx = 0.5, fy = 0.5) => {
@@ -352,6 +405,11 @@ async function playwright(url) {
       }
     },
     async eval(s) { return JSON.stringify(await (await where(s)).evaluate(s.eval)); },
+    async console() {
+      const said = errors;
+      errors = [];
+      return `${said.length} errors${said.length ? `, the first: ${said.slice(0, 3).join(' | ')}` : ''}`;
+    },
     async shot(name) {
       const to = path.join(opt.out, `${label}-${name}.png`);
       await page.screenshot({ path: to });
@@ -459,6 +517,12 @@ async function safari(url) {
   const at = async (s, p) => {
     if (Array.isArray(p)) return { x: Math.round(p[0]), y: Math.round(p[1]), origin: 'viewport' };
     const sel = typeof p === 'object' ? p.at : p;
+    // The frame is drawn again once a press writes its line back, and Safari
+    // then presses in the frame it had, which takes nothing: go in afresh.
+    if (s.frame) {
+      await call('POST', `${s0}/frame`, { id: null });
+      inFrame = false;
+    }
     const ref = await find(sel, !!s.frame);
     // An action's element must be in view, or the press lands on nothing, so it's brought there first.
     await script(s, "arguments[0].scrollIntoView({ block: 'center', inline: 'nearest' })", [ref]);
@@ -505,6 +569,7 @@ async function safari(url) {
     async wait(s) { await find(s.wait, !!s.frame, s.timeout ?? STEP_MS); },
     async until(s) { await poll(s, s.until); },
     async eval(s) { return JSON.stringify(await script(s, `return (${s.eval})`)); },
+    async console() { throw new Error("the console is read through Playwright's browsers, not Safari's driver"); },
     async shot(name) {
       const to = path.join(opt.out, `${label}-${name}.png`);
       fs.writeFileSync(to, Buffer.from(await call('GET', `${s0}/screenshot`, null, 15000), 'base64'));
@@ -515,7 +580,6 @@ async function safari(url) {
 
 // ---- the run ---------------------------------------------------------------
 
-const ACTIONS = ['work', 'click', 'tap', 'drag', 'type', 'press', 'wait', 'until', 'eval', 'shot', 'sleep'];
 // The theme, chosen in the app as the help does, and the page drawn again in it.
 const theming = opt.theme ? [
   { eval: `Theme.choose('${opt.theme}')` },

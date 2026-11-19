@@ -319,6 +319,7 @@ A lettered list, `a)`, `b)` and on, has its letters drawn as badges too, at any 
 On GitHub its items are lines of text, so it reads as written.
 Like a numbered list, one starts right under a line of text only at `a)`, but in a list's item any letter does, to pick out one part: `1) Ideas` then `d) Today`.
 A lettered item takes a box, a choice or braces as a numbered one does: `a) [ ] {red} Smaller buttons`.
+A box or a choice on a badged item is pressed by its badge: a box's badge shows ✓ once it's ticked, and a choice's badge is hollow until it's picked, then filled.
 `a\)` stays as typed.
 
 ::: tabs

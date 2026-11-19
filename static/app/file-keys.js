@@ -4,7 +4,7 @@
  * Each presses its button, and so does nothing where the button is gray.
  */
 
-import { state } from './state.js';
+import { state, readOnly } from './state.js';
 import { pressNew, pressStart, pressToday } from './files.js';
 import { makeCopy } from './copying.js';
 import { trash } from './manage.js';
@@ -17,7 +17,8 @@ const KEYS = {
   KeyY: () => makeCopy(false),
   '⇧KeyY': () => makeCopy(true),
   // The open file's trash can, in its row; its message has an Undo.
-  Backspace: () => state.current && trash(state.current.path),
+  // Not reader's own file, which is read here, never written (gh-263).
+  Backspace: () => state.current && !readOnly() && trash(state.current.path),
 };
 
 /** Presses the button for `e`, if it's one of these keys: true if it was. */

@@ -20,6 +20,25 @@ $ cd docs && node ../bin/reader.js export *.md
 A change to what reader-markdown does goes in its page there, with a sample
 in a `::: tabs` block, its `+++ Source` and `+++ Rendered` tabs.
 
+To run reader while you change it, `npm run dev`, with reader's own
+arguments after `--`:
+
+```console
+$ npm run dev -- ~/Documents/notes --port 8734
+```
+
+It starts reader again whenever its code changes, in `src/`, `features/`,
+`static/` or `bin/`, and the page shows the change by itself: the preview is
+drawn again, or, if the app's own files changed, the whole page is loaded
+again, on the same file, scrolled where it was, with any edit saved first.
+Only reader's code is watched, never the folder it's serving, and it opens no
+new browser tab when it starts again. A start that fails, from a mistake
+mid-edit, waits for the next change. It also opens `$reader/` links in
+reader's own folder ([Links](docs/links.md)); plain `reader` does neither.
+Underneath, it runs reader with `--dev`, kept out of `--help` as only it and
+the contributing browser checks pass it, and says in `READER_RESTARTS` that
+it will start reader again, which is what lets the page watch for it.
+
 ## Layout of the code
 
 | | |
@@ -28,6 +47,7 @@ in a `::: tabs` block, its `+++ Source` and `+++ Rendered` tabs.
 | `src/version.js` | which reader this is, from `package.json` (and the commit, in a checkout past its release): for `--version` and the foot of the file list |
 | `src/export-cli.js`, `src/browser.js` | `reader export`, and the headless browser it draws with |
 | `src/export.js` | a document as one HTML file, to keep, send or print: its stylesheet and images inside it, a deck as its pages |
+| `scripts/dev.js`, `src/dev.js`, `static/app/dev.js` | `npm run dev`: reader started again as its code changes; which start of the server this is, and the app's own files' fingerprint (`/api/dev`); and the page noticing, and drawing the preview again or loading the whole page |
 | `scripts/shots.js` | `npm run shots`: screenshots of a page for a review, across browsers, sizes and themes |
 | `scripts/shots-report.js` | the `report.html` written beside a run's screenshots: every picture on one page, narrowed by pills, read from their names |
 | `action.yml` | the GitHub Action |
@@ -40,14 +60,16 @@ in a `::: tabs` block, its `+++ Source` and `+++ Rendered` tabs.
 | `src/render.js` | markdown → `{css, body}` for the preview: one markdown-it, with every feature, laid out in columns; `makeRenderer(features)` for a test that leaves one out |
 | `src/page.js` | what every page has taken off before the features read it: its front matter (less the lines a feature claims, its `matter`) and its HTML comments, with each line left traced back to the file |
 | `src/columns.js` | the two-column layout: the speaker's passages beside the notes in the margin about them (`env.margin`, each `{ anchor, render(attrs) }`), under the masthead, its byline's reviewers among it, and what features add to it (`env.masthead`); a part of a deck, without the masthead, and a slide, its opening heading set apart (`layout`) |
-| `features/` | one directory per piece of syntax: its markdown-it plugin, CSS, tests and, if it can be clicked, the `preview.js` that makes it so; one built on others names them in its `requires` (`features/index.js`) (so far: `open-until`, `asides`, `fields`, `tasks`, `qa`, `definitions`, `sizes`, `alerts`, `attributions`, `styles`, `columns`, `row`, `grid`, `cards`, `tabs`, `date`, `scripture`, `scripture-lds`, `search`, `rfc`, `pitch`, `timer`, `social`, `math`, `arrows`, `ordinals`, `emoji`, `highlight`, `mermaid`, `headline`, `number`, `badges`, `count`, `progress`, `steps`, `ingredients`, `puzzles`, `fold`) |
+| `features/` | one directory per piece of syntax: its markdown-it plugin, CSS, tests and, if it can be clicked, the `preview.js` that makes it so; one built on others names them in its `requires` (`features/index.js`) (so far: `open-until`, `asides`, `fields`, `tasks`, `qa`, `definitions`, `sizes`, `alerts`, `attributions`, `styles`, `columns`, `row`, `grid`, `cards`, `tabs`, `date`, `scripture`, `scripture-lds`, `search`, `rfc`, `pitch`, `timer`, `social`, `math`, `arrows`, `ordinals`, `emoji`, `highlight`, `mermaid`, `headline`, `number`, `badges`, `count`, `progress`, `steps`, `ingredients`, `puzzles`, `fold`, `music`) |
 | `src/slides.js` | a `slides`-format deck → rendered slides and their notes |
 | `src/pacing.js` | a deck's pacing plan: checkpoints and budgets from the notes, and when each slide should start |
+| `src/anchors.js` | each heading's id, made from its words the way GitHub makes them, so a link to `#the-plan` works in reader and on GitHub alike (gh-244) |
+| `src/soundfont.js` | the notes a `music` fence plays, fetched from abcjs's website the first time and kept in reader's own cache folder, served to the preview frames (gh-99) |
 | `src/fonts.js` | a document's own fonts: `font:` and `title-font:` in the front matter |
 | `src/accent.js` | a document's own accent: `accent:` in the front matter, which `src/columns.css` keeps readable in every theme |
 | `src/background.js` | what's behind a page or a slide: `background:` in the front matter, or in a slide's notes |
 | `src/transition.js` | how one slide gives way to the next: `transition:` in the front matter, or in a slide's notes |
-| `static/app/` | the app, a module each: `main.js` (start, events, keys), `files.js` (the file list), `outline.js` and `sections.js` (the open file's outline), `goto.js` (going to a place, `⌃G`), `extracting.js` (taking a part out into a file), `starting.js` (starting today's file from a dated folder's latest), `copying.js` (making a copy of the open file, today's if it's dated), `file-keys.js` (the keys that press the buttons for files: New, Today, a copy, the trash), `versions.js` (folders, and which files are versions of which), `manage.js` (branching, renaming, the trash), `render.js` (the preview), `saving.js`, `editing.js`, `lines.js` (line numbers, copying where you are), `modes.js` (layout, work mode), `sync.js` (scrolling the editor and the preview together), `pages.js` (a deck worked through a page at a time), `dots.js` (a workbook's dots), `done.js` (which pages of a deck are done, by what's tagged on them, and the bar of how many), `deck.js` (presenting), `moves.js` (where each key moves the deck), `screens.js` (two-screen presenting), `fit.js` (slides that don't fit), `exporting.js` (saving a document as HTML, and printing it), `sheets.js` (a deck's pages scaled to fill the paper), `pdf.js`, `status.js`, `api.js`, `address.js` (the file in the address, its lines, and how it's set to be seen, `?by=%23`), `state.js`, `icons.js` (the icons a button with no words goes by: the files list's, and the top bar's copies) |
+| `static/app/` | the app, a module each: `main.js` (start, events, keys), `files.js` (the file list), `outline.js` and `sections.js` (the open file's outline), `goto.js` (going to a place, `⌃G`), `extracting.js` (taking a part out into a file), `starting.js` (starting today's file from a dated folder's latest), `copying.js` (making a copy of the open file, today's if it's dated), `file-keys.js` (the keys that press the buttons for files: New, Today, a copy, the trash), `versions.js` (folders, and which files are versions of which), `manage.js` (branching, renaming, the trash), `render.js` (the preview), `saving.js`, `editing.js`, `lines.js` (line numbers, copying where you are), `modes.js` (layout, work mode), `sync.js` (scrolling the editor and the preview together), `pages.js` (a deck worked through a page at a time), `dots.js` (a workbook's dots), `done.js` (which pages of a deck are done, by what's tagged on them, and the bar of how many), `html.js` (a page's HTML read in the app without its inline styles, and written back with them), `deck.js` (presenting), `moves.js` (where each key moves the deck), `screens.js` (two-screen presenting), `fit.js` (slides that don't fit), `exporting.js` (saving a document as HTML, and printing it), `sheets.js` (a deck's pages scaled to fill the paper), `pdf.js`, `status.js`, `api.js`, `address.js` (the file in the address, its lines, and how it's set to be seen, `?by=%23`), `state.js`, `icons.js` (the icons a button with no words goes by: the files list's, and the top bar's copies) |
 | `static/palette.css` | every colour the app draws with, light and dark, and nowhere else; the speaker view takes them too |
 | `static/preview.html` | the sandboxed preview frame, served from the frames' own origin |
 | `static/frames.js` | where the app and the speaker view load a preview frame from, by name or by port, tried once a tab; sending a frame a message at its own origin (`Frames.post`); the message that draws a slide in one (`Frames.slide`), and fitting it to what it's in (`Frames.fit`) |
@@ -63,6 +85,7 @@ in a `::: tabs` block, its `+++ Source` and `+++ Rendered` tabs.
 | `static/print.html` | the empty page a document is printed from, out of sight |
 | `features/source.js` | for features that read the source as written: each line read before anything else (`readLines`), a placeholder left in the text and turned into tokens once parsed, the page's sections (`sections`), escaping |
 | `features/layout.js` | what the `:::` layouts share: each layout's feature declares itself and the words it reads on its fence (`declare`), so one left out is no layout, and a block's panes, by `+++` lines or one to a block, for each to draw |
+| `features/choices.js` | choices to pick one of on a line, `( )` and `(x)`, read alike for a field and an answer, with the line each writes when picked (gh-253) |
 | `features/blank.js` | a blank to fill in, as any feature draws one (fields, definitions), and whether a page can be worked where it's drawn: not on a slide, not once exported, not once it's a record (`open-until:`) |
 | `features/rows.js` | the page cut into rows, each passage beside the notes in the margin about it, whichever feature wrote them; and the block a note is written after (`lastBlockBefore`), where the words an aside chooses are |
 | `features/mark.js`, `features/color.js` | a mark, words circled, underlined or highlighted, as styles draws one (`[quick]{circle}`) and asides does (`~a[quick]`); and the colours an author names, in the family's hue for each, as marks and an aside's key draw them |

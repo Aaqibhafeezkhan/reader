@@ -126,6 +126,19 @@ test('⌘⌥[ in the app folds every heading, and ⌘⌥] opens every one, kept 
   assert.equal(p.posted.filter((m) => m.type === 'edit').length, 0);
 });
 
+test('⌘⌥[ on a slide folds nothing, there or once the page is back, and says nothing', () => {
+  const p = preview();
+  const md = '# Slide\n\n## Kept open\n\nShown.\n\n---\n\n# Next\n';
+  p.show(slides(md).slides[0].body, { deck: true });
+  const before = p.posted.length;
+  p.send({ type: 'fold-all', folded: true });
+  assert.equal(p.document.querySelector('.fold-hidden'), null);
+  assert.deepEqual(p.posted.slice(before), [], 'nothing said, nothing written');
+  // Back on the page, the slide's ⌘⌥[ hasn't folded its heading.
+  p.show(render(md, { lines: true }).body);
+  assert.equal(p.document.querySelector('.fold-hidden'), null);
+});
+
 test('the page hands ⌘⌥[ and ⌘⌥] up by the key\'s place, whatever ⌥ makes of it', () => {
   const p = page();
   const e = new p.window.KeyboardEvent('keydown', { key: '“', code: 'BracketLeft', metaKey: true, altKey: true, bubbles: true, cancelable: true });

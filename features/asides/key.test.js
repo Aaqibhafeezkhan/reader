@@ -87,7 +87,7 @@ test('a run of aliases: the reviewer, the topics, and any not declared', () => {
 });
 
 test('attributed asides come out like any other, with who and what', () => {
-  const { meta, asides: found, source } = preprocess(`${KEY}Some paragraph.\n\n~#c This contradicts §2.\n  and goes on.\n~m Tighten.\n`);
+  const { meta, asides: found, source } = preprocess(`${KEY}Some paragraph.\n\n~#c This contradicts §2.\n~#c and goes on.\n~m Tighten.\n`);
   assert.deepEqual(meta, {});
   assert.equal(source.trim(), 'Some paragraph.');
   assert.equal(found.length, 2);
@@ -95,6 +95,13 @@ test('attributed asides come out like any other, with who and what', () => {
   assert.equal(found[0].by.who.name, 'Josh');
   assert.deepEqual(found[0].by.topics.map((t) => t.name), ['Coherence']);
   assert.equal(found[1].by.who.name, 'Maria');
+  assert.equal(found[1].anchor, found[0].anchor, 'another reviewer\'s, straight under, is about the same line');
+});
+
+test('aliases that differ, words in brackets, or a box start another aside about the same line (gh-305)', () => {
+  const { asides: found } = preprocess(`${KEY}The line these asides are about.\n~# This aside\n~c is not the same as this aside.\n~#[these words] are found in the line.\n~#[asides] start another.\n~#c A different aside,\n~#c and the same paragraph.\n~#c\n~#c Its second paragraph.\n~# [ ] A thread to resolve.\n`);
+  assert.deepEqual(found.map((a) => a.text), ['This aside', 'is not the same as this aside.', 'are found in the line.', 'start another.', 'A different aside,\nand the same paragraph.\n\nIts second paragraph.', 'A thread to resolve.']);
+  assert.equal(new Set(found.map((a) => a.anchor)).size, 1);
 });
 
 test('without a key, or with none of its aliases, `~word` is text as before', () => {

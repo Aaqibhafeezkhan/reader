@@ -15,7 +15,7 @@
  *
  * A span is an inline rule. A `:::` block is read line by line before the
  * blocks are parsed: its fence lines read as blank, and each line inside
- * gets a marker naming the styles, after whatever opens its block (`>`, `~`,
+ * gets a marker naming the styles, after whatever opens its block (`>`,
  * a bullet, `#`) and after each table pipe, so it lands in the paragraph,
  * heading, list item or cell that line belongs to. Once the blocks are
  * parsed, the markers come out, before the inline rules can take them for
@@ -49,17 +49,18 @@ const [BOX_OPEN, BOX_CLOSE] = MARKS.box;
 // A list item's first line with braces where it's declared, after its
 // bullet and any box (as typed, or as another feature has placed it, whose
 // placeholder this steps past without knowing whose it is), and before its
-// text: `- ( ) {bg-honeydew} **A**`. A heading's are the same, after its
+// text: `- ( ) {bg-honeydew} **A**`, or alone, for its words under it,
+// `- {red}` (gh-219's review). A heading's are the same, after its
 // `#`s and any box: `## [ ] {uppercase} Today`.
 const ITEM = new RegExp(`^([ \\t]*(?:>[ \\t]*)*(?:${LIST_MARKER}[ \\t]+`
   + `(?:(?:${PLACEHOLDER}|(?:\\[[ xX]\\])+|\\([ xX]\\))[ \\t]+)*`
   + `|#{1,6}[ \\t]+(?:(?:${PLACEHOLDER}|\\[[ xX]\\])[ \\t]+)*))`
-  + '(\\{([\\w-]+(?:[ \\t]+[\\w-]+)*)\\}[ \\t]+)(?=\\S)');
+  + '(\\{([\\w-]+(?:[ \\t]+[\\w-]+)*)\\}(?:[ \\t]+(?=\\S)|[ \\t]*$))');
 // Words that set how text is cased rather than its color or font.
 const CASES = new Set(['uppercase']);
-// What opens a line's block, for the marker to go after.
-// An aside's `~` can carry aliases and the words it's about: `~c[the lazy dog] `.
-const PREFIX = new RegExp(String.raw`^[ \t]*(?:~[^\s~[]*(?:\[(?:[^\]\\\n]|\\.)+\](?:\{[a-z]+\})?)?[ \t]+|[>~][ \t]*)*(?:${LIST_MARKER}[ \t]+)?(?:#{1,6}[ \t]+)?`);
+// What opens a line's block, for the marker to go after. The asides are
+// out by now (gh-305), so an aside's `~` is never one.
+const PREFIX = new RegExp(String.raw`^[ \t]*(?:>[ \t]*)*(?:${LIST_MARKER}[ \t]+)?(?:#{1,6}[ \t]+)?`);
 // Lines a marker would change the meaning of.
 const RULE = /^[ \t]*([-*_=])(?:[ \t]*\1)*[ \t]*$/;
 const DELIMITER_ROW = /^[ \t]*\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*$/;
@@ -139,6 +140,8 @@ const known = (name) => COLORS.has(name.toLowerCase()) || background(name) || GE
 function item(line) {
   const m = ITEM.exec(line);
   if (!m || !m[3].split(/\s+/).every(known)) return line;
+  // A heading's need words after them: there are none under it to style.
+  if (m[0].length >= line.trimEnd().length && /^[ \t]*(?:>[ \t]*)*#/.test(line)) return line;
   return m[1] + ITEM_OPEN + m[2] + ITEM_CLOSE + line.slice(m[0].length);
 }
 
@@ -197,6 +200,8 @@ function own(tokens, i) {
     li.meta = { ...li.meta, own: braces.trim().slice(1, -1).trim() };
     return '';
   });
+  // Braces alone on the item's line leave it empty: its words start on the next.
+  if (li && /^[ \t]*\n/.test(t.content)) t.content = t.content.replace(/^[ \t]*\n/, '');
 }
 
 /**

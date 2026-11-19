@@ -4,7 +4,7 @@
  * and connects the page's events and keys to them.
  */
 
-import { el, state, deck, dirty, remember } from './state.js';
+import { el, state, deck, dirty, remember, isSource } from './state.js';
 import { api } from './api.js';
 import { dirOf } from './versions.js';
 import { loadTree, drawTree, visiblePaths, step, open, follow, createFile, pressNew, pressStart, setUpSideIcons, go, reveal, pressToday, filterTyped, rememberedDir, onListKey, onListDoubleClick } from './files.js';
@@ -25,6 +25,7 @@ import { wireGoTo, openGoTo, isGoTo, goToHeading } from './goto.js';
 import { wireTheme } from './theme.js';
 import { makeCopy, setUpCopy } from './copying.js';
 import { fileKey } from './file-keys.js';
+import { wireDev, restorePlace } from './dev.js';
 
 state.previewReady = whenReady(el.preview);
 deck.stageReady = whenReady(el.stage);
@@ -47,7 +48,8 @@ async function init() {
   // The file in the address, or the one last changed in the folder last shown.
   const { wanted, line, last, heading } = readAddress();
   const under = state.files.filter((f) => dirOf(f.path) === state.dir);
-  const first = state.files.find((f) => f.path === wanted)
+  // reader's own file, `$reader/…`, isn't listed, but its address still opens it (gh-263).
+  const first = (isSource(wanted) ? { path: wanted } : state.files.find((f) => f.path === wanted))
     || under.find((f) => f.type === 'md') || state.files.find((f) => f.type === 'md') || state.files[0];
   if (first) {
     reveal(first.path);
@@ -55,6 +57,9 @@ async function init() {
     if (first.path === wanted && heading) goToHeading(heading);
     else if (first.path === wanted && line) goToLines(line, last);
   } else showEmpty('No markdown files here yet. Press New to start one.');
+  // Under `npm run dev`, back where it was before reader was started again.
+  if (info.dev) await restorePlace();
+  wireDev(info);
   // Back or Forward, or a heading's hash typed in (address.js).
   window.addEventListener('popstate', followAddress);
 }
@@ -79,7 +84,7 @@ function showVersion({ label, url, release } = {}) {
 /** An address changed after loading, by a link or by hand: open what it names. */
 async function followAddress() {
   const { wanted, line, last, params, heading } = readAddress();
-  if (!state.files.some((f) => f.path === wanted)) return;
+  if (!state.files.some((f) => f.path === wanted) && !isSource(wanted)) return;
   if (wanted !== state.current?.path) {
     reveal(wanted);
     await open(wanted);

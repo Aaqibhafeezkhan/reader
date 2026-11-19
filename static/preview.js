@@ -194,7 +194,10 @@
     const el = scroller(pre);
     const other = el === pre ? pre.querySelector(':scope > code') : pre;
     if (other?.hasAttribute('tabindex')) for (const a of REACHED) other.removeAttribute(a);
-    const over = el.scrollWidth > el.clientWidth + 1;
+    // Kept out of sight for a screen reader, a pixel wide, as a drawn tune's
+    // text is (features/music), it's read, not scrolled: the keyboard
+    // reaching it would find nothing to see.
+    const over = pre.clientWidth > 1 && el.scrollWidth > el.clientWidth + 1;
     if (over === el.hasAttribute('tabindex')) return;
     if (over) {
       const lang = CODE_LANG.exec(pre.querySelector('code')?.className || '');
@@ -319,6 +322,7 @@
   // out into the app's own addresses.
   const CONTENT = '/content/';
   const RELATIVE = /^(?![a-z][a-z\d+.-]*:|[/\\#?])/i;
+  const SOURCE = '$reader/';
 
   function withinContent(page) {
     const at = new URL(base.href);
@@ -329,6 +333,12 @@
       for (const node of page.querySelectorAll(selector)) {
         const was = node.getAttribute(attr);
         if (!was || !RELATIVE.test(was)) continue;
+        // reader's own folder, from wherever the note is, which the server
+        // gives only in dev mode (gh-263); elsewhere it goes nowhere.
+        if (was.startsWith(SOURCE)) {
+          node.setAttribute(attr, new URL(CONTENT + was, at.origin).href);
+          continue;
+        }
         const to = new URL(was, folder);
         node.setAttribute(attr, new URL(CONTENT.slice(0, -1) + to.pathname + to.search + to.hash, at.origin).href);
       }
@@ -564,6 +574,11 @@
     window.dispatchEvent(new CustomEvent('preview:open-to', { detail: { target: t } }));
     marks = null;
     t.scrollIntoView({ behavior: 'smooth' });
+    // The keyboard goes there too, so the next Tab goes on from where the
+    // page went, not from the link (gh-81's review): a place that can't
+    // take it, a heading or an item, takes it but stays out of Tab's way.
+    if (!t.matches(REACHABLE)) t.setAttribute('tabindex', '-1');
+    t.focus({ preventScroll: true });
   });
 
   /** What on the page has the id `id`: a heading first, then anything else, and never the frame's own. */

@@ -149,6 +149,28 @@ test('what waits on the contributor: boxes, criteria, untried Tries and unpicked
     'the Send box left out is the configured AI\'s');
 });
 
+test('a choice\'s own lines under it, a closing comment\'s quote after a blank, keep its question one, picked or waiting once', (t) => {
+  const closing = (pick) => [
+    'Q (Claude): Does gh-1 still describe what shipped?',
+    `- (${pick[0]}) The issue stands`,
+    `- (${pick[1]}) The issue stands, with this closing comment:`,
+    '',
+    '  > Nothing went beyond it.',
+    '- ( ) A PR replaces it',
+    '- ( ) [@ Something else]',
+  ];
+  const day = tree(scratch(t), {
+    'review.md': [
+      ...closing(' x'),
+      '',
+      ...closing('  '),
+    ].join('\n'),
+  });
+  assert.deepEqual(boxes(day, day, CLAUDE).map((b) => [b.at, b.text]), [
+    ['review.md:10', '- ( ) The issue stands'],
+  ]);
+});
+
 test('asides-open lists both, under the names the config gives, with / between folders', (t) => {
   const dir = scratch(t);
   const day = tree(path.join(dir, 'meetings', '2026-11-22'), {
@@ -202,33 +224,35 @@ test('send-watch says so when there are no day folders', (t) => {
   assert.match(out, /no day folders at/);
 });
 
-test('a line straight after the AI\'s reply, not indented past its ~, is listed to check, as it reads as the page\'s text', (t) => {
+test('a line straight after the AI\'s reply, indented past its ~, is listed to check, as it reads as the page\'s text (gh-305)', (t) => {
   const day = tree(scratch(t), {
     'review.md': [
       'One line.',
       '~# a question',
+      '~#',
+      '~# asked on two paragraphs',
       '~~c An answer,',
-      '  carried on as it should be,',
-      'and one that isn\'t.',
+      '~~c carried on as it should be,',
+      '  and one that isn\'t.',
       '',
       '- [ ] An item',
       '  ~# asked',
       '  ~~c answered',
-      '- [ ] The next item, not a line run on',
+      '- [ ] The next item',
       '',
       '~c An aside of the AI\'s own',
-      'run on too.',
+      'The page, carrying on.',
       '',
       '```md',
       '~~c a sample',
-      'in a fence',
+      '  in a fence',
       '```',
     ].join('\n'),
   });
   assert.deepEqual(runOn(day).map((a) => [a.at, a.text]), [
-    ['review.md:5', 'and one that isn\'t.'],
-    ['review.md:13', 'run on too.'],
+    ['review.md:7', 'and one that isn\'t.'],
   ]);
+  assert.deepEqual(open(day, day, CLAUDE), [], 'an aside of three lines, answered once');
 });
 
 test('send-watch says every box ticked in the pass that wakes it, not only the first', (t) => {

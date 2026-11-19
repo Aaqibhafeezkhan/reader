@@ -42,7 +42,13 @@ const index = fs.readFileSync(path.join(day, 'review.md'), 'utf8');
 // An issue in the index: a box or heading with its gh: link, or an item's file link followed by one.
 const listed = new RegExp(String.raw`^(?:- \[[ x]\](?:\[[ x]\]\[[ x]\])?|#+) .*?gh:${literal(c.repo)}#(\d+)`, 'gm');
 const issues = [...new Set([...index.matchAll(listed), ...index.matchAll(/\((?:review\/gh-(\d+)\.md|gh-(\d+)\/review\.md)\), gh:/g)].map((m) => m[1] ?? m[2]))];
-for (const n of issues) check(new RegExp(`closes gh-${n}\\b`, 'i').test(log), `a merge closes gh-${n}`);
+// A release review has no branch of its own: its report is a commit that says See gh-N,
+// and the issue is closed by hand once that's merged, with a comment linking the report.
+const reviews = issues.filter((n) => new RegExp(String.raw`gh:${literal(c.repo)}#${n}\[gh-${n}\] Perform Release Review`).test(index));
+for (const n of issues) {
+  if (reviews.includes(n)) check(new RegExp(`^See gh-${n}$`, 'm').test(log), `a commit reports gh-${n}, the release review`);
+  else check(new RegExp(`closes gh-${n}\\b`, 'i').test(log), `a merge closes gh-${n}`);
+}
 
 for (const [cmd, ...a] of [['npm', 'test'], ['npm', 'run', 'lint']]) {
   // npm is npm.cmd on Windows, which only a shell runs.
@@ -107,3 +113,4 @@ else console.log(`  gh pr create -R ${c.repo} --base main --head ${branch} --tit
 console.log('Once it\'s approved, a committer merges it with a merge commit, then brings main up to it:');
 console.log(`  gh pr merge ${pr ? pr.number : branch} -R ${c.repo} --merge`);
 console.log(`  git -C ${at(c.main)} pull --ff-only origin main`);
+for (const n of reviews) console.log(`Then the release review, by hand: a comment on #${n} linking its report in reviews/, and close it.`);

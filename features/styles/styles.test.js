@@ -19,7 +19,8 @@ test('::: styles every block until the closing :::', () => {
   assert.match(body, /<td class="font" style="text-align:right; color: var\(--gm-red\); --font: 'georgia'">2<\/td>/);
   assert.match(body, /<hr>/);
   assert.match(body, /<code>\[c\]\{red\}\n<\/code>/);
-  assert.match(body, new RegExp(`<summary ${style}>aside</summary>`));
+  // An aside is out before the styles are read (gh-305): the reader's own, not the block's.
+  assert.match(body, /<summary>aside<\/summary>/);
   assert.match(body, /<p>after<\/p>\n<p>:::<\/p>/);
   assert.doesNotMatch(body, /[\uE000-\uE007]/);
 });
@@ -56,9 +57,10 @@ test('a ::: with nothing open stays as typed, and code inside a block is left al
   assert.match(body, /<pre><code>indented\n<\/code><\/pre>/);
 });
 
-test('an aside in a ::: block keeps its style', () => {
-  const { body } = render('::: red\n~ aside\n:::\n');
-  assert.match(body, /<summary style="color: var\(--gm-red\)">aside<\/summary>/);
+test('an aside in a ::: block is the reader\'s own, not styled with it (gh-305)', () => {
+  const { body } = render('::: red\nA line.\n~ aside\n:::\n');
+  assert.match(body, /<summary>aside<\/summary>/);
+  assert.match(body, /<p style="color: var\(--gm-red\)">A line\.<\/p>/);
 });
 
 test('the stylesheet comes with the feature', () => {
@@ -95,7 +97,7 @@ test('braces after a list item\'s bullet and box style the whole item, its box i
 });
 
 test('braces that aren\'t all style names, or aren\'t right after an item\'s bullet and box, stay as typed', () => {
-  const src = '- {placeholder} a\n- {red georgia} b\n- [c]{red} d\n- {red}e\n- f {red}\n- [ ] g {red}\n- h\n  {red} i\n- {red}\n\n{red} j\n\n    - {red} k\n\n- `{red} l`\n';
+  const src = '- {placeholder} a\n- {red georgia} b\n- [c]{red} d\n- {red}e\n- f {red}\n- [ ] g {red}\n- h\n  {red} i\n\n{red} j\n\n    - {red} k\n\n- `{red} l`\n';
   const { body } = render(src);
   assert.match(body, /<li>\{placeholder\} a<\/li>/);
   assert.match(body, /<li>\{red georgia\} b<\/li>/);
@@ -104,7 +106,6 @@ test('braces that aren\'t all style names, or aren\'t right after an item\'s bul
   assert.match(body, /<li>f \{red\}<\/li>/);
   assert.match(body, /aria-label="g \{red\}"> g \{red\}<\/li>/);
   assert.match(body, /<li>h\n\{red\} i<\/li>/);
-  assert.match(body, /<li>\{red\}<\/li>/);
   assert.match(body, /<p>\{red\} j<\/p>/);
   assert.match(body, /<pre><code>- \{red\} k\n<\/code><\/pre>/);
   assert.match(body, /<li><code>\{red\} l<\/code><\/li>/);
@@ -115,6 +116,12 @@ test('braces after whatever leads an item, a box, a date, a blank, or more than 
   const { body } = render('- date:2026-11-10[] {red} Buy milk\n- [ ] date:2026-11-10[] {red} Both\n- [@ m] {red} n\n- [x][ ] {red} staged\n');
   assert.equal(body.match(/<li [^>]*style="color: var\(--gm-red\)"/g).length, 4);
   assert.doesNotMatch(body.replace(/<[^>]*>/g, ''), /\{red\}|[\uE000-\uE009]/, 'none is left in the words');
+});
+
+test('braces alone after an item\'s bullet style the whole item, its words under it; a heading\'s stay as typed (gh-219)', () => {
+  const { body } = render('- {red}\n  Words under it.\n\n  And more.\n\n## {blue}\n');
+  assert.match(body, /<li style="color: var\(--gm-red\)">\s*<p>Words under it\.<\/p>\s*<p>And more\.<\/p>/);
+  assert.match(body, /<h2[^>]*>\{blue\}<\/h2>/);
 });
 
 test('an item\'s own color wins over its ::: block\'s, whose font still comes after', () => {

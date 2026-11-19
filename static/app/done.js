@@ -7,6 +7,7 @@
  */
 
 import { progressBar, progressWords } from '../progress.js';
+import { readPage } from './html.js';
 
 const HEADINGS = 'h1, h2, h3, h4, h5, h6';
 
@@ -19,7 +20,8 @@ const HEADINGS = 'h1, h2, h3, h4, h5, h6';
  * nothing to do on it, and `done` is null.
  */
 export function mark(body, i) {
-  const doc = new DOMParser().parseFromString(`<body>${body}</body>`, 'text/html');
+  // Without its inline styles, as a page's marks and headings don't need its looks (html.js).
+  const doc = readPage(body);
   const heading = doc.querySelector(HEADINGS);
   // As a screen reader hears it, an image by its alt, as the deck names a slide (spoken.js).
   const title = (heading && Spoken.short(Spoken.spoken(heading, Infinity))) || `Page ${i + 1}`;

@@ -69,6 +69,32 @@ Indenting only nests an exchange in another: an indented `Q:` with no
 exchange above it stays as typed. Under a heading, the heading's level
 already says what it belongs to.
 
+Inside a list's item, an exchange starts at the item's words, as one does at
+the margin: a question under a numbered point, with its choices under it, is
+drawn as a question in that point. A `- Q:` bullet is a question too, and a
+`- A:` in the bullet after it its answer:
+
+::: tabs
++++ Source
+```markdown
+1) [ ] **Two lists numbered the same**
+
+   The first item to claim an id keeps it.
+
+   Q (Claude): Is that enough, for now?
+   - ( ) Yes
+   - ( ) [@ Something else]
+```
++++ Rendered
+1) [ ] **Two lists numbered the same**
+
+   The first item to claim an id keeps it.
+
+   Q (Claude): Is that enough, for now?
+   - ( ) Yes
+   - ( ) [@ Something else]
+:::
+
 An answer can be a pick from choices, `( )` in front of each, as a
 [field's](forms.md#fields) are: they're radio buttons in a row, one set to
 each `A:` line. Clicking one writes `(x)` in front of it, and `( )` in front of
@@ -120,6 +146,36 @@ Try [x] (Ana): Put the release dates on the team calendar
 :::
 
 A `+1` with no card or question above it stays as typed.
+
+A card that's a paragraph or two long can have its label on a line of its
+own, and its words indented straight under it, with no blank line between,
+as a bullet alone on its line takes the lines indented under it. The same
+goes for a `Q:` or an `A:`. Its words go on as a list item's do: more
+paragraphs, indented, a blank line between them, and a list, a quote or
+code under it are the card's too. A blank line straight after the label
+leaves the card empty, as it leaves a bullet alone, and a label alone
+straight under a paragraph's line stays as typed, as a bullet alone can't
+start a list there. An aside can go straight under the label, beside it,
+as an aside is only its own `~` lines (see [asides](asides.md)):
+
+::: tabs
++++ Source
+```markdown
+Good (Claude):
+~ Written under its label.
+  An aside under the line it was about kept each conversation in place.
+
+  Neither of us had to say which line or which item.
++1 (Josh): I'd add that it shows we need to fold finished asides.
+```
++++ Rendered
+Good (Claude):
+~ Written under its label.
+  An aside under the line it was about kept each conversation in place.
+
+  Neither of us had to say which line or which item.
++1 (Josh): I'd add that it shows we need to fold finished asides.
+:::
 
 Clicking a card's G or B marks its discussion done: the line gets an
 `[x]` (`Good [x] (Josh):`), and the card, its votes and its answers fade.

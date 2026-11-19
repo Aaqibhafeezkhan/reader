@@ -9,10 +9,11 @@
  * copy is the file whole, answers and all, from Edit or Work alike.
  *
  * Where a button doesn't apply it's gray, not gone, so the bar doesn't shift
- * and it can say why: aria-disabled, as Start today's is (files.js).
+ * and it can say why: aria-disabled, as Start today's is (files.js). On
+ * reader's own file, read and never written, both are gone (gh-263).
  */
 
-import { el, state } from './state.js';
+import { el, state, readOnly } from './state.js';
 import { api } from './api.js';
 import { saveFirst } from './saving.js';
 import { toast } from './status.js';
@@ -31,6 +32,7 @@ function dateOf() {
 function whyNot() {
   if (!state.current) return 'once a file is open';
   if (state.current.type !== 'md') return 'of a markdown file, not a PDF';
+  if (readOnly()) return "of a file of your own, not reader's";
   return null;
 }
 
@@ -51,6 +53,9 @@ function draw(b, label, key, no, yes) {
 
 /** The two buttons beside the file's path, and what each would make. */
 export function drawCopy() {
+  // On reader's own file, read and never written, there's nothing to copy:
+  // gone, not gray, as it's never going to apply there (gh-263).
+  el.copyFile.hidden = el.copyToday.hidden = readOnly();
   draw(el.copyFile, 'Make a copy', '⌘⌥Y', whyNot(),
     'Make a copy, a file of its own, answers and all');
   draw(el.copyToday, 'Copy for today', '⌘⌥⇧Y', whyNotToday(),

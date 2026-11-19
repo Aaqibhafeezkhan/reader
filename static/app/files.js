@@ -5,7 +5,7 @@
  * outline (outline.js).
  */
 
-import { el, state, remembered, remember } from './state.js';
+import { el, state, remembered, remember, isSource, lockEditor } from './state.js';
 import { api, exportUrl, contentUrl } from './api.js';
 import { saveFirst, setConflict } from './saving.js';
 import { exportDocument } from './exporting.js';
@@ -461,6 +461,8 @@ export function rememberedDir() {
 
 /** Show the folder `p` is in, and its versions if it isn't the one its row opens. */
 export function reveal(p) {
+  // reader's own file, `$reader/…`, isn't in the list, so there's nowhere to show it (gh-263).
+  if (isSource(p)) return;
   const group = groupOf(state.files, p);
   go(dirOf(p), group && group.opens.path !== p ? group.name : null, { focus: false });
 }
@@ -476,7 +478,9 @@ export async function follow(href) {
   const p = url.origin === root.origin && url.pathname.startsWith(root.pathname)
     ? url.pathname.slice(root.pathname.length).split('/').map(decodeURIComponent).join('/')
     : null;
-  if (!p || !state.files.some((f) => f.path === p && f.type === 'md')) return toast(`no file ${p ?? url.pathname} here`, true);
+  // reader's own markdown, `$reader/…`, isn't listed, and the server says if it can't be read.
+  const ours = isSource(p) ? /\.(md|markdown)$/i.test(p) : state.files.some((f) => f.path === p && f.type === 'md');
+  if (!p || !ours) return toast(`no file ${p ?? url.pathname} here`, true);
   let id = '';
   try { id = decodeURIComponent(url.hash.slice(1)); } catch { /* not a heading's */ }
   if (p !== state.current?.path) {
@@ -576,7 +580,7 @@ export async function open(p) {
   setConflict(false);
 
   if (type === 'pdf') {
-    state.current = { path: p, type };
+    state.current = { path: p, type, readOnly: isSource(p) };
     state.saved = '';
     el.editor.value = '';
     showPdf(p);
@@ -588,12 +592,13 @@ export async function open(p) {
       return toast(err.message, true);
     }
     if (seq !== state.openSeq) return;
-    state.current = { path: p, type };
+    state.current = { path: p, type, readOnly: isSource(p) };
     state.saved = file.text;
     state.mtime = file.mtime;
     state.worked = false;
     el.editor.value = file.text;
     el.editor.disabled = false;
+    lockEditor();
     el.editor.scrollTop = 0;
     el.editor.setSelectionRange(0, 0);
     // A workbook opens in Work, slides in Edit, a document as last chosen.

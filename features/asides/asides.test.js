@@ -58,17 +58,21 @@ test('tildes inside fenced code are left in the code', () => {
   assert.match(source, /~ not an aside/);
 });
 
-test('a wrapped line continues the same thought', () => {
-  const { asides } = preprocess('a\n\n~ first line\n  second line\n\nb\n');
+test('an aside is its own ~ lines, joined as a quote\'s > lines are, a ~ alone starting its next paragraph (gh-305)', () => {
+  const { asides, source } = preprocess('a\n\n~ first line\n~ second line\n~\n~ - [ ] a box\n\nb\n');
   assert.equal(asides.length, 1);
-  assert.equal(asides[0].text, 'first line\nsecond line');
+  assert.equal(asides[0].text, 'first line\nsecond line\n\n- [ ] a box');
+  assert.deepEqual(asides[0].lines, [2, 3, 4, 5]);
+  assert.deepEqual(asides[0].prefixes, ['~ ', '~ ', '~', '~ ']);
+  assert.equal(source, 'a\n\nb\n');
 });
 
-test('consecutive ~ lines are separate thoughts sharing an anchor', () => {
-  const { asides } = preprocess('a\n\n~ one\n~ two\n\nb\n');
-  assert.equal(asides.length, 2);
-  assert.deepEqual(asides.map((a) => a.text), ['one', 'two']);
-  assert.equal(asides[0].anchor, asides[1].anchor);
+test('a line with no mark after an aside is the page\'s own, indented or not (gh-305)', () => {
+  for (const next of ['  indented', 'plain']) {
+    const { asides, source } = preprocess(`a\n\n~ thought\n${next}\n`);
+    assert.equal(asides[0].text, 'thought');
+    assert.match(source, new RegExp(`^${next}$`, 'm'));
+  }
 });
 
 test('an aside does not swallow the block that follows it', () => {
@@ -103,9 +107,10 @@ test('an aside under a paragraph, then a blank, keeps the paragraphs apart', () 
   assert.equal(speakerShape('One paragraph.\n~ about it\n\nAnother paragraph.\n'), speakerShape('One paragraph.\n\nAnother paragraph.\n'));
 });
 
-test('an aside under a line can still wrap, indented', () => {
-  const { asides } = preprocess('a line\n~ first\n  second\nmore of the paragraph\n');
+test('an aside under a line goes on with its own ~ lines, the paragraph after it', () => {
+  const { asides, source } = preprocess('a line\n~ first\n~ second\nmore of the paragraph\n');
   assert.equal(asides[0].text, 'first\nsecond');
+  assert.equal(source, 'a line\nmore of the paragraph\n');
 });
 
 // --- structural transparency: the whole point -----------------------------
@@ -209,7 +214,7 @@ test('the item after a commented one starts a fresh row either way', () => {
 });
 
 test('several asides on one line share a cell', () => {
-  const { pairs } = parse('a point\n\n~ one\n~ two\n');
+  const { pairs } = parse('a point\n\n~ one\n~[point] two\n');
   const cell = pairs.find((p) => p.notes.length);
   assert.equal(cell.notes.length, 2);
 });
@@ -231,8 +236,8 @@ test('a document with no asides is a single pair', () => {
 const KEYED = '---\nreviewer #: Josh\nreviewer c: Claude\ntopic d: Design\n---\n\n';
 const cells = (body) => [...body.matchAll(/<div class="gm-aside-cell[\s\S]*?<\/details>\n<\/div>/g)].map((m) => m[0]);
 
-test('a ~~ line under an aside is a reply in its thread, flat, each with who wrote it, wrapping as an aside does', () => {
-  const { asides } = parse(`${KEYED}A line.\n~# Does it?\n~~c Yes, and\n  it wraps.\n~~# Then steps only.\n~~ And mine.\n`);
+test('a ~~ line under an aside is a reply in its thread, flat, each with who wrote it, going on as an aside does', () => {
+  const { asides } = parse(`${KEYED}A line.\n~# Does it?\n~~c Yes, and\n~~c it wraps.\n~~# Then steps only.\n~~ And mine.\n`);
   assert.equal(asides.length, 1, 'one thread, keeping the first aside\'s place');
   assert.deepEqual(asides[0].replies.map((r) => [r.by?.who?.name ?? null, r.text, r.line]),
     [['Claude', 'Yes, and\nit wraps.', 8], ['Josh', 'Then steps only.', 10], [null, 'And mine.', 11]]);
@@ -255,7 +260,8 @@ test('~~ is a reply only straight under an aside, and only before a space or an 
   assert.equal(asides[0].replies, undefined);
   assert.match(source, /^~~ not a reply$/m);
   assert.match(source, /^~~struck~~ and on$/m);
-  assert.equal(asides[0].text, 'an aside\n~~struck~~ too', 'struck text under an aside wraps it, as before');
+  assert.equal(asides[0].text, 'an aside');
+  assert.match(source, /^~~struck~~ too$/m, 'struck text under an aside is the page\'s own, as it has no mark');
 });
 
 test('a reply counts towards its reviewer in the legend, and a dot at a chip\'s corner counts the threads it opened still to resolve', () => {

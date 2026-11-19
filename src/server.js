@@ -1,7 +1,8 @@
 /**
  * HTTP API and static files.
  *
- *   GET  /api/info             content root and name, reader's version: { label, url, release }, and when its day starts, in minutes after midnight (`--day-starts`)
+ *   GET  /api/info             content root and name, reader's version: { label, url, release }, and when its day starts, in minutes after midnight (`--day-starts`); `dev: true` with --dev
+ *   GET  /api/dev              under `npm run dev` only, { boot, app }: this start of the server, and the app's own files' fingerprint (src/dev.js)
  *   GET  /api/tree             listable files, newest first, each with its date; today's date; and the folders today's file could be started in
  *   GET  /api/start-day?dir=   { from, to, mtime, css, body }: the folder's latest file, drawn whole and open, to clear its answers
  *   POST /api/start-day        { dir, from, mtime, edits } -> { path, from, mtime }: today's file, made from it with `edits` made
@@ -21,6 +22,9 @@
  *                              { text, path?, pages: true } -> for a deck, { css, title, deck, pages: [{ body, line }] }
  *   POST /api/slides           { text, path? } -> { css, title, slides: [{ body, notes, notesHtml, line, at, budget, plan, transition }], end }
  *   GET  /content/<path>       raw bytes (PDFs, images a note links to)
+ *
+ * In dev mode (`dev`), a path starting `$reader/` is in reader's own folder,
+ * not the content root: read, never written, and nowhere else (gh-263).
  *
  * Local unless told otherwise: the server refuses requests whose Host isn't
  * loopback, or a name it was started with (`allowHosts`), which is what
@@ -72,10 +76,13 @@ import { slides, pages, isDeck, isSlides } from './slides.js';
 import { exportHtml } from './export.js';
 import { version } from './version.js';
 import { note, NOTE, NoteError } from './soundfont.js';
+import { devInfo } from './dev.js';
 import { FEATURES } from '../features/index.js';
 import { READ } from '../static/app/address.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
+// What a path starts with to be in reader's own folder, in dev mode (gh-263).
+export const SOURCE = '$reader/';
 export const STATIC_DIR = path.join(HERE, '..', 'static');
 // The name each static file has on disk, which a case-insensitive disk would
 // otherwise let a request spell any way it likes.
@@ -236,8 +243,25 @@ const CONTENT_SANDBOX = { 'Content-Security-Policy': 'sandbox' };
  * the preview frames' second port, listens once it does (`listenFrames`), and
  * closes with it.
  */
-export function createServer({ root, allowHosts = [], now = Date.now, dayStarts = 0, soundfont = {} }) {
+export function createServer({ root, allowHosts = [], now = Date.now, dayStarts = 0, soundfont = {}, dev = false, restarts = false }) {
   const content = createContent(root);
+  // reader's own folder, for `$reader/…` in dev mode only, as it says where
+  // reader is installed; read, never written.
+  const source = dev ? createContent(path.resolve(HERE, '..')) : null;
+  /** The content `rel` is in, and its path there: `$reader/…` is reader's own. */
+  function where(rel) {
+    if (typeof rel !== 'string' || !rel.startsWith(SOURCE)) return [content, rel];
+    if (!source) throw Object.assign(new Error(`${SOURCE}… is reader's own folder, under npm run dev only: ${rel}`), { status: 404 });
+    return [source, rel.slice(SOURCE.length)];
+  }
+  const readAny = (rel) => {
+    const [from, at] = where(rel);
+    return { ...from.read(at), path: rel };
+  };
+  // Working on reader under `npm run dev`, which starts it again as its code
+  // changes: how a page tells it was (src/dev.js). Not with `--dev` alone, as
+  // nothing would start it again.
+  const started = dev && restarts ? devInfo(STATIC_DIR) : null;
   // Which reader this is, worked out now, while nothing's waiting on it.
   const known = version();
   const hosts = new Set([...LOOPBACK, ...allowHosts.map((h) => h.toLowerCase())]);
@@ -315,7 +339,7 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
   }
 
   // A puzzle's board kept in a file of its own, read from the content root.
-  const read = (rel) => content.read(rel).text;
+  const read = (rel) => readAny(rel).text;
 
   async function handle(req, res) {
     const host = nameOf(req);
@@ -334,8 +358,9 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
 
     if (req.method === 'GET' || req.method === 'HEAD') {
       if (route === '/api/info') {
-        return sendJson(res, { root: content.root, name: path.basename(content.root), version: await known, dayStarts });
+        return sendJson(res, { root: content.root, name: path.basename(content.root), version: await known, dayStarts, ...(started && { dev: true }) });
       }
+      if (route === '/api/dev' && started) return sendJson(res, started);
       if (route === '/api/tree') {
         const day = today(now, dayStarts);
         // Each file's front matter read once, for both.
@@ -357,11 +382,11 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
         const { css, body } = render(text, { file: plan.from, read, lines: true, now: 0 });
         return sendJson(res, { ...plan, css, body });
       }
-      if (route === '/api/file') return sendJson(res, content.read(url.searchParams.get('path')));
+      if (route === '/api/file') return sendJson(res, readAny(url.searchParams.get('path')));
       if (route === '/api/export') return sendExport(res, url.searchParams.get('path') || '');
       if (route.startsWith('/content/')) {
-        const rel = decode(route.slice('/content/'.length));
-        const { abs } = content.statFile(rel);
+        const [from, rel] = where(decode(route.slice('/content/'.length)));
+        const { abs } = from.statFile(rel);
         const ext = path.extname(abs).toLowerCase();
         const type = CONTENT_TYPES[ext] || 'application/octet-stream';
         if (type.startsWith('image/')) open(res);
@@ -393,6 +418,9 @@ export function createServer({ root, allowHosts = [], now = Date.now, dayStarts 
       return sendJson(res, slides(body.text, { file: body.path, read }));
     }
     if (route === '/api/file' && req.method === 'PUT') {
+      if (typeof body.path === 'string' && body.path.startsWith(SOURCE)) {
+        throw Object.assign(new Error(`reader's own files are read here, not written: ${body.path}`), { status: 403 });
+      }
       if (body.worked) {
         const closes = closesAt(extract(body.text ?? '').meta);
         if (closes != null && now() >= closes + GRACE) {

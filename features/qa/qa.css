@@ -1,4 +1,7 @@
 ul:has(> li.qa) { list-style: none; padding-left: 0; margin: var(--gm-space-5) 0; }
+/* A `- Q:` bullet is the question, its label in place of the bullet (gh-302);
+ * a numbered item keeps its number. */
+ul > li:has(> ul:first-child > li.qa) { list-style: none; }
 li.qa {
   position: relative;
   /* the room for its label, a box of a set size, hung in it */

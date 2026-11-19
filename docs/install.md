@@ -56,6 +56,8 @@ only on `127.0.0.1` and rejects requests addressed to any other host name;
 `--host` and `--allow-host` open it to other devices (below). It rejects
 any path that would leave `dir`, including through symlinks.
 
+For working on reader itself there's `npm run dev`, in reader's own folder ([CONTRIBUTING.md](https://github.com/jzheaux/reader/blob/main/CONTRIBUTING.md)): it starts reader again as its code changes, and opens `$reader/` links in reader's own folder ([Links](links.md#readers-own-files)).
+
 The page's preview is served apart from the app, so that what a document
 draws can't reach your files: at `frames.localhost` on the app's port, where
 the browser can have that name, and else on a second port, `--frame-port`,

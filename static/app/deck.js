@@ -2,7 +2,7 @@
  * Presenting: a deck of slides, a step at a time, with a speaker view.
  */
 
-import { el, state, deck, dirty, remember, RENDER_DELAY } from './state.js';
+import { el, state, deck, dirty, remember, lockEditor, RENDER_DELAY } from './state.js';
 import { api } from './api.js';
 import { baseFor } from './render.js';
 import { save } from './saving.js';
@@ -12,6 +12,7 @@ import * as moves from './moves.js';
 import { treatAsDeck } from './fit.js';
 import { findScreens, roomScreen, speakerFeatures, placeSpeaker } from './screens.js';
 import { mark, drawDone } from './done.js';
+import { readPage, writePage } from './html.js';
 
 //
 // A file in the format of https://github.com/maaslalani/slides -- slides
@@ -49,7 +50,7 @@ export async function present() {
   deck.reveal = 0;
   deck.scale = 1;
   deck.open = true;
-  el.editor.readOnly = true;
+  lockEditor();
   deck.returnTo = document.activeElement;
   if (document.activeElement === el.editor) el.editor.blur();
   // Out of reach under the slides, for the keyboard and for a screen reader.
@@ -107,7 +108,8 @@ const FOCUS = 'pre[data-focus-steps]';
  * overview.
  */
 export function steps(body) {
-  const doc = new DOMParser().parseFromString(`<body>${body}</body>`, 'text/html');
+  // Read without its inline styles, and written back with them, for the stage (html.js).
+  const doc = readPage(body);
   let n = 0;
   // A title the server set apart (`.slide-title`) is already out of the way.
   let opening = !doc.querySelector('.slide-title');
@@ -123,7 +125,7 @@ export function steps(body) {
     if (n === before) continue;
     for (const aside of pair.querySelectorAll(':scope > .gm-asides > *')) aside.dataset.step = n;
   }
-  return { body: doc.body.innerHTML, steps: n, title: Spoken.title(doc) };
+  return { body: writePage(doc), steps: n, title: Spoken.title(doc) };
 }
 
 /**

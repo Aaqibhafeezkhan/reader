@@ -202,6 +202,19 @@ another file. Images and links in a note resolve relative to that note, so
 → [Spring Security 7](spring-security-7.md)
 ```
 
+### reader's own files
+
+Run with `npm run dev`, for working on reader itself, reader reads its own folder too: a link to `$reader/` and a path opens that file there, wherever the note is, a markdown file in reader and anything else as its text.
+A review kept outside reader's folder can point at a test or a sample on the branch being reviewed:
+
+```markdown
+See [the journal sample]($reader/samples/daily-journal/2026-11-02.md), and [its test]($reader/test/samples.test.js).
+```
+
+reader's own files are read there, never written: one opened in reader can't be edited, and a box ticked on its page is put back.
+Hidden files and folders, such as `.git`, aren't there, as in your own folder.
+Run as `reader`, the link goes nowhere, as `$reader` would say where reader is installed.
+
 ## Headings
 
 Each heading has an id made from its words, the way GitHub makes them, so a link to it works there and in reader alike.

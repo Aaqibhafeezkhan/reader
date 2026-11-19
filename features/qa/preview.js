@@ -45,10 +45,9 @@
     const now = box.dataset.on;
     row.dataset.text = now;
     // A choice whose words are a blank still to write in is picked, but
-    // not yet an answer: the keyboard goes to its blank.
-    const unwritten = box.closest('.qa-choice')?.querySelector('[data-unwritten]');
+    // not yet an answer: the keyboard goes to its blank (Preview.toBlank).
+    const unwritten = Preview.toBlank(box);
     row.dataset.answered = String(!unwritten);
-    unwritten?.focus();
     if (now === was) return;
     // Not one to undo when the keyboard's gone to a blank, as that would close it.
     Preview.edit([{ from: line, to: line + 1, before: [was], after: [now] }], { undo: !unwritten });
@@ -61,7 +60,7 @@
     const box = Preview.workable && e.target.closest?.('.qa-choice')?.querySelector(CHOICE);
     if (!box || box === e.target) return;
     if (box.checked) {
-      box.closest('.qa-choices').dataset.answered = String(!box.closest('.qa-choice').querySelector('[data-unwritten]'));
+      box.closest('.qa-choices').dataset.answered = String(!Preview.blankOf(box));
       return;
     }
     box.checked = true;

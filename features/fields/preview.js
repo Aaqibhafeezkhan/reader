@@ -226,10 +226,9 @@
     const now = picked(field, boxes(field).indexOf(e.target));
     setText(line, now);
     // A choice whose words are a blank still to write in is picked, but
-    // not yet an answer: the keyboard goes to its blank.
-    const unwritten = e.target.closest('.field-choice')?.querySelector('[data-unwritten]');
+    // not yet an answer: the keyboard goes to its blank (Preview.toBlank).
+    const unwritten = Preview.toBlank(e.target);
     field.dataset.answered = String(!unwritten);
-    unwritten?.focus();
     if (now !== was) {
       // Not one to undo when the keyboard's gone to a blank, as that would close it.
       Preview.edit([{ from: line, to: line + 1, before: [was], after: [now] }], { undo: !unwritten });

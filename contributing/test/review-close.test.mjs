@@ -135,6 +135,22 @@ test('it lists everything in the way', (t) => {
   assert.doesNotMatch(out, /retro\.md/, 'the retro waits for after the merge');
 });
 
+test('a release review is closed by hand: its report\'s commit, See gh-N, stands for a merge, and the steps say to close it', (t) => {
+  const r = ready(t, { gh: { issues: { 21: { title: 'Pages fold' }, 80: { title: 'Perform Release Review' } } } });
+  fs.appendFileSync(path.join(r.day, 'review.md'), '\n- [x][x][x] [Its file](gh-80/review.md), gh:acme/reader#80[gh-80] Perform Release Review. Done.\n');
+  tree(path.join(r.day, 'gh-80'), { 'review.md': '# [x] Review\n\n## Closing\n\nQ (Claude): Does gh:acme/reader#80[gh-80] still describe what shipped?\n- (x) The issue stands\n- ( ) A PR replaces it\n' });
+  let { status, out } = close(r);
+  assert.equal(status, 1);
+  assert.match(out, /^FAIL {2}a commit reports gh-80, the release review$/m);
+  fs.writeFileSync(path.join(r.work, 'report.md'), '# report\n');
+  r.git(r.work, 'add', '-A');
+  r.git(r.work, 'commit', '-q', '-m', 'Report the Release Review\n\nSee gh-80');
+  ({ status, out } = close(r));
+  assert.equal(status, 0, out);
+  assert.match(out, /^ok {4}a commit reports gh-80, the release review$/m);
+  assert.match(out, /^Then the release review, by hand: a comment on #80 linking its report in reviews\/, and close it\.$/m);
+});
+
 test('an item with no Closing to decide its issue is in the way', (t) => {
   const r = ready(t);
   fs.writeFileSync(path.join(r.day, 'gh-21', 'review.md'), '# [x] Review\n');
